@@ -1,0 +1,256 @@
+# Everett — alcance del prototipo hasta 1.0
+
+Alcance ratificado por el usuario el 28 de septiembre de 2026, a partir de [Desarrollar en Canvas](chatgpt-conversation://6ab710c9-398c-83e9-bbd8-f80ccc9e6f31). Se conserva el detalle del roadmap recuperado. Sus requisitos de arnés y entrega se trasladan íntegros a [Validación del prototipo](validacion-prototipo.md), que establece el piso obligatorio y su ampliación según riesgos.
+
+Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referencias del diseño acordado. La lectura de la conversación recuperó el texto, pero no sus adjuntos ni los documentos completos de esas referencias. No darlos por inspeccionados.
+
+**Base de trabajo: 0.7.5.** La reconstrucción de **0.8** está pendiente. El Universo conserva lo aprobado; las siguientes etapas se concentran en las superficies y su integración.
+
+| Versión | Alcance principal |
+|---|---|
+| **0.8** | Canvas, tomando los comportamientos aplicables de Infinity Canvas. |
+| **0.9** | Code + Docs. |
+| **0.10** | Session + Agents. |
+| **0.11** | Board + Shipping Mode. |
+| **0.12** | Vista del mundo, barra global, perfil y configuración. |
+| **1.0 RC** | Integración completa, regresiones y pulido final. |
+| **1.0** | Prototipo aprobado. |
+
+**Regla de avance:** implementación → pruebas → tu feedback → correcciones → aprobación. Si una etapa necesita correcciones, continúa como `0.8.1`, `0.8.2`, etc. No se pasa a la siguiente dejando pendientes los problemas de su alcance.
+
+---
+
+## 0.8 — Canvas
+
+### Materiales y edición
+
+- Representaciones reconocibles de notas, documentos, PDF, imágenes, videos, enlaces y referencias a otras superficies.
+- Previews, portadas y metadatos cuando estén disponibles.
+- Edición directa de notas y nombres.
+- Selección discreta y controles contextuales.
+- Conservar identidad y contenido al abrir, referenciar o asignar materiales.
+- Mantener zoom hacia objetos y regreso al contexto espacial de origen.
+
+### Zonas de agente
+
+- Inspector con agente, instrucción, contexto, actividad y acciones.
+- Distinguir asignación contextual con acciones rápidas y transferencia mediante arrastre.
+- Mantener exclusividad de uso y estados de procesamiento y revisión.
+- Conservar y devolver materiales al cancelar, rechazar, retirar al agente o eliminar la zona.
+- Mantener las zonas fijas después de crearlas, según la decisión vigente.
+- Propuestas coherentes con el material recibido y la acción solicitada.
+
+Aplicar los estados de densidad de la referencia de Infinity Canvas: (adjunto de referencia no recuperado)
+
+| Materiales | Representación |
+|---|---|
+| **1–6** | Materiales individuales con previews ricos. |
+| **7–15** | Grupos compactos por tipo, con contadores. |
+| **16+** | Resumen agregado con cantidad total y tipos presentes. |
+
+Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse para llenar la zona. Las agrupaciones permitirán consultar sus elementos.
+
+### Herramientas y conexiones
+
+- Consolidar selección, paneo, notas, dibujo, formas y zonas en un dock compacto.
+- Herramientas de dibujo y formas con controles contextuales.
+- Respetar dimensiones y proporciones del gesto.
+- Mantener selección sin padding ni halos que engorden los objetos.
+- Conexiones desde los anclajes elegidos por el usuario.
+- Selección y eliminación explícita de conexiones.
+- Rechazar conexiones hacia zonas de agente.
+- Undo/Redo desde los atajos reales, diferenciando texto y operaciones del Canvas.
+
+### Quick Chat, chat anclado y Room
+
+- Quick Chat compacto y arrastrable.
+- Incorporación de participantes desde el chat anclado, no desde Quick Chat.
+- **Permitir Quick Chat → Room**, según tu autorización posterior.
+- Anclaje y desacoplamiento mediante desplazamiento visible y rápido.
+- Reacomodar el dock para que no quede detrás del chat anclado.
+- Conservar conversación, borradores, participantes y referencias entre estados.
+- Arrastrar materiales al chat para referenciarlos, sin transferir su propiedad.
+- Mantener dictado y participación de agentes por invocación en conversaciones multiusuario.
+
+### Comentarios y propuestas
+
+- Comentarios asociados a materiales, con marcador y consulta contextual.
+- Listado, respuestas y resolución desde el chat anclado.
+- Comentarios fuera del dock principal.
+- Propuestas legibles y diferenciadas del contenido aceptado.
+- Aceptar, rechazar y pedir cambios con resultados coherentes.
+- Cancelar un pedido de cambios conserva la propuesta pendiente.
+- Ninguna propuesta modifica el contenido compartido antes de aceptarse.
+
+**Cierre de 0.8:** completar el recorrido material → zona → agente → propuesta → revisión, y trabajar con chat, referencias y comentarios sin perder contenido, contexto ni controles.
+
+---
+
+## 0.9 — Code + Docs
+
+### Code
+
+- Reorganizar **crear archivo, guardar y buscar dentro del archivo** en un acceso contextual discreto.
+- Evitar controles que queden flotando o cambien arbitrariamente de posición al colapsar el explorador.
+- Integrar la búsqueda interna sin competir visualmente con la búsqueda global.
+- Comparación **Actual / Propuesta** con cambios reales y resaltado de diferencias.
+- Apertura lateral consistente con las demás herramientas auxiliares.
+- Desplazamiento coordinado, sin scrollbars redundantes.
+- Geometría consistente entre editor, comparación y Terminal.
+- Revisar Browser, Files, Images y Preview dentro del espacio auxiliar.
+- Eliminar controles redundantes, incluida la lupa aislada junto al buscador de Browser.
+
+### Docs
+
+- Colocar el control de cierre del panel izquierdo dentro del panel.
+- Mantener acceso visible para recuperarlo cuando esté cerrado.
+- Reordenar creación de documentos y hojas.
+- Conservar composer centrado respecto de la hoja.
+- Mantener transiciones consistentes en cada cambio de documento.
+- Preservar contenido, saltos de línea y posición de trabajo al cambiar de documento o colapsar paneles.
+
+### Compartido
+
+- FAB lateral y composer centrado en el área útil.
+- Expansión desde el FAB y contracción hacia él.
+- Conservación de borradores y cambios.
+- Navegación desde referencias de Canvas y regreso al contexto de origen.
+
+**Cierre de 0.9:** crear, editar, guardar, buscar y revisar contenido sin pérdida de cambios, paneles superpuestos ni comparaciones ambiguas.
+
+---
+
+## 0.10 — Session + Agents
+
+### Session
+
+- Conservar el estado inicial limpio: pregunta y composer.
+- Mantener el slot auxiliar con apertura contextual y manual.
+- Contexto resumido en un indicador compacto.
+- **256k como capacidad de ejemplo del prototipo.**
+- Clic en el indicador → desglose detallado con scroll.
+- Mostrar instrucciones, skills, memoria, materiales, mensajes y resultados de herramientas.
+- Detalle por llamada: modelo, entrada, salida, herramientas, duración, tokens, caché, errores, reintentos y recuperación.
+- Distinguir contexto actualmente ocupado de consumo acumulado.
+- Hacer reconciliables las cifras del resumen y del detalle.
+
+El desglose que señalaste en **OpenCode** queda como referencia para esta etapa.
+
+### Agents
+
+- Relacionar actividad, tareas, herramientas, duración, consumo, errores y resultados.
+- Utilizar las mismas ejecuciones que aparecen en las conversaciones.
+- Permitir pasar de una métrica o gráfico a los registros que la explican.
+- Mantener variedad de estados: trabajando, disponibles, con historial, con errores y con resultados pendientes.
+- Conservar conversación directa, capacidades y memoria.
+- Evitar métricas y gráficos desconectados de los registros.
+
+### Compartido
+
+- Revisar dictado, borradores y estados de los composers.
+- Mantener acciones del agente sobre el mundo sin obligar a navegar a otra superficie.
+- Verificar coherencia de Shipping, tareas y referencias.
+- Mantener datos de ejecución consistentes y reproducibles dentro del prototipo.
+
+**Cierre de 0.10:** poder identificar qué hizo un agente, qué información utilizó, qué recursos consumió, qué falló y cómo terminó cada ejecución.
+
+---
+
+## 0.11 — Board + Shipping Mode
+
+### Board
+
+- Revisar Kanban, tabla y calendario sobre las mismas tareas.
+- Adoptar los patrones de propiedades y vistas de **Notion** que acordamos usar como referencia.
+- Buscar, añadir, editar, quitar y organizar propiedades.
+- Mantener estado, prioridad, responsable, creador, fechas, origen y propiedades personalizadas.
+- Resolver consistentemente clic para abrir/editar y arrastre para mover.
+- Permitir paneo sin interferir con el movimiento de tarjetas.
+- Corregir contadores pegados al borde y contenido fuera de pantalla.
+- Reubicar propiedades y creación de tareas hacia el lateral.
+- Despejar el centro y ordenar su convivencia con Shipping Mode.
+
+### Shipping Mode
+
+- Conservar el toggle discreto en Board y el estado global del mundo.
+- Mejorar la presentación de bloqueantes, trabajo necesario, revisión y tareas listas.
+- Hacer claras las cantidades y su relación con las tareas.
+- Mantener accesible el trabajo posterior.
+- Conservar activación y desactivación mediante agente sobre el mismo estado compartido.
+- Reflejar el estado en las demás superficies sin añadir contenido innecesario.
+- Verificar consultas sobre bloqueantes y trabajo pendiente para lanzar.
+
+**Cierre de 0.11:** organizar el mismo trabajo desde distintas vistas y utilizar Shipping sin discrepancias entre tareas, propiedades, cantidades y estado global.
+
+---
+
+## 0.12 — vista del mundo, barra global y perfil
+
+### Vista de superficies del mundo
+
+- Acordar el nombre que reemplazará a `Vista atómica`.
+- Definir y aprobar una referencia visual para representar las seis superficies.
+- Sustituir las tarjetas actuales por una representación cohesiva con Everett.
+- Mantener identificación, foco y destino inequívocos.
+- Conservar la navegación aprobada.
+- Mantener miniaturas y conexiones visualmente comprensibles.
+
+### Barra global
+
+- Evaluar el acceso secundario a superficies con el resto de la experiencia ya pulida.
+- Mantenerlo discreto mientras aporte utilidad.
+- Revisar ubicación, búsqueda, filtros, estado e iconografía.
+- Eliminar duplicaciones y trasladar acciones secundarias a su contexto correspondiente.
+- Mantener cantidades de mundos coherentes y contextualizadas.
+
+### Perfil y configuración
+
+- Definir y aprobar las opciones concretas que entran en 1.0.
+- Separar identidad, preferencias y diagnóstico.
+- Rediseñar presentación y navegación.
+- Mantener comportamiento adecuado ante campos extensos.
+- Evitar que el perfil esté dominado por herramientas técnicas.
+
+**Pendientes de definición al iniciar esta etapa:** nombre y representación de la vista del mundo; opciones adicionales del perfil.
+
+**Cierre de 0.12:** orientación, navegación global, perfil y configuración coherentes con las superficies ya aprobadas.
+
+---
+
+## 1.0 RC — integración y pulido final
+
+### Recorridos completos
+
+- Universo → mundo → superficies → objetos → regreso.
+- Canvas → documento, archivo o tarea → edición → regreso.
+- Material → agente → procesamiento → propuesta → aceptación, rechazo o cambios.
+- Session → acción del sistema → resultado reflejado en otra superficie.
+- Board → Shipping → consulta al agente → actualización de tareas.
+- Combinaciones de paneles, chats, composers, búsquedas y herramientas.
+- Cambios rápidos, acciones repetidas y sesiones prolongadas.
+
+### Revisión transversal
+
+- Motion, iconografía, contraste y espaciado.
+- Foco, selección, atajos y conservación de borradores.
+- Límites de arrastre y recuperación de controles.
+- Comportamiento con poco y mucho contenido.
+- Coherencia de datos entre superficies.
+- Errores, recuperación, trazas y diagnóstico.
+- Rendimiento y estabilidad durante los recorridos acordados.
+
+Los problemas encontrados se corrigen en candidatas sucesivas hasta cerrar la evaluación.
+
+---
+
+## Arnés y entrega: requisitos de todas las etapas
+
+Aplicar [Validación del prototipo](validacion-prototipo.md). Sus exigencias son el **piso, nunca el techo**. La aprobación técnica requiere evidencia del artefacto actual; la aprobación de producto corresponde al usuario.
+
+## 1.0 — aprobación del prototipo
+
+La 1.0 se publica cuando los recorridos acordados funcionan, las superficies representan suficientemente la visión, no quedan correcciones críticas pendientes dentro del alcance y **vos aprobás la prueba libre de la candidata**.
+
+Backend, inferencia, colaboración, autenticación e integraciones reales quedan para el desarrollo del producto.
+
+**Próximo paso del roadmap: reconstruir 0.8 desde 0.7.5 y cerrar Canvas antes de pasar a 0.9.**
