@@ -60,9 +60,20 @@ for (const [surface, label] of [
     await expect(page.locator('.surface-object')).toHaveCount(6);
     await expect(page.locator('.transition-ghost')).toHaveCount(0);
     const worldRoute = await page.locator('#viewport').getAttribute('data-route');
+    if (surface === 'agents') {
+      const before = await page.evaluate(() => window.EverettDebug!.snapshot().camera.y);
+      await page.mouse.move(720, 400);
+      await page.mouse.down();
+      await page.mouse.move(720, 620, { steps: 12 });
+      await page.mouse.up();
+      await expect
+        .poll(() => page.evaluate(() => window.EverettDebug!.snapshot().camera.y))
+        .toBeGreaterThan(before + 100);
+    }
     await page
       .locator('.surface-object')
       .filter({ has: page.getByText(label, { exact: true }) })
+      .locator('.surface-label')
       .click();
     await expect
       .poll(() => page.evaluate(() => window.EverettDebug?.snapshot().focus))

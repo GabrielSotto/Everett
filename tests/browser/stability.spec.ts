@@ -15,7 +15,11 @@ test('UI-STABILITY-01: los remontajes de las seis superficies conservan edición
     for (const name of ['Code', 'Canvas', 'Docs', 'Board', 'Agents', 'Session']) {
       const start = Date.now();
       await expect(page.locator('.surface-object')).toHaveCount(6);
-      await page.getByRole('main').getByRole('button', { name, exact: true }).click();
+      await page
+        .getByRole('main')
+        .getByRole('button', { name, exact: true })
+        .locator('.surface-label')
+        .click();
       await page.keyboard.press('Enter');
       await expect(page.locator('.transition-ghost')).toHaveCount(0);
       if (name === 'Docs')

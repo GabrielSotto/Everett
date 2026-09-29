@@ -56,7 +56,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
       for (let j = i + 1; j < positions.length; j++) {
         expect(
           Math.hypot(positions[i]!.x - positions[j]!.x, positions[i]!.y - positions[j]!.y),
-        ).toBeGreaterThan(400);
+        ).toBeGreaterThan(475);
       }
     }
     const canvas = page.getByRole('main').getByRole('button', { name: 'Canvas', exact: true });
@@ -72,7 +72,17 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
       await expect(page.locator('.surface-object[aria-pressed="true"]')).toHaveCount(1);
       await expect.poll(() => target!.evaluate(halo)).toBe('1');
       await expect.poll(() => previous!.evaluate(halo)).toBe('0');
-      await expect(target!.locator('.surface-label > svg')).not.toHaveCSS('transform', 'none');
+      const labels = await page.locator('.surface-label').evaluateAll((elements) =>
+        elements.map((element) => {
+          const icon = element.querySelector('svg')!.getBoundingClientRect();
+          const text = element.querySelector('.surface-label-text')!.getBoundingClientRect();
+          return {
+            name: element.textContent,
+            delta: icon.y + icon.height / 2 - text.y - text.height / 2,
+          };
+        }),
+      );
+      for (const label of labels) expect(Math.abs(label.delta), label.name ?? '').toBeLessThan(0.5);
       if (reducedMotion === 'reduce') {
         await expect(target!.locator('.surface-label')).toHaveCSS('transition-duration', '0s');
       }
@@ -83,3 +93,64 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     });
   });
 }
+
+test('UI-WORLD-03: Session y Agents animan el conjunto sin desalinear icono y nombre', async ({
+  page,
+}, testInfo) => {
+  await enterWorld(page);
+  const evidence = [];
+  for (const name of ['Session', 'Agents']) {
+    const target = page.getByRole('main').getByRole('button', { name, exact: true });
+    // El gesto dispara la medición antes del primer fotograma de foco.
+    await target.evaluate((element) => {
+      element.addEventListener(
+        'pointerdown',
+        () => {
+          const label = element.querySelector<HTMLElement>('.surface-label')!;
+          const icon = label.querySelector('svg')!;
+          const text = label.querySelector('.surface-label-text')!;
+          const frames: { delta: number; width: number; iconX: number }[] = [];
+          const start = performance.now();
+          const sample = (now: number) => {
+            const i = icon.getBoundingClientRect(),
+              t = text.getBoundingClientRect();
+            frames.push({
+              delta: i.y + i.height / 2 - t.y - t.height / 2,
+              width: label.getBoundingClientRect().width,
+              iconX: new DOMMatrix(getComputedStyle(icon).transform).m41,
+            });
+            if (now - start < 450) requestAnimationFrame(sample);
+            else label.dataset.motionSamples = JSON.stringify(frames);
+          };
+          requestAnimationFrame(sample);
+        },
+        { once: true },
+      );
+    });
+    await target.click();
+    await expect(target).toHaveAttribute('aria-pressed', 'true');
+    const label = target.locator('.surface-label');
+    await expect(label).toHaveAttribute('data-motion-samples', /./);
+    const frames = JSON.parse((await label.getAttribute('data-motion-samples'))!) as {
+      delta: number;
+      width: number;
+      iconX: number;
+    }[];
+    expect(frames.length).toBeGreaterThan(5);
+    expect(Math.max(...frames.map((frame) => Math.abs(frame.delta)))).toBeLessThan(0.5);
+    expect(
+      Math.max(...frames.map((frame) => frame.width)) /
+        Math.min(...frames.map((frame) => frame.width)),
+    ).toBeGreaterThan(1.05);
+    expect(frames.some((frame) => frame.iconX > -2 && frame.iconX < 0)).toBe(true);
+    evidence.push({ name, frames });
+    await testInfo.attach(`alineacion-${name}`, {
+      body: await page.screenshot(),
+      contentType: 'image/png',
+    });
+  }
+  await testInfo.attach('fotogramas-alineados', {
+    body: JSON.stringify(evidence),
+    contentType: 'application/json',
+  });
+});

@@ -13,12 +13,12 @@ import { Minimap } from '../../spatial/minimap';
 import { reducedMotion } from '../../ui/motion';
 import { navigationTuning } from '../../spatial/tuning';
 export const surfacePositions: Record<Surface, Point> = {
-  session: { x: -425, y: -230 },
-  canvas: { x: 430, y: -230 },
-  docs: { x: 465, y: 190 },
-  code: { x: -445, y: 195 },
-  board: { x: 20, y: 425 },
-  agents: { x: 5, y: -530 },
+  session: { x: -490, y: -265 },
+  canvas: { x: 495, y: -265 },
+  docs: { x: 535, y: 220 },
+  code: { x: -510, y: 225 },
+  board: { x: 25, y: 490 },
+  agents: { x: 5, y: -610 },
 };
 export function worldMatches(
   ctx: Context,
@@ -371,7 +371,7 @@ export class SpatialView implements View {
       plane.innerHTML = surfaces
         .map(
           (surface) =>
-            `<button class="surface-object" data-focus="${surface}" style="left:${surfacePositions[surface].x}px;top:${surfacePositions[surface].y}px" aria-label="${surfaceNames[surface]}"><div class="surface-preview">${surfacePreview(surface)}</div><span class="surface-label">${icon(surface, 16)}${surfaceNames[surface]}</span></button>`,
+            `<button class="surface-object" data-focus="${surface}" style="left:${surfacePositions[surface].x}px;top:${surfacePositions[surface].y}px" aria-label="${surfaceNames[surface]}"><div class="surface-preview">${surfacePreview(surface)}</div><span class="surface-label">${icon(surface, 16)}<span class="surface-label-text">${surfaceNames[surface]}</span></span></button>`,
         )
         .join('');
       this.cam.setItems(
