@@ -7,7 +7,9 @@ if (!suppliedUrl)
 const baseURL = new URL(suppliedUrl);
 if (!['http:', 'https:'].includes(baseURL.protocol))
   throw new Error('EVERETT_TEST_URL debe utilizar HTTP(S).');
-const runId = randomUUID();
+const runId = process.env.EVERETT_BROWSER_RUN_ID ?? randomUUID();
+if (!/^[a-f0-9-]{36}$/i.test(runId)) throw new Error('Identificador de ejecución inválido.');
+process.env.EVERETT_BROWSER_RUN_ID = runId;
 
 export default defineConfig({
   testDir: './tests/browser',
