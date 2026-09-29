@@ -1,0 +1,95 @@
+import { type State } from './model';
+import type { Command } from './command-types';
+import { affectsView } from './command-effects';
+export { affectsView } from './command-effects';
+export { initialCamera } from './navigation';
+import { applyWorkspaceCommand } from './commands/workspace';
+import { applyBoardCommand } from './commands/board';
+import { applyCanvasCommand } from './commands/canvas';
+import { applyDocumentsCommand } from './commands/documents';
+import { applyCodeCommand } from './commands/code';
+import { applyAgentsCommand } from './commands/agents';
+import { applyConversationsCommand } from './commands/conversations';
+
+export function reduce(state: State, command: Command): State {
+  const next = structuredClone(state);
+  switch (command.type) {
+    case 'world.shipping':
+    case 'profile.edit':
+    case 'navigate':
+    case 'back':
+    case 'universe':
+    case 'camera':
+    case 'world.create':
+    case 'world.rename':
+    case 'world.archive':
+      applyWorkspaceCommand(next, command);
+      break;
+    case 'task.shipping':
+    case 'task.create':
+    case 'task.edit':
+    case 'board.view':
+    case 'property.add':
+    case 'property.remove':
+    case 'property.toggle':
+      applyBoardCommand(next, command);
+      break;
+    case 'node.create':
+    case 'node.move':
+    case 'node.edit':
+    case 'node.delete':
+    case 'link.create':
+    case 'link.delete':
+    case 'node.resize':
+    case 'zone.create':
+    case 'zone.edit':
+    case 'zone.delete':
+    case 'zone.agent':
+    case 'canvas.undo':
+    case 'canvas.redo':
+    case 'assign':
+    case 'assignment.ready':
+    case 'assignment.revise':
+    case 'assignment.finish':
+    case 'comment':
+    case 'comment.resolve':
+    case 'comment.reply':
+      applyCanvasCommand(next, command);
+      break;
+    case 'document.create':
+    case 'document.edit':
+    case 'sheet.edit':
+      applyDocumentsCommand(next, command);
+      break;
+    case 'file.create':
+    case 'file.edit':
+    case 'file.save':
+    case 'branch':
+    case 'code.propose':
+    case 'code.accept':
+      applyCodeCommand(next, command);
+      break;
+    case 'agent.run.start':
+    case 'agent.run.finish':
+    case 'agent.create':
+    case 'agent.toggle':
+    case 'agent.memory':
+      applyAgentsCommand(next, command);
+      break;
+    case 'message':
+    case 'participant':
+      applyConversationsCommand(next, command);
+      break;
+    default: {
+      const unhandled: never = command;
+      throw new Error('Comando desconocido: ' + JSON.stringify(unhandled));
+    }
+  }
+  if ('world' in command && affectsView(command) !== 'none') {
+    const world = next.worlds.find((candidate) => candidate.id === command.world);
+    if (!world) throw new Error('Mundo inexistente');
+    world.activity.unshift({ action: command.type, at: new Date().toISOString() });
+    world.activity = world.activity.slice(0, 30);
+  }
+  return next;
+}

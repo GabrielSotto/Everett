@@ -1,0 +1,442 @@
+[
+  {
+    "path": "src/assets/deep-sky-assets/01.webp",
+    "sha256": "f68f30f1cae064b8bfa6186ea6387b454d9e33b86c4ef01b1ed8dd253960a81e",
+    "bytes": 42252
+  },
+  {
+    "path": "src/assets/deep-sky-assets/02.webp",
+    "sha256": "41850cc2651139a28d46948e029b85b00e0c949c8809148dbb80611b35470bff",
+    "bytes": 35404
+  },
+  {
+    "path": "src/assets/deep-sky-assets/03.webp",
+    "sha256": "ca3aeaa5ed01d425282509fc4fa8d58cf72558fabbaeb6eb8dd59a59768363d7",
+    "bytes": 35474
+  },
+  {
+    "path": "src/assets/deep-sky-assets/04.webp",
+    "sha256": "65cbbe28234a4dd91219edee1dc1eb8bce8259087dcdc42d7caff0256c6c45f7",
+    "bytes": 32008
+  },
+  {
+    "path": "src/assets/deep-sky-assets/05.webp",
+    "sha256": "24c6378ec67c36e27e8f11e2ca7f2ba26b396c74aba3d0efd38b8c4d79b54fe8",
+    "bytes": 14744
+  },
+  {
+    "path": "src/assets/deep-sky-assets/06.webp",
+    "sha256": "7842ba53f3322130f9c3e5788798af9659fe9146d60938b362f8c55798f9b179",
+    "bytes": 17114
+  },
+  {
+    "path": "src/assets/deep-sky-assets/07.webp",
+    "sha256": "52c5ae968a8b108315be779e2a25bfb625d14ef35106740edb4f7db477cd581a",
+    "bytes": 13148
+  },
+  {
+    "path": "src/assets/deep-sky-assets/08.webp",
+    "sha256": "02b21346d66a3ac6c98596de7a85c7680cc4f41e60ac760204128d67d6aabada",
+    "bytes": 14482
+  },
+  {
+    "path": "src/assets/planet-maps/01.webp",
+    "sha256": "b49c99d890e6f681e383308aaa00fb6945d4eaf4dae3a32606fc8fb5b34424f9",
+    "bytes": 52536
+  },
+  {
+    "path": "src/assets/planet-maps/02.webp",
+    "sha256": "652e9381cd0fd8f6780413e39465891aba5acb35a38c02fe752da1da040c9919",
+    "bytes": 22270
+  },
+  {
+    "path": "src/assets/planet-maps/03.webp",
+    "sha256": "abd136d8e50370e4a6bc74e2b33db6594a57d12aa0a41140c3a4fe38ec9cca3f",
+    "bytes": 24200
+  },
+  {
+    "path": "src/assets/planet-maps/04.webp",
+    "sha256": "42aef1cbc76a755277b0765fa911373cb855579be919cf1add56226f42f89068",
+    "bytes": 33380
+  },
+  {
+    "path": "src/assets/planet-maps/05.webp",
+    "sha256": "9472cda8ece041d2b1a1e39befc7f2eebce65a7ba2c5211eff2baa4d8281d384",
+    "bytes": 52230
+  },
+  {
+    "path": "src/assets/planet-maps/06.webp",
+    "sha256": "8a957bd5304dcc94ff51662d2250267e50330c39738a57577e3e538db3f43bed",
+    "bytes": 23506
+  },
+  {
+    "path": "src/assets/planet-maps/07.webp",
+    "sha256": "3e5d2836428112575d3a10868b307f3a14f8f6499d3e93b55bcae2855ac20b44",
+    "bytes": 26786
+  },
+  {
+    "path": "src/assets/planet-maps/08.webp",
+    "sha256": "c2eb7da6212dafd0321905c18acf7061dadf4bda5775201aab71a304def8fbde",
+    "bytes": 49532
+  },
+  {
+    "path": "src/assets/planet-maps/09.webp",
+    "sha256": "5ed966a9987721d6b872f46a70d9ee3799a427da19571e37d2e5a0a2f2d21744",
+    "bytes": 45820
+  },
+  {
+    "path": "src/assets/planet-maps/10.webp",
+    "sha256": "ce94b74f1830b639791e1634408c4fcefa79292299f23420432ed14b2236c38e",
+    "bytes": 24480
+  },
+  {
+    "path": "src/assets/planet-maps/11.webp",
+    "sha256": "56b4d88d4a99481c9430f99410bc64a72df1ddfcc5ea8e8dd3f1ce0504510216",
+    "bytes": 20546
+  },
+  {
+    "path": "src/assets/planet-maps/12.webp",
+    "sha256": "db51feb2ad3f7cef559ea7cb2b4620475e63e0afed3c42ef590f7f5566e5fb79",
+    "bytes": 31734
+  },
+  {
+    "path": "src/assets/planet-maps/13.webp",
+    "sha256": "54cc51542c0a22238448f4162beafef61a238f4a959405408ce16b381dfbbca6",
+    "bytes": 51994
+  },
+  {
+    "path": "src/assets/planet-maps/14.webp",
+    "sha256": "c58d807ff1c900f7be9e192c97b526d8128197a256d3e68c478269d9c25b4af3",
+    "bytes": 24442
+  },
+  {
+    "path": "src/assets/planet-maps/15.webp",
+    "sha256": "8f2a53663c697213d5baffbef21d183161aa03d92d69560806d78595a0cd411d",
+    "bytes": 20676
+  },
+  {
+    "path": "src/assets/planet-maps/16.webp",
+    "sha256": "1eeed852dfbc5c87fb1165ab1f1c57b9861c9f261961b3e6618d012285fbdb4f",
+    "bytes": 53160
+  },
+  {
+    "path": "src/assets/planet-maps/17.webp",
+    "sha256": "386d55b031c87603887287c1de4b766e75eb0d8bcb69a2aef25f4a9126effe3d",
+    "bytes": 54176
+  },
+  {
+    "path": "src/assets/planet-maps/18.webp",
+    "sha256": "ef4941f42e8c1e74b725d726ed933b4db83dae2010186c0345439108ab85a40e",
+    "bytes": 22398
+  },
+  {
+    "path": "src/assets/planet-maps/19.webp",
+    "sha256": "ce80d4195758372bd16f3e43f5a750f0be6cad0bc3803c1d230e3b6decaea8db",
+    "bytes": 22312
+  },
+  {
+    "path": "src/assets/planet-maps/20.webp",
+    "sha256": "be0617a356c85cd2d5a7909ffcd84e2bcf9551ae2950b46e58d5c72bdee6aabe",
+    "bytes": 27264
+  },
+  {
+    "path": "src/assets/planet-maps/21.webp",
+    "sha256": "542496d39adc287a833234f04f949aae546c7e6797a525d70bf37500ac9f2aad",
+    "bytes": 53756
+  },
+  {
+    "path": "src/assets/planet-maps/22.webp",
+    "sha256": "dd291192538aced36adae488ff4797f8842643e57992ecfe6b7c453ec53e50d8",
+    "bytes": 26468
+  },
+  {
+    "path": "src/assets/planet-maps/23.webp",
+    "sha256": "e56c78d97984ec2644b3c9e5c582ebdc5a221da576f0b83a5634d0498e9b7746",
+    "bytes": 27382
+  },
+  {
+    "path": "src/assets/planet-maps/24.webp",
+    "sha256": "366f5e1e2147741c44cf03d9fec624545185eab32a8575d1f9bb28e3031f8720",
+    "bytes": 48556
+  },
+  {
+    "path": "src/assets/planet-maps/25.webp",
+    "sha256": "98c76c0a02a205fc3a51896e14b742344aee2420792ea391f91e13c495c1e309",
+    "bytes": 52708
+  },
+  {
+    "path": "src/assets/planet-maps/26.webp",
+    "sha256": "e2054e21f7869bfad1dbaf942aaf230b4d0a2d5f50b95daef4150ba7527f3d2b",
+    "bytes": 24514
+  },
+  {
+    "path": "src/assets/planet-maps/27.webp",
+    "sha256": "b301d74f4d0d0acbceddba11078b74af86c3aec2092aeaff8159bbcb5e1c3651",
+    "bytes": 21794
+  },
+  {
+    "path": "src/assets/planet-maps/28.webp",
+    "sha256": "ad67d3dd26c8d7f13ec12f2c56992432abfdd0ec3df14a8dd358d6581f7fb288",
+    "bytes": 30744
+  },
+  {
+    "path": "src/assets/planet-maps/29.webp",
+    "sha256": "d6d08ccf299a62cb9eea28567f638aa1203f156db09acd1e2c3b467a9e6d0537",
+    "bytes": 49724
+  },
+  {
+    "path": "src/assets/planet-maps/30.webp",
+    "sha256": "932020c63ea7a9c5151631661c4114d3be9b37c89c4bac681d162d3fe5bb2ee7",
+    "bytes": 22962
+  },
+  {
+    "path": "src/assets/planet-maps/31.webp",
+    "sha256": "a2d004f8e355063e4713c369986c142543bf776a200dfdf7857845529ba5222b",
+    "bytes": 23800
+  },
+  {
+    "path": "src/assets/planet-maps/32.webp",
+    "sha256": "ce9683a53e9931a8a7e3b234f846b074305c0e6c744dfa539cd9aca611deaea5",
+    "bytes": 47196
+  },
+  {
+    "path": "src/assets/planet-maps/33.webp",
+    "sha256": "1d1cb9d1e44c08919901646df673d75406e05f4bad3d6a8d87d65fb45f4da97d",
+    "bytes": 46266
+  },
+  {
+    "path": "src/assets/planet-maps/34.webp",
+    "sha256": "417a1c75f5263e8a10565b9e876348936f24e667a26a8021caaf1ea7142df6cf",
+    "bytes": 25710
+  },
+  {
+    "path": "src/assets/planet-maps/35.webp",
+    "sha256": "b2c26e2a4c8d0d4321b5d3da610881badf5ecd94fe181f69d7cd86eb1facae3d",
+    "bytes": 24562
+  },
+  {
+    "path": "src/assets/planet-maps/36.webp",
+    "sha256": "2f9a0e2106b1ea6b64f35ec3064d5cc68ff5e0959790c8e3d5013a71e96a33c6",
+    "bytes": 29664
+  },
+  {
+    "path": "src/assets/planet-maps/37.webp",
+    "sha256": "e6e5c857d3367240da06bc03b5ccb8400a99c2f7d225ab784fa79ea43bedc87b",
+    "bytes": 52136
+  },
+  {
+    "path": "src/assets/planet-maps/38.webp",
+    "sha256": "2fe4b88e4a2545b2a26ba2cde8435d0ac4012dc140e659a5cc32a044bbe33e11",
+    "bytes": 21862
+  },
+  {
+    "path": "src/assets/planet-maps/39.webp",
+    "sha256": "061505b61e9ba5f01aec63b64b718933681504325e252796de3e9b34a41e1227",
+    "bytes": 22792
+  },
+  {
+    "path": "src/assets/planet-maps/40.webp",
+    "sha256": "b93b141ca485d07c8addf9daf11c9e8bdaaf2eeddb79c45a9646547cf05c008a",
+    "bytes": 48886
+  },
+  {
+    "path": "src/assets/planets/01.webp",
+    "sha256": "6dfe8737bf7b589c06a5c4da7bec3e628be78169c7ba8dcc374165558977c449",
+    "bytes": 13416
+  },
+  {
+    "path": "src/assets/planets/02.webp",
+    "sha256": "d65eb52a73716d3a6ee77f08c9adfdbdd71b23313ab0e832362f3b4297727cd9",
+    "bytes": 6820
+  },
+  {
+    "path": "src/assets/planets/03.webp",
+    "sha256": "91c74bad730dcad8c87774a06ebe2caee5f0333ba9d6f4637b0c737b608aafa7",
+    "bytes": 6186
+  },
+  {
+    "path": "src/assets/planets/04.webp",
+    "sha256": "4225d56837c6ae0f6af4ffdc1dd8e3d422d5b981130f2f05cc45a155f4b2fbb3",
+    "bytes": 7816
+  },
+  {
+    "path": "src/assets/planets/05.webp",
+    "sha256": "04560bef7e1600f93b4dc215608809b94cf1237a34d8ea566c3aefc2d64cf8c5",
+    "bytes": 11512
+  },
+  {
+    "path": "src/assets/planets/06.webp",
+    "sha256": "ab784b8e013d0f9e547880564ad9ee68dc561bffd668086da64677011c2cd286",
+    "bytes": 7308
+  },
+  {
+    "path": "src/assets/planets/07.webp",
+    "sha256": "9fc5c4522d6c8e01e6da39c307e44949e1c063d6b151f9133ad7348b5a7e76e4",
+    "bytes": 6560
+  },
+  {
+    "path": "src/assets/planets/08.webp",
+    "sha256": "df5cfe7db769d87b0135ccd8aa3332c8e605e6f8a1a3c90df28f582fd3496976",
+    "bytes": 10176
+  },
+  {
+    "path": "src/assets/planets/09.webp",
+    "sha256": "a297761cc87b9b8c59246dfceddfe2a333bb0e7db04b070b6fc6fc05ddc7491d",
+    "bytes": 11694
+  },
+  {
+    "path": "src/assets/planets/10.webp",
+    "sha256": "31550dadbfbb274872e3ab92d6dbe6934ed41af9c8e3a0630f7362737c494de6",
+    "bytes": 6868
+  },
+  {
+    "path": "src/assets/planets/11.webp",
+    "sha256": "1890741fba253555769be8bcc4fff55b917c5e28972de77396d7e47f2239dc6b",
+    "bytes": 5802
+  },
+  {
+    "path": "src/assets/planets/12.webp",
+    "sha256": "300365d63ea270a1fed9f2a6c5e2561ac977cb8394e059a25097323072b71765",
+    "bytes": 7758
+  },
+  {
+    "path": "src/assets/planets/13.webp",
+    "sha256": "e3de1699a65232b26d368ec0db13a6d8d47b6359aa59a7ffd376fe35e0c9dcfc",
+    "bytes": 11748
+  },
+  {
+    "path": "src/assets/planets/14.webp",
+    "sha256": "a27e6c38fe70addac8ccbf701507978d56fd49019b7e021bbd9bef1fdffba682",
+    "bytes": 7168
+  },
+  {
+    "path": "src/assets/planets/15.webp",
+    "sha256": "5d97d11459e6047ce24f6a75b42ac6f6a4ffa912b97fa1ed5417225616f856a2",
+    "bytes": 5482
+  },
+  {
+    "path": "src/assets/planets/16.webp",
+    "sha256": "f182f48f0968d4099d4bb600612c8b400f6f175eec0ccb04b3f62368f9b03f84",
+    "bytes": 12120
+  },
+  {
+    "path": "src/assets/planets/17.webp",
+    "sha256": "7a85b09a2c5e7ec686b55b9f1a2631f166e705689f866a4b1af127c6d66486e1",
+    "bytes": 14194
+  },
+  {
+    "path": "src/assets/planets/18.webp",
+    "sha256": "2afc4073735b16ad4c458ced1ead759224b1d81c538ae457fef9deb5884dee9a",
+    "bytes": 6852
+  },
+  {
+    "path": "src/assets/planets/19.webp",
+    "sha256": "241078128ffeab3779526d3a98474652cab76f785313b9ec76291b6a2b353cc8",
+    "bytes": 6196
+  },
+  {
+    "path": "src/assets/planets/20.webp",
+    "sha256": "9855006af07c42d2ca5c30c612b14686b9479a59b27664ac398ebdbd3b6e8520",
+    "bytes": 7088
+  },
+  {
+    "path": "src/assets/planets/21.webp",
+    "sha256": "9ba1d605762724a374bae8c8442b6fc7cad95b58c6f370b3b96bcd562bfd6087",
+    "bytes": 14210
+  },
+  {
+    "path": "src/assets/planets/22.webp",
+    "sha256": "ef0bfff247d35d54236e53bc104f858b517ae9fa40e22cce869d4358ceda3138",
+    "bytes": 6988
+  },
+  {
+    "path": "src/assets/planets/23.webp",
+    "sha256": "50e8e08482cbefc121d82eb4f5893bb04f1d7ef3a4c95c339677d36df80674c5",
+    "bytes": 6474
+  },
+  {
+    "path": "src/assets/planets/24.webp",
+    "sha256": "acc8dd31b71c40ac4609c7811f3e00da0339eb108ca6783c583e27f3a6d4c0ed",
+    "bytes": 12358
+  },
+  {
+    "path": "src/assets/planets/25.webp",
+    "sha256": "d6486c75fae53e7be722b673e23d28a1b8be51bed6c158a2457920a543819c87",
+    "bytes": 12826
+  },
+  {
+    "path": "src/assets/planets/26.webp",
+    "sha256": "4ae0886fb28c2733fb4847c2d4463f3644d8c24c91d7a50c646e453d6f11c6b3",
+    "bytes": 7004
+  },
+  {
+    "path": "src/assets/planets/27.webp",
+    "sha256": "247ced6255484360fe73b0c8b2920c7652908c2c9dc5b58e3e5bda587bd22922",
+    "bytes": 6178
+  },
+  {
+    "path": "src/assets/planets/28.webp",
+    "sha256": "4e1467b9e543032f0258f95f3f8fbd25b2ab3247e666c7cd24711a00350a82ef",
+    "bytes": 8110
+  },
+  {
+    "path": "src/assets/planets/29.webp",
+    "sha256": "4ab31bad6fbaad5208d214530ae21d71e4312b23e697ff027323d95d0b36aa54",
+    "bytes": 12446
+  },
+  {
+    "path": "src/assets/planets/30.webp",
+    "sha256": "b6ec2cf50655e860a68abe2d60630d22daa5f318328e47f569f52a4830108183",
+    "bytes": 6718
+  },
+  {
+    "path": "src/assets/planets/31.webp",
+    "sha256": "de3342f50e7745f50961dfe548f012eff548707b0d9955c972d7ba933c3bd783",
+    "bytes": 6326
+  },
+  {
+    "path": "src/assets/planets/32.webp",
+    "sha256": "8b69151f3504e7896c6fe53bcb6717a372edf345b8c5ede73a8758b911d7b533",
+    "bytes": 10754
+  },
+  {
+    "path": "src/assets/planets/33.webp",
+    "sha256": "2fdc87ffbfd2ea1574cd40a6933248f5df612e93e3294631b5721d0bf4b4a843",
+    "bytes": 12780
+  },
+  {
+    "path": "src/assets/planets/34.webp",
+    "sha256": "19b32189f7730238b0da62bc05b8d51c17d4a86a6a81a8d0cb7aa2a73a56dc8b",
+    "bytes": 6402
+  },
+  {
+    "path": "src/assets/planets/35.webp",
+    "sha256": "4937a1d7ff97747034f87a5aa04221222def225fb9dcf32e542f19841f4488a7",
+    "bytes": 6094
+  },
+  {
+    "path": "src/assets/planets/36.webp",
+    "sha256": "0d1e97f134cbed1b7424e44946297e10b09807a8c8fa5e4dddcdd0b93be8e93d",
+    "bytes": 7548
+  },
+  {
+    "path": "src/assets/planets/37.webp",
+    "sha256": "f09415574badc55c27ae9a932e67727c775a9c49a5960c97b7ee3c54001a80a1",
+    "bytes": 14128
+  },
+  {
+    "path": "src/assets/planets/38.webp",
+    "sha256": "10123dd66a4b9397e6bcafd172d6b3645eca8049212d966d678fee7ee5ccb2a6",
+    "bytes": 6578
+  },
+  {
+    "path": "src/assets/planets/39.webp",
+    "sha256": "b07c746430b41111f79ca1176e4853df7b47dd46ce6228906ff2f947e4aecad1",
+    "bytes": 6096
+  },
+  {
+    "path": "src/assets/planets/40.webp",
+    "sha256": "a2c3283945a1f39e278167259293ac8d4fb9e852393a7c2c5cd1d3d358cf59bc",
+    "bytes": 10662
+  }
+]
