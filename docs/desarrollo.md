@@ -45,9 +45,13 @@ Usar la ruta concreta emitida por el runner para comprobar vigencia. Modificar u
 
 ## Pruebas de navegador
 
+Antes de ejecutar por primera vez, instalar Chromium para la versión fijada de Playwright mediante `npx playwright install chromium`, si el entorno no lo tiene disponible.
+
+Para evaluar el build en la propia computadora, ejecutar `node scripts/preview.mjs` y utilizar la URL que imprime. El servidor escucha exclusivamente en `127.0.0.1`, comprueba el manifiesto y sirve el HTML de `dist/` leído al arrancar. Reiniciarlo después de reconstruir el HTML y detenerlo con Ctrl+C al terminar. El argumento opcional de puerto acepta `0` para elegir uno libre.
+
 `EVERETT_TEST_URL` debe apuntar a una dirección HTTP(S) admitida que sirva el HTML exacto de `dist/build-manifest.json`. El arnés comprueba los bytes recibidos antes del recorrido. La configuración no inicia un servidor ni publica archivos.
 
-Antes de ejecutar por primera vez, instalar Chromium para la versión fijada de Playwright mediante `npx playwright install chromium`, si el entorno no lo tiene disponible. Después de definir la URL de prueba en la sesión de PowerShell, ejecutar `npm run test:browser`.
+En una segunda terminal de PowerShell, definir `$env:EVERETT_TEST_URL = 'http://127.0.0.1:4173/'` con el puerto utilizado y ejecutar `npm run test:browser`.
 
 La salida se guarda en `output/browser/<runId>/`: resultados JSON, informe HTML, trazas, capturas y videos de fallos. Los casos leen el diagnóstico para contrastar resultados; las acciones utilizan controles y teclado. Un error de consola o de página hace fallar el recorrido.
 
