@@ -252,6 +252,8 @@ El nombre y la representación se trabajan inicialmente en la reconstrucción de
 
 Los problemas encontrados se corrigen en candidatas sucesivas hasta cerrar la evaluación.
 
+**Observación pendiente de diseño para el cierre previo a 1.0:** revisar el inicio de un Mundo y sus superficies, incluido el momento de asignar nombres. El usuario señaló que falta un paso previo y difirió su definición; la navegación aprobada de 0.7.5 se conserva.
+
 ---
 
 ## Arnés y entrega: requisitos de todas las etapas
