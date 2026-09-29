@@ -1,11 +1,12 @@
 import { parseShippingIntent } from '../../domain/shipping';
 import type { Context } from '../../app/context';
-import { html, target, value, type View } from '../../ui/dom';
-import { btn, icon } from '../../ui/icons';
+import { target, value, type View } from '../../ui/dom';
+import { docsPresentation } from './presentation';
 import { ComposerDisclosure } from '../../ui/disclosure';
-import { composer, bindComposer, preserveComposerDrafts } from '../../ui/composer';
+import { bindComposer, preserveComposerDrafts } from '../../ui/composer';
 export class DocsView implements View {
   private abort = new AbortController();
+  private resize = new ResizeObserver(() => this.resizeBody());
   private disclosure: ComposerDisclosure;
   private aiOpen = false;
   private response = '';
@@ -16,6 +17,7 @@ export class DocsView implements View {
     private root: HTMLElement,
     private ctx: Context,
   ) {
+    this.resize.observe(root);
     this.disclosure = new ComposerDisclosure(root, '.document-page');
     bindComposer(root, this.abort.signal, ctx);
     root.addEventListener(
@@ -79,6 +81,7 @@ export class DocsView implements View {
       (e) => {
         const d = this.doc();
         if (!d || !(e.target instanceof HTMLElement)) return;
+        if (e.target.id === 'doc-body') this.resizeBody();
         if (e.target.id === 'doc-title' || e.target.id === 'doc-body')
           ctx.act(
             {
@@ -86,7 +89,7 @@ export class DocsView implements View {
               world: ctx.world().id,
               id: d.id,
               title: this.root.querySelector('#doc-title')?.textContent ?? '',
-              body: this.root.querySelector<HTMLElement>('#doc-body')?.innerText ?? '',
+              body: value(this.root, '#doc-body'),
             },
             'editar documento',
             'DOCS-01',
@@ -160,6 +163,12 @@ export class DocsView implements View {
       w = this.ctx.world();
     return w.docs.find((d) => r.kind === 'surface' && d.id === r.entity) ?? w.docs[0];
   }
+  private resizeBody(): void {
+    const body = this.root.querySelector<HTMLTextAreaElement>('#doc-body');
+    if (!body) return;
+    body.style.height = 'auto';
+    body.style.height = `${body.scrollHeight}px`;
+  }
   render(): void {
     const restoreDraft = preserveComposerDrafts(this.root);
     const oldScroll = this.root.querySelector<HTMLElement>('.document-scroll');
@@ -170,7 +179,14 @@ export class DocsView implements View {
       });
     const d = this.doc(),
       w = this.ctx.world();
-    this.root.innerHTML = `<div class="docs-layout">${this.ctx.ui.docs.docsList ? `<aside class="docs-list"><div class="document-actions">${btn('doc-new', 'plus', 'Crear documento')}${btn('sheet-new', 'table', 'Crear hoja')}</div>${w.docs.map((doc) => `<button data-action="doc-open" data-id="${doc.id}" class="${doc.id === d?.id ? 'selected' : ''}">${icon(doc.sheet ? 'table' : 'docs', 15)}<span>${html(doc.title)}</span></button>`).join('')}</aside>` : ''}<div class="document-main"><div class="document-toolbar">${btn('docs-list', 'panel-left', this.ctx.ui.docs.docsList ? 'Ocultar documentos' : 'Mostrar documentos', `aria-expanded="${this.ctx.ui.docs.docsList}"`, this.ctx.ui.docs.docsList)}${!this.ctx.ui.docs.docsList ? btn('doc-new', 'plus', 'Crear documento') + btn('sheet-new', 'table', 'Crear hoja') : ''}</div>${d ? `<div class="document-scroll"><article class="document-page"><h1 contenteditable="true" spellcheck="false" id="doc-title" aria-label="Título del documento">${html(d.title)}</h1>${d.sheet ? `<div class="sheet-scroll"><table class="sheet-grid"><thead><tr><th></th>${d.sheet[0]?.map((_, i) => `<th>${String.fromCharCode(65 + i)}</th>`).join('') ?? ''}</tr></thead><tbody>${d.sheet.map((row, i) => `<tr><th>${i + 1}</th>${row.map((v, j) => `<td><input data-cell="${i}:${j}" aria-label="Celda ${String.fromCharCode(65 + j)}${i + 1}" value="${html(v)}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>` : `<div class="document-body" id="doc-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenido del documento">${html(d.body)}</div>`}</article></div><div class="code-fab-anchor"><button class="agent-fab" data-action="doc-ai" aria-label="Asistente de escritura" data-tip="Asistente de escritura" aria-expanded="${this.aiOpen}">${icon('agents', 21)}</button><div class="composer-reveal ${this.aiOpen ? 'open' : ''}" ${this.aiOpen ? '' : 'inert'}>${composer('doc-composer', 'Trabajá sobre este documento…')}</div>${this.response ? `<div class="agent-response"><p>${html(this.response)}</p>${btn('doc-insert', 'check', 'Incorporar al documento')}</div>` : ''}</div>` : `<button class="empty-create" data-action="doc-new" aria-label="Crear documento">${icon('plus', 26)}</button>`}</div></div>`;
+    this.root.innerHTML = docsPresentation({
+      world: w,
+      document: d,
+      listOpen: this.ctx.ui.docs.docsList,
+      aiOpen: this.aiOpen,
+      response: this.response,
+    });
+    this.resizeBody();
     this.displayedDocument = d?.id ?? null;
     const saved = d ? this.positions.get(d.id) : undefined,
       scroll = this.root.querySelector<HTMLElement>('.document-scroll');
@@ -188,6 +204,7 @@ export class DocsView implements View {
     return true;
   }
   dispose(): void {
+    this.resize.disconnect();
     this.disclosure.dispose();
     this.abort.abort();
   }

@@ -1973,6 +1973,9 @@ svg.canvas-miniature path {
 }
 
 .document-body {
+  display: block;
+  width: 100%;
+  overflow: hidden;
   font-size: 14px;
   line-height: 1.95;
   white-space: pre-wrap;
