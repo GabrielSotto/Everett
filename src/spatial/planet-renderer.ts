@@ -6,6 +6,7 @@ import { atmosphereStyle, longitudeAt, spinProfile } from './celestial-style';
 import { ambientSeconds, suspendAmbient } from './ambient-clock';
 import { clamp } from './math';
 import { PlanetAtmosphere } from './planet-atmosphere';
+import { drawOrbit, orbitPosition, orbitProfile } from './planet-orbit';
 
 interface Body {
   id: string;
@@ -294,15 +295,10 @@ export class PlanetRenderer {
       const radius = 97 * z * (1 + 0.035 * capture);
       const x = width / 2 + this.camera.x + body.x * z,
         y = height / 2 + this.camera.y + body.y * z - 26 * z;
-      if (
-        x + radius + 12 < 0 ||
-        x - radius - 12 > width ||
-        y + radius + 12 < 0 ||
-        y - radius - 12 > height
-      )
-        continue;
       const appearance = planetAppearance(body.seed, body.id, globeMaps.length),
-        index = appearance.texture;
+        extent = radius * (appearance.orbit ? 2 : 1) + 12;
+      if (x + extent < 0 || x - extent > width || y + extent < 0 || y - extent > height) continue;
+      const index = appearance.texture;
       const map = this.decoded.get(index);
       if (!map) {
         if (!this.loading.has(index)) {
@@ -360,8 +356,11 @@ export class PlanetRenderer {
       el.dataset.liveGlobe = 'true';
       const style = atmosphereStyle(radius, capture),
         dim = el.classList.contains('dimmed') ? 0.12 : 1;
+      const orbit = appearance.orbit ? orbitProfile(body.id, appearance.orbitAngle) : null,
+        moon = orbit ? orbitPosition(orbit, this.seconds) : null;
       ctx.save();
       ctx.globalAlpha = dim;
+      if (orbit && moon) drawOrbit(ctx, { x, y }, radius, orbit, moon, 'back');
       this.atmosphere.draw(
         ctx,
         body.id,
@@ -375,6 +374,8 @@ export class PlanetRenderer {
       );
       ctx.filter = `hue-rotate(${appearance.hueShift}deg)`;
       ctx.drawImage(sprite.canvas, x - radius, y - radius, radius * 2, radius * 2);
+      ctx.filter = 'none';
+      if (orbit && moon) drawOrbit(ctx, { x, y }, radius, orbit, moon, 'front');
       ctx.restore();
       evidence.push({
         id: body.id,
@@ -387,6 +388,7 @@ export class PlanetRenderer {
         direction: profile.direction,
         period: profile.periodSeconds,
         resolution,
+        orbit: orbit && moon ? { ...orbit, moon } : null,
       });
     }
     this.canvas.dataset.worlds = JSON.stringify(evidence);

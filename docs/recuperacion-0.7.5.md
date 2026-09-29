@@ -48,6 +48,8 @@ La capa de dominio comprueba los contratos de datos. Cada recorrido requiere ade
 
 La matriz se amplía cuando los riesgos y fallos lo exijan. Los identificadores de pruebas conservan su significado; la aprobación de lógica no completa la columna de interfaz.
 
+Las órbitas del Universo deben tener un cuerpo que las recorra. El Mundo oculta el tramo posterior y la luna cuando pasan detrás; la proyección conserva esa relación al cambiar de escala y al aplicar filtros. ORBIT-01–02 comprueban trayectoria e identidad; UI-ORBIT-01–04 comprueban el render, su control negativo, navegación, escala y preferencias de movimiento.
+
 Ampliaciones de la reconstrucción:
 
 | Requisitos                      | Casos                     | Comprobación y contraejemplo                                                                                                                          |

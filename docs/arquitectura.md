@@ -41,6 +41,8 @@ Los borradores de composers se identifican por Mundo, formulario y contexto (arc
 
 El dominio conserva ruta y contextos de regreso con sus cámaras. La cámara espacial interpreta los gestos usando los parámetros de `src/spatial/tuning.ts`. Las transiciones animan el cambio ya confirmado y conservan el contexto visual de salida.
 
+`src/spatial/planet-orbit.ts` define la trayectoria y la luna de los Mundos con órbita. `PlanetRenderer` compone el tramo posterior, el Mundo y el tramo delantero en el mismo canvas. El recorte posterior conserva la oclusión al atenuar Mundos con filtros. La órbita utiliza el reloj ambiental compartido, que se pausa con movimiento reducido y al ocultar la página.
+
 Los gestos, umbrales, gravedad y reglas de regreso pertenecen al comportamiento aprobado. Cualquier trabajo de presentación debe verificarse contra ese comportamiento. La revisión de la vista del Mundo modifica su nombre y representación según la elección del usuario.
 
 `src/features/spatial/surface-previews.ts` reúne las ilustraciones vectoriales de las seis actividades, con iconos y componentes gráficos compartidos. `surfaces.css` define sus contornos y estados visuales. Estas ilustraciones contienen ejemplos de cada actividad; los datos del proyecto se consultan y editan al entrar en la superficie correspondiente.

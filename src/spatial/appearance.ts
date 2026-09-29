@@ -4,8 +4,8 @@ export interface PlanetAppearance {
   texture: number;
   rotation: number;
   hueShift: number;
-  ring: boolean;
-  ringAngle: number;
+  orbit: boolean;
+  orbitAngle: number;
   signature: string;
 }
 /** La identidad visual del Mundo se conserva al renderizar y filtrar. */
@@ -18,8 +18,8 @@ export function planetAppearance(seed: number, id: string, textures: number): Pl
     texture,
     rotation,
     hueShift,
-    ring: seed % 9 === 1 || seed % 13 === 6,
-    ringAngle: -38 + (hash % 31),
+    orbit: seed % 9 === 1 || seed % 13 === 6,
+    orbitAngle: -38 + (hash % 31),
     signature: `${texture}:${rotation}:${hueShift}`,
   };
 }

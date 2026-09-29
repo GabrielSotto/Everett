@@ -8,9 +8,6 @@
   transform: rotate(var(--planet-rotate, 0deg)) scale(calc(1 + var(--capture, 0) * 0.055));
   transition: none;
 }
-.planet-ring {
-  transform: rotate(var(--ring-angle, -26deg));
-}
 .shell.dark-shell {
   background: #080b11;
   border-color: #ffffff0c;

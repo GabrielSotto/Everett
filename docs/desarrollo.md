@@ -74,6 +74,12 @@ Tras tres ciclos de preparación, cada punto exige cero temporizadores, interval
 
 Los resultados completos se rechazan si la traza de la aplicación contiene errores, aunque la consola del navegador esté vacía. Un caso aislado sirve para diagnosticar; el verificador de entrega continúa exigiendo todos los casos descubiertos.
 
+### Órbitas de los Mundos
+
+`orbits.spec.ts` comprueba la presencia y el movimiento de la luna, la continuidad al entrar y regresar, el zoom, los filtros y el movimiento reducido. Recorre un ciclo orbital completo con el reloj controlado del navegador a densidades de píxeles 1 y 2. La sonda crea una referencia del sprite real del planeta, con su transformación y opacidad, y compara sus píxeles con la composición final del mismo fotograma: el tramo posterior debe quedar oculto; el delantero y la luna visible deben cambiar la imagen. Un control negativo dibuja deliberadamente el tramo posterior sobre el planeta y exige que la comprobación lo detecte; después restaura el render y vuelve a comprobarlo. Las capturas y mediciones quedan adjuntas al caso.
+
+La comparación admite un nivel de redondeo en los canales premultiplicados por alfa. Esto evita amplificar errores de cuantización al leer colores semitransparentes. El control negativo se repite con la opacidad real de un Mundo atenuado por el filtro y debe seguir detectando la órbita incorrecta.
+
 ## Empaquetado de la reconstrucción
 
 Con la revisión de alcance y sus evidencias actuales en `output/rebuild-0.7.5/current/`, ejecutar en PowerShell 7:

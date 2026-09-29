@@ -298,7 +298,7 @@ export class SpatialView implements View {
         worlds
           .map((w) => {
             const appearance = planetAppearance(w.seed, w.id, planets.length);
-            return `<button class="world-body ${worldMatches(this.ctx, w) ? '' : 'dimmed'}" style="left:${w.x}px;top:${w.y}px;--planet-rotate:${appearance.rotation}deg;--planet-hue:${appearance.hueShift}deg;--ring-angle:${appearance.ringAngle}deg" data-skin="${appearance.signature}" data-focus="${w.id}" aria-label="${html(w.name)}"><span class="atmosphere"></span>${appearance.ring ? '<span class="planet-ring"></span>' : ''}<img class="planet" src="${planets[appearance.texture]}" alt="" draggable="false"><span class="planet-name">${html(w.name)}</span></button>`;
+            return `<button class="world-body ${worldMatches(this.ctx, w) ? '' : 'dimmed'}" style="left:${w.x}px;top:${w.y}px;--planet-rotate:${appearance.rotation}deg;--planet-hue:${appearance.hueShift}deg" data-skin="${appearance.signature}" data-focus="${w.id}" aria-label="${html(w.name)}"><span class="atmosphere"></span><img class="planet" src="${planets[appearance.texture]}" alt="" draggable="false"><span class="planet-name">${html(w.name)}</span></button>`;
           })
           .join('');
       this.cam.setItems(
