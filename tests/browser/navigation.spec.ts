@@ -90,3 +90,69 @@ test('UI-NAV-03: el movimiento reducido conserva entrada, salida y controles acc
   await page.keyboard.press('Escape');
   await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'universe');
 });
+
+test('UI-NAV-04: la rueda entra y regresa una sola escala por gesto', async ({ page }) => {
+  const id = await focusWorld(page);
+  const viewport = page.locator('#viewport');
+  const box = (await viewport.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (
+    let step = 0;
+    step < 40 && (await viewport.getAttribute('data-route')) === 'universe';
+    step++
+  ) {
+    await page.mouse.wheel(0, -180);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+  }
+  await expect(viewport).toHaveAttribute('data-route', `world/${id}`);
+  await expect(page.locator('.transition-ghost')).toHaveCount(0);
+  for (
+    let step = 0;
+    step < 40 && (await viewport.getAttribute('data-route')) !== 'universe';
+    step++
+  ) {
+    await page.mouse.wheel(0, 180);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+  }
+  await expect(viewport).toHaveAttribute('data-route', 'universe');
+  const routes = await page.evaluate(() =>
+    window
+      .EverettDebug!.logs()
+      .filter((entry) => entry.event === 'transition.started')
+      .map((entry) => entry.details.to),
+  );
+  expect(routes).toEqual([`world/${id}`, 'universe']);
+});
+
+test('UI-NAV-05: el minimapa desplaza con teclado y su rueda conserva el zoom del Universo', async ({
+  page,
+}) => {
+  await focusWorld(page);
+  const minimap = page.getByLabel('Minimapa del universo', { exact: true });
+  const before = await page.evaluate(() => window.EverettDebug!.snapshot().camera);
+  await minimap.press('ArrowRight');
+  await expect
+    .poll(() => page.evaluate(() => window.EverettDebug!.snapshot().camera.x))
+    .toBeCloseTo(before.x - 160, 0);
+  await minimap.hover();
+  await page.mouse.wheel(0, -300);
+  await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'universe');
+  expect((await page.evaluate(() => window.EverettDebug!.snapshot().camera)).z).toBeCloseTo(
+    before.z,
+    5,
+  );
+  await minimap.press('ArrowLeft');
+  await expect
+    .poll(() => page.evaluate(() => window.EverettDebug!.snapshot().camera.x))
+    .toBeCloseTo(before.x, 0);
+});

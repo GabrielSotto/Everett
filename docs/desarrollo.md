@@ -12,16 +12,17 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 
 ## Comandos
 
-| Comando                                                  | Resultado                                                                                                      |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `npm run typecheck`                                      | Comprueba los tipos sin generar archivos.                                                                      |
-| `npm run format:check`                                   | Comprueba el formato de fuentes, configuración y documentación.                                                |
-| `npm run format`                                         | Aplica el formato del proyecto.                                                                                |
-| `npm run test:unit`                                      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                             |
-| `npm run verify:unit -- output/unit/<runId>/result.json` | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión. |
-| `npm run build`                                          | Genera `dist/Everett-0.7.5.html` y `dist/build-manifest.json`.                                                 |
-| `npm run verify:build`                                   | Comprueba existencia, bytes, hash, versión e identidad de las fuentes del build.                               |
-| `npm run test:browser`                                   | Ejecuta los recorridos preparados en Playwright sobre la URL indicada en `EVERETT_TEST_URL`.                   |
+| Comando                                                         | Resultado                                                                                                      |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `npm run typecheck`                                             | Comprueba los tipos sin generar archivos.                                                                      |
+| `npm run format:check`                                          | Comprueba el formato de fuentes, configuración y documentación.                                                |
+| `npm run format`                                                | Aplica el formato del proyecto.                                                                                |
+| `npm run test:unit`                                             | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                             |
+| `npm run verify:unit -- output/unit/<runId>/result.json`        | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión. |
+| `npm run build`                                                 | Genera `dist/Everett-0.7.5.html` y `dist/build-manifest.json`.                                                 |
+| `npm run verify:build`                                          | Comprueba existencia, bytes, hash, versión e identidad de las fuentes del build.                               |
+| `npm run test:browser`                                          | Ejecuta los recorridos preparados en Playwright sobre la URL indicada en `EVERETT_TEST_URL`.                   |
+| `npm run verify:browser -- output/browser/<runId>/results.json` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.            |
 
 `npm run recover` corresponde a la extracción inicial del HTML original. Rechaza sobrescribir archivos existentes y comprueba primero el hash de la base. El desarrollo cotidiano utiliza las fuentes mantenidas en `src/`.
 
@@ -53,9 +54,13 @@ Para evaluar el build en la propia computadora, ejecutar `node scripts/preview.m
 
 En una segunda terminal de PowerShell, definir `$env:EVERETT_TEST_URL = 'http://127.0.0.1:4173/'` con el puerto utilizado y ejecutar `npm run test:browser`.
 
-La salida se guarda en `output/browser/<runId>/`: resultados JSON, informe HTML, trazas, capturas y videos de fallos. Los casos leen el diagnóstico para contrastar resultados; las acciones utilizan controles y teclado. Un error de consola o de página hace fallar el recorrido.
+La salida se guarda en `output/browser/<runId>/`: resultados JSON, informe HTML, trazas, capturas y videos de fallos. Cada caso carga y comprueba los bytes del HTML antes de operar. Los casos leen el diagnóstico para contrastar resultados; las acciones utilizan controles, teclado y arrastres. Un error de consola o de página hace fallar el recorrido.
 
-Los casos actuales cubren entrada y regreso iniciales. Deben ampliarse con las interacciones reales, accesibilidad, regresiones y revisión visual exigidas por [Validación del prototipo](validacion-prototipo.md). La existencia de los archivos de test y su typecheck no acreditan una ejecución.
+`verify:browser` vuelve a descubrir los casos del proyecto y exige su correspondencia exacta con el informe. Rechaza ejecuciones parciales, omisiones, reintentos, fallos esperados, otro HTML, cambios en las fuentes del arnés y adjuntos ausentes o vacíos. Puede ejecutarse después de detener el servidor: descubre casos sin abrir el navegador.
+
+Los recorridos preparados cubren navegación inicial, edición y propuestas de Code, documentos y hojas, Board y Shipping, notas y referencias de Canvas, asignación y devolución de materiales, memoria de agentes y motion de paneles y composers. La matriz de [Recuperación de 0.7.5](recuperacion-0.7.5.md) mantiene los recorridos adicionales necesarios para cerrar la etapa.
+
+El control `UI-HARNESS-01` captura un panel visible, comprueba una segunda captura idéntica y oculta sus campos deliberadamente para exigir una diferencia visual. Al restaurarlos, exige igualdad otra vez. Sus imágenes quedan dentro de la ejecución y comprueban el comparador; la referencia de diseño aprobada se evalúa por separado. La existencia de tests, su typecheck o una ejecución parcial no acreditan el gate completo.
 
 ## Dependencias
 
