@@ -6,6 +6,8 @@ import { composer, bindComposer } from '../../ui/composer';
 import { bound } from '../../spatial/math';
 import { bindDismiss } from '../../ui/popover';
 import { trace, type Intent } from '../../app/diagnostics/trace';
+import { bindPointerCancellation } from '../../ui/pointer-cancellation';
+import type { ChatUi } from './state';
 export class CanvasChat {
   private abort = new AbortController();
   private people = false;
@@ -13,6 +15,7 @@ export class CanvasChat {
     start: Point;
     origin: Point;
     raw: Point;
+    mode: ChatUi['chatMode'];
     intent: Intent;
   } | null = null;
   constructor(
@@ -156,6 +159,7 @@ export class CanvasChat {
         const panel = root.querySelector<HTMLElement>('.canvas-chat');
         if (!panel) return;
         const r = panel.getBoundingClientRect();
+        const mode = ctx.ui.chat.chatMode;
         ctx.ui.chat.chatMode = 'quick';
         ctx.ui.chat.chatPosition = { x: r.x, y: r.y };
         const intent = trace.intent('arrastrar chat', 'DRAG-01');
@@ -163,6 +167,7 @@ export class CanvasChat {
           start: { x: e.clientX, y: e.clientY },
           origin: { x: r.x, y: r.y },
           raw: { x: r.x, y: r.y },
+          mode,
           intent,
         };
         panel.classList.remove('docked', 'room');
@@ -229,7 +234,14 @@ export class CanvasChat {
       this.render();
     };
     root.addEventListener('pointerup', release, { signal: this.abort.signal });
-    root.addEventListener('pointercancel', release, { signal: this.abort.signal });
+    bindPointerCancellation(root, this.abort.signal, () => {
+      if (!this.drag) return;
+      ctx.ui.chat.chatPosition = this.drag.origin;
+      ctx.ui.chat.chatMode = this.drag.mode;
+      this.drag = null;
+      root.classList.remove('dock-preview');
+      this.render();
+    });
     window.addEventListener('resize', () => this.render(), { signal: this.abort.signal });
     this.render();
   }

@@ -2,6 +2,7 @@ import type { Context } from '../app/context';
 import type { WorldSnapshot, Point } from '../domain/model';
 import { clamp } from './math';
 import { minimapPulseStyle } from './minimap-pulse';
+import { bindPointerCancellation } from '../ui/pointer-cancellation';
 export class Minimap {
   private canvas: HTMLCanvasElement;
   private abort = new AbortController();
@@ -67,7 +68,7 @@ export class Minimap {
       this.drag = null;
     };
     this.canvas.addEventListener('pointerup', release, { signal: this.abort.signal });
-    this.canvas.addEventListener('pointercancel', release, { signal: this.abort.signal });
+    bindPointerCancellation(this.canvas, this.abort.signal, release);
     this.canvas.addEventListener(
       'wheel',
       (e) => {

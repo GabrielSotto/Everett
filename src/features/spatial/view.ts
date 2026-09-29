@@ -12,6 +12,7 @@ import { SpatialCamera } from '../../spatial/camera';
 import { Minimap } from '../../spatial/minimap';
 import { reducedMotion } from '../../ui/motion';
 import { navigationTuning } from '../../spatial/tuning';
+import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 export const surfacePositions: Record<Surface, Point> = {
   session: { x: -490, y: -265 },
   canvas: { x: 495, y: -265 },
@@ -122,15 +123,12 @@ export class SpatialView implements View {
       { signal: this.abort.signal },
     );
     root.addEventListener('pointerup', (e) => this.stop(e), { signal: this.abort.signal });
-    root.addEventListener(
-      'pointercancel',
-      () => {
-        this.dragging = false;
-        this.cam.stop();
-        root.classList.remove('dragging');
-      },
-      { signal: this.abort.signal },
-    );
+    bindPointerCancellation(root, this.abort.signal, () => {
+      this.dragging = false;
+      this.down = null;
+      this.cam.stop();
+      root.classList.remove('dragging');
+    });
     root.addEventListener(
       'dblclick',
       (e) => {

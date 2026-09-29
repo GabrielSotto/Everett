@@ -24,6 +24,7 @@ import { toWorld, bound } from '../../spatial/math';
 import { bindDismiss } from '../../ui/popover';
 import { trace, type Intent } from '../../app/diagnostics/trace';
 import { colors } from './note-colors';
+import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
@@ -49,7 +50,14 @@ type Drag =
     }
   | { kind: 'draw'; tool: Tool; start: Point; point: Point; intent: Intent }
   | { kind: 'dock'; start: Point; origin: Point; intent: Intent }
-  | { kind: 'connect'; node: string; anchor: Anchor; intent: Intent };
+  | {
+      kind: 'connect';
+      node: string;
+      anchor: Anchor;
+      start: Point;
+      distance: number;
+      intent: Intent;
+    };
 
 export class CanvasView implements View {
   private abort = new AbortController();
@@ -92,7 +100,7 @@ export class CanvasView implements View {
     root.addEventListener('pointerdown', (e) => this.down(e), { signal: this.abort.signal });
     root.addEventListener('pointermove', (e) => this.move(e), { signal: this.abort.signal });
     root.addEventListener('pointerup', (e) => this.up(e), { signal: this.abort.signal });
-    root.addEventListener('pointercancel', () => this.cancel(), { signal: this.abort.signal });
+    bindPointerCancellation(root, this.abort.signal, () => this.cancel());
     root.addEventListener('click', (e) => this.click(e), { signal: this.abort.signal });
     root.addEventListener(
       'dblclick',
@@ -195,6 +203,8 @@ export class CanvasView implements View {
         kind: 'connect',
         node,
         anchor,
+        start: { x: e.clientX, y: e.clientY },
+        distance: 0,
         intent: trace.intent('conectar anclajes', 'LINK-01'),
       };
       this.root.setPointerCapture(e.pointerId);
@@ -313,6 +323,7 @@ export class CanvasView implements View {
     }
     const point = this.point(e);
     if (d.kind === 'connect') {
+      d.distance = Math.hypot(e.clientX - d.start.x, e.clientY - d.start.y);
       const source = this.ctx.world().nodes.find((n) => n.id === d.node);
       if (!source) return;
       let preview = this.root.querySelector<SVGPathElement>('.pending-link');
@@ -413,6 +424,7 @@ export class CanvasView implements View {
     }
     if (d.kind === 'connect') {
       this.root.querySelector('.pending-link')?.remove();
+      if (d.distance > 3) this.ctx.ui.canvas.linkStart = null;
       const port = document
         .elementFromPoint(e.clientX, e.clientY)
         ?.closest<HTMLElement>('[data-anchor]');
@@ -528,6 +540,7 @@ export class CanvasView implements View {
     this.render();
   }
   private cancel(): void {
+    if (!this.drag && !this.ctx.ui.canvas.linkStart) return;
     this.drag = null;
     this.ctx.ui.canvas.linkStart = null;
     this.cam.stop();
