@@ -11,7 +11,13 @@ import {
 import { drawRect, anchorPoint, linkPath } from '../../domain/geometry';
 import { html, target, value, type View } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
-import { materialMarkup, zoneMarkup, connectionMarkup, shapeMarkup } from './materials';
+import {
+  materialMarkup,
+  zoneMarkup,
+  connectionMarkup,
+  shapeMarkup,
+  resizeHandles,
+} from './materials';
 import { CanvasChat } from '../chat/controller';
 import { SpatialCamera } from '../../spatial/camera';
 import { toWorld, bound } from '../../spatial/math';
@@ -236,7 +242,7 @@ export class CanvasView implements View {
     const point = this.point(e),
       nodeId = target.closest<HTMLElement>('[data-node]')?.dataset.node,
       zoneId = target.closest<HTMLElement>('[data-zone]')?.dataset.zone;
-    this.root.setPointerCapture(e.pointerId);
+    (target.closest<HTMLElement>('[data-node]') ?? this.root).setPointerCapture(e.pointerId);
     if (
       shapeTools.includes(ui.canvas.tool as Shape) ||
       ui.canvas.tool === 'zone' ||
@@ -751,16 +757,17 @@ export class CanvasView implements View {
   private paintSelection(): void {
     const w = this.ctx.world(),
       ui = this.ctx.ui;
-    // El reemplazo del material ocurre al seleccionarlo; la geometría del gesto se confirma al soltar.
+    // Mantener el material conserva el destino del doble clic y la captura del puntero.
     this.root.querySelectorAll<HTMLElement>('[data-node]').forEach((element) => {
       const node = w.nodes.find((n) => n.id === element.dataset.node);
-      if (node)
-        element.outerHTML = materialMarkup(
-          w,
-          node,
-          node.id === ui.canvas.selection,
-          ui.canvas.tool === 'connect',
-        );
+      if (!node) return;
+      const selected = node.id === ui.canvas.selection;
+      element.classList.toggle('selected', selected);
+      const handles = element.querySelectorAll('.resize-handle');
+      if (selected && ui.canvas.tool !== 'connect') {
+        if (!handles.length)
+          element.insertAdjacentHTML('beforeend', resizeHandles('node', node.id));
+      } else handles.forEach((handle) => handle.remove());
     });
     this.root.querySelectorAll<HTMLElement>('[data-zone]').forEach((element) => {
       const zone = w.zones.find((z) => z.id === element.dataset.zone);
