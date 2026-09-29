@@ -3,11 +3,10 @@
 ## Estado
 
 - Etapa: descubrimiento de producto.
-- Nombre de trabajo: **Comunity Hub**.
+- Nombre de trabajo: **Everett Hub**.
 - Marca final: abierta.
-- Encaje confirmado: producto integrado dentro de una aplicación de escritorio
-  propia para codificación agéntica.
-- Implementación y stack: todavía no iniciados.
+- Encaje confirmado: integrado en [Everett](../producto.md).
+- Implementación del Hub: no iniciada.
 
 El contexto fuente aprobado se conserva en
 [`context-recovered.md`](context-recovered.md). Esta fundación reúne la visión y los
@@ -16,13 +15,12 @@ enlazados en cada sección.
 
 ## Territorio del producto
 
-Comunity Hub es un punto de convergencia integrado en una aplicación de escritorio
-para codificación agéntica. Permite que personas, creadores y organizaciones
-interactúen con lo que otros construyen sin depender conceptualmente de un único
-proveedor, modelo o marca.
+Everett Hub es el espacio de descubrimiento, publicación, comunidad y comercio de
+Everett. Permite que personas, creadores y organizaciones interactúen con lo que otros
+construyen en Everett o con herramientas compatibles, con independencia del proveedor,
+modelo o marca.
 
-Descubrimiento, publicación, comunidad y comercio forman el núcleo de Comunity Hub.
-La aplicación anfitriona aporta el espacio de trabajo desde el que una creación
+Everett aporta el espacio de trabajo desde el que una creación
 puede utilizarse, inspeccionarse y continuarse.
 
 Las interacciones imaginadas incluyen:
@@ -38,7 +36,7 @@ Las interacciones imaginadas incluyen:
 
 ## Misión de trabajo v0
 
-> Crear un espacio compartido dentro de la herramienta de codificación agéntica
+> Crear un espacio compartido dentro de Everett
 > donde lo construido pueda descubrirse, utilizarse, organizarse, inspeccionarse,
 > mejorarse, compartirse y, cuando corresponda, comercializarse.
 
@@ -112,7 +110,7 @@ mantenimiento.
 
 ### Exploración clara
 
-Comunity Hub debe seguir siendo comprensible aunque contenga millones de objetos.
+Everett Hub debe seguir siendo comprensible aunque contenga millones de objetos.
 La experiencia inicial necesita categorías claras, jerarquía fuerte, pocas
 tarjetas, contenido seleccionado y comprensión sin onboarding.
 
@@ -132,7 +130,7 @@ forma parte de la experiencia del Hub.
 Las decisiones se tomarán de a una, traduciendo intuiciones en principios y usando
 ejemplos concretos cuando una elección afecte navegación, experiencia o algoritmo.
 
-## Tensiones que Comunity Hub debe resolver
+## Tensiones que Everett Hub debe resolver
 
 El diseño debe resolver las siguientes tensiones:
 
@@ -146,7 +144,7 @@ El diseño debe resolver las siguientes tensiones:
 - una experiencia rica frente a una interfaz limpia;
 - jugar una obra terminada frente a inspeccionarla, forkearla o remixarla.
 
-## Áreas de Comunity Hub ya imaginadas
+## Áreas de Everett Hub ya imaginadas
 
 Áreas contempladas en la visión, con alcance por definir:
 
@@ -164,17 +162,17 @@ El diseño debe resolver las siguientes tensiones:
 
 ## Hipótesis de crecimiento comunitario
 
-Publicar creaciones en Comunity Hub puede convertir el trabajo hecho en la
-aplicación anfitriona o en herramientas compatibles en un canal orgánico de
+Publicar creaciones en Everett Hub puede convertir el trabajo hecho en
+Everett o en herramientas compatibles en un canal orgánico de
 distribución. Los creadores obtienen audiencia; quienes exploran o usan reciben
 contenido; y la comunidad tiene más motivos para volver, compartir y crear.
 
 ```mermaid
 flowchart LR
-    A["Crear o continuar en la aplicación anfitriona"] --> B["Publicar en Comunity Hub"]
+    A["Crear o continuar en Everett"] --> B["Publicar en Everett Hub"]
     B --> C["Descubrir, jugar y compartir"]
     C --> D["Atraer nuevos usuarios"]
-    D --> E["Fortalecer Comunity Hub y la aplicación anfitriona"]
+    D --> E["Fortalecer Everett y su Hub"]
     E --> A
 ```
 
@@ -199,12 +197,11 @@ Esta dirección sigue pendiente de validación.
 
 ## Decisiones todavía abiertas
 
-- Cambio principal que Comunity Hub debería producir en el ecosistema de la
-  aplicación anfitriona.
+- Cambio principal que Everett Hub debería producir en el ecosistema de Everett.
 - Modelo económico y condiciones de comercialización.
 - Actores prioritarios y primer mercado.
 - Procedimientos de revisión, moderación y respuesta a reportes.
 - Arquitectura de información y navegación.
 - Dirección visual.
-- Relación entre las capacidades de Comunity Hub y las de la aplicación anfitriona.
+- Relación entre las capacidades del Hub y las demás áreas de Everett.
 - Relación entre funciones conceptuales futuras y capacidades construibles hoy.

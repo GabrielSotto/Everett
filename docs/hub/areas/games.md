@@ -16,7 +16,7 @@ material de aprendizaje, reutilización y nueva creación.
 
 La referencia “micro itch.io” describe la experiencia de publicación y juego. La
 capa de proyecto vinculada al espacio de trabajo es la diferencia propia del
-modelo de Comunity Hub.
+modelo de Everett Hub.
 
 ## Principio central
 

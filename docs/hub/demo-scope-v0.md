@@ -23,17 +23,17 @@
 
 La vertical se puede reemplazar por Juegos, aplicaciones web u otra familia si la
 prueba revela que Mascotas comunica una parte demasiado pequeña o confusa del
-ecosistema de Comunity Hub. Cambiarla no obliga a abandonar la estructura general
+ecosistema de Everett Hub. Cambiarla no obliga a abandonar la estructura general
 de la demo.
 
 ## Qué debe demostrar la T
 
-El eje horizontal debe dejar claro que Comunity Hub reúne distintas clases de
+El eje horizontal debe dejar claro que Everett Hub reúne distintas clases de
 creaciones. Mascotas tiene profundidad especial en esta primera prueba, pero
 Juegos, aplicaciones web, plugins, automatizaciones y otros objetos siguen siendo
 visibles como partes reales del mismo ecosistema.
 
-El eje vertical debe volver tangible el modelo común de Comunity Hub:
+El eje vertical debe volver tangible el modelo común de Everett Hub:
 
 > descubrir un resultado utilizable, comprender quién lo creó y bajo qué permisos,
 > acceder a su fuente, adaptarlo y mantener la relación con la obra original.
@@ -72,14 +72,14 @@ todavía deben validarse:
 10. publicar el derivado con atribución y linaje visibles.
 
 La compra, el intercambio, el alquiler y otros derechos asociados pertenecen al
-territorio de Comunity Hub, pero todavía está abierto cuánto debe demostrar de
+territorio de Everett Hub, pero todavía está abierto cuánto debe demostrar de
 ellos la primera demo.
 
 ## Criterios para conservar o cambiar la vertical
 
 Mascotas seguirá como vertical si permite que una persona entienda:
 
-- que Comunity Hub abarca un ecosistema mayor;
+- que Everett Hub abarca un ecosistema mayor;
 - que una creación tiene resultado y fuente;
 - que instalar o usar no equivale a poseer todos los derechos;
 - que un remix conserva autoría, atribución y procedencia;

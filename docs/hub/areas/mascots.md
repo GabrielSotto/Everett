@@ -78,13 +78,13 @@ y variedad de comportamiento pueden importar tanto como la cantidad de funciones
 - La expresividad de marca y la experiencia dentro del producto deben sentirse como
   manifestaciones coherentes del mismo personaje.
 
-Comunity Hub toma estos principios como referencia conductual. No reutiliza
+Everett Hub toma estos principios como referencia conductual. No reutiliza
 especies, arte, nombres ni animaciones de Claude.
 
 ## Baseline actual de Codex
 
 Esta sección conserva una referencia comparativa del mercado; no define el alcance
-ni la identidad de Comunity Hub.
+ni la identidad de Everett Hub.
 
 La documentación oficial consultada el 2 de agosto de 2026 describe mascotas
 opcionales que siguen la actividad de uno o varios chats mediante cuatro estados:
@@ -122,7 +122,7 @@ Fuentes:
 - [repositorio de Persona](https://github.com/xikhar/persona);
 - [reporte sobre burbujas y overlay](https://github.com/openai/codex/issues/21501).
 
-La consecuencia para Comunity Hub es estratégica: hablar, mostrar estados o añadir
+La consecuencia para Everett Hub es estratégica: hablar, mostrar estados o añadir
 una animación nueva son capacidades que una aplicación anfitriona puede incorporar
 rápidamente. La vertical debe demostrar además descubrimiento público, autoría,
 instalación, fuente editable, personalidad, persistencia, remix y publicación de
@@ -158,7 +158,7 @@ primera demo con alcance básico. El nivel 4 permanece excluido.
 
 Una mascota limitada a los cuatro estados actuales, algunas animaciones adicionales y
 un acceso a Voice quedaría demasiado cerca de lo que Codex ya ofrece. En ese caso,
-la vertical serviría para demostrar publicación y remix dentro de Comunity Hub,
+la vertical serviría para demostrar publicación y remix dentro de Everett Hub,
 pero fallaría como propuesta de mascota más atractiva.
 
 La primera demo combina las tres dimensiones con una jerarquía explícita:
@@ -179,7 +179,7 @@ Voice no alcanzan.
 ## Lecciones estructurales de Persona
 
 El repositorio aporta más que una referencia visual. Su arquitectura valida varias
-decisiones que Comunity Hub ya venía insinuando:
+decisiones que Everett Hub ya venía insinuando:
 
 - la integración recibe estados y niveles normalizados, no audio crudo, prompts,
   transcripciones, credenciales ni archivos del proyecto;
@@ -204,14 +204,14 @@ Persona permite distinguir tres piezas publicables o remixables:
 3. **Paquete de conducta:** acciones, escenarios, variedad, timing y reglas que
    convierten eventos seguros en expresión.
 
-Una publicación sencilla puede empaquetar las tres, pero Comunity Hub debería
+Una publicación sencilla puede empaquetar las tres, pero Everett Hub debería
 mostrar qué parte instala, de qué runtime depende y cuál está permitido forkear o
 redistribuir. Esto también permite que alguien use Persona con un personaje nuevo,
 aplique una mascota 2D al runtime de un anfitrión compatible o remezcle solamente
 el comportamiento sin copiar assets restringidos.
 
 Esta separación se adopta como arquitectura conceptual de la vertical. Define cómo
-Comunity Hub representa, inspecciona y remezcla una mascota; todavía no elige una
+Everett Hub representa, inspecciona y remezcla una mascota; todavía no elige una
 implementación técnica, no convierte Persona en un runtime obligatorio ni obliga a
 que todas las mascotas sean 3D.
 
@@ -269,10 +269,10 @@ otra decisión de producto, permisos explícitos y un modelo de seguridad propio
 El resultado utilizable es una mascota instalada y reaccionando dentro o junto a la
 aplicación anfitriona. Adaptadores posteriores pueden llevarla a otros anfitriones
 compatibles. Puede distribuirse como un paquete que instala las tres capas de una
-vez, pero Comunity Hub conserva su composición visible.
+vez, pero Everett Hub conserva su composición visible.
 
 Cada capa publicada tiene fuente editable propia; una capa que ya existe como otra
-creación de Comunity Hub se declara como dependencia en lugar de duplicarse:
+creación de Everett Hub se declara como dependencia en lugar de duplicarse:
 
 - **runtime:** adaptadores, contrato de eventos seguros, compatibilidad, permisos y
   controles de integración;

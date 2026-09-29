@@ -11,12 +11,12 @@
 
 ## Las dos familias principales
 
-Comunity Hub reúne cosas que pueden parecer similares en una tienda, pero tienen
+Everett Hub reúne cosas que pueden parecer similares en una tienda, pero tienen
 comportamientos fundamentalmente distintos.
 
 ```mermaid
 flowchart TD
-    H["Comunity Hub"] --> C["Creaciones publicadas"]
+    H["Everett Hub"] --> C["Creaciones publicadas"]
     H --> R["Recursos y derechos"]
     C --> U["Resultado utilizable"]
     C --> S["Fuente editable"]
@@ -55,28 +55,28 @@ menos:
 
 Una creación también puede depender de otra creación publicada. Por ejemplo, un
 runtime de mascotas puede ser una creación instalable y un paquete de personaje otra
-creación compatible con ese runtime. Comunity Hub puede ofrecer una instalación
+creación compatible con ese runtime. Everett Hub puede ofrecer una instalación
 conjunta, pero debe conservar identidad, versión, permisos, licencia y linaje
 separados.
 
 El repositorio de [Persona](https://github.com/xikhar/persona) demuestra el problema:
 su código usa MIT, mientras los modelos y animaciones requieren procedencia y licencia
 propias. Su manifiesto bloquea la distribución cuando esos derechos no están
-completos. Comunity Hub debe tratar ese comportamiento de cierre seguro como parte
+completos. Everett Hub debe tratar ese comportamiento de cierre seguro como parte
 del modelo común, no como una excepción exclusiva de Mascotas.
 
 ### Ejemplos
 
-| Tipo | Resultado utilizable | Fuente editable |
-|---|---|---|
-| Juego | Build jugable | Proyecto, código, assets y dependencias |
-| Aplicación o sitio web | Resultado en ejecución | Proyecto, componentes, datos de ejemplo y configuración |
-| Plugin | Capacidad instalable | Manifiesto, código, skills, prompts y conectores |
-| Automatización | Flujo activable | Pasos, reglas, prompts, horarios y conexiones |
-| Plantilla | Sistema duplicable | Estructura, componentes y contenido base |
-| Mascota | Compañero aplicable y reactivo | Modelo o sprites, animaciones, conducta, manifiesto de componentes y archivos fuente |
-| Tema | Apariencia aplicable | Tokens, estilos, assets y configuración |
-| Prompt o skill | Comportamiento reutilizable | Instrucciones, contexto, archivos auxiliares y pruebas |
+| Tipo                   | Resultado utilizable           | Fuente editable                                                                      |
+| ---------------------- | ------------------------------ | ------------------------------------------------------------------------------------ |
+| Juego                  | Build jugable                  | Proyecto, código, assets y dependencias                                              |
+| Aplicación o sitio web | Resultado en ejecución         | Proyecto, componentes, datos de ejemplo y configuración                              |
+| Plugin                 | Capacidad instalable           | Manifiesto, código, skills, prompts y conectores                                     |
+| Automatización         | Flujo activable                | Pasos, reglas, prompts, horarios y conexiones                                        |
+| Plantilla              | Sistema duplicable             | Estructura, componentes y contenido base                                             |
+| Mascota                | Compañero aplicable y reactivo | Modelo o sprites, animaciones, conducta, manifiesto de componentes y archivos fuente |
+| Tema                   | Apariencia aplicable           | Tokens, estilos, assets y configuración                                              |
+| Prompt o skill         | Comportamiento reutilizable    | Instrucciones, contexto, archivos auxiliares y pruebas                               |
 
 ### Verbos comunes
 

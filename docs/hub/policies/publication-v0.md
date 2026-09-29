@@ -11,7 +11,7 @@
 
 ## Principio
 
-> Comunity Hub valida si una creación puede existir; el uso, la comunidad y el
+> Everett Hub valida si una creación puede existir; el uso, la comunidad y el
 > sistema de descubrimiento determinan cuánto merece emerger.
 
 Una creación no necesita ser popular, sofisticada, bella ni comercialmente valiosa
@@ -94,7 +94,7 @@ indica qué condición objetiva debe corregirse para volver a presentar la creac
 
 ## Publicar no garantiza visibilidad
 
-Superar estas validaciones permite que la creación exista en Comunity Hub. No
+Superar estas validaciones permite que la creación exista en Everett Hub. No
 garantiza:
 
 - aparecer en Home;

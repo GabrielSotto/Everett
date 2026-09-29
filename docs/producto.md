@@ -38,3 +38,7 @@ Las propuestas requieren aceptación antes de modificar el contenido compartido.
 ## Continuidad del proyecto
 
 Everett busca permitir que un proyecto se inicie, se desarrolle y madure dentro del mismo entorno. Los cambios deben reflejarse de forma coherente en las superficies que representan los mismos datos. Cambiar de área debe conservar los materiales, actores y contexto necesarios para continuar el trabajo.
+
+## Hub
+
+Everett Hub reúne descubrimiento, publicación, comunidad y comercio alrededor de creaciones y recursos del ecosistema. Su definición y las decisiones pendientes se mantienen en la [fundación del Hub](hub/foundation-v0.md).

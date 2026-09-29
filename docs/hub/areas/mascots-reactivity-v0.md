@@ -11,7 +11,7 @@
 
 Los identificadores de este documento son nombres semánticos provisionales. Sirven
 para diseñar y comparar paquetes de conducta; todavía no comprometen una
-API concreta de la aplicación anfitriona ni una implementación de Comunity Hub.
+API concreta de la aplicación anfitriona ni una implementación de Everett Hub.
 
 ## Objetivo
 
@@ -44,13 +44,13 @@ flowchart LR
 Representa la situación actual del anfitrión. Permanece visible aunque la mascota
 esté ejecutando una reacción breve, comiendo o durmiendo.
 
-| Estado | Significado | Prioridad agregada |
-|---|---|---:|
-| `needs_input` | El anfitrión requiere aprobación, respuesta o decisión | 1 |
-| `blocked` | Una actividad falló o encontró un error del sistema | 2 |
-| `ready` | Existe actividad terminada todavía no revisada | 3 |
-| `running` | Al menos una actividad continúa trabajando | 4 |
-| `idle` | No existe actividad operativa pendiente | 5 |
+| Estado        | Significado                                            | Prioridad agregada |
+| ------------- | ------------------------------------------------------ | -----------------: |
+| `needs_input` | El anfitrión requiere aprobación, respuesta o decisión |                  1 |
+| `blocked`     | Una actividad falló o encontró un error del sistema    |                  2 |
+| `ready`       | Existe actividad terminada todavía no revisada         |                  3 |
+| `running`     | Al menos una actividad continúa trabajando             |                  4 |
+| `idle`        | No existe actividad operativa pendiente                |                  5 |
 
 Los primeros cuatro estados conservan el orden publicado en la
 [documentación oficial de Pets](https://learn.chatgpt.com/docs/pets). `idle` completa
@@ -84,35 +84,35 @@ un sistema conversacional separado.
 
 ### Estado y trabajo
 
-| Evento provisional | Cuándo ocurre | Resultado conductual esperado |
-|---|---|---|
-| `status.changed` | Cambia el estado operativo agregado | Actualizar inmediatamente la señal persistente |
-| `work.started` | Comienza una actividad | Reacción de entrada y transición a trabajo |
-| `work.resumed` | Continúa una actividad pausada o atendida | Reacción breve de reanudación |
-| `work.needs_input` | Aparece una decisión o aprobación pendiente | Solicitar atención sin insistencia repetitiva |
-| `work.completed` | Una actividad termina correctamente | Celebración proporcional y luego estado vigente |
-| `work.blocked` | Una actividad falla o queda bloqueada | Reacción clara que no trivializa el problema |
-| `work.cancelled` | La persona detiene una actividad | Cierre neutral, sin celebrar ni dramatizar |
+| Evento provisional | Cuándo ocurre                               | Resultado conductual esperado                   |
+| ------------------ | ------------------------------------------- | ----------------------------------------------- |
+| `status.changed`   | Cambia el estado operativo agregado         | Actualizar inmediatamente la señal persistente  |
+| `work.started`     | Comienza una actividad                      | Reacción de entrada y transición a trabajo      |
+| `work.resumed`     | Continúa una actividad pausada o atendida   | Reacción breve de reanudación                   |
+| `work.needs_input` | Aparece una decisión o aprobación pendiente | Solicitar atención sin insistencia repetitiva   |
+| `work.completed`   | Una actividad termina correctamente         | Celebración proporcional y luego estado vigente |
+| `work.blocked`     | Una actividad falla o queda bloqueada       | Reacción clara que no trivializa el problema    |
+| `work.cancelled`   | La persona detiene una actividad            | Cierre neutral, sin celebrar ni dramatizar      |
 
 ### Presencia y relación
 
-| Evento provisional | Cuándo ocurre | Resultado conductual esperado |
-|---|---|---|
-| `presence.idle_entered` | Comienza un período sin actividad | Entrar al repertorio ambiental |
-| `presence.returned` | La persona vuelve a la superficie | Saludo variado; el cuidado no se deterioró en ausencia |
-| `relationship.first_meeting` | Se aplica la mascota por primera vez | Presentación breve y memorable |
-| `relationship.renamed` | Cambia el nombre de la instancia | Reconocimiento corto del nuevo nombre |
-| `interaction.petted` | La persona interactúa directamente | Feedback inmediato y expresivo |
+| Evento provisional           | Cuándo ocurre                        | Resultado conductual esperado                          |
+| ---------------------------- | ------------------------------------ | ------------------------------------------------------ |
+| `presence.idle_entered`      | Comienza un período sin actividad    | Entrar al repertorio ambiental                         |
+| `presence.returned`          | La persona vuelve a la superficie    | Saludo variado; el cuidado no se deterioró en ausencia |
+| `relationship.first_meeting` | Se aplica la mascota por primera vez | Presentación breve y memorable                         |
+| `relationship.renamed`       | Cambia el nombre de la instancia     | Reconocimiento corto del nuevo nombre                  |
+| `interaction.petted`         | La persona interactúa directamente   | Feedback inmediato y expresivo                         |
 
 ### Cuidado ligero
 
-| Evento provisional | Cuándo ocurre | Resultado conductual esperado |
-|---|---|---|
-| `care.hunger_band_changed` | Hambre cambia de franja | Ajustar repertorio; una reacción ocasional como máximo |
-| `care.sleep_band_changed` | Sueño cambia de franja | Ajustar energía, reposo y probabilidad de siesta |
-| `care.fed` | La persona alimenta a la mascota | Respuesta inmediata y actualización de hambre |
-| `care.tucked_in` | La persona la arropa o manda a descansar | Transición voluntaria al descanso |
-| `care.woken` | La persona la despierta | Despertar breve y regreso al contexto vigente |
+| Evento provisional         | Cuándo ocurre                            | Resultado conductual esperado                          |
+| -------------------------- | ---------------------------------------- | ------------------------------------------------------ |
+| `care.hunger_band_changed` | Hambre cambia de franja                  | Ajustar repertorio; una reacción ocasional como máximo |
+| `care.sleep_band_changed`  | Sueño cambia de franja                   | Ajustar energía, reposo y probabilidad de siesta       |
+| `care.fed`                 | La persona alimenta a la mascota         | Respuesta inmediata y actualización de hambre          |
+| `care.tucked_in`           | La persona la arropa o manda a descansar | Transición voluntaria al descanso                      |
+| `care.woken`               | La persona la despierta                  | Despertar breve y regreso al contexto vigente          |
 
 ### Extensiones opcionales
 
@@ -148,14 +148,14 @@ El evento no incluye:
 El estado operativo y las reacciones usan arbitrajes separados. Una animación breve
 puede cambiar sin que desaparezca la señal de `needs_input` o `blocked`.
 
-| Prioridad de reacción | Clase | Ejemplos |
-|---:|---|---|
-| 1 | Acción directa del usuario | acariciar, alimentar, arropar, despertar |
-| 2 | Nueva necesidad de atención | aprobación pendiente, bloqueo nuevo |
-| 3 | Resultado terminal | completado, cancelado, error |
-| 4 | Transición de trabajo | comenzar, reanudar |
-| 5 | Cambio de cuidado | pasar a hambriento, cansado o descansado |
-| 6 | Conducta ambiental | idle, rarezas, pequeños gestos espontáneos |
+| Prioridad de reacción | Clase                       | Ejemplos                                   |
+| --------------------: | --------------------------- | ------------------------------------------ |
+|                     1 | Acción directa del usuario  | acariciar, alimentar, arropar, despertar   |
+|                     2 | Nueva necesidad de atención | aprobación pendiente, bloqueo nuevo        |
+|                     3 | Resultado terminal          | completado, cancelado, error               |
+|                     4 | Transición de trabajo       | comenzar, reanudar                         |
+|                     5 | Cambio de cuidado           | pasar a hambriento, cansado o descansado   |
+|                     6 | Conducta ambiental          | idle, rarezas, pequeños gestos espontáneos |
 
 ### Reglas de arbitraje
 
@@ -217,19 +217,19 @@ anfitriona.
 El paquete de conducta escribe variantes para intenciones semánticas, no respuestas
 libres. Estos textos son ejemplos ilustrativos, no copy final:
 
-| Intención | Evento asociado | Ejemplo neutro |
-|---|---|---|
-| `greet` | primer encuentro o regreso | “¡Volviste!” |
-| `work_start` | comienzo o reanudación | “Me pongo con eso.” |
-| `attention` | necesita input | “Te necesito un segundo.” |
-| `success` | actividad completada | “Listo por acá.” |
-| `problem` | bloqueo | “Algo se trabó.” |
-| `petted` | interacción directa | “Je, otra vez.” |
-| `hungry` | cambio a hungry | “¿Comemos algo?” |
-| `sleepy` | cambio a sleepy | “Me vendría bien una siesta.” |
-| `fed` | alimentación | “Eso estaba buenísimo.” |
-| `goodnight` | arropada | “Nos vemos en un rato.” |
-| `wake` | despertar | “Ya estoy.” |
+| Intención    | Evento asociado            | Ejemplo neutro                |
+| ------------ | -------------------------- | ----------------------------- |
+| `greet`      | primer encuentro o regreso | “¡Volviste!”                  |
+| `work_start` | comienzo o reanudación     | “Me pongo con eso.”           |
+| `attention`  | necesita input             | “Te necesito un segundo.”     |
+| `success`    | actividad completada       | “Listo por acá.”              |
+| `problem`    | bloqueo                    | “Algo se trabó.”              |
+| `petted`     | interacción directa        | “Je, otra vez.”               |
+| `hungry`     | cambio a hungry            | “¿Comemos algo?”              |
+| `sleepy`     | cambio a sleepy            | “Me vendría bien una siesta.” |
+| `fed`        | alimentación               | “Eso estaba buenísimo.”       |
+| `goodnight`  | arropada                   | “Nos vemos en un rato.”       |
+| `wake`       | despertar                  | “Ya estoy.”                   |
 
 Una frase nunca afirma detalles que el evento no contiene. La personalidad modifica
 el tono y el vocabulario, pero conserva la intención verdadera.
