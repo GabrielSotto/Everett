@@ -1,3 +1,4 @@
+import { latestTestResult } from './output-runs.mjs';
 import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { basename, dirname, relative, resolve } from 'node:path';
@@ -6,7 +7,7 @@ import { inside, verifyBuild, verifySourceHashes } from './artifact-evidence.mjs
 import { browserSpecs, verifyBrowserReport } from './browser-evidence.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const supplied = process.argv[2];
+const supplied = process.argv[2] ?? (await latestTestResult(root, 'navegador'));
 if (!supplied) throw new Error('Indicá el results.json de la ejecución de navegador.');
 const path = resolve(root, supplied);
 const report = JSON.parse(await readFile(path, 'utf8'));
@@ -16,7 +17,11 @@ const discovery = spawnSync(
   ['node_modules/@playwright/test/cli.js', 'test', '--list', '--reporter=json'],
   {
     cwd: root,
-    env: { ...process.env, EVERETT_TEST_URL: report.config?.metadata?.target },
+    env: {
+      ...process.env,
+      EVERETT_TEST_URL: report.config?.metadata?.target,
+      EVERETT_BROWSER_RUN_ID: report.config?.metadata?.runId,
+    },
     encoding: 'utf8',
     timeout: 30000,
     maxBuffer: 10 * 1024 * 1024,

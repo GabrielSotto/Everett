@@ -11,6 +11,7 @@ Marco común: `C:/Proyectos/AGENTS.md`. Leerlo si no está ya cargado y aplicar 
 
 ## Organización por iteración
 
+- Mantener el estado de las iteraciones y los fallos abiertos en [Tareas](TAREAS.md); aplicar la conservación de resultados de [Desarrollo](docs/desarrollo.md).
 - Trabajar una iteración por vez. Dedicarle un chat de implementación y una rama. Mantener los chats de organización e instrucciones separados de los de implementación.
 - Crear las ramas desde `dev` con los prefijos del marco común. Integrarlas con `--no-ff` después de completar las verificaciones y correcciones y recibir la confirmación explícita del usuario aprobando el cierre de la iteración.
 - Comenzar la siguiente iteración cuando la anterior esté aprobada e integrada en `dev`.

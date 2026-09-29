@@ -1,4 +1,5 @@
-import { mkdir, stat, writeFile } from 'node:fs/promises';
+import { removeOutput } from './output-runs.mjs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
@@ -21,23 +22,18 @@ for (const [script, path] of [
     throw new Error(`Falló ${script}: ${result.error?.message ?? result.status}`);
 }
 const evidence = await deliveryEvidence(root, browserPath, unitPath);
-const directory = `output/delivery/${evidence.summary.browser.runId}`;
-const existing = await stat(resolve(root, directory, 'summary.json')).catch((error) => {
-  if (error.code !== 'ENOENT') throw error;
-  return null;
-});
-if (!existing) {
-  await mkdir(resolve(root, directory, 'images'), { recursive: true });
-  for (const image of evidence.images)
-    await writeFile(resolve(root, directory, image.path), image.bytes);
-  await writeFile(
-    resolve(root, directory, 'summary.json'),
-    JSON.stringify(evidence.summary, null, 2) + '\n',
-  );
-  await writeFile(
-    resolve(root, directory, 'informe.md'),
-    deliveryMarkdown(evidence.summary, directory),
-  );
-}
+const directory = 'output/informe';
+await removeOutput(root, directory);
+await mkdir(resolve(root, directory, 'images'), { recursive: true });
+for (const image of evidence.images)
+  await writeFile(resolve(root, directory, image.path), image.bytes);
+await writeFile(
+  resolve(root, directory, 'summary.json'),
+  JSON.stringify(evidence.summary, null, 2) + '\n',
+);
+await writeFile(
+  resolve(root, directory, 'informe.md'),
+  deliveryMarkdown(evidence.summary, directory),
+);
 await verifyDeliveryReport(root, directory, evidence);
 console.log(`Informe verificado: ${directory}/informe.md`);

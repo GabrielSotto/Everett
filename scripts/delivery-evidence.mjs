@@ -18,7 +18,7 @@ export async function deliveryEvidence(root, browserPath, unitPath) {
   verifyRunIdentity(unit, { runId: basename(dirname(unitPath)), version: build.version });
   const images = [];
   for (const spec of specs) {
-    for (const [index, attachment] of spec.tests[0].results[0].attachments.entries()) {
+    for (const attachment of spec.tests[0].results[0].attachments) {
       if (attachment.contentType !== 'image/png') continue;
       const bytes = attachment.path
         ? await readFile(
@@ -29,8 +29,15 @@ export async function deliveryEvidence(root, browserPath, unitPath) {
           )
         : Buffer.from(attachment.body ?? '', 'base64');
       if (!bytes.length) throw new Error(`Captura vacía: ${spec.title}`);
+      const label = `${spec.title.slice(0, 75)}-${attachment.name}`
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/gi, '-')
+        .replace(/^-|-$/g, '')
+        .toLowerCase()
+        .slice(0, 120);
       images.push({
-        path: `images/${spec.id.replace(/[^a-z0-9-]/gi, '_')}-${index}.png`,
+        path: `images/${String(images.length + 1).padStart(3, '0')}-${label}.png`,
         case: spec.title,
         name: attachment.name,
         sha256: sha256(bytes),
@@ -81,7 +88,7 @@ Build: \`${summary.buildId}\`. HTML: ${summary.artifact.bytes} bytes, SHA-256 \`
 
 [HTML](${link(summary.artifact.path)}) · [Resultado de navegador](${link(summary.browser.path)}) · [Resultado unitario](${link(summary.unit.path)}) · [Informe navegable](${link(dirname(summary.browser.path) + '/report/index.html')})
 
-Este informe deriva de las ejecuciones verificadas. La [revisión de alcance y robustez](${link('output/rebuild-0.7.5/current/revision.md')}) registra los hallazgos y límites. La aprobación del usuario completa el cierre de producto.
+Este informe deriva de las ejecuciones verificadas. La [revisión de alcance y robustez](${link(`output/revision/${summary.version}/revision.md`)}) registra los hallazgos y límites. La aprobación del usuario completa el cierre de producto.
 
 ## Casos ejecutados
 

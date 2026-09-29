@@ -4,7 +4,7 @@ Alcance ratificado por el usuario el 28 de septiembre de 2026, a partir de [Desa
 
 Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referencias del diseño acordado. La lectura de la conversación recuperó el texto, pero no sus adjuntos ni los documentos completos de esas referencias. No darlos por inspeccionados.
 
-**Etapa actual: reconstrucción de 0.7.5.** Incluye recuperar fuentes, establecer la arquitectura y el arnés, pulir motion y revisar el nombre y la representación de la vista del Mundo. Se preserva la navegación aprobada. El alcance de 0.8 continúa pendiente.
+**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8 continúa pendiente.
 
 | Versión    | Alcance principal                                                                   |
 | ---------- | ----------------------------------------------------------------------------------- |
@@ -23,9 +23,9 @@ Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referenci
 
 ## 0.7.5 — reconstrucción y pulido
 
-Aplicar [Recuperación de 0.7.5](recuperacion-0.7.5.md). Esta etapa conserva las funciones de la base y establece los límites técnicos necesarios para continuar hasta 1.0. El Universo actual es el piso de calidad visual; el resultado debe superarlo. La navegación espacial aprobada se conserva y se pule en su ejecución.
+Aplicar [Reconstrucción de 0.7.5](iteraciones/0.7.5.md). Esta etapa conserva las funciones de la base y establece los límites técnicos necesarios para continuar hasta 1.0. El Universo actual es el piso de calidad visual; el resultado debe superarlo. La navegación espacial aprobada se conserva y se pule en su ejecución.
 
-La elección de nombre y representación de la vista actualmente denominada `Vista atómica` se adelanta a esta etapa por pedido del usuario. Las seis superficies mantienen su distribución sin jerarquía visual central. Se presentan propuestas antes de implementar esa dirección visual.
+La etapa incorporó las representaciones circulares de las seis superficies, con foco, espaciado y alineación aprobados por el usuario. Mantienen su distribución sin jerarquía visual central. El nombre `Vista atómica` continúa pendiente de revisión.
 
 ---
 
@@ -266,4 +266,4 @@ La 1.0 se publica cuando los recorridos acordados funcionan, las superficies rep
 
 Backend, inferencia, colaboración, autenticación e integraciones reales quedan para el desarrollo del producto.
 
-**Próximo paso del roadmap: verificar y aprobar la reconstrucción de 0.7.5; después, desarrollar 0.8 y cerrar Canvas antes de pasar a 0.9.**
+**Próximo paso del roadmap: desarrollar 0.8 y cerrar Canvas antes de pasar a 0.9.**
