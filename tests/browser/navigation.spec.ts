@@ -156,3 +156,60 @@ test('UI-NAV-05: el minimapa desplaza con teclado y su rueda conserva el zoom de
     .poll(() => page.evaluate(() => window.EverettDebug!.snapshot().camera.x))
     .toBeCloseTo(before.x, 0);
 });
+
+test('UI-NAV-06: los filtros atenúan los Mundos ajenos y recuperan los resultados al quitarse', async ({
+  page,
+}) => {
+  const worlds = await page.evaluate(() =>
+    window
+      .EverettDebug!.snapshot()
+      .state.worlds.map(({ id, region, archived }) => ({ id, region, archived })),
+  );
+  await page.getByRole('button', { name: 'Filtrar mundos', exact: true }).click();
+  const region = page.getByRole('combobox', { name: 'Región', exact: true });
+  await region.selectOption('Investigación');
+  for (const world of worlds) {
+    const button = page.locator(`.world-body[data-focus="${world.id}"]`);
+    if (world.region === 'Investigación') await expect(button).not.toHaveClass(/dimmed/);
+    else await expect(button).toHaveClass(/dimmed/);
+  }
+  await region.selectOption('Todas');
+  await page.getByRole('button', { name: 'Archivados', exact: true }).click();
+  for (const world of worlds) {
+    const button = page.locator(`.world-body[data-focus="${world.id}"]`);
+    if (world.archived) await expect(button).not.toHaveClass(/dimmed/);
+    else await expect(button).toHaveClass(/dimmed/);
+  }
+  await page.getByRole('button', { name: 'Archivados', exact: true }).click();
+  await expect(page.locator('.world-body.dimmed')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Filtrar mundos', exact: true })).toBeFocused();
+});
+
+test('UI-NAV-07: arrastrar permite escapar de la gravedad y volver a enfocar sin entrar', async ({
+  page,
+}, testInfo) => {
+  const id = await focusWorld(page);
+  const before = await page.evaluate(() => window.EverettDebug!.snapshot().camera);
+  await page.mouse.move(720, 480);
+  await page.mouse.down();
+  await page.mouse.move(1320, 750, { steps: 40 });
+  const during = await page.evaluate(() => window.EverettDebug!.snapshot());
+  await page.mouse.up();
+  expect(Math.hypot(during.camera.x - before.x, during.camera.y - before.y)).toBeGreaterThan(10);
+  expect(during.gravity?.manualTravel).toBe(false);
+  expect(during.gravity?.inputGain).toBeGreaterThan(0);
+  expect(during.gravity?.inputGain).toBeLessThanOrEqual(1);
+  await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'universe');
+  const world = page.locator(`.world-body[data-focus="${id}"]`);
+  await world.click();
+  await expect
+    .poll(() => page.evaluate(() => window.EverettDebug!.snapshot().camera.x))
+    .toBeCloseTo(before.x, 0);
+  await expect.poll(() => page.evaluate(() => window.EverettDebug!.snapshot().focus)).toBe(id);
+  await expect(world).toHaveAttribute('aria-pressed', 'true');
+  await testInfo.attach('gravedad-durante-arrastre', {
+    body: JSON.stringify({ before, during }),
+    contentType: 'application/json',
+  });
+});
