@@ -1,2 +1,6 @@
+* text=auto eol=lf
+*.png binary
+*.webp binary
+
 # Conservar los bytes y el hash del HTML recibido como referencia.
 /Everett-0.7.5.html -text

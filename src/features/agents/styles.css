@@ -1,0 +1,231 @@
+.agents-layout {
+  height: 100%;
+  overflow: auto;
+  padding: 15px 60px 70px;
+}
+
+.agents-toolbar {
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 35px;
+}
+
+.agents-toolbar input {
+  border-bottom: 1px solid var(--line);
+  padding: 8px;
+  font-size: 12px;
+}
+
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(210px, 1fr));
+  gap: 25px;
+  max-width: 1050px;
+  margin: 30px auto;
+}
+
+.agent-card {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 38px 23px 22px;
+  min-height: 330px;
+  transition:
+    transform 0.25s var(--ease),
+    box-shadow 0.25s,
+    border-color 0.25s;
+}
+
+.agent-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--line);
+  box-shadow: 0 16px 40px #3a264b08;
+}
+
+.agent-orb {
+  width: 73px;
+  height: 73px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  border-radius: 25px;
+  color: var(--agent-color);
+  background: color-mix(in srgb, var(--agent-color) 10%, #fff);
+  border: 1px solid color-mix(in srgb, var(--agent-color) 25%, #fff);
+  box-shadow: 0 9px 25px color-mix(in srgb, var(--agent-color) 10%, transparent);
+}
+
+.agent-card h2 {
+  font-weight: 500;
+  font-size: 24px;
+  letter-spacing: -0.7px;
+  margin: 26px 0 8px;
+}
+
+.agent-card p {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.agent-availability {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 27px;
+}
+
+.agent-card-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  width: 100%;
+  padding-top: 17px;
+  margin-top: 28px;
+}
+
+.agent-space {
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  padding: 40px max(35px, calc((100% - 860px) / 2)) 100px;
+}
+
+.agent-identity {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.agent-identity h1 {
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+
+.agent-identity p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.agent-identity > .icon-button {
+  margin-left: auto;
+}
+
+.agent-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 30px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.agent-body {
+  padding-top: 30px;
+  max-width: 850px;
+}
+
+.agent-work > button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  width: 100%;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.agent-work > button svg {
+  margin-left: auto;
+}
+
+.agent-job {
+  display: flex;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 20px 0;
+}
+
+.agent-events {
+  display: grid;
+  gap: 13px;
+  margin-top: 36px;
+}
+
+.agent-events span {
+  display: flex;
+  font:
+    10px Consolas,
+    monospace;
+  color: var(--muted);
+}
+
+.agent-events time {
+  margin-left: auto;
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+}
+
+.memory-note {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  padding: 20px;
+  position: relative;
+  min-height: 170px;
+  color: var(--muted);
+}
+
+.memory-note p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 20px;
+  color: var(--muted);
+}
+
+.memory-note .icon-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.agent-space #memory-add {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  margin-top: 30px;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-space #memory-add input {
+  flex: 1;
+  min-width: 0;
+  padding: 15px 0;
+  font-size: 12px;
+}
+
+.capabilities > div {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  padding: 17px 0;
+  font-size: 13px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}

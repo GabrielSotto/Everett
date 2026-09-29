@@ -1,0 +1,261 @@
+.chat-host {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.canvas-chat {
+  pointer-events: auto;
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 45px #3e2b5214;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 41;
+}
+
+.canvas-chat.quick {
+  width: min(310px, calc(100vw - 24px));
+  height: min(340px, calc(100vh - 90px));
+  border-radius: 17px;
+}
+
+.canvas-chat.docked {
+  left: 0;
+  top: 59px;
+  bottom: 0;
+  width: 310px;
+  max-width: 90vw;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: 10px 0 35px #493f6006;
+}
+
+.canvas-chat.room {
+  left: 0;
+  right: 0;
+  top: 59px;
+  bottom: 0;
+  border: 0;
+  border-radius: 0;
+  z-index: 44;
+}
+
+.canvas-chat.compact {
+  height: 48px !important;
+}
+
+.canvas-chat.compact > .chat-scroll,
+.canvas-chat.compact > .composer,
+.canvas-chat.compact > .chat-tabs {
+  display: none;
+}
+
+.chat-handle {
+  min-height: 47px;
+  height: 47px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+  touch-action: none;
+  background: #fff9;
+}
+
+.chat-grip {
+  color: var(--muted);
+}
+
+.chat-presence {
+  font-size: 10px;
+  color: var(--muted);
+  flex: 1;
+  white-space: nowrap;
+}
+
+.chat-handle > div {
+  display: flex;
+  gap: 1px;
+}
+
+.chat-handle .icon-button {
+  width: 25px;
+  height: 27px;
+  border-radius: 7px;
+}
+
+.chat-handle .icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chat-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 7px;
+  border-bottom: 1px solid var(--line);
+}
+
+.chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 15px 17px;
+}
+
+.chat-message {
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+.chat-message strong {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.chat-message p {
+  white-space: pre-wrap;
+  color: var(--muted);
+}
+
+.chat-message.user {
+  background: var(--surface);
+  border-radius: 11px 11px 3px 11px;
+  padding: 11px 13px;
+  max-width: 95%;
+  margin-left: auto;
+}
+
+.canvas-chat > .composer {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 12px 14px 10px;
+  background: var(--surface);
+}
+
+.canvas-chat > .composer textarea {
+  font-size: 11px;
+  min-height: 28px;
+}
+
+.canvas-chat > .composer .send {
+  width: 26px;
+  height: 26px;
+  background: #9e86b9;
+}
+
+.canvas-chat.room .chat-scroll,
+.canvas-chat.room > .composer {
+  width: min(760px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.canvas-chat.room > .composer {
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  margin-bottom: 30px;
+}
+
+.canvas-chat.room .chat-handle {
+  padding: 0 25px;
+}
+
+.canvas-chat.room .chat-handle > div {
+  gap: 8px;
+}
+
+.canvas-chat.room .chat-handle .icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+.canvas-chat #add-person {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  background: var(--surface);
+}
+
+.canvas-chat #add-person input {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+}
+
+.comment-thread {
+  margin-bottom: 19px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--line);
+}
+
+.comment-thread > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.comment-thread strong {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.comment-thread p {
+  font-size: 11px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  color: var(--muted);
+  margin-top: 7px;
+}
+
+.comment-thread.resolved {
+  opacity: 0.46;
+}
+
+.comment-thread .reply {
+  margin-left: 12px;
+  padding-left: 10px;
+  border-left: 1px solid var(--line);
+}
+
+.comment-thread form {
+  display: flex;
+  gap: 5px;
+  margin-top: 9px;
+  align-items: center;
+}
+
+.comment-thread form input {
+  flex: 1;
+  min-width: 0;
+  font-size: 10px;
+  padding: 7px 0;
+}
+
+.dock-preview:before {
+  content: '';
+  position: fixed;
+  top: 59px;
+  bottom: 0;
+  left: 0;
+  width: 310px;
+  border: 1px dashed #aa90c4;
+  background: #b5a1cf11;
+  pointer-events: none;
+  z-index: 40;
+}

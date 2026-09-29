@@ -1,30 +1,29 @@
 # AGENTS.md — Everett
 
-Marco común: `C:/Proyectos/AGENTS.md`. Leerlo si no está ya cargado. Este archivo define las particularidades del proyecto; mantener ambos niveles alineados.
+Marco común: `C:/Proyectos/AGENTS.md`. Leerlo si no está ya cargado y aplicar sus reglas junto con estas instrucciones.
 
-## Alcance y referencias
+## Alcance y decisiones
 
-Everett es un prototipo interactivo cuyo alcance aprobado avanza desde 0.7.5 hasta 1.0 por etapas.
-
-- Al planificar o implementar producto, leer [Alcance del prototipo](docs/alcance-prototipo.md) y el detalle de la etapa afectada. Preservar los comportamientos aprobados y la secuencia de aprobación del usuario.
-- Al modificar comportamiento, construir el arnés, validar o preparar una entrega, aplicar [Validación del prototipo](docs/validacion-prototipo.md). Sus comprobaciones son el **piso obligatorio, nunca el techo**: ampliar la cobertura según los riesgos y fallos encontrados.
-- Las referencias visuales citadas por el alcance no equivalen a archivos recuperados. Comprobar su disponibilidad antes de afirmar que se inspeccionaron.
+- Al planificar o implementar, consultar [Producto](docs/producto.md), [Alcance del prototipo](docs/alcance-prototipo.md) y el detalle del área y la iteración afectadas.
+- Antes de iniciar una implementación, contar con el alcance y la dirección visual acordados. Preservar los comportamientos aprobados y aplicar los cambios de alcance que autorice el usuario.
+- Distinguir decisiones confirmadas de hipótesis. Comprobar la disponibilidad y el contenido de las referencias antes de afirmar que se inspeccionaron.
+- Mantener las definiciones, el estado y los antecedentes del producto en sus documentos correspondientes dentro de `docs/`.
 
 ## Organización por iteración
 
-- Trabajar una iteración por vez, con un chat de implementación y una rama específicos para cada 0.x, incluida la recuperación de 0.7.5. Mantener los chats de organización e instrucciones separados de los de implementación.
-- Comenzar la siguiente iteración cuando la anterior esté verificada, aprobada por el usuario e integrada en `dev`. El flujo de Git, incluidos los fixes, se rige por G1–G5 del marco común.
+- Trabajar una iteración por vez. Dedicarle un chat de implementación y una rama. Mantener los chats de organización e instrucciones separados de los de implementación.
+- Crear las ramas desde `dev` con los prefijos del marco común. Integrarlas con `--no-ff` después de completar las verificaciones y correcciones y recibir la confirmación explícita del usuario aprobando el cierre de la iteración.
+- Comenzar la siguiente iteración cuando la anterior esté aprobada e integrada en `dev`.
+- Versionar el trabajo en el repositorio de Everett. Aplicar G1–G5 del marco común, incluidos los fixes.
 
-## Base y herramientas
+## Convenciones y desarrollo
 
-La base local recibida es `Everett-0.7.5.html`, un HTML autónomo con CSS, JavaScript y un source map que contiene 59 fuentes TypeScript. El inventario y hash inicial están en el contrato de validación. Preservar este archivo como referencia de partida.
+- Aplicar la [Arquitectura](docs/arquitectura.md) y el flujo de [Desarrollo](docs/desarrollo.md) a todo el prototipo. Utilizar las mismas convenciones de nombres, responsabilidades, herramientas y comandos.
+- Consultar en Desarrollo los requisitos de entorno, dependencias, comandos y condiciones de ejecución. Mantener esa documentación alineada con las herramientas del repositorio.
 
-Al establecer estas instrucciones no hay fuentes separadas, gestor o lockfile, comandos de build o test ni arnés ejecutable en el proyecto. Recuperar y comprobar esos recursos al iniciar la implementación; documentar los comandos reales una vez establecidos. Las afirmaciones de la conversación anterior no acreditan ejecuciones locales ni la existencia de una entrega 0.8.
+## Verificación
 
-Everett tiene un repositorio Git propio en `C:/Proyectos/Everett`, con `dev` como rama de integración. Aplicar G1–G5 del marco común. El repositorio del directorio padre corresponde a infraestructura y excluye las carpetas de proyectos; no usarlo para versionar Everett.
-
-## Verificación específica
-
-Para cambios de documentación, comprobar preservación del alcance y requisitos, enlaces locales y correspondencia con la fuente adoptada. Esa revisión documental no certifica el producto.
-
-Para código y entregas, completar el gate definido en el contrato de validación, con evidencia del artefacto actual y comprobaciones del propio arnés. La aprobación de cada etapa y de 1.0 corresponde al usuario.
+- Para cambios de documentación, comprobar preservación del alcance y requisitos, enlaces locales y correspondencia con las fuentes adoptadas.
+- Al modificar comportamiento, construir el arnés, validar o preparar una entrega, aplicar [Validación del prototipo](docs/validacion-prototipo.md). Sus comprobaciones son el piso obligatorio; ampliar la cobertura según los riesgos y fallos encontrados.
+- En cada iteración, ampliar el arnés y las pruebas para cubrir las funciones y comportamientos incorporados o modificados. Convertir los fallos detectados durante las pruebas manuales en casos de regresión que comprueben su corrección y detecten su reaparición.
+- Antes de entregar código o una versión, completar el gate correspondiente con evidencia del artefacto actual y comprobaciones del propio arnés. La aprobación de cada iteración y de las versiones del prototipo corresponde al usuario.

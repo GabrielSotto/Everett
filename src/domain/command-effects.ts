@@ -1,0 +1,16 @@
+import type { Command } from './command-types';
+export function affectsView(c: Command): 'navigation' | 'content' | 'none' {
+  return ['navigate', 'back', 'universe', 'world.create'].includes(c.type)
+    ? 'navigation'
+    : [
+          'camera',
+          'node.edit',
+          'document.edit',
+          'sheet.edit',
+          'file.edit',
+          'world.rename',
+          'task.edit',
+        ].includes(c.type)
+      ? 'none'
+      : 'content';
+}

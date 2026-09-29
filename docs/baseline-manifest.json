@@ -1,0 +1,311 @@
+{
+  "source": "Everett-0.7.5.html",
+  "sha256": "1389917ed01c2bac74933f10e4e44b4c0fcfd1eb659cd5b33340bf8fe5bf0ccc",
+  "files": [
+    {
+      "path": "src/core/app.ts",
+      "sha256": "a0e8ed2cf88a66634116f1a0bdc8b61e908aa6e6625f02d7115c7e2554eb1d55",
+      "bytes": 18067
+    },
+    {
+      "path": "src/core/context.ts",
+      "sha256": "b95928e3cf6aa14cd2fd98bbfc3f1016b6d9108aeb349ede65eb63fd7e266398",
+      "bytes": 2601
+    },
+    {
+      "path": "src/core/dictation.ts",
+      "sha256": "5b47309738580c6754a158846cccb018520b343717b57fd2464db37a653150d9",
+      "bytes": 5514
+    },
+    {
+      "path": "src/core/service.ts",
+      "sha256": "b5dbc952227e961532f872e37bea8eb22f5a33dd54f01f2f4f1498a8bde231af",
+      "bytes": 11443
+    },
+    {
+      "path": "src/core/store.ts",
+      "sha256": "8661b20faf930f5d5b33f5ff5a1df42cf7e521a51fceb38b1a1be31c5d966ece",
+      "bytes": 3710
+    },
+    {
+      "path": "src/core/trace-input.ts",
+      "sha256": "6e612b7549b57479617c8d5356156069a6b62c858d3d7da3e76f51986715e47d",
+      "bytes": 714
+    },
+    {
+      "path": "src/core/trace.ts",
+      "sha256": "ab440cd71f1ceb956d8c64f09f6c4c397f3320dcfa967e2e6cabc1105659264f",
+      "bytes": 2659
+    },
+    {
+      "path": "src/domain/agent-fixtures.ts",
+      "sha256": "a7bbf2d56161c63466bf934b3275dde1933bfa258e08e96decbe3de39efa7dbe",
+      "bytes": 2416
+    },
+    {
+      "path": "src/domain/canvas-history.ts",
+      "sha256": "b8de776b736d4dc71a4b5f6e48947d4549be93e995d99cfc8ab3ccd74d99e01a",
+      "bytes": 3433
+    },
+    {
+      "path": "src/domain/code-diff.ts",
+      "sha256": "795af9f24d23a91bffe0363e10e54d102d577be2a48dc049e492c02819a770ff",
+      "bytes": 1136
+    },
+    {
+      "path": "src/domain/conversation-context.ts",
+      "sha256": "3a77e02c70c2b1c3823fd40df1fec522de1cf0c30467c796e5862dd899369b67",
+      "bytes": 854
+    },
+    {
+      "path": "src/domain/geometry.ts",
+      "sha256": "6c81f142a31445121e521434e8bd7a8db61f1607b5e0e1328fe1000e62416320",
+      "bytes": 2284
+    },
+    {
+      "path": "src/domain/invariants.ts",
+      "sha256": "c77636dfa507a4d33554d7be27532577ba453df69a9ced71cab258453c7e4390",
+      "bytes": 4736
+    },
+    {
+      "path": "src/domain/material-density.ts",
+      "sha256": "070af702963e84639b16ad52469b9cd7dd8c89c9bad3413752245875b036465d",
+      "bytes": 807
+    },
+    {
+      "path": "src/domain/model.ts",
+      "sha256": "d1a8e6c96a4f65cb43bbc1cdd1aac46388e78535a0484060403b9426cbbc5eaf",
+      "bytes": 10398
+    },
+    {
+      "path": "src/domain/navigation.ts",
+      "sha256": "f3c438737b35a2cfc30a3b4dbcdad7cdcac9d3783fa2ec082c43c9ada10d4b7c",
+      "bytes": 4142
+    },
+    {
+      "path": "src/domain/operations.ts",
+      "sha256": "9dfcaa25faec4da8b5fedd5f07b8eb2c227aef878c3581d18f91ca1748db4d63",
+      "bytes": 367
+    },
+    {
+      "path": "src/domain/profile.ts",
+      "sha256": "106eb88c9727dfce2bc26938709ea246868d52acd34310b755237e95e6caf553",
+      "bytes": 162
+    },
+    {
+      "path": "src/domain/reducer.ts",
+      "sha256": "0e996ecac11ca3d5c8b54220e0253ad285250a3db61fbb8c3515dd7bb6d056af",
+      "bytes": 15179
+    },
+    {
+      "path": "src/domain/seed.ts",
+      "sha256": "28bdb2770c6a8b487a6180c3d6a1fbaa77a3ca8e255c06437763e0bf38b0abe5",
+      "bytes": 10633
+    },
+    {
+      "path": "src/domain/shipping.ts",
+      "sha256": "8ef435031d091a9d8344694b4c14415ca167b71f7f66457183729e1522a8618f",
+      "bytes": 2164
+    },
+    {
+      "path": "src/domain/world-layout.ts",
+      "sha256": "bbf0623b8a842c6606c0188efd56058c0588fd158b718b4d48d27d84c53d4bf9",
+      "bytes": 4452
+    },
+    {
+      "path": "src/domain/zone-ownership.ts",
+      "sha256": "9d9cd2a82ce9d35620d9b457402e4fa3feea3137348719797456237d5152b53a",
+      "bytes": 1001
+    },
+    {
+      "path": "src/main.ts",
+      "sha256": "cff1d37e9bd533ed661c13ff10f8d3d872fb1cfd3cc5ac7fd556c69af6cfdd59",
+      "bytes": 542
+    },
+    {
+      "path": "src/spatial/ambient-clock.ts",
+      "sha256": "eed390e542a83d9c9e878c9ceecbe0865e0758c7d544ce10ebe1723e1079e5a6",
+      "bytes": 394
+    },
+    {
+      "path": "src/spatial/appearance.ts",
+      "sha256": "a76ab8b98dea4f0245a03ba926a5af2b34b91075300356f08d80a0ee10a2d0a7",
+      "bytes": 787
+    },
+    {
+      "path": "src/spatial/camera.ts",
+      "sha256": "83e8110ef917164aae1a344be3ca0ffba8f2dad60fb6ee1596ce8ff203f6d5d8",
+      "bytes": 9706
+    },
+    {
+      "path": "src/spatial/celestial-style.ts",
+      "sha256": "d2716d4b2f3bc5e15bfd88753a8ef5da49b75a0ba86bb8e5901e755f9261019b",
+      "bytes": 2257
+    },
+    {
+      "path": "src/spatial/deep-sky-assets.ts",
+      "sha256": "fb71a1df8974288ef65ee0a43d9276a563fc20058c2c4db4145e10f08c6032e5",
+      "bytes": 273421
+    },
+    {
+      "path": "src/spatial/gravity.ts",
+      "sha256": "e26a6e55e1c529f0a44401cbd5b634a574d84378ce3853ed60824fb23d41f345",
+      "bytes": 4044
+    },
+    {
+      "path": "src/spatial/math.ts",
+      "sha256": "3310d38b37b14f4f8b2b6e1ce0243e1f54817748bdbffc3ceae85e5811b5b34e",
+      "bytes": 1403
+    },
+    {
+      "path": "src/spatial/minimap-pulse.ts",
+      "sha256": "91496f68df04182e767cbedf05e7268795d455433b6af7908ab643529284bb84",
+      "bytes": 1161
+    },
+    {
+      "path": "src/spatial/minimap.ts",
+      "sha256": "e00d23ef99fe3abbb2d58ca9d923caba4b530cab444ec660c01a2a9b28a4417f",
+      "bytes": 8902
+    },
+    {
+      "path": "src/spatial/planet-atmosphere.ts",
+      "sha256": "34a12d80ecf868e42421095846aa2ab2c716702b19c42277038c63619e1f4f2d",
+      "bytes": 3558
+    },
+    {
+      "path": "src/spatial/planet-maps.ts",
+      "sha256": "2bc9e3954a1dd6fd476f5f7aadf46a064a15efe7a6041ec73c1242a20f921c3d",
+      "bytes": 1851426
+    },
+    {
+      "path": "src/spatial/planet-renderer.ts",
+      "sha256": "b180bdab5077c4938e0605a140af54b81059c870be10dc790874ce91b1a95c49",
+      "bytes": 12364
+    },
+    {
+      "path": "src/spatial/planets.ts",
+      "sha256": "6a1073fb28627fc6f47bea91a0fa65479918b03180597a3a903ee5926a30c309",
+      "bytes": 472509
+    },
+    {
+      "path": "src/spatial/space-backdrop.ts",
+      "sha256": "dff15d07488a4bc7780a486e69767267f65eda8bd66694bf6caa295a7495e2d7",
+      "bytes": 6751
+    },
+    {
+      "path": "src/spatial/tuning.ts",
+      "sha256": "abb821c942f08379a24647f7db015075a314b80a152d76118f8f6bed110c87ce",
+      "bytes": 1133
+    },
+    {
+      "path": "src/spatial/wheel-intent.ts",
+      "sha256": "58e55ad7f9d15e17ba81cb122e68ebd0c4eb273ad7cd48eff67dc31e2561a0a1",
+      "bytes": 916
+    },
+    {
+      "path": "src/surfaces/agents.ts",
+      "sha256": "29bb37dfc83b718f3ddc0b83a2e51ecd3526ca6412a322425ae47afc689964b8",
+      "bytes": 8388
+    },
+    {
+      "path": "src/surfaces/board.ts",
+      "sha256": "329388eb13322d01d373fce979ae570f7d276e8fb8cb653c684add8906fca6a0",
+      "bytes": 13513
+    },
+    {
+      "path": "src/surfaces/canvas.ts",
+      "sha256": "92bf7ef708493c28537e233f419848a53ff975a58c57eb314211c37f5141c17c",
+      "bytes": 33888
+    },
+    {
+      "path": "src/surfaces/code.ts",
+      "sha256": "050e9acf6d80b21e3fdfed7db8f210a609d2cdb817f99f81d7d88e494d2ee682",
+      "bytes": 14252
+    },
+    {
+      "path": "src/surfaces/docs.ts",
+      "sha256": "50f1715b5dbeed9c52b2132a2f138892e814d22ab55b37a9b4cf71e880c9d78b",
+      "bytes": 7772
+    },
+    {
+      "path": "src/surfaces/session.ts",
+      "sha256": "cdab440a8f39376d8b1fdb80bcaf98195654abdca11479ed486a305f930d3c0b",
+      "bytes": 4125
+    },
+    {
+      "path": "src/surfaces/spatial.ts",
+      "sha256": "6696e39c69ed68b1583d8631ddd35118d8de2d4f6ead708798f516cd588e3b0f",
+      "bytes": 16645
+    },
+    {
+      "path": "src/ui/agent-overview.ts",
+      "sha256": "1436ab773820e3b9c77fcd92e559f5da4f3bd1795f4182a91f10ebbc2aa918d6",
+      "bytes": 6040
+    },
+    {
+      "path": "src/ui/chat.ts",
+      "sha256": "c87e5c2472721a0a48d9c0cf98b369e5d8914ea5f6d448d6ef45eeca006eb93d",
+      "bytes": 11592
+    },
+    {
+      "path": "src/ui/composer.ts",
+      "sha256": "c0e264990e370d0edad8f6f8ae668f520216738d9f38ec86d9f3428770ccdd41",
+      "bytes": 2525
+    },
+    {
+      "path": "src/ui/disclosure.ts",
+      "sha256": "923a2a008b5a89a82ab60de48dbf9c73cf473a03eece3d956938ab9eb22eb277",
+      "bytes": 6592
+    },
+    {
+      "path": "src/ui/dom.ts",
+      "sha256": "1d9bcb41aa1f203e7e6dfb8a0c280018baaf61a75cf4ce22250906a5ecdfb253",
+      "bytes": 1520
+    },
+    {
+      "path": "src/ui/icons.ts",
+      "sha256": "3704212f1f8075e82bc3a8ab6f85292a58ee8966b2c6e8b8451396e4ffa3dc2f",
+      "bytes": 5094
+    },
+    {
+      "path": "src/ui/materials.ts",
+      "sha256": "d724964216cfda03c031d93058ab319c234abb5a338bc467c288f14e65ac8723",
+      "bytes": 7123
+    },
+    {
+      "path": "src/ui/motion.ts",
+      "sha256": "5e44cce3d91923bbebd7fd1021802fa07669a79d80b1f202bec069db359c0295",
+      "bytes": 422
+    },
+    {
+      "path": "src/ui/popover.ts",
+      "sha256": "cb0a3cb1e675297e5bc81775cd189c1e41325ffd44151ea82895ad7b5d75d100",
+      "bytes": 824
+    },
+    {
+      "path": "src/ui/shell.ts",
+      "sha256": "4d677ddf2b8fefa759f14ae2c4305726c39916f643038765719aab4af69d0b96",
+      "bytes": 13851
+    },
+    {
+      "path": "src/ui/slot.ts",
+      "sha256": "a73f26e2ba86b26717fd95b960c4e32f433c51c38ed78877beeab24814452329",
+      "bytes": 7205
+    },
+    {
+      "path": "src/ui/transitions.ts",
+      "sha256": "4eb4d8fc50208f2e0848f918683a16b360da0bee1962ca724f6a6482616328e8",
+      "bytes": 5271
+    },
+    {
+      "path": "src/styles/main.css",
+      "sha256": "f3843dd930d999413cad860860416a93776e3446902b2ac81056dbacb95a91cb",
+      "bytes": 86184
+    },
+    {
+      "path": "index.html",
+      "sha256": "8712287b3bacb91c1a19f2aa28c1cb38d7c6fbb2e1cf43399c5663070ad39a8a",
+      "bytes": 355
+    }
+  ]
+}

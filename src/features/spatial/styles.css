@@ -1,0 +1,306 @@
+.space {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #04070d;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dragging:has(> .space),
+.dragging .space {
+  cursor: grabbing;
+}
+.stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.58;
+  background-image:
+    radial-gradient(1px 1px at 26px 43px, #9faabe9c 50%, transparent 80%),
+    radial-gradient(1px 1px at 130px 21px, #e1eaff99 60%, transparent 80%),
+    radial-gradient(0.6px 0.6px at 231px 124px, #d3daecb3 70%, transparent 80%),
+    radial-gradient(0.7px 0.7px at 432px 331px, #ddd8 50%, transparent 85%);
+  background-size:
+    573px 347px,
+    813px 743px,
+    479px 419px,
+    651px 913px;
+}
+.space-plane {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  will-change: transform;
+  transform-origin: 0 0;
+}
+.world-body {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 238px;
+  height: 246px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  cursor: inherit;
+  color: #a6afc0;
+}
+.world-body .planet {
+  position: relative;
+  width: 194px;
+  height: 194px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 11px 12px #0009);
+  transition: transform 0.36s var(--ease);
+  z-index: 2;
+  opacity: 0.95;
+}
+.planet-name {
+  display: block;
+  max-width: none;
+  white-space: nowrap;
+  margin-top: 13px;
+  letter-spacing: 0.01em;
+  font-size: 12px;
+  font-weight: 450;
+  color: #8c97ac;
+  transform: scale(var(--label-scale, 1));
+  transform-origin: 50% 0;
+  transition:
+    color 0.16s,
+    opacity 0.16s;
+  pointer-events: none;
+}
+.world-body.focused .planet-name {
+  color: #eef3fa;
+  text-shadow:
+    0 1px 4px #000,
+    0 0 8px #020409;
+  background: transparent;
+  padding: 0;
+}
+.world-body.focused .planet {
+  opacity: 1;
+  transform: none;
+}
+.world-body.dimmed {
+  opacity: 0.12;
+}
+.new-world {
+  height: 360px;
+  width: 350px;
+}
+.empty-planet {
+  width: 310px;
+  height: 310px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #49618225, #1b2a4520 40%, #03060c88 75%);
+  border: 1px solid #7289b027;
+  box-shadow:
+    inset 7px 7px 22px #778eb112,
+    inset -15px -11px 45px #000b,
+    0 0 50px #7185b105;
+  transition:
+    border-color 0.4s,
+    box-shadow 0.4s;
+}
+.new-world.focused .empty-planet {
+  border-color: #9cb0d341;
+  box-shadow:
+    inset 7px 7px 22px #778eb121,
+    inset -15px -11px 45px #000b,
+    0 0 65px #7185b115;
+}
+.new-world .planet-name {
+  display: block;
+  max-width: none;
+  white-space: nowrap;
+  margin-top: 13px;
+  letter-spacing: 0.01em;
+  font-size: 12px;
+  font-weight: 450;
+  color: #8c97ac;
+  transform: scale(var(--label-scale, 1));
+  transform-origin: 50% 0;
+  transition:
+    color 0.16s,
+    opacity 0.16s;
+  pointer-events: none;
+}
+.world-core {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 106px;
+  height: 106px;
+  pointer-events: none;
+  opacity: 0.62;
+}
+.world-core img {
+  width: 100%;
+  height: 100%;
+}
+.minimap-host {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  border: 1px solid #56627838;
+  border-radius: 13px;
+  background: #0a101ace;
+  box-shadow: 0 8px 35px #0004;
+  overflow: hidden;
+  backdrop-filter: blur(9px);
+}
+.minimap-canvas {
+  width: 220px;
+  height: 150px;
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
+.minimap-host:empty {
+  display: none;
+}
+@media (max-width: 700px) {
+  .minimap-host {
+    right: 14px;
+    bottom: 14px;
+  }
+  .minimap-canvas {
+    width: 176px;
+    height: 120px;
+  }
+  .surface-object {
+    width: 246px;
+  }
+}
+
+.distant .world-body:not(.focused) .planet-name {
+  opacity: 0;
+}
+
+/* El fondo espacial persistente evita un rectángulo negro al escalar una escena. */
+body[data-mode='space'] #viewport {
+  background: #04070d;
+}
+.scene:has(> .space),
+.transition-ghost:has(> .space),
+.space {
+  background: transparent;
+}
+.stars {
+  opacity: 0.82;
+  background-image:
+    radial-gradient(1.35px 1.35px at 26px 43px, #e0e9ffbd 45%, transparent 90%),
+    radial-gradient(1.9px 1.9px at 130px 21px, #eaddbfa1 36%, transparent 85%),
+    radial-gradient(0.85px 0.85px at 231px 124px, #c0d5f5c9 48%, transparent 90%),
+    radial-gradient(1.05px 1.05px at 432px 331px, #e9e8ddac 48%, transparent 90%),
+    radial-gradient(2.2px 2.2px at 318px 166px, #ffe3ada3 25%, transparent 88%);
+  background-size:
+    573px 347px,
+    813px 743px,
+    479px 419px,
+    651px 913px,
+    1103px 927px;
+}
+/* El HUD pertenece al viewport y queda fuera de las transformaciones de escena. */
+#viewport-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+#viewport-hud .minimap-host {
+  pointer-events: auto;
+}
+#viewport-hud .minimap-host[data-map-state='leaving'] {
+  pointer-events: none;
+}
+
+/* Proyección esférica, atmósfera ajustada a la escala y etiquetas estables. */
+.space-backdrop,
+.planet-renderer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.space-backdrop.stars {
+  opacity: 1;
+  background: none;
+}
+.planet-renderer {
+  z-index: 1;
+}
+.space-plane {
+  z-index: 2;
+}
+.world-body[data-live-globe='true'] .planet {
+  visibility: hidden;
+}
+.atmosphere {
+  position: absolute;
+  width: 194px;
+  height: 194px;
+  left: 22px;
+  top: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: var(--capture, 0);
+  border: 0;
+  transform: none;
+  background: transparent;
+  box-shadow:
+    0 0 2px 1px #a8c7eb38,
+    inset 2px 0 3px #a8c7eb28;
+}
+.world-body[data-live-globe='true'] .atmosphere {
+  box-shadow: none;
+}
+.world-body .planet-name,
+.new-world .planet-name {
+  position: absolute;
+  left: 50%;
+  top: 208px;
+  margin: 0;
+  max-width: 310px;
+  white-space: nowrap;
+  transform: translateX(-50%) scale(var(--label-scale, 1));
+  transform-origin: 50% 0;
+  line-height: 1.4;
+  text-shadow:
+    0 1px 4px #020409,
+    0 0 6px #020409;
+  letter-spacing: 0.012em;
+}
+.new-world .planet-name {
+  top: 388px;
+}
+.distant .world-body.focused .planet-name {
+  font-size: 12px;
+}
+.world-body:hover .planet-name {
+  color: #eef3fa;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .planet-renderer {
+    transition: none;
+  }
+}
+
+/* Chromium debe rasterizar las etiquetas tras cambiar la escala para conservar su nitidez. */
+.space:has(.planet-renderer) .space-plane {
+  will-change: auto;
+}

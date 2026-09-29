@@ -1,0 +1,157 @@
+:root {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-synthesis: none;
+  font-size: 13px;
+  --surface: #293946;
+  --panel: #30414f;
+  --raised: #384b59;
+  --hover: #405362;
+  --text: #e0e7ed;
+  --muted: #adbecb;
+  --subtle: #9bafbf;
+  --line: #586d7b55;
+  --accent: #b9a5df;
+  --ink: var(--text);
+  --ease: cubic-bezier(0.22, 0.82, 0.22, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --note-ink: #36394a;
+  color: var(--text);
+  background: var(--surface);
+  color-scheme: dark;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6b809266 transparent;
+}
+body {
+  color: var(--text);
+  background: var(--surface);
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--subtle);
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 3px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+input,
+textarea {
+  border: 0;
+  outline: none;
+  background: none;
+}
+
+textarea {
+  resize: none;
+}
+
+button,
+input,
+textarea,
+select,
+[contenteditable] {
+  outline: none;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline: 2px solid #9988c6;
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+button {
+  transition:
+    background 0.16s,
+    color 0.16s,
+    transform 0.16s var(--ease);
+}
+
+button:active:not(.world-body):not(.surface-object) {
+  transform: scale(0.96);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+}
+
+::selection {
+  background: #a89bcd44;
+}
+
+pre {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}
+
+#app {
+  position: relative;
+}

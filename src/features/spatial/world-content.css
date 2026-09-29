@@ -1,0 +1,29 @@
+/* Identidad estable de los Mundos y miniaturas de su contenido. */
+.world-body .planet {
+  filter: hue-rotate(var(--planet-hue, 0deg)) drop-shadow(0 10px 18px #0008);
+  transform: rotate(var(--planet-rotate, 0deg));
+}
+.world-body .planet,
+.world-body.focused .planet {
+  transform: rotate(var(--planet-rotate, 0deg)) scale(calc(1 + var(--capture, 0) * 0.055));
+  transition: none;
+}
+.shell.dark-shell {
+  background: #080b11;
+  border-color: #ffffff0c;
+}
+.shell.dark-shell .global-search.open,
+.shell.dark-shell .popover,
+.shell.dark-shell .surface-menu,
+.shell.dark-shell .search-results {
+  background: #141d28;
+  border-color: #56687844;
+}
+.new-world {
+  width: 370px;
+  height: 422px;
+}
+.empty-planet {
+  width: 370px;
+  height: 370px;
+}

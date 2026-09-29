@@ -1,0 +1,182 @@
+/* Controles compartidos y búsqueda contextual */
+.shell {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.wordmark {
+  color: var(--text);
+  font-weight: 540;
+}
+.location {
+  min-width: 0;
+  flex-shrink: 1;
+  gap: 8px;
+}
+.location input {
+  color: var(--muted);
+  min-width: 30px;
+  max-width: 245px;
+  text-overflow: ellipsis;
+}
+.location > span {
+  color: var(--text);
+}
+.global-search {
+  flex: 0 0 auto;
+}
+.global-search.open {
+  width: min(246px, 30vw);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.global-search.open input {
+  flex: 1;
+  width: 100%;
+  opacity: 1;
+  padding: 8px 10px;
+}
+.global-search input {
+  color: var(--text);
+}
+.icon-button {
+  color: var(--muted);
+}
+.icon-button.active {
+  color: #d8c7f1;
+  background: #b89ed526;
+}
+.icon-button:hover {
+  color: var(--text);
+  background: #a3bbcc15;
+}
+.popover,
+.surface-menu,
+.search-results,
+.tools-pop,
+.reference-menu,
+.shape-menu,
+.properties-menu {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: 0 16px 48px #090f1a33;
+}
+select {
+  color: var(--text);
+  background: var(--panel);
+}
+select option {
+  background: #30414f;
+}
+.shell .shipping-indicator {
+  color: #d5c2ed;
+  display: inline-flex;
+}
+.profile-pop {
+  width: 330px;
+  gap: 16px;
+  padding: 22px;
+}
+.profile-identity {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: #aa94ce27;
+  color: #d4c1ef;
+  font-size: 20px;
+}
+.profile-identity strong {
+  display: block;
+  font-size: 16px;
+  margin: 0 0 5px;
+}
+.profile-identity small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.profile-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  gap: 17px;
+}
+.profile-tabs button {
+  padding: 9px 0;
+  font-size: 11px;
+  color: var(--subtle);
+}
+.profile-tabs button.active {
+  color: var(--text);
+  box-shadow: 0 1px var(--accent);
+}
+.profile-pop #profile-name {
+  font-size: 19px;
+  width: 100%;
+}
+.profile-pop textarea {
+  width: 100%;
+  resize: none;
+  line-height: 1.6;
+}
+.profile-pop .preference-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.profile-pop select {
+  max-width: 156px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px;
+  font-size: 11px;
+}
+.context-budget {
+  padding: 5px 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+.budget-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 12px 0;
+}
+.budget-value strong {
+  font-size: 23px;
+  font-weight: 500;
+}
+.budget-value span,
+.context-budget small {
+  color: var(--subtle);
+  font-size: 10px;
+}
+.budget-track {
+  height: 4px;
+  border-radius: 3px;
+  background: #71869a27;
+  margin: 12px 0 17px;
+  overflow: hidden;
+}
+.budget-track i {
+  display: block;
+  min-width: 3px;
+  height: 100%;
+  background: var(--accent);
+}
+.context-budget small {
+  display: block;
+  margin: 12px 0 0;
+}
+.status-pop {
+  max-height: calc(100vh - 95px);
+  overflow: auto;
+  width: 320px;
+}
