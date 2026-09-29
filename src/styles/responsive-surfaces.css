@@ -1,0 +1,163 @@
+@media (max-width: 900px) {
+  .agents-layout {
+    padding: 12px 25px 60px;
+  }
+
+  .agents-grid {
+    gap: 13px;
+  }
+
+  .agent-card {
+    padding: 30px 16px;
+  }
+
+  .memory-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .file-tree {
+    width: 160px;
+  }
+
+  .board-toolbar {
+    gap: 10px;
+    padding: 0 18px;
+  }
+
+  .board-toolbar input {
+    width: 140px;
+  }
+
+  .document-page {
+    padding: 0 28px;
+  }
+
+  .docs-list {
+    width: 180px;
+  }
+}
+
+@media (max-width: 650px) {
+  .agents-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+  }
+
+  .agent-card {
+    min-height: 275px;
+  }
+
+  .file-tree {
+    width: 104px;
+    padding: 8px 4px;
+  }
+
+  .file-entry {
+    gap: 5px;
+    padding: 10px 4px;
+    font-size: 9px;
+  }
+
+  .editor-toolbar {
+    padding: 0 7px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .editor-toolbar .icon-button {
+    width: 27px;
+  }
+
+  .file-name {
+    font-size: 9px;
+  }
+
+  .gutter {
+    width: 35px;
+    padding-right: 8px;
+  }
+
+  .editor-surface pre,
+  .editor-surface textarea {
+    font-size: 12px;
+  }
+
+  .docs-list {
+    width: 115px;
+    padding: 10px 4px;
+  }
+
+  .docs-list > button {
+    font-size: 9px;
+    gap: 5px;
+    padding: 10px 5px;
+  }
+
+  .document-page {
+    padding: 0 20px;
+    margin-top: 22px;
+  }
+
+  .document-page h1 {
+    font-size: 25px;
+  }
+
+  .board-toolbar {
+    padding: 0 12px;
+    gap: 5px;
+  }
+
+  .board-toolbar input {
+    width: 92px;
+  }
+
+  .board-toolbar > form {
+    padding-left: 6px;
+  }
+
+  .view-switch .icon-button {
+    width: 29px;
+  }
+
+  .board-content {
+    padding: 8px 17px 40px;
+  }
+
+  .empty-conversation h1 {
+    font-size: 30px;
+    font-weight: 450;
+    letter-spacing: -1px;
+    color: var(--text);
+    white-space: normal;
+  }
+
+  .conversation-stream {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 42px max(24px, calc((100% - 640px) / 2)) 15px;
+    scrollbar-width: thin;
+  }
+
+  .agent-space {
+    padding: 30px 24px 100px;
+  }
+
+  .agent-identity {
+    gap: 16px;
+  }
+
+  .agent-orb {
+    width: 61px;
+    height: 61px;
+    border-radius: 22px;
+  }
+
+  .code-status input {
+    width: 50px;
+  }
+
+  .code-status span:last-child {
+    display: none;
+  }
+}

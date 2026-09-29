@@ -1,0 +1,573 @@
+.space {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #04070d;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dragging .space {
+  cursor: grabbing;
+}
+.stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.58;
+  background-image:
+    radial-gradient(1px 1px at 26px 43px, #9faabe9c 50%, transparent 80%),
+    radial-gradient(1px 1px at 130px 21px, #e1eaff99 60%, transparent 80%),
+    radial-gradient(0.6px 0.6px at 231px 124px, #d3daecb3 70%, transparent 80%),
+    radial-gradient(0.7px 0.7px at 432px 331px, #ddd8 50%, transparent 85%);
+  background-size:
+    573px 347px,
+    813px 743px,
+    479px 419px,
+    651px 913px;
+}
+.space-plane {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  will-change: transform;
+  transform-origin: 0 0;
+}
+.world-body {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 238px;
+  height: 246px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  cursor: inherit;
+  color: #a6afc0;
+}
+.world-body .planet {
+  position: relative;
+  width: 194px;
+  height: 194px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 11px 12px #0009);
+  transition: transform 0.36s var(--ease);
+  z-index: 2;
+  opacity: 0.95;
+}
+.planet-name {
+  display: block;
+  max-width: none;
+  white-space: nowrap;
+  margin-top: 13px;
+  letter-spacing: 0.01em;
+  font-size: 12px;
+  font-weight: 450;
+  color: #8c97ac;
+  transform: scale(var(--label-scale, 1));
+  transform-origin: 50% 0;
+  transition:
+    color 0.16s,
+    opacity 0.16s;
+  pointer-events: none;
+}
+.world-body.focused .planet-name {
+  color: #eef3fa;
+  text-shadow:
+    0 1px 4px #000,
+    0 0 8px #020409;
+  background: transparent;
+  padding: 0;
+}
+.world-body.focused .planet {
+  opacity: 1;
+  transform: none;
+}
+.world-body.dimmed {
+  opacity: 0.12;
+}
+.planet-ring {
+  position: absolute;
+  left: -11px;
+  top: 65px;
+  width: 230px;
+  height: 42px;
+  border: 5px double #9f97b231;
+  border-radius: 50%;
+  transform: rotate(-26deg);
+  z-index: 3;
+  pointer-events: none;
+}
+.new-world {
+  height: 360px;
+  width: 350px;
+}
+.empty-planet {
+  width: 310px;
+  height: 310px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #49618225, #1b2a4520 40%, #03060c88 75%);
+  border: 1px solid #7289b027;
+  box-shadow:
+    inset 7px 7px 22px #778eb112,
+    inset -15px -11px 45px #000b,
+    0 0 50px #7185b105;
+  transition:
+    border-color 0.4s,
+    box-shadow 0.4s;
+}
+.new-world.focused .empty-planet {
+  border-color: #9cb0d341;
+  box-shadow:
+    inset 7px 7px 22px #778eb121,
+    inset -15px -11px 45px #000b,
+    0 0 65px #7185b115;
+}
+.new-world .planet-name {
+  display: block;
+  max-width: none;
+  white-space: nowrap;
+  margin-top: 13px;
+  letter-spacing: 0.01em;
+  font-size: 12px;
+  font-weight: 450;
+  color: #8c97ac;
+  transform: scale(var(--label-scale, 1));
+  transform-origin: 50% 0;
+  transition:
+    color 0.16s,
+    opacity 0.16s;
+  pointer-events: none;
+}
+.world-core {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 106px;
+  height: 106px;
+  pointer-events: none;
+  opacity: 0.62;
+}
+.world-core img {
+  width: 100%;
+  height: 100%;
+}
+.surface-object {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 246px;
+  text-align: left;
+  color: #a6afbf;
+  cursor: inherit;
+}
+.surface-preview {
+  height: 145px;
+  border-radius: 15px;
+  border: 1px solid #bacbe222;
+  background: #111824dd;
+  box-shadow: 0 12px 30px #0004;
+  padding: 20px;
+  overflow: hidden;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.25s,
+    transform 0.3s var(--ease);
+}
+.surface-object > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 13px 5px 0;
+  font-size: 13px;
+}
+.surface-object.focused .surface-preview {
+  border-color: #c5d2e1;
+  box-shadow:
+    0 0 0 1px #c5d2e122,
+    0 12px 36px #0007;
+  transform: translateY(-2px);
+}
+.surface-object.focused > span {
+  color: #d2c7e7;
+}
+.mini-notes {
+  position: relative;
+  height: 100%;
+}
+.mini-notes i {
+  position: absolute;
+  width: 65px;
+  height: 46px;
+  top: 0;
+  left: 0;
+  background: #beac7725;
+  border: 1px solid #ddc88736;
+  border-radius: 5px;
+}
+.mini-notes i:nth-child(2) {
+  left: 105px;
+  top: 46px;
+  background: #b6a1d525;
+  border-color: #b6a1d536;
+}
+.mini-notes i:nth-child(3) {
+  left: 2px;
+  top: 73px;
+  height: 30px;
+  background: #88a1c21a;
+  border-color: #88a1c22a;
+}
+.mini-notes span {
+  position: absolute;
+  left: 65px;
+  top: 30px;
+  width: 52px;
+  height: 42px;
+  border-bottom: 1px solid #8c88a84d;
+  border-right: 1px solid #8c88a84d;
+  border-radius: 0 0 15px 0;
+}
+.mini-code {
+  font:
+    10px/1.9 Consolas,
+    monospace;
+  color: #8fa4b7;
+}
+.mini-code b {
+  color: #b9a2d3;
+  font-weight: 400;
+}
+.mini-code i {
+  color: #95acba;
+}
+.mini-chat {
+  display: grid;
+  grid-template-columns: 17px 1fr;
+  gap: 15px 12px;
+  margin: 8px;
+}
+.mini-chat i {
+  height: 17px;
+  border-radius: 50%;
+  background: #9996bd40;
+}
+.mini-chat span {
+  height: 5px;
+  margin-top: 5px;
+  background: #a1adbe25;
+  border-radius: 2px;
+  width: 90%;
+}
+.mini-chat span:nth-of-type(2) {
+  width: 60%;
+}
+.mini-chat div {
+  grid-column: 1/3;
+  height: 24px;
+  border: 1px solid #8c8da62e;
+  border-radius: 6px;
+}
+.mini-doc {
+  width: 106px;
+  padding: 14px;
+  margin: 0 auto;
+  background: #c4c7d510;
+  border: 1px solid #ffffff11;
+  min-height: 128px;
+  border-radius: 5px;
+}
+.mini-doc b,
+.mini-doc i {
+  display: block;
+  height: 3px;
+  margin-bottom: 11px;
+  border-radius: 2px;
+  background: #bbc5d726;
+}
+.mini-doc b {
+  height: 5px;
+  width: 60%;
+  margin-bottom: 20px;
+}
+.mini-board {
+  display: flex;
+  gap: 9px;
+  height: 105px;
+}
+.mini-board i {
+  flex: 1;
+  background: #afbad00a;
+  border: 1px solid #a6afca1c;
+  border-radius: 5px;
+  position: relative;
+}
+.mini-board i:before,
+.mini-board i:after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 14px;
+  height: 25px;
+  border-radius: 3px;
+  background: #a8acd41e;
+}
+.mini-board i:after {
+  top: 52px;
+  height: 19px;
+}
+.mini-board i:nth-child(2):after {
+  display: none;
+}
+.mini-agents {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.mini-agents i {
+  font: 12px inherit;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: #b294cc17;
+  border: 1px solid #b294cc33;
+  border-radius: 14px;
+  color: #b7a2c8;
+  font-style: normal;
+}
+.mini-agents i:nth-child(2) {
+  background: #819fcb17;
+  color: #99adcb;
+  border-color: #819fcb33;
+}
+.minimap-host {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  border: 1px solid #56627838;
+  border-radius: 13px;
+  background: #0a101ace;
+  box-shadow: 0 8px 35px #0004;
+  overflow: hidden;
+  backdrop-filter: blur(9px);
+}
+.minimap-canvas {
+  width: 220px;
+  height: 150px;
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
+.minimap-host:empty {
+  display: none;
+}
+@media (max-width: 700px) {
+  .minimap-host {
+    right: 14px;
+    bottom: 14px;
+  }
+  .minimap-canvas {
+    width: 176px;
+    height: 120px;
+  }
+  .surface-object {
+    width: 246px;
+  }
+}
+
+.distant .world-body:not(.focused) .planet-name {
+  opacity: 0;
+}
+
+.surface-object.focused > .surface-label {
+  transform: scale(var(--label-scale, 1));
+  transform-origin: 50% 0;
+  width: max-content;
+  max-width: none;
+  margin: 0 auto;
+}
+
+/* El fondo espacial persistente evita un rectángulo negro al escalar una escena. */
+body[data-mode='space'] #viewport {
+  background: #04070d;
+}
+.scene:has(> .space),
+.transition-ghost:has(> .space),
+.space {
+  background: transparent;
+}
+.stars {
+  opacity: 0.82;
+  background-image:
+    radial-gradient(1.35px 1.35px at 26px 43px, #e0e9ffbd 45%, transparent 90%),
+    radial-gradient(1.9px 1.9px at 130px 21px, #eaddbfa1 36%, transparent 85%),
+    radial-gradient(0.85px 0.85px at 231px 124px, #c0d5f5c9 48%, transparent 90%),
+    radial-gradient(1.05px 1.05px at 432px 331px, #e9e8ddac 48%, transparent 90%),
+    radial-gradient(2.2px 2.2px at 318px 166px, #ffe3ada3 25%, transparent 88%);
+  background-size:
+    573px 347px,
+    813px 743px,
+    479px 419px,
+    651px 913px,
+    1103px 927px;
+}
+.canvas-miniature {
+  width: 100%;
+  height: 105px;
+  display: block;
+  overflow: visible;
+}
+.canvas-miniature .mini-connections {
+  fill: none;
+  stroke: #a4b8cc;
+  stroke-width: 1.1;
+  opacity: 0.7;
+}
+.mini-note-art rect {
+  fill: #b8a27026;
+  stroke: #b8a27080;
+}
+.mini-note-art path {
+  stroke: #cab57c;
+  opacity: 0.6;
+}
+.mini-image-art rect {
+  fill: #6c99b62b;
+  stroke: #8aacbd66;
+}
+.mini-image-art path {
+  fill: none;
+  stroke: #94bec8;
+}
+.mini-image-art circle {
+  fill: #abc8d0;
+}
+.mini-file-art rect {
+  fill: #9a89b326;
+  stroke: #9a89b36b;
+}
+.mini-file-art path {
+  fill: none;
+  stroke: #c1afd4;
+  stroke-width: 1.2;
+}
+.mini-link-art rect {
+  fill: #8e9cb321;
+  stroke: #9aadc262;
+}
+.mini-link-art path {
+  fill: none;
+  stroke: #bbcada;
+  stroke-width: 1.1;
+}
+
+svg.canvas-miniature {
+  position: relative;
+}
+svg.canvas-miniature path {
+  vector-effect: non-scaling-stroke;
+}
+
+/* El HUD pertenece al viewport y queda fuera de las transformaciones de escena. */
+#viewport-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+#viewport-hud .minimap-host {
+  pointer-events: auto;
+}
+#viewport-hud .minimap-host[data-map-state='leaving'] {
+  pointer-events: none;
+}
+
+/* Proyección esférica, atmósfera ajustada a la escala y etiquetas estables. */
+.space-backdrop,
+.planet-renderer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.space-backdrop.stars {
+  opacity: 1;
+  background: none;
+}
+.planet-renderer {
+  z-index: 1;
+}
+.space-plane {
+  z-index: 2;
+}
+.world-body[data-live-globe='true'] .planet {
+  visibility: hidden;
+}
+.atmosphere {
+  position: absolute;
+  width: 194px;
+  height: 194px;
+  left: 22px;
+  top: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: var(--capture, 0);
+  border: 0;
+  transform: none;
+  background: transparent;
+  box-shadow:
+    0 0 2px 1px #a8c7eb38,
+    inset 2px 0 3px #a8c7eb28;
+}
+.world-body[data-live-globe='true'] .atmosphere {
+  box-shadow: none;
+}
+.world-body .planet-name,
+.new-world .planet-name {
+  position: absolute;
+  left: 50%;
+  top: 208px;
+  margin: 0;
+  max-width: 310px;
+  white-space: nowrap;
+  transform: translateX(-50%) scale(var(--label-scale, 1));
+  transform-origin: 50% 0;
+  line-height: 1.4;
+  text-shadow:
+    0 1px 4px #020409,
+    0 0 6px #020409;
+  letter-spacing: 0.012em;
+}
+.new-world .planet-name {
+  top: 388px;
+}
+.distant .world-body.focused .planet-name {
+  font-size: 12px;
+}
+.world-body:hover .planet-name {
+  color: #eef3fa;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .planet-renderer {
+    transition: none;
+  }
+}
+
+/* Chromium debe rasterizar las etiquetas tras cambiar la escala para conservar su nitidez. */
+.space:has(.planet-renderer) .space-plane {
+  will-change: auto;
+}

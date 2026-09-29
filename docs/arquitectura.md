@@ -57,6 +57,8 @@ El estado del prototipo vive en memoria durante la sesión de la página. La rec
 - Extraer un módulo cuando tenga una responsabilidad concreta o se comparta una misma regla. Evitar capas anticipadas sin consumidor.
 - Las imágenes se mantienen como archivos; el build las incorpora al HTML. Sus hashes de recuperación están en `docs/asset-manifest.json`.
 
-## Trabajo pendiente de presentación
+## Estilos y plantillas
 
-La hoja de estilos conserva el orden de cascada recuperado. Su organización final y las plantillas de render deben revisarse junto con la comparación visual del navegador. La separación técnica actual permite continuar ese trabajo sin atribuirle una aprobación visual.
+Cada funcionalidad conserva sus estilos en `src/features/`. `src/styles/` reúne fundamentos, shell, controles compartidos y reglas de adaptación que afectan a varias vistas. `main.css` declara las importaciones en el orden de cascada recuperado; los módulos complementarios conservan los ajustes que dependen de ese orden.
+
+Las vistas coordinan eventos y estado local. Las plantillas con una responsabilidad separable, como la página y la lista de Docs, reciben datos de presentación y producen el marcado. Las reglas de dominio permanecen fuera de esas plantillas.

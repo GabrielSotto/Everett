@@ -1,0 +1,156 @@
+/* Composer centrado con activador fijo en el lateral. */
+.composer {
+  position: relative;
+  background: var(--raised);
+  border: 1px solid #8ea3b333;
+  border-radius: 20px;
+  padding: 17px 17px 12px;
+  box-shadow: 0 12px 36px #0d152322;
+}
+.composer:focus-within {
+  border-color: #bba6d96b;
+  box-shadow: 0 14px 38px #131b2a33;
+}
+.composer textarea {
+  color: var(--text);
+  min-height: 37px;
+  max-height: 130px;
+  line-height: 1.65;
+  padding: 0;
+}
+.composer-bottom {
+  margin-top: 13px;
+}
+.composer .send {
+  background: #bba9db;
+  color: #26303f;
+  width: 30px;
+  height: 30px;
+}
+.composer .send:hover {
+  background: #d3c2ef;
+}
+.composer .context-chip {
+  color: var(--muted);
+}
+.composer-send {
+  gap: 8px !important;
+}
+.code-fab-anchor {
+  position: fixed;
+  right: 26px;
+  left: auto;
+  bottom: 28px;
+  width: 49px;
+  height: 49px;
+  z-index: 20;
+  --composer-width: 460px;
+  --composer-left: -640px;
+  --composer-origin-x: 120px;
+}
+.agent-fab {
+  background: #3c4b61;
+  border: 1px solid #a9a5cb44;
+  color: #d0bdec;
+  border-radius: 17px;
+  box-shadow: 0 7px 22px #111a2733;
+}
+.agent-fab.active {
+  background: #574f70;
+  color: #e0cef4;
+}
+.agent-fab:hover {
+  background: #4b536d;
+  color: #e0cef4;
+  transform: translateY(-1px);
+}
+.composer-reveal {
+  position: absolute;
+  left: var(--composer-left);
+  right: auto;
+  bottom: var(--composer-bottom, 0px);
+  width: var(--composer-width);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: none;
+  transform-origin: 0 0;
+  clip-path: none;
+  overflow: visible;
+  transition: none;
+  background: var(--raised);
+  border-radius: 20px;
+  box-shadow: 0 12px 36px #0d152322;
+}
+.composer-reveal.open {
+  width: var(--composer-width);
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  clip-path: none;
+  transition: none;
+}
+.composer-reveal > .composer {
+  width: 100%;
+  margin: 0;
+  box-shadow: none;
+}
+.agent-response {
+  position: absolute;
+  left: var(--composer-left);
+  right: auto;
+  bottom: calc(150px + var(--composer-bottom, 0px));
+  width: var(--composer-width);
+  max-height: min(300px, 40vh);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 18px;
+  box-shadow: 0 15px 40px #111a2733;
+  animation: response-arrive 0.22s var(--ease-out);
+}
+@keyframes response-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-action='dictate'].listening {
+  color: #f1b8c4;
+  background: #bc64702a;
+  box-shadow: 0 0 0 3px #bc647011;
+}
+.dictation-consent {
+  position: absolute;
+  z-index: 42;
+  bottom: calc(100% + 10px);
+  right: 0;
+  width: min(320px, 100%);
+  padding: 17px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: 0 16px 45px #10182744;
+}
+.dictation-consent p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.dictation-consent > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 14px;
+}
+.dictation-consent button {
+  font-size: 11px;
+  color: var(--text);
+  padding: 5px 0;
+}

@@ -1,0 +1,117 @@
+/* Session y panel lateral compartido */
+.session-layout {
+  position: relative;
+  background: var(--surface);
+}
+.session-actions {
+  position: absolute;
+  top: 16px;
+  right: 19px;
+  z-index: 24;
+}
+.conversation {
+  min-width: 0;
+}
+.empty-conversation {
+  justify-content: center;
+  padding: 18vh 0 0;
+}
+.empty-conversation .conversation-stream {
+  flex: 0 0 auto;
+  padding: 0 24px 31px;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.empty-conversation h1 {
+  color: var(--text);
+  font-size: 30px;
+  letter-spacing: -1px;
+  font-weight: 430;
+}
+.session-compose {
+  position: relative;
+  width: min(520px, calc(100% - 48px));
+  max-width: 520px;
+  margin: 0 auto 30px;
+  flex-shrink: 0;
+}
+.empty-conversation .session-compose {
+  margin: 0 auto;
+  max-width: 520px;
+}
+.conversation-stream {
+  padding: 60px max(24px, calc((100% - 680px) / 2)) 20px;
+}
+.message.user {
+  background: #53607469;
+}
+.aux-slot {
+  width: 354px;
+  min-width: 300px;
+  max-width: 42%;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+  animation: slot-arrive 0.28s var(--ease-out);
+  overflow: hidden;
+}
+@keyframes slot-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+    clip-path: inset(0 0 0 18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0);
+  }
+}
+.slot-head {
+  min-height: 63px;
+  height: 63px;
+  padding: 0 15px;
+  background: var(--panel);
+}
+.slot-selector {
+  display: flex;
+  gap: 4px;
+}
+.session-layout .slot-head {
+  padding-right: 60px;
+}
+.slot-body {
+  background: var(--panel);
+  padding: 20px;
+}
+.slot-files button {
+  color: var(--text);
+}
+.preview-page {
+  background: #354957;
+  padding: 27px 20px;
+}
+.preview-page p,
+.terminal-log {
+  color: var(--muted);
+}
+.browser-start {
+  height: 240px;
+  display: grid;
+  place-items: center;
+  color: var(--subtle);
+}
+.browser-link {
+  padding: 32px 10px;
+}
+.browser-link h3 {
+  margin: 18px 0;
+  font-weight: 500;
+}
+.browser-link a {
+  display: flex;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 12px;
+}

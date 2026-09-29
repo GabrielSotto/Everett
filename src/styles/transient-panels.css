@@ -1,0 +1,231 @@
+/* Paneles transitorios con la paleta y controles compartidos. */
+.proposal {
+  background: #394d59;
+  color: #e7edf2;
+  border: 1px dashed #acbbd6aa;
+  box-shadow: 0 12px 32px #111d2840;
+  opacity: 0.94;
+}
+.proposal > p {
+  color: #e7edf2;
+  line-height: 1.7;
+}
+.proposal .icon-button {
+  color: #d6c9ec;
+}
+.proposal textarea {
+  color: var(--text);
+  background: #304451;
+}
+.chat-handle {
+  background: #30424f;
+  color: #e2eaf1;
+  border-color: var(--line);
+}
+.chat-handle .icon-button {
+  color: #ccdbe7;
+}
+.chat-presence {
+  color: #e2eaf1;
+}
+#scene[data-tool='hand'],
+#scene[data-tool='hand'] .canvas-stage,
+#scene[data-tool='hand'] .canvas-stage * {
+  cursor: grab;
+}
+#scene.panning,
+#scene.panning .canvas-stage,
+#scene.panning .canvas-stage * {
+  cursor: grabbing !important;
+}
+#scene[data-tool='note'],
+#scene[data-tool='zone'],
+#scene[data-tool='rectangle'],
+#scene[data-tool='ellipse'],
+#scene[data-tool='triangle'],
+#scene[data-tool='star'],
+#scene[data-tool='connect'] {
+  cursor: crosshair;
+}
+#scene .canvas-tools,
+#scene .zone-inspector,
+#scene .chat-host {
+  cursor: default;
+}
+#scene .canvas-tools button,
+#scene .zone-inspector button,
+#scene .chat-host button {
+  cursor: pointer;
+}
+#scene.panning {
+  user-select: none;
+}
+.release-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 130px;
+  color: #d3c2e9;
+}
+.release-heading span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.release-heading strong {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text);
+}
+.release-stats {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.release-stat {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  color: var(--muted);
+}
+.release-stat strong {
+  font-size: 21px;
+  font-weight: 450;
+  color: var(--text);
+}
+.release-stat.blocker strong {
+  color: #e6b9b0;
+}
+.release-progress {
+  flex: 1;
+  max-width: 180px;
+  height: 5px;
+  background: #8992b129;
+  margin-left: auto;
+}
+.release-progress i {
+  transition: width 0.3s var(--ease-out);
+}
+.execution-detail dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 9px 16px;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 12px 0;
+}
+.execution-detail dt {
+  color: var(--subtle);
+}
+.execution-detail dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.execution-detail code {
+  user-select: text;
+}
+.run-chart rect {
+  cursor: pointer;
+}
+.run-chart rect:hover {
+  opacity: 1;
+}
+.profile-pop {
+  width: 370px;
+  max-width: calc(100vw - 24px);
+  border-radius: 20px;
+  padding: 24px;
+  gap: 20px;
+}
+.profile-identity {
+  align-items: center;
+  min-width: 0;
+}
+.profile-identity > div {
+  min-width: 0;
+}
+.profile-identity strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-height: 70px;
+  overflow: auto;
+}
+.profile-identity small {
+  display: block;
+  line-height: 1.6;
+}
+.profile-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #aa94ce20;
+  box-shadow: inset 0 0 0 1px #b5a3cf2b;
+}
+.profile-field {
+  display: grid;
+  gap: 9px;
+}
+.profile-field label {
+  color: var(--subtle);
+  font-size: 10px;
+  letter-spacing: 0.025em;
+}
+.profile-pop #profile-name {
+  font-size: 17px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.profile-pop textarea {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: 115px;
+  max-height: 220px;
+  background: #25354140;
+}
+.profile-counter {
+  text-align: right;
+  color: var(--subtle);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.profile-pop .preference-line {
+  display: grid;
+  gap: 12px;
+}
+.profile-pop select {
+  max-width: none;
+  width: 100%;
+  padding: 10px;
+}
+.world-count-details {
+  color: var(--subtle);
+  font-size: 10px;
+  line-height: 1.6;
+}
+@media (max-width: 700px) {
+  .shipping-summary {
+    padding: 12px 18px;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .release-heading {
+    min-width: 100px;
+  }
+  .release-stats {
+    gap: 12px;
+  }
+  .release-progress {
+    max-width: 100%;
+    width: 100%;
+    flex-basis: 100%;
+  }
+  .composer-reveal {
+    max-width: none;
+  }
+  .empty-conversation {
+    padding-top: 12vh;
+  }
+}

@@ -1,0 +1,117 @@
+/* Code: un único contenedor desplazable mantiene alineada la comparación. */
+.code-layout,
+.code-main,
+.editor-body,
+.editor-surface {
+  background: var(--surface);
+  min-height: 0;
+}
+.file-tree {
+  background: #263643;
+  border-color: var(--line);
+}
+.editor-toolbar,
+.code-status {
+  background: #2b3a49;
+  border-color: var(--line);
+}
+.file-entry.selected {
+  background: #85779e26;
+  color: #ded1f0;
+}
+.editor-surface textarea {
+  color: transparent !important;
+  caret-color: var(--text);
+}
+.editor-surface pre {
+  color: #d0dce5;
+}
+.syntax-keyword {
+  color: #c5b0ea;
+}
+.syntax-string {
+  color: #acd0bd;
+}
+.syntax-number {
+  color: #e0c2a2;
+}
+.syntax-comment {
+  color: #849caa;
+}
+.diff {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: block;
+  background: #293a46;
+}
+.diff-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-width: 640px;
+  height: 39px;
+  background: #304351;
+  border-bottom: 1px solid var(--line);
+}
+.diff-header span {
+  padding: 12px 22px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.diff-lines {
+  min-width: 640px;
+  width: max-content;
+  min-width: 100%;
+  display: table;
+  table-layout: fixed;
+}
+.diff-row {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  min-height: 25px;
+}
+.diff-cell {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 14px;
+  line-height: 25px;
+  border-right: 1px solid var(--line);
+}
+.diff-number {
+  min-width: 43px;
+  text-align: right;
+  font:
+    10px/25px Consolas,
+    monospace;
+  color: #8299ac;
+  user-select: none;
+}
+.diff-cell code {
+  font:
+    12px/25px Consolas,
+    monospace;
+  white-space: pre;
+  padding-right: 30px;
+  color: #d5e0e9;
+}
+.diff-cell.added {
+  background: #57997b22;
+}
+.diff-cell.removed {
+  background: #b4697221;
+}
+.diff-review {
+  background: #3b475e;
+  color: var(--muted);
+  border-color: var(--line);
+}
+.code-layout > .aux-slot {
+  position: relative;
+  flex-shrink: 0;
+  top: auto;
+  bottom: auto;
+}

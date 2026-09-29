@@ -1,0 +1,83 @@
+/* Los límites adaptables conservan el acceso al botón y al área de trabajo. */
+@media (max-width: 760px) {
+  .global-search.open {
+    position: absolute;
+    left: auto;
+    right: 48px;
+    top: 10px;
+    width: min(230px, calc(100vw - 150px));
+    z-index: 52;
+    background: var(--panel);
+  }
+  .shell:has(.global-search.open) > .profile-button {
+    visibility: visible;
+  }
+  .shell:has(.global-search.open) > .icon-button {
+    visibility: hidden;
+  }
+  .shell .location input {
+    max-width: 135px;
+  }
+  .aux-slot {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    max-width: none;
+    width: min(354px, 85%);
+    min-width: 0;
+    z-index: 22;
+  }
+  .code-fab-anchor {
+    position: fixed;
+    right: 18px;
+    left: auto;
+    bottom: 22px;
+  }
+  .code-layout > .aux-slot {
+    position: absolute;
+    top: 44px;
+    bottom: 30px;
+  }
+  .shipping-control > span:first-child {
+    font-size: 10px;
+  }
+  .board-toolbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 65px;
+    padding: 12px;
+  }
+  .shipping-control {
+    margin-left: auto;
+  }
+  .empty-conversation h1 {
+    font-size: 27px;
+  }
+  .session-compose,
+  .empty-conversation .session-compose {
+    width: calc(100% - 38px);
+    max-width: 500px;
+  }
+  .operation-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .operation-charts {
+    grid-template-columns: 1fr;
+  }
+  .zone-inspector {
+    width: 240px;
+    right: 12px;
+  }
+  .session-actions {
+    right: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer-reveal,
+  .aux-slot,
+  .agent-response {
+    transition-duration: 0.05s;
+    animation-duration: 0.05s;
+  }
+}
