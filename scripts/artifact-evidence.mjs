@@ -49,6 +49,16 @@ export async function verifyBuild(root) {
   return manifest;
 }
 
+export async function verifyServedArtifact(url, manifest) {
+  if (!url || !['http:', 'https:'].includes(new URL(url).protocol))
+    throw new Error('EVERETT_TEST_URL debe indicar el HTML mediante HTTP(S).');
+  const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+  if (!response.ok) throw new Error(`El servidor devolvió HTTP ${response.status}.`);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length !== manifest.bytes || sha256(bytes) !== manifest.sha256)
+    throw new Error('El servidor no entrega el HTML del build actual.');
+}
+
 export function verifyRunIdentity(result, expected) {
   if (!result || result.runId !== expected.runId || result.version !== expected.version)
     throw new Error('La evidencia pertenece a otra ejecución o versión.');

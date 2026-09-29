@@ -11,15 +11,15 @@ import {
 
 test('HARNESS-08: rechaza cifras, fechas y capturas del informe distintas de la ejecución', async () => {
   const root = await mkdtemp(join(tmpdir(), 'everett-delivery-'));
-  const browserPath = 'output/browser/browser-run/results.json';
-  const unitPath = 'output/unit/unit-run/result.json';
-  const directory = 'output/delivery/browser-run';
+  const browserPath = 'output/pruebas/navegador/browser-run/results.json';
+  const unitPath = 'output/pruebas/unitarias/unit-run/result.json';
+  const directory = 'output/informe';
   const encoded = (value) => Buffer.from(JSON.stringify(value)).toString('base64');
   try {
     for (const path of [
       'dist',
-      'output/browser/browser-run',
-      'output/unit/unit-run',
+      'output/pruebas/navegador/browser-run',
+      'output/pruebas/unitarias/unit-run',
       directory + '/images',
     ])
       await mkdir(join(root, path), { recursive: true });
@@ -93,6 +93,7 @@ test('HARNESS-08: rechaza cifras, fechas y capturas del informe distintas de la 
     await writeFile(join(root, browserPath), JSON.stringify(browser));
     await writeFile(join(root, unitPath), JSON.stringify(unit));
     const evidence = await deliveryEvidence(root, browserPath, unitPath);
+    assert.match(evidence.images[0].path, /recorrido-real-screenshot\.png$/);
     const summaryPath = join(root, directory, 'summary.json');
     const reportPath = join(root, directory, 'informe.md');
     const summary = JSON.stringify(evidence.summary);
@@ -102,7 +103,7 @@ test('HARNESS-08: rechaza cifras, fechas y capturas del informe distintas de la 
     for (const image of evidence.images)
       await writeFile(join(root, directory, image.path), image.bytes);
     await verifyDeliveryReport(root, directory, evidence);
-    assert.match(markdown, /\[HTML\]\(\.\.\/\.\.\/\.\.\/dist\/Everett-0\.7\.5\.html\)/);
+    assert.match(markdown, /\[HTML\]\(\.\.\/\.\.\/dist\/Everett-0\.7\.5\.html\)/);
     await writeFile(summaryPath, summary.replace('"cases":1', '"cases":99'));
     await assert.rejects(verifyDeliveryReport(root, directory, evidence), /resumen/);
     await writeFile(summaryPath, summary);

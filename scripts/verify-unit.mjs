@@ -1,3 +1,4 @@
+import { latestTestResult } from './output-runs.mjs';
 import { glob, readFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -5,7 +6,7 @@ import { verifyRunIdentity, verifySourceHashes } from './artifact-evidence.mjs';
 import { parseTapSummary } from './test-evidence.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const path = process.argv[2];
+const path = process.argv[2] ?? (await latestTestResult(root, 'unitarias'));
 if (!path) throw new Error('Indicá el result.json de la ejecución que querés comprobar.');
 const reportPath = resolve(root, path);
 const result = JSON.parse(await readFile(reportPath, 'utf8'));

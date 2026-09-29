@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -9,8 +11,34 @@ import {
   verifyRunIdentity,
   verifySourceHashes,
   inside,
+  verifyServedArtifact,
 } from '../../scripts/artifact-evidence.mjs';
 import { runProcess } from '../../scripts/run-process.mjs';
+
+test('HARNESS-12: rechaza un servidor detenido, un error HTTP y un HTML distinto antes de abrir el navegador', async () => {
+  const html = '<html>artefacto actual</html>';
+  const manifest = { bytes: Buffer.byteLength(html), sha256: sha256(html) };
+  let content = html;
+  let status = 200;
+  const server = createServer((_, response) => {
+    response.writeHead(status, { 'Content-Type': 'text/html', Connection: 'close' });
+    response.end(content);
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const url = `http://127.0.0.1:${server.address().port}/`;
+  try {
+    await verifyServedArtifact(url, manifest);
+    content = '<html>otro artefacto</html>';
+    await assert.rejects(verifyServedArtifact(url, manifest), /build actual/);
+    status = 404;
+    await assert.rejects(verifyServedArtifact(url, manifest), /HTTP 404/);
+    await assert.rejects(verifyServedArtifact('file:///prototipo.html', manifest), /HTTP/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+  await assert.rejects(verifyServedArtifact(url, manifest), /fetch failed/);
+});
 
 test('HARNESS-04: detecta procesos que no inician o exceden su tiempo y los finaliza', async () => {
   const missing = await runProcess('everett-nonexistent-command-92b6', [], { timeoutMs: 1000 });
