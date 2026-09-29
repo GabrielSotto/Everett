@@ -1,7 +1,7 @@
 import type { Context } from '../../app/context';
 import { html, target, value, preserveFocus, type View } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
-import { composer, bindComposer, preserveComposerDrafts } from '../../ui/composer';
+import { contextualComposer, bindComposer, preserveComposerDrafts } from '../../ui/composer';
 import { agentOverview, agentStatus, formatDuration } from './overview';
 import { ComposerDisclosure } from '../../ui/disclosure';
 export class AgentsView implements View {
@@ -117,7 +117,10 @@ export class AgentsView implements View {
           const text = value(root, '#agent-composer-input');
           if (!text.trim() || this.busy) return;
           const field = root.querySelector<HTMLTextAreaElement>('#agent-composer-input');
-          if (field) field.value = '';
+          if (field) {
+            field.value = '';
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+          }
           this.busy = true;
           void ctx.service
             .talk(ctx.world().id, a.id, text)
@@ -198,7 +201,7 @@ export class AgentsView implements View {
         : tab === 'memory'
           ? `<div class="memory-grid">${a.memory.map((m, i) => `<article class="memory-note">${icon('pin', 15)}<p>${html(m)}</p>${btn('memory-remove', 'close', 'Quitar nota', `data-index="${i}"`)}</article>`).join('')}</div><form id="memory-add"><input id="memory-input" aria-label="Fijar contexto" placeholder="Fijar una nota…"><button type="submit" class="icon-button" aria-label="Guardar nota">${icon('plus')}</button></form>`
           : `<div class="capabilities">${a.capabilities.map((cap) => `<div>${icon('check', 16)}<span>${html(cap)}</span></div>`).join('')}</div>`
-    }</div></div><div class="code-fab-anchor"><button class="agent-fab ${this.talk ? 'active' : ''}" data-action="agent-talk" aria-label="Hablar con ${html(a.name)}" aria-expanded="${this.talk}" data-tip="Hablar con ${html(a.name)}">${icon('session', 21)}</button><div class="composer-reveal ${this.talk ? 'open' : ''}" ${this.talk ? '' : 'inert'}>${composer('agent-composer', 'Conversá con ' + a.name + '…')}</div>${this.answer ? `<div class="agent-response"><div class="response-close">${btn('response-close', 'close', 'Cerrar respuesta')}</div><p>${html(this.answer)}</p></div>` : ''}</div>`;
+    }</div></div><div class="code-fab-anchor"><button class="agent-fab ${this.talk ? 'active' : ''}" data-action="agent-talk" aria-label="Hablar con ${html(a.name)}" aria-expanded="${this.talk}" data-tip="Hablar con ${html(a.name)}">${icon('session', 21)}</button><div class="composer-reveal ${this.talk ? 'open' : ''}" ${this.talk ? '' : 'inert'}>${contextualComposer(this.ctx, 'agent-composer', 'Conversá con ' + a.name + '…', false, '', a.id)}</div>${this.answer ? `<div class="agent-response"><div class="response-close">${btn('response-close', 'close', 'Cerrar respuesta')}</div><p>${html(this.answer)}</p></div>` : ''}</div>`;
     restoreDraft();
     restoreFocus();
     this.disclosure.sync(this.talk);

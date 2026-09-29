@@ -35,6 +35,8 @@ Cada funcionalidad define su estado transitorio: selección de Canvas, archivo a
 
 El contenido del proyecto se modifica mediante comandos. La interfaz conserva por separado sus controles abiertos, selección y borradores. Un render no debe reponer texto ya enviado ni perder una edición en curso.
 
+Los borradores de composers se identifican por Mundo, formulario y contexto (archivo, documento o agente). Se conservan al desmontar una superficie y se vacían al enviar. Los cambios de contexto recuperan su propio borrador.
+
 ## Navegación y presentación
 
 El dominio conserva ruta y contextos de regreso con sus cámaras. La cámara espacial interpreta los gestos usando los parámetros de `src/spatial/tuning.ts`. Las transiciones animan el cambio ya confirmado y conservan el contexto visual de salida.

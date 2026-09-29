@@ -8,6 +8,7 @@ import { createBoardUi, type BoardUi } from '../features/board/state';
 import { createAgentsUi, type AgentsUi } from '../features/agents/state';
 
 export interface Ui {
+  composerDrafts: Record<string, string>;
   shell: ShellUi;
   canvas: CanvasUi;
   chat: ChatUi;
@@ -20,6 +21,7 @@ export interface Ui {
 
 export function uiState(): Ui {
   return {
+    composerDrafts: {},
     shell: createShellUi(),
     canvas: createCanvasUi(),
     chat: createChatUi(),

@@ -3,7 +3,7 @@ import type { Context } from '../../app/context';
 import { target, value, type View } from '../../ui/dom';
 import { docsPresentation } from './presentation';
 import { ComposerDisclosure } from '../../ui/disclosure';
-import { bindComposer, preserveComposerDrafts } from '../../ui/composer';
+import { bindComposer, preserveComposerDrafts, composerDraft } from '../../ui/composer';
 export class DocsView implements View {
   private abort = new AbortController();
   private resize = new ResizeObserver(() => this.resizeBody());
@@ -134,7 +134,10 @@ export class DocsView implements View {
           const text = value(root, '#doc-composer-input').trim();
           if (d && text && !this.busy) {
             const input = root.querySelector<HTMLTextAreaElement>('#doc-composer-input');
-            if (input) input.value = '';
+            if (input) {
+              input.value = '';
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
             if (parseShippingIntent(text)) {
               this.busy = true;
               void ctx.service
@@ -185,6 +188,7 @@ export class DocsView implements View {
       listOpen: this.ctx.ui.docs.docsList,
       aiOpen: this.aiOpen,
       response: this.response,
+      draft: composerDraft(this.ctx, 'doc-composer', d?.id ?? ''),
     });
     this.resizeBody();
     this.displayedDocument = d?.id ?? null;

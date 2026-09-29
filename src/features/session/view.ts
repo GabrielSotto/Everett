@@ -1,11 +1,10 @@
 import type { Context } from '../../app/context';
 import { html, target, value, preserveFocus, type View } from '../../ui/dom';
 import { btn } from '../../ui/icons';
-import { composer, bindComposer } from '../../ui/composer';
+import { contextualComposer, bindComposer, preserveComposerDrafts } from '../../ui/composer';
 import { slot, tools, slotToggle, bindSlot } from '../../ui/slot';
 export class SessionView implements View {
   private abort = new AbortController();
-  private draft = '';
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -13,22 +12,17 @@ export class SessionView implements View {
     bindComposer(root, this.abort.signal, ctx);
     bindSlot(root, ctx, this.abort.signal);
     root.addEventListener(
-      'input',
-      (e) => {
-        if (e.target instanceof HTMLTextAreaElement && e.target.id === 'session-composer-input')
-          this.draft = e.target.value;
-      },
-      { signal: this.abort.signal },
-    );
-    root.addEventListener(
       'submit',
       (e) => {
         if (e.target instanceof HTMLFormElement && e.target.id === 'session-composer') {
           e.preventDefault();
           const text = value(root, '#session-composer-input');
           const ta = root.querySelector<HTMLTextAreaElement>('#session-composer-input');
-          if (ta) ta.value = '';
-          this.draft = '';
+          if (ta) {
+            ta.value = '';
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+
           if (/preview|terminal|browser|navegador|im[aá]gen|archivos|repo/i.test(text)) {
             ctx.ui.auxiliary.slot = /terminal/i.test(text)
               ? 'terminal'
@@ -93,10 +87,10 @@ export class SessionView implements View {
   }
   render(): void {
     const w = this.ctx.world(),
-      restore = preserveFocus(this.root);
-    this.root.innerHTML = `<div class="session-layout"><div class="session-actions">${slotToggle(this.ctx)}</div><div class="conversation ${w.messages.length ? 'has-messages' : 'empty-conversation'}"><div class="conversation-stream">${w.messages.length ? w.messages.map((m) => `<article class="message ${m.role}">${m.role === 'agent' ? '<div class="message-author">' + html(m.name) + '</div>' : ''}<div class="message-text">${html(m.text).replace(/(@[\wáéíóú]+)/g, '<span class="mention">$1</span>')}</div>${m.plan ? `<div class="plan">${m.plan.map((t) => `<p>${html(t)}</p>`).join('')}<div>${btn('plan-board', 'board', 'Enviar tareas a Board', `data-id="${m.id}"`)}${btn('message-doc', 'docs', 'Guardar en Docs', `data-id="${m.id}"`)}</div></div>` : ''}</article>`).join('') : '<h1>¿Por dónde seguimos?</h1>'}</div><div class="session-compose">${tools(this.ctx)}${composer('session-composer', 'Escribí lo que tenés en mente…', true)}</div></div>${slot(this.ctx, false)}</div>`;
-    const draftInput = this.root.querySelector<HTMLTextAreaElement>('#session-composer-input');
-    if (draftInput) draftInput.value = this.draft;
+      restore = preserveFocus(this.root),
+      restoreDraft = preserveComposerDrafts(this.root);
+    this.root.innerHTML = `<div class="session-layout"><div class="session-actions">${slotToggle(this.ctx)}</div><div class="conversation ${w.messages.length ? 'has-messages' : 'empty-conversation'}"><div class="conversation-stream">${w.messages.length ? w.messages.map((m) => `<article class="message ${m.role}">${m.role === 'agent' ? '<div class="message-author">' + html(m.name) + '</div>' : ''}<div class="message-text">${html(m.text).replace(/(@[\wáéíóú]+)/g, '<span class="mention">$1</span>')}</div>${m.plan ? `<div class="plan">${m.plan.map((t) => `<p>${html(t)}</p>`).join('')}<div>${btn('plan-board', 'board', 'Enviar tareas a Board', `data-id="${m.id}"`)}${btn('message-doc', 'docs', 'Guardar en Docs', `data-id="${m.id}"`)}</div></div>` : ''}</article>`).join('') : '<h1>¿Por dónde seguimos?</h1>'}</div><div class="session-compose">${tools(this.ctx)}${contextualComposer(this.ctx, 'session-composer', 'Escribí lo que tenés en mente…', true)}</div></div>${slot(this.ctx, false)}</div>`;
+    restoreDraft();
     restore();
     const stream = this.root.querySelector('.conversation-stream');
     if (stream && w.messages.length) stream.scrollTop = stream.scrollHeight;

@@ -2,7 +2,7 @@ import type { Document, WorldSnapshot } from '../../domain/model';
 import type { DeepReadonly } from '../../domain/readonly';
 import { html } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
-import { composer } from '../../ui/composer';
+import { composer, type ComposerDraft } from '../../ui/composer';
 
 interface DocsPresentation {
   world: WorldSnapshot;
@@ -10,6 +10,7 @@ interface DocsPresentation {
   listOpen: boolean;
   aiOpen: boolean;
   response: string;
+  draft: ComposerDraft;
 }
 
 function createActions(): string {
@@ -35,13 +36,14 @@ export function docsPresentation({
   listOpen,
   aiOpen,
   response,
+  draft,
 }: DocsPresentation): string {
   const list = listOpen
     ? `<aside class="docs-list"><div class="document-actions">${createActions()}</div>${world.docs.map((doc) => `<button data-action="doc-open" data-id="${doc.id}" class="${doc.id === document?.id ? 'selected' : ''}">${icon(doc.sheet ? 'table' : 'docs', 15)}<span>${html(doc.title)}</span></button>`).join('')}</aside>`
     : '';
   const assistant = `<div class="code-fab-anchor">
     <button class="agent-fab" data-action="doc-ai" aria-label="Asistente de escritura" data-tip="Asistente de escritura" aria-expanded="${aiOpen}">${icon('agents', 21)}</button>
-    <div class="composer-reveal ${aiOpen ? 'open' : ''}" ${aiOpen ? '' : 'inert'}>${composer('doc-composer', 'Trabajá sobre este documento…')}</div>
+    <div class="composer-reveal ${aiOpen ? 'open' : ''}" ${aiOpen ? '' : 'inert'}>${composer('doc-composer', 'Trabajá sobre este documento…', false, '', draft)}</div>
     ${response ? `<div class="agent-response"><p>${html(response)}</p>${btn('doc-insert', 'check', 'Incorporar al documento')}</div>` : ''}
   </div>`;
   return `<div class="docs-layout">${list}<div class="document-main">
