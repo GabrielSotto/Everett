@@ -8,6 +8,7 @@
   user-select: none;
   -webkit-user-select: none;
 }
+.dragging:has(> .space),
 .dragging .space {
   cursor: grabbing;
 }
@@ -198,14 +199,6 @@
 
 .distant .world-body:not(.focused) .planet-name {
   opacity: 0;
-}
-
-.surface-object.focused > .surface-label {
-  transform: scale(var(--label-scale, 1));
-  transform-origin: 50% 0;
-  width: max-content;
-  max-width: none;
-  margin: 0 auto;
 }
 
 /* El fondo espacial persistente evita un rectángulo negro al escalar una escena. */

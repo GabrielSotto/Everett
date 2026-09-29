@@ -13,12 +13,12 @@ import { Minimap } from '../../spatial/minimap';
 import { reducedMotion } from '../../ui/motion';
 import { navigationTuning } from '../../spatial/tuning';
 export const surfacePositions: Record<Surface, Point> = {
-  session: { x: -340, y: -185 },
-  canvas: { x: 345, y: -185 },
-  docs: { x: 370, y: 150 },
-  code: { x: -355, y: 155 },
-  board: { x: 15, y: 340 },
-  agents: { x: 5, y: -425 },
+  session: { x: -425, y: -230 },
+  canvas: { x: 430, y: -230 },
+  docs: { x: 465, y: 190 },
+  code: { x: -445, y: 195 },
+  board: { x: 20, y: 425 },
+  agents: { x: 5, y: -530 },
 };
 export function worldMatches(
   ctx: Context,
