@@ -40,15 +40,15 @@ Secuencia mínima recuperada del acuerdo:
 
 Cada requisito debe tener un identificador estable y casos asociados. Cada caso registra:
 
-| Campo | Evidencia necesaria |
-|---|---|
-| Requisito e intención | Qué necesidad del usuario o contrato demuestra. |
-| Preparación | Datos iniciales, versión, entorno y condiciones reproducibles. |
-| Acción | Controles visibles, atajos, arrastres y secuencia exacta del recorrido. |
-| Resultado observable | Qué datos, contenido y representación debe percibir el usuario. |
-| Contraejemplo | Qué resultado sería incorrecto y cómo detectarlo. |
-| Evidencia | Salida de ejecución y, según el caso, logs, errores, capturas y trazas vinculados al identificador. |
-| Estado | Aprobado, fallido, pendiente, bloqueado u omitido, con motivo y ejecución correspondiente. |
+| Campo                 | Evidencia necesaria                                                                                 |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| Requisito e intención | Qué necesidad del usuario o contrato demuestra.                                                     |
+| Preparación           | Datos iniciales, versión, entorno y condiciones reproducibles.                                      |
+| Acción                | Controles visibles, atajos, arrastres y secuencia exacta del recorrido.                             |
+| Resultado observable  | Qué datos, contenido y representación debe percibir el usuario.                                     |
+| Contraejemplo         | Qué resultado sería incorrecto y cómo detectarlo.                                                   |
+| Evidencia             | Salida de ejecución y, según el caso, logs, errores, capturas y trazas vinculados al identificador. |
+| Estado                | Aprobado, fallido, pendiente, bloqueado u omitido, con motivo y ejecución correspondiente.          |
 
 Las aserciones de dominio complementan los recorridos de navegador. Modificar directamente el estado interno no demuestra que un control visible, un gesto o un atajo funcione. Una captura final no demuestra por sí sola una transición, la conservación de datos o la intención de una acción.
 

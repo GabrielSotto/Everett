@@ -4,19 +4,28 @@ Alcance ratificado por el usuario el 28 de septiembre de 2026, a partir de [Desa
 
 Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referencias del diseño acordado. La lectura de la conversación recuperó el texto, pero no sus adjuntos ni los documentos completos de esas referencias. No darlos por inspeccionados.
 
-**Base de trabajo: 0.7.5.** La reconstrucción de **0.8** está pendiente. El Universo conserva lo aprobado; las siguientes etapas se concentran en las superficies y su integración.
+**Etapa actual: reconstrucción de 0.7.5.** Incluye recuperar fuentes, establecer la arquitectura y el arnés, pulir motion y revisar el nombre y la representación de la vista del Mundo. Se preserva la navegación aprobada. El alcance de 0.8 continúa pendiente.
 
-| Versión | Alcance principal |
-|---|---|
-| **0.8** | Canvas, tomando los comportamientos aplicables de Infinity Canvas. |
-| **0.9** | Code + Docs. |
-| **0.10** | Session + Agents. |
-| **0.11** | Board + Shipping Mode. |
-| **0.12** | Vista del mundo, barra global, perfil y configuración. |
-| **1.0 RC** | Integración completa, regresiones y pulido final. |
-| **1.0** | Prototipo aprobado. |
+| Versión    | Alcance principal                                                                   |
+| ---------- | ----------------------------------------------------------------------------------- |
+| **0.7.5**  | Reconstrucción modular, tipado, arnés, motion y propuestas para la vista del Mundo. |
+| **0.8**    | Canvas, tomando los comportamientos aplicables de Infinity Canvas.                  |
+| **0.9**    | Code + Docs.                                                                        |
+| **0.10**   | Session + Agents.                                                                   |
+| **0.11**   | Board + Shipping Mode.                                                              |
+| **0.12**   | Vista del mundo, barra global, perfil y configuración.                              |
+| **1.0 RC** | Integración completa, regresiones y pulido final.                                   |
+| **1.0**    | Prototipo aprobado.                                                                 |
 
 **Regla de avance:** implementación → pruebas → tu feedback → correcciones → aprobación. Si una etapa necesita correcciones, continúa como `0.8.1`, `0.8.2`, etc. No se pasa a la siguiente dejando pendientes los problemas de su alcance.
+
+---
+
+## 0.7.5 — reconstrucción y pulido
+
+Aplicar [Recuperación de 0.7.5](recuperacion-0.7.5.md). Esta etapa conserva las funciones de la base y establece los límites técnicos necesarios para continuar hasta 1.0. El Universo actual es el piso de calidad visual; el resultado debe superarlo. La navegación espacial aprobada se conserva y se pule en su ejecución.
+
+La elección de nombre y representación de la vista actualmente denominada `Vista atómica` se adelanta a esta etapa por pedido del usuario. Las seis superficies mantienen su distribución sin jerarquía visual central. Se presentan propuestas antes de implementar esa dirección visual.
 
 ---
 
@@ -42,11 +51,11 @@ Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referenci
 
 Aplicar los estados de densidad de la referencia de Infinity Canvas: (adjunto de referencia no recuperado)
 
-| Materiales | Representación |
-|---|---|
-| **1–6** | Materiales individuales con previews ricos. |
-| **7–15** | Grupos compactos por tipo, con contadores. |
-| **16+** | Resumen agregado con cantidad total y tipos presentes. |
+| Materiales | Representación                                         |
+| ---------- | ------------------------------------------------------ |
+| **1–6**    | Materiales individuales con previews ricos.            |
+| **7–15**   | Grupos compactos por tipo, con contadores.             |
+| **16+**    | Resumen agregado con cantidad total y tipos presentes. |
 
 Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse para llenar la zona. Las agrupaciones permitirán consultar sus elementos.
 
@@ -188,6 +197,8 @@ El desglose que señalaste en **OpenCode** queda como referencia para esta etapa
 
 ### Vista de superficies del mundo
 
+El nombre y la representación se trabajan inicialmente en la reconstrucción de 0.7.5. En 0.12 se verifica su integración con las superficies terminadas y se resuelven los ajustes que el usuario apruebe.
+
 - Acordar el nombre que reemplazará a `Vista atómica`.
 - Definir y aprobar una referencia visual para representar las seis superficies.
 - Sustituir las tarjetas actuales por una representación cohesiva con Everett.
@@ -211,7 +222,7 @@ El desglose que señalaste en **OpenCode** queda como referencia para esta etapa
 - Mantener comportamiento adecuado ante campos extensos.
 - Evitar que el perfil esté dominado por herramientas técnicas.
 
-**Pendientes de definición al iniciar esta etapa:** nombre y representación de la vista del mundo; opciones adicionales del perfil.
+**Definiciones necesarias:** nombre y representación elegidos durante 0.7.5; opciones adicionales del perfil a acordar en 0.12.
 
 **Cierre de 0.12:** orientación, navegación global, perfil y configuración coherentes con las superficies ya aprobadas.
 
@@ -253,4 +264,4 @@ La 1.0 se publica cuando los recorridos acordados funcionan, las superficies rep
 
 Backend, inferencia, colaboración, autenticación e integraciones reales quedan para el desarrollo del producto.
 
-**Próximo paso del roadmap: reconstruir 0.8 desde 0.7.5 y cerrar Canvas antes de pasar a 0.9.**
+**Próximo paso del roadmap: verificar y aprobar la reconstrucción de 0.7.5; después, desarrollar 0.8 y cerrar Canvas antes de pasar a 0.9.**
