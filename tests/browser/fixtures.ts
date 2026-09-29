@@ -11,6 +11,30 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         if (message.type() === 'error') errors.push(message.text());
       });
       try {
+        const baseURL = testInfo.project.use.baseURL;
+        if (!baseURL) throw new Error('Falta la URL de la prueba.');
+        const manifest = JSON.parse(await readFile('dist/build-manifest.json', 'utf8')) as {
+          sha256: string;
+          buildId: string;
+        };
+        const url = new URL(baseURL);
+        url.searchParams.set('seed', '42');
+        url.hash = '';
+        const response = await page.goto(url.href);
+        expect(response?.ok()).toBe(true);
+        if (!response) throw new Error('La navegación no recibió el HTML.');
+        const hash = createHash('sha256')
+          .update(await response.body())
+          .digest('hex');
+        expect(hash, 'El documento cargado debe coincidir con el HTML del manifiesto').toBe(
+          manifest.sha256,
+        );
+        testInfo.annotations.push({ type: 'artifact-sha256', description: hash });
+        await expect(page.locator('meta[name="everett-build"]')).toHaveAttribute(
+          'content',
+          manifest.buildId,
+        );
+        await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
         await use(errors);
       } finally {
         if (!page.isClosed()) {
@@ -32,33 +56,6 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
     },
     { auto: true },
   ],
-});
-
-test.beforeEach(async ({ request, page, baseURL }, testInfo) => {
-  if (!baseURL) throw new Error('Falta la URL de la prueba.');
-  const manifest = JSON.parse(await readFile('dist/build-manifest.json', 'utf8')) as {
-    sha256: string;
-    buildId: string;
-    version: string;
-  };
-  const response = await request.get(baseURL);
-  expect(response.ok()).toBe(true);
-  const hash = createHash('sha256')
-    .update(await response.body())
-    .digest('hex');
-  expect(hash, 'La URL debe servir exactamente el HTML identificado por el build local').toBe(
-    manifest.sha256,
-  );
-  testInfo.annotations.push({ type: 'artifact-sha256', description: hash });
-  const url = new URL(baseURL);
-  url.searchParams.set('seed', '42');
-  url.hash = '';
-  await page.goto(url.href);
-  await expect(page.locator('meta[name="everett-build"]')).toHaveAttribute(
-    'content',
-    manifest.buildId,
-  );
-  await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
 });
 
 export { expect };
