@@ -133,7 +133,7 @@ export function zoneMarkup(w: WorldSnapshot, zone: Zone, selected: boolean): str
       ? `<div class="zone-materials">${assignedMaterials(
           w,
           w.nodes.filter((n) => n.owner === zone.agent),
-        )}</div>${w.assignments.some((a) => a.agent === agent.id && a.phase === 'working') ? '<div class="working-dots"><i></i><i></i><i></i></div>' : ''}`
+        )}</div>${w.assignments.some((a) => a.agent === agent.id && a.phase === 'working') ? '<div class="working-dots" role="status" aria-label="Agente trabajando"><i></i><i></i><i></i></div>' : ''}`
       : ''
   }</div>`;
 }

@@ -43,6 +43,11 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
             body: JSON.stringify(logs, null, 2),
             contentType: 'application/json',
           });
+          errors.push(
+            ...logs
+              .filter((entry) => entry.level === 'error')
+              .map((entry) => JSON.stringify(entry)),
+          );
         }
         await testInfo.attach('runtime-errors', {
           body: JSON.stringify(errors, null, 2),

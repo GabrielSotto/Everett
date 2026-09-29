@@ -347,9 +347,18 @@
 }
 
 .agent-zone .working-dots {
+  display: flex;
+  gap: 3px;
   position: absolute;
   right: 12px;
   top: 12px;
+}
+
+.working-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .material-actions {
