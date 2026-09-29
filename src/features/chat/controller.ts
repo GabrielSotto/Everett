@@ -23,10 +23,7 @@ export class CanvasChat {
     bindDismiss(
       this.abort.signal,
       () => ctx.ui.chat.chatMode === 'quick' && !this.drag,
-      () => {
-        ctx.ui.chat.chatMode = 'closed';
-        this.render();
-      },
+      (source) => this.close(source === 'keyboard'),
       '.canvas-chat,[data-action=chat-open],.dictation-consent',
     );
     root.addEventListener(
@@ -63,8 +60,7 @@ export class CanvasChat {
             break;
           }
           case 'chat-close':
-            u.chat.chatMode = 'closed';
-            this.render();
+            this.close(true);
             break;
           case 'chat-dock':
             u.chat.chatMode = 'docked';
@@ -239,6 +235,14 @@ export class CanvasChat {
   }
   private draft(): { text: string; materials: string[] } {
     return (this.ctx.ui.chat.chatDrafts[this.ctx.world().id] ??= { text: '', materials: [] });
+  }
+  private close(restoreFocus: boolean): void {
+    this.ctx.ui.chat.chatMode = 'closed';
+    this.render();
+    if (restoreFocus)
+      this.root.parentElement
+        ?.querySelector<HTMLButtonElement>('[data-action="chat-open"]')
+        ?.focus({ preventScroll: true });
   }
   reference(id: string): void {
     const w = this.ctx.world(),
