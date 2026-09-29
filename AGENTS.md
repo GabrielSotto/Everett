@@ -14,6 +14,7 @@ Everett es un prototipo interactivo cuyo alcance aprobado avanza desde 0.7.5 has
 ## Organización por iteración
 
 - Trabajar una iteración por vez, con un chat de implementación y una rama específicos para cada 0.x, incluida la recuperación de 0.7.5. Mantener los chats de organización e instrucciones separados de los de implementación.
+- Integrar la rama de una iteración en `dev` únicamente después de completar sus verificaciones y recibir la confirmación explícita del usuario aprobando el cierre de esa iteración.
 - Comenzar la siguiente iteración cuando la anterior esté verificada, aprobada por el usuario e integrada en `dev`. El flujo de Git, incluidos los fixes, se rige por G1–G5 del marco común.
 
 ## Base y herramientas
