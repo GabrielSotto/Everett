@@ -22,6 +22,12 @@ Las ediciones manuales conviven con la asistencia agéntica. Una propuesta pendi
 
 El nombre y la representación de la vista del Mundo se revisan mediante propuestas visuales. La elección no incorpora nuevas escalas conceptuales ni cambia la forma de navegar.
 
+## Representación elegida
+
+El usuario aprobó para esta fase los contornos circulares con representaciones vectoriales de las actividades de Canvas, Code, Docs, Board, Agents y Session. Comparten paleta, iconografía y tratamiento gráfico con Everett. El pulido adicional de estos interiores queda para una iteración posterior; esta decisión permite continuar la reconstrucción y sus verificaciones.
+
+Las ilustraciones identifican cada actividad y conservan las seis superficies como destinos de navegación. La cámara, los gestos, el foco, la entrada y el regreso mantienen sus contratos. `UI-WORLD-01` comprueba su integración mediante paneo, entrada y regreso, además de registrar la representación visible. La aprobación de estos interiores se limita a esta decisión de diseño; el cierre de la etapa sigue sujeto al gate completo.
+
 ## Matriz de comprobación
 
 La capa de dominio comprueba los contratos de datos. Cada recorrido requiere además evidencia de los controles reales y su representación visual.

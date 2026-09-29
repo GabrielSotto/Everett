@@ -1,0 +1,82 @@
+.surface-object {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: left;
+  color: #a6afbf;
+  cursor: inherit;
+}
+.surface-object > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.surface-object.focused .surface-preview {
+  transform: translateY(-2px);
+}
+.surface-object {
+  width: 246px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.surface-object .surface-preview {
+  position: relative;
+  width: 246px;
+  height: 246px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid #a4b7c333;
+  background: #293946;
+  box-shadow:
+    inset 0 1px 1px #e1edff10,
+    0 10px 40px #0005;
+  opacity: 0.94;
+  transition:
+    opacity 220ms,
+    border-color 220ms,
+    box-shadow 220ms;
+}
+.surface-object .surface-preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 44%, transparent 36%, #0a10182b 81%, #0a101874 100%);
+  box-shadow: inset 0 0 25px #0b15233d;
+}
+.surface-object .surface-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  font-family: 'Segoe UI', sans-serif;
+}
+.surface-object.focused .surface-preview {
+  opacity: 1;
+  border-color: #c1b2dc7a;
+  box-shadow:
+    0 0 0 5px #b9a5df07,
+    0 0 42px #b9a5df10,
+    inset 0 1px 1px #e1edff18,
+    0 14px 45px #0006;
+}
+.surface-object > .surface-label {
+  margin-top: 16px;
+  padding: 0;
+  justify-content: center;
+  color: #bac9d5;
+}
+.surface-object.focused .surface-label {
+  color: #ebe4f5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface-object .surface-preview {
+    transition: none;
+  }
+}

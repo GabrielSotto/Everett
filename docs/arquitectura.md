@@ -41,6 +41,8 @@ El dominio conserva ruta y contextos de regreso con sus cámaras. La cámara esp
 
 Los gestos, umbrales, gravedad y reglas de regreso pertenecen al comportamiento aprobado. Cualquier trabajo de presentación debe verificarse contra ese comportamiento. La revisión de la vista del Mundo modifica su nombre y representación según la elección del usuario.
 
+`src/features/spatial/surface-previews.ts` reúne las ilustraciones vectoriales de las seis actividades, con iconos y componentes gráficos compartidos. `surfaces.css` define sus contornos y estados visuales. Estas ilustraciones contienen ejemplos de cada actividad; los datos del proyecto se consultan y editan al entrar en la superficie correspondiente.
+
 ## Agentes y ciclo de vida
 
 El servicio de agentes ejecuta una gramática local y respuestas simuladas. Las acciones resultantes utilizan los mismos comandos que los controles manuales. No hay conexión a proveedores de inferencia.

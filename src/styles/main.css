@@ -2,6 +2,7 @@
 @import 'shell.css';
 @import 'workspace.css';
 @import '../features/spatial/styles.css';
+@import '../features/spatial/surfaces.css';
 @import '../features/session/styles.css';
 @import '../features/code/styles.css';
 @import '../features/docs/styles.css';

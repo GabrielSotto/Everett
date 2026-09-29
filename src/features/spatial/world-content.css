@@ -11,69 +11,6 @@
 .planet-ring {
   transform: rotate(var(--ring-angle, -26deg));
 }
-.canvas-miniature {
-  position: relative;
-  height: 105px;
-  width: 100%;
-}
-.canvas-miniature > svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  fill: none;
-  stroke: #a5aec26b;
-  stroke-width: 1.4;
-}
-.mini-material {
-  position: absolute;
-  border-radius: 5px;
-  border: 1px solid #c6bdaa55;
-  padding: 7px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.mini-note {
-  left: 0;
-  top: 6px;
-  width: 58px;
-  height: 46px;
-  background: #a6996530;
-  color: #dac899;
-}
-.mini-material b {
-  height: 2px;
-  width: 80%;
-  background: currentColor;
-  opacity: 0.45;
-}
-.mini-material b:last-child {
-  width: 55%;
-}
-.mini-image {
-  left: 132px;
-  top: 32px;
-  width: 68px;
-  height: 41px;
-  background: #637e9538;
-  border-color: #a2c3d548;
-  color: #96b5c9;
-  align-items: center;
-  justify-content: center;
-}
-.mini-file {
-  left: 9px;
-  top: 78px;
-  width: 61px;
-  height: 27px;
-  background: #a38aba20;
-  border-color: #a992c94a;
-  color: #b9a5cd;
-  flex-direction: row;
-  align-items: center;
-}
 .shell.dark-shell {
   background: #080b11;
   border-color: #ffffff0c;

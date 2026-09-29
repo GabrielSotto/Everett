@@ -1,3 +1,4 @@
+import { surfacePreview } from './surface-previews';
 import { trace, type Intent } from '../../app/diagnostics/trace';
 import { surfaces, surfaceNames, type Point, type Surface } from '../../domain/model';
 import type { Context } from '../../app/context';
@@ -40,17 +41,6 @@ export function worldMatches(
     (ctx.ui.shell.region === 'Todas' || w.region === ctx.ui.shell.region) &&
     (!ctx.ui.shell.archived || w.archived)
   );
-}
-function preview(s: Surface): string {
-  if (s === 'canvas')
-    return `<svg class="canvas-miniature" viewBox="0 0 210 105" aria-hidden="true"><g class="mini-connections"><path d="M52 26H78Q86 26 86 34V38H118"/><path d="M150 56V75H114"/><path d="M52 39V81H66"/></g><g class="mini-note-art"><rect x="8" y="8" width="44" height="44" rx="4"/><path d="M17 20h25M17 28h20M17 36h14"/></g><g class="mini-image-art"><rect x="118" y="16" width="58" height="40" rx="4"/><path d="m123 48 15-15 11 10 8-7 13 12"/><circle cx="162" cy="26" r="3"/></g><g class="mini-file-art"><rect x="66" y="66" width="48" height="29" rx="4"/><path d="m77 75-5 5 5 5m25-10 5 5-5 5m-13-11-6 13"/></g><g class="mini-link-art"><rect x="165" y="71" width="31" height="25" rx="4"/><path d="m174 87 11-10m-5-1h6v6m-12-1h-3v9h9v-3"/></g></svg>`;
-  if (s === 'code')
-    return '<div class="mini-code"><b>export</b> interface World {<br>&nbsp;&nbsp;id: <i>string</i>;<br>&nbsp;&nbsp;materials: Material[];<br>}</div>';
-  if (s === 'session')
-    return '<div class="mini-chat"><i></i><span></span><i></i><span></span><div></div></div>';
-  if (s === 'docs') return '<div class="mini-doc"><b></b><i></i><i></i><i></i><i></i></div>';
-  if (s === 'board') return '<div class="mini-board"><i></i><i></i><i></i></div>';
-  return '<div class="mini-agents"><i>E</i><i>M</i><i>N</i></div>';
 }
 export class SpatialView implements View {
   private background: SpaceBackdrop | null = null;
@@ -381,7 +371,7 @@ export class SpatialView implements View {
       plane.innerHTML = surfaces
         .map(
           (surface) =>
-            `<button class="surface-object" data-focus="${surface}" style="left:${surfacePositions[surface].x}px;top:${surfacePositions[surface].y}px" aria-label="${surfaceNames[surface]}"><div class="surface-preview">${preview(surface)}</div><span class="surface-label">${icon(surface, 16)}${surfaceNames[surface]}</span></button>`,
+            `<button class="surface-object" data-focus="${surface}" style="left:${surfacePositions[surface].x}px;top:${surfacePositions[surface].y}px" aria-label="${surfaceNames[surface]}"><div class="surface-preview">${surfacePreview(surface)}</div><span class="surface-label">${icon(surface, 16)}${surfaceNames[surface]}</span></button>`,
         )
         .join('');
       this.cam.setItems(
