@@ -62,6 +62,18 @@ Los recorridos preparados cubren navegación inicial, edición y propuestas de C
 
 El control `UI-HARNESS-01` captura un panel visible, comprueba una segunda captura idéntica y oculta sus campos deliberadamente para exigir una diferencia visual. Al restaurarlos, exige igualdad otra vez. Sus imágenes quedan dentro de la ejecución y comprueban el comparador; la referencia de diseño aprobada se evalúa por separado. La existencia de tests, su typecheck o una ejecución parcial no acreditan el gate completo.
 
+## Empaquetado de la reconstrucción
+
+Con el informe `output/rebuild-0.7.5/estado.md` actualizado, ejecutar en PowerShell 7:
+
+```powershell
+./scripts/package.ps1 -BrowserResult output/browser/<runId>/results.json -UnitResult output/unit/<runId>/result.json
+```
+
+El script exige evidencia unitaria y de navegador vigente. Incluye fuentes, recursos, configuración, arnés, HTML original y construido, documentación e informes de esas ejecuciones. Genera un ZIP en `output/packages/<buildId>/`, con un manifiesto de cada archivo. Reabre el ZIP y contrasta nombres, tamaños y SHA-256 de todos sus contenidos; `verification.json` registra el hash del ZIP y el HTML incluido. Rechaza sobrescribir un paquete existente para ese build.
+
+El informe incluido identifica la cobertura y los pendientes de producto. La integridad del paquete y la aprobación de la etapa se comprueban por separado según [Validación](validacion-prototipo.md).
+
 ## Dependencias
 
 | Dependencia        | Uso y motivo                                                                     | Licencia   |
