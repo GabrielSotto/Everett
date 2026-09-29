@@ -7,15 +7,19 @@ async function focusWorld(page: Page, name = 'Resource Scout'): Promise<void> {
   await page.getByRole('textbox', { name: 'Buscar en Everett', exact: true }).fill(name);
   const world = page.getByRole('main').getByRole('button', { name, exact: true });
   await expect(world).toBeInViewport();
+  const offset = async (): Promise<number> => {
+    const box = (await world.boundingBox())!;
+    return Math.abs(box.x + box.width / 2 - page.viewportSize()!.width / 2);
+  };
+  // El clic automático desplaza el contenedor si se ejecuta mientras el Mundo sigue entrando.
+  await expect.poll(offset).toBeLessThan(0.1);
   await page.getByRole('button', { name: 'Cerrar búsqueda', exact: true }).click();
   await world.click();
   await page.mouse.move(10, 70);
-  await expect
-    .poll(async () => {
-      const box = (await world.boundingBox())!;
-      return Math.abs(box.x + box.width / 2 - page.viewportSize()!.width / 2);
-    })
-    .toBeLessThan(0.1);
+  await expect.poll(offset).toBeLessThan(0.1);
+  expect(
+    await page.locator('#space').evaluate((space) => [space.scrollLeft, space.scrollTop]),
+  ).toEqual([0, 0]);
 }
 
 async function rendered(page: Page, id = 'scout'): Promise<RenderedWorld> {
