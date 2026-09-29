@@ -7,19 +7,19 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Push-Location -LiteralPath $projectRoot
 try {
-    & node scripts/verify-browser.mjs $BrowserResult
-    if ($LASTEXITCODE -ne 0) { throw 'La evidencia de navegador no está vigente.' }
-    & node scripts/verify-unit.mjs $UnitResult
-    if ($LASTEXITCODE -ne 0) { throw 'La evidencia unitaria no está vigente.' }
+    & node scripts/report.mjs $BrowserResult $UnitResult
+    if ($LASTEXITCODE -ne 0) { throw 'La evidencia y el informe no están vigentes.' }
 
     $build = Get-Content -LiteralPath dist/build-manifest.json -Raw | ConvertFrom-Json
-    $destination = Join-Path $projectRoot ('output/packages/' + $build.buildId)
+    $browserRun = Split-Path -Leaf (Split-Path -Parent $BrowserResult)
+    $deliveryReport = 'output/delivery/' + $browserRun
+    $destination = Join-Path $projectRoot ('output/packages/' + $build.buildId + '/' + $browserRun)
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
     $archivePath = Join-Path $destination 'Everett-reconstruccion-0.7.5.zip'
-    if (Test-Path -LiteralPath $archivePath) { throw 'Ya existe un paquete para este build.' }
+    if (Test-Path -LiteralPath $archivePath) { throw 'Ya existe un paquete para esta ejecución.' }
 
-    $directories = @('src', 'tests', 'scripts', 'docs', 'dist', 'output/rebuild-0.7.5',
-        (Split-Path -Parent $BrowserResult), (Split-Path -Parent $UnitResult))
+    $directories = @('src', 'tests', 'scripts', 'docs', 'dist', 'output/rebuild-0.7.5/current',
+        (Split-Path -Parent $BrowserResult), (Split-Path -Parent $UnitResult), $deliveryReport)
     $files = @('AGENTS.md', 'Everett-0.7.5.html', 'index.html', 'package.json', 'package-lock.json',
         'tsconfig.json', 'playwright.config.ts', '.gitignore', '.gitattributes', '.prettierignore')
     $files += @(Get-ChildItem -LiteralPath $projectRoot -File -Filter '*prettier*' |
@@ -46,7 +46,7 @@ try {
         artifactSha256 = $build.sha256
         browserResult = $BrowserResult.Replace('\', '/')
         unitResult = $UnitResult.Replace('\', '/')
-        report = 'output/rebuild-0.7.5/estado.md'
+        report = $deliveryReport + '/informe.md'
         files = $entries
     }
     $zip = [IO.Compression.ZipFile]::Open($archivePath, [IO.Compression.ZipArchiveMode]::Create)

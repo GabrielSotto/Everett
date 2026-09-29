@@ -25,6 +25,10 @@ El siguiente bloque conserva íntegros los mínimos del roadmap:
 
 ## Gate de cada versión
 
+En cada cambio de comportamiento, ampliar o ajustar el arnés junto con la implementación: funciones, superficies, interacciones, gestos, motion y sus combinaciones requieren comprobaciones observables y contraejemplos pertinentes. Cada fallo encontrado durante pruebas o feedback debe quedar cubierto por una regresión reproducible. Conservar las pruebas de comportamientos aprobados y ejecutar las regresiones afectadas; completar la regresión de la etapa antes de integrarla. Los cambios exclusivamente documentales mantienen su verificación específica.
+
+Versionar las fuentes del arnés, sus datos y las instrucciones de ejecución en la misma rama de la iteración. Conservar los resultados, trazas y capturas de la entrega junto con el HTML y las fuentes en un paquete verificado. La continuidad de las pruebas debe depender del repositorio y sus entregas guardadas.
+
 Secuencia mínima recuperada del acuerdo:
 
 `base verificada → implementación → build → typecheck → pruebas de dominio → pruebas de intención → navegador real → regresión completa de Everett → revisión visual → auditoría del alcance → empaquetado → hash del artefacto final → entrega`

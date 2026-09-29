@@ -48,6 +48,17 @@ La capa de dominio comprueba los contratos de datos. Cada recorrido requiere ade
 
 La matriz se amplía cuando los riesgos y fallos lo exijan. Los identificadores de pruebas conservan su significado; la aprobación de lógica no completa la columna de interfaz.
 
+Ampliaciones de la reconstrucción:
+
+| Requisitos                      | Casos                     | Comprobación y contraejemplo                                                                                                                          |
+| ------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| REC-NAV, REC-CANVAS             | UI-GESTURE-01–04          | Interrumpir paneo, arrastre, tamaño, chat y minimapa; recuperar controles sin continuar un gesto cancelado ni confirmar cambios involuntarios.        |
+| REC-CANVAS                      | UI-LINK-01, UI-HISTORY-01 | Rechazar conexiones propias, vacías y canceladas; conservar conexión por arrastre y por clics, y separar historial del material del texto editable.   |
+| REC-CODE, REC-DOCS, REC-AGENTS  | UI-DRAFT-01–02            | Recuperar borradores al cambiar de superficie, aislarlos por contexto y consumirlos al enviar sin reponer el texto.                                   |
+| REC-NAV, REC-MOTION, REC-AGENTS | UI-SEQUENCE-01–02         | Combinar acciones durante transiciones y trabajo pendiente; conservar edición y contexto e impedir respuestas de revisiones canceladas.               |
+| REC-STATE, REC-MOTION           | UI-STABILITY-02           | Sesión sostenida con edición e historial; detectar pérdida de contenido, recursos retenidos y deterioro de respuesta según los límites de Desarrollo. |
+| REC-HARNESS                     | UI-HARNESS-02, HARNESS-08 | Introducir recursos deliberadamente para probar la sonda y rechazar cifras, fechas o capturas del informe que no correspondan a la ejecución.         |
+
 ## Criterios visuales y de motion
 
 - Conservar un origen espacial reconocible al entrar y regresar, incluidos cámara, escala y contenido.

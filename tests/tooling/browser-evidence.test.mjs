@@ -94,6 +94,11 @@ test('HARNESS-07: el informe de navegador exige todos los casos y el mismo artef
     (r) => {
       r.suites[0].specs[0].tests[0].results[0].attachments[1].body = encoded([]);
     },
+    (r) => {
+      r.suites[0].specs[0].tests[0].results[0].attachments[1].body = encoded([
+        { event: 'error', level: 'error' },
+      ]);
+    },
   ]) {
     const report = valid();
     mutate(report);

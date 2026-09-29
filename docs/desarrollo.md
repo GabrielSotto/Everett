@@ -62,15 +62,29 @@ Los recorridos preparados cubren navegación inicial, edición y propuestas de C
 
 El control `UI-HARNESS-01` captura un panel visible, comprueba una segunda captura idéntica y oculta sus campos deliberadamente para exigir una diferencia visual. Al restaurarlos, exige igualdad otra vez. Sus imágenes quedan dentro de la ejecución y comprueban el comparador; la referencia de diseño aprobada se evalúa por separado. La existencia de tests, su typecheck o una ejecución parcial no acreditan el gate completo.
 
+### Interrupciones, secuencias y estabilidad
+
+`gestures.spec.ts` inicia los gestos con el mouse del navegador y después inyecta `pointercancel` o `blur`, o solicita al navegador liberar la captura real del puntero. Comprueba paneo, materiales, tamaño, chat y minimapa, además de la recuperación posterior. El caso de salida del viewport utiliza movimiento y liberación reales fuera de sus límites. Estas inyecciones representan interrupciones del navegador; no simulan una sesión táctil ni un cambio de aplicación del sistema operativo.
+
+`sequences.spec.ts` altera el orden de visitas mediante semillas 17, 91 y 2026 y encadena acciones durante transiciones; repite la semilla 17 con movimiento reducido. Cada fallo adjunta la semilla y los pasos completados. Incluye trabajo pendiente al cambiar de superficie y cancelación de una revisión antes de que llegue su respuesta. `drafts.spec.ts` comprueba conservación, aislamiento por contexto y consumo de borradores al enviar.
+
+`UI-STABILITY-02` recorre las seis superficies durante al menos cinco minutos y 30 ciclos, con orden reproducible, visitas al Universo, edición, historial y composers. Los puntos de medición vuelven al mismo documento de Docs tras completar las transiciones. La sonda de pruebas cuenta temporizadores y fotogramas pendientes; Chromium aporta memoria tras recolección de basura, nodos y listeners. La instrumentación pertenece al arnés.
+
+Tras tres ciclos de preparación, cada punto exige cero temporizadores, intervalos y fotogramas pendientes. Admite hasta dos listeners y 20 nodos sobre una referencia fija para variaciones del navegador. La memoria puede aumentar hasta un 25 % más 8 MiB para cachés y la traza acotada de la aplicación. La mediana de los cinco últimos ciclos debe quedar por debajo del doble de la inicial más 500 ms. Los adjuntos conservan todas las muestras; estos límites detectan acumulación y deterioro en ese recorrido, y no certifican sesiones de duración ilimitada. `UI-HARNESS-02` introduce recursos deliberadamente para comprobar que las mediciones detectan su presencia y su liberación.
+
+Los resultados completos se rechazan si la traza de la aplicación contiene errores, aunque la consola del navegador esté vacía. Un caso aislado sirve para diagnosticar; el verificador de entrega continúa exigiendo todos los casos descubiertos.
+
 ## Empaquetado de la reconstrucción
 
-Con el informe `output/rebuild-0.7.5/estado.md` actualizado, ejecutar en PowerShell 7:
+Con la revisión de alcance y sus evidencias actuales en `output/rebuild-0.7.5/current/`, ejecutar en PowerShell 7:
 
 ```powershell
 ./scripts/package.ps1 -BrowserResult output/browser/<runId>/results.json -UnitResult output/unit/<runId>/result.json
 ```
 
-El script exige evidencia unitaria y de navegador vigente. Incluye fuentes, recursos, configuración, arnés, HTML original y construido, documentación e informes de esas ejecuciones. Genera un ZIP en `output/packages/<buildId>/`, con un manifiesto de cada archivo. Reabre el ZIP y contrasta nombres, tamaños y SHA-256 de todos sus contenidos; `verification.json` registra el hash del ZIP y el HTML incluido. Rechaza sobrescribir un paquete existente para ese build.
+El script exige evidencia unitaria y de navegador vigente. `scripts/report.mjs` deriva las cifras, fechas y casos de esos resultados y copia las capturas de sus adjuntos comprobando sus hashes. Guarda el resumen JSON y el informe Markdown en `output/delivery/<browserRunId>/`; si ya existen, exige que coincidan. Puede ejecutarse por separado con `node scripts/report.mjs <BrowserResult> <UnitResult>`.
+
+El paquete incluye fuentes, recursos, configuración, arnés, HTML original y construido, documentación, revisión de alcance e informes de esas ejecuciones. Los informes históricos de `output/rebuild-0.7.5/` permanecen fuera de `current/` y del paquete nuevo. Genera un ZIP en `output/packages/<buildId>/<browserRunId>/`, con un manifiesto de cada archivo y la ruta del informe técnico generado. Reabre el ZIP y contrasta nombres, tamaños y SHA-256 de todos sus contenidos; `verification.json` registra el hash del ZIP y el HTML incluido. Rechaza sobrescribir un paquete de la misma ejecución. Los paquetes anteriores permanecen separados.
 
 El informe incluido identifica la cobertura y los pendientes de producto. La integridad del paquete y la aprobación de la etapa se comprueban por separado según [Validación](validacion-prototipo.md).
 

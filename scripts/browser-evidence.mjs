@@ -58,6 +58,8 @@ export function verifyBrowserReport(report, expected) {
     const entries = JSON.parse(Buffer.from(diagnostics.body ?? '', 'base64').toString());
     if (!Array.isArray(entries) || entries.length === 0)
       throw new Error(`Falta la traza de la aplicación en ${spec.title}.`);
+    if (entries.some((entry) => entry.level === 'error'))
+      throw new Error(`La aplicación registró un fallo en ${spec.title}.`);
   }
   return specs;
 }
