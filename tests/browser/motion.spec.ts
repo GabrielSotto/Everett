@@ -90,3 +90,32 @@ test('UI-MOTION-02: la preferencia de movimiento reducido elimina transformacion
     page.getByRole('textbox', { name: 'Pedile un cambio a Milo…', exact: true }),
   ).toBeVisible();
 });
+
+test('UI-MOTION-03: cerrar y reabrir el perfil mantiene una única presentación y devuelve el foco', async ({
+  page,
+}, testInfo) => {
+  const trigger = page.getByRole('button', { name: 'Perfil de Gabi', exact: true });
+  await trigger.click();
+  const panel = page.locator('.profile-pop:not(.panel-exit)');
+  await expect(panel).toBeVisible();
+  await page
+    .getByRole('textbox', { name: 'Descripción del perfil', exact: true })
+    .fill('Edición conservada durante el cierre');
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+  await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'universe');
+  await expect(page.locator('.panel-exit')).toHaveAttribute('aria-hidden', 'true');
+  await trigger.click();
+  await expect(panel).toHaveCount(1);
+  await expect(
+    page.getByRole('textbox', { name: 'Descripción del perfil', exact: true }),
+  ).toHaveValue('Edición conservada durante el cierre');
+  await expect(page.locator('.panel-exit')).toHaveCount(0);
+  await testInfo.attach('perfil-reabierto', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.profile-pop')).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});

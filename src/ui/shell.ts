@@ -6,14 +6,22 @@ import { conversationContext } from '../domain/conversation-context';
 import { html, target } from './dom';
 import { btn, icon } from './icons';
 import { bindDismiss } from './popover';
+import { PanelMotion } from './panel-motion';
 import { trace } from '../app/diagnostics/trace';
 
 export class Shell {
   private abort = new AbortController();
+  private readonly panels: PanelMotion;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
   ) {
+    this.panels = new PanelMotion(root, [
+      '.profile-pop',
+      '.status-pop',
+      '.filter-pop',
+      '.surface-menu',
+    ]);
     bindDismiss(
       this.abort.signal,
       () =>
@@ -21,13 +29,24 @@ export class Shell {
         ctx.ui.shell.status ||
         ctx.ui.shell.filters ||
         ctx.ui.shell.surfaceMenu,
-      () => {
+      (source) => {
+        const action = ctx.ui.shell.profile
+          ? 'profile'
+          : ctx.ui.shell.status
+            ? 'status'
+            : ctx.ui.shell.filters
+              ? 'filters'
+              : 'surface-menu';
         ctx.ui.shell.profile =
           ctx.ui.shell.status =
           ctx.ui.shell.filters =
           ctx.ui.shell.surfaceMenu =
             false;
         this.render();
+        if (source === 'keyboard')
+          root
+            .querySelector<HTMLElement>(`[data-action="${action}"]`)
+            ?.focus({ preventScroll: true });
       },
       '#shell',
     );
@@ -260,6 +279,7 @@ export class Shell {
     return `<div class="popover profile-pop"><div class="profile-identity"><span class="profile-avatar">${html(p.name.slice(0, 1).toUpperCase())}</span><div><strong>${html(p.name)}</strong><small>${this.ctx.store.get().worlds.length} mundos en total · ${this.ctx.store.get().worlds.filter((world) => world.archived).length} archivados</small></div></div><nav class="profile-tabs">${(['identity', 'preferences', 'tools'] as const).map((t) => `<button data-action="profile-tab" data-tab="${t}" class="${t === tab ? 'active' : ''}">${{ identity: 'Perfil', preferences: 'Preferencias', tools: 'Herramientas' }[t]}</button>`).join('')}</nav>${tab === 'identity' ? `<div class="profile-field"><label for="profile-name">Nombre</label><input id="profile-name" aria-label="Nombre de perfil" maxlength="${profileLimits.name}" value="${html(p.name)}"></div><div class="profile-field"><label for="profile-bio">Sobre vos</label><textarea id="profile-bio" rows="4" maxlength="${profileLimits.bio}" aria-label="Descripción del perfil" placeholder="Sobre vos…">${html(p.bio)}</textarea><span class="profile-counter" id="profile-bio-count">${p.bio.length} / ${profileLimits.bio}</span></div>` : tab === 'preferences' ? `<label class="preference-line" for="profile-language">Idioma de dictado<select id="profile-language"><option value="es-AR" ${p.language === 'es-AR' ? 'selected' : ''}>Español · Argentina</option><option value="es-ES" ${p.language === 'es-ES' ? 'selected' : ''}>Español · España</option></select></label>` : `${w ? `<button data-action="archive">${icon('archive', 15)}${w.archived ? 'Desarchivar mundo' : 'Archivar mundo'}</button>` : ''}<button data-action="shortcuts">${icon('help', 15)}Atajos</button><button data-action="diagnostics">${icon('download', 15)}Exportar diagnóstico</button>`}</div>`;
   }
   render(): void {
+    const finishPanels = this.panels.prepare();
     const { ctx } = this,
       ui = ctx.ui,
       s = ctx.store.get(),
@@ -269,8 +289,10 @@ export class Shell {
       'shell ' + (s.route.kind === 'universe' || s.route.kind === 'world' ? 'dark-shell' : '');
     this.root.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}<div class="shell-spacer"></div><div class="global-search ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${ui.shell.searchOpen ? btn('search-clear', 'close', 'Cerrar búsqueda') : ''}${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu)}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results"></div>`;
     if (ui.shell.searchOpen && s.route.kind !== 'universe') this.results();
+    finishPanels();
   }
   dispose(): void {
+    this.panels.dispose();
     this.abort.abort();
   }
 }

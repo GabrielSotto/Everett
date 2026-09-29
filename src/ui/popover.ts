@@ -2,7 +2,7 @@
 export function bindDismiss(
   signal: AbortSignal,
   isOpen: () => boolean,
-  close: () => void,
+  close: (source: 'keyboard' | 'pointer') => void,
   inside: string,
 ): void {
   document.addEventListener(
@@ -17,7 +17,7 @@ export function bindDismiss(
           .some((node) => node instanceof Element && (node.matches(inside) || node.closest(inside)))
       )
         return;
-      close();
+      close('pointer');
     },
     { signal },
   );
@@ -27,7 +27,7 @@ export function bindDismiss(
       if (event.key !== 'Escape' || !isOpen()) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      close();
+      close('keyboard');
     },
     { capture: true, signal },
   );
