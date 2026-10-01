@@ -70,11 +70,13 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Rechazar conexiones hacia zonas de agente.
 - Undo/Redo desde los atajos reales, diferenciando texto y operaciones del Canvas.
 
-### Quick Chat, chat anclado y Room
+### Quick Chat, chat anclado e historial
 
 - Quick Chat compacto y arrastrable.
 - Incorporación de participantes desde el chat anclado, no desde Quick Chat.
-- **Permitir Quick Chat → Room**, según tu autorización posterior.
+- Retirar Room como modo de Canvas. Conservar la identidad transversal de cada conversación.
+- Historial local real de varias conversaciones, accesible mediante un desplegable desde el título.
+- Aplicar las decisiones confirmadas y resolver las definiciones abiertas de [Canvas 0.8](iteraciones/0.8.md).
 - Anclaje y desacoplamiento mediante desplazamiento visible y rápido.
 - Reacomodar el dock para que no quede detrás del chat anclado.
 - Conservar conversación, borradores, participantes y referencias entre estados.
