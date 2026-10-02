@@ -58,6 +58,9 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   sin marco ni encabezado permanentes, identificación en hover con una demora breve y nombre y
   acciones al seleccionar. Estas decisiones están recogidas en [Canvas 0.8](../../../iteraciones/0.8.md);
   no cambian las tarjetas compactas de zonas.
+- Notas, documentos y PDF siguen el [mismo patrón de identificación contextual](../notas-documentos-pdf.png),
+  con contenido visible en reposo y sin pies permanentes de metadatos. Los controles concretos
+  de los materiales siguen pendientes: los botones de los mockups no constituyen una lista aprobada.
 
 ## Puntos para revisar con el usuario
 
@@ -67,9 +70,9 @@ Estas observaciones son propuestas de evaluación, no decisiones confirmadas:
   interfaz de Everett. Las portadas, imágenes, fotogramas y texto permiten reconocer contenido
   sin abrir cada material.
 - Concretar los tamaños y límites de los materiales libres manteniendo la dirección elegida para
-  imágenes y videos y sus proporciones. Ajustar la demora del hover durante las pruebas y concretar
-  la presentación libre de los demás tipos; el tamaño uniforme definido para zonas no se traslada
-  a todo el Canvas.
+  imágenes, videos, notas, documentos y PDF. Ajustar la demora del hover durante las pruebas y
+  concretar enlaces y referencias a otras superficies; el tamaño uniforme definido para zonas
+  no se traslada a todo el Canvas.
 - Revisar la utilidad de los puntos de color repetidos en las tarjetas antiguas y la diferenciación
   de notas frente a documentos. Definir su significado antes de trasladarlos.
 - Concretar selección, controles contextuales, apertura y regreso, nombres largos y previews no
