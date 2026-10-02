@@ -39,6 +39,9 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 - Selección discreta y controles contextuales.
 - Conservar identidad y contenido al abrir, referenciar o asignar materiales.
 - Mantener zoom hacia objetos y regreso al contexto espacial de origen.
+- Conservar el zoom acoplado de Everett para entrar y salir de materiales y superficies donde
+  corresponda. No incorporar un botón de entrar o abrir en la barra de cada material. Aplicar
+  las decisiones de representación y controles de [Canvas 0.8](iteraciones/0.8.md).
 
 ### Zonas de agente
 
@@ -61,7 +64,7 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 
 ### Herramientas y conexiones
 
-- Consolidar selección, paneo, notas, dibujo, formas y zonas en un dock compacto.
+- Consolidar selección, paneo, notas, dibujo, formas, zonas y comentarios en un dock compacto.
 - Herramientas de dibujo y formas con controles contextuales.
 - Respetar dimensiones y proporciones del gesto.
 - Mantener selección sin padding ni halos que engorden los objetos.
@@ -87,7 +90,8 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 
 - Comentarios asociados a materiales, con marcador y consulta contextual.
 - Listado, respuestas y resolución desde el chat anclado.
-- Comentarios fuera del dock principal.
+- Herramienta de comentarios en el dock principal, con su atajo de teclado; no duplicar el botón
+  de crear comentario en la barra de cada material. Conservar los marcadores y la consulta contextual.
 - Propuestas legibles y diferenciadas del contenido aceptado.
 - Aceptar, rechazar y pedir cambios con resultados coherentes.
 - Cancelar un pedido de cambios conserva la propuesta pendiente.

@@ -44,7 +44,7 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
 
 - La barra del producto independiente, su `grayboard`, el menú `Create` y los accesos de cuenta y
   proyecto no sustituyen la navegación ni la dirección visual vigente de Everett. El alcance de
-  0.8 exige consolidar selección, paneo, notas, dibujo, formas y zonas en un dock compacto.
+  0.8 exige consolidar selección, paneo, notas, dibujo, formas, zonas y comentarios en un dock compacto.
 - La referencia 03 muestra handles de tamaño de zona. Tanto las decisiones posteriores del
   proyecto anterior como el alcance de Everett establecen zonas fijas después de crearlas.
 - Las referencias 06, 07 y 14 sirven para discutir chat, anclaje, referencias y comentarios. El
@@ -60,7 +60,9 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   no cambian las tarjetas compactas de zonas.
 - Notas, documentos y PDF siguen el [mismo patrón de identificación contextual](../notas-documentos-pdf.png),
   con contenido visible en reposo y sin pies permanentes de metadatos. Los controles concretos
-  de los materiales siguen pendientes: los botones de los mockups no constituyen una lista aprobada.
+  se rigen por [Canvas 0.8](../../../iteraciones/0.8.md): se descartan los botones de entrar y
+  comentar de las barras de los materiales. La entrada y salida utilizan el zoom acoplado de
+  Everett; comentar pasa al dock con su atajo. Los botones de los mockups no son una lista aprobada.
 
 ## Puntos para revisar con el usuario
 
