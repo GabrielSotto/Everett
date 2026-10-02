@@ -54,6 +54,9 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
 - Los accesos a ramas, tareas, personas, audio y documentos propios del Canvas anterior no amplían
   por sí mismos esta iteración. Las referencias a otras superficies deben conservar la identidad
   del contenido compartido del Mundo, según el alcance vigente.
+- Para imágenes y videos libres, el usuario eligió una [presentación centrada en el contenido](../materiales-libres.png),
+  sin marco ni encabezado permanentes y con nombre y acciones al seleccionar. Esta decisión está
+  recogida en [Canvas 0.8](../../../iteraciones/0.8.md); no cambia las tarjetas compactas de zonas.
 
 ## Puntos para revisar con el usuario
 
@@ -62,9 +65,9 @@ Estas observaciones son propuestas de evaluación, no decisiones confirmadas:
 - Usar las previews de la referencia 32 como punto de partida y ajustar su composición a la
   interfaz de Everett. Las portadas, imágenes, fotogramas y texto permiten reconocer contenido
   sin abrir cada material.
-- Distinguir la tarjeta compacta de un material asignado de su presentación libre en Canvas. El
-  tamaño uniforme está definido para la zona; falta acordar proporciones, tamaño y contenido
-  visible fuera de ella, especialmente para imágenes y moodboards.
+- Concretar los tamaños y límites de los materiales libres manteniendo la dirección elegida para
+  imágenes y videos y sus proporciones. Revisar la identificación durante el hover y la presentación
+  libre de los demás tipos; el tamaño uniforme definido para zonas no se traslada a todo el Canvas.
 - Revisar la utilidad de los puntos de color repetidos en las tarjetas antiguas y la diferenciación
   de notas frente a documentos. Definir su significado antes de trasladarlos.
 - Concretar selección, controles contextuales, apertura y regreso, nombres largos y previews no
