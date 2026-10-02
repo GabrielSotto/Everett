@@ -6,16 +6,16 @@ Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referenci
 
 **0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8 continúa pendiente.
 
-| Versión    | Alcance principal                                                                   |
-| ---------- | ----------------------------------------------------------------------------------- |
-| **0.7.5**  | Reconstrucción modular, tipado, arnés, motion y propuestas para la vista del Mundo. |
-| **0.8**    | Canvas, tomando los comportamientos aplicables de Infinity Canvas.                  |
-| **0.9**    | Code + Docs.                                                                        |
-| **0.10**   | Session + Agents.                                                                   |
-| **0.11**   | Board + Shipping Mode.                                                              |
-| **0.12**   | Vista del mundo, barra global, perfil y configuración.                              |
-| **1.0 RC** | Integración completa, regresiones y pulido final.                                   |
-| **1.0**    | Prototipo aprobado.                                                                 |
+| Versión    | Alcance principal                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| **0.7.5**  | Reconstrucción modular, tipado, arnés, motion y propuestas para la vista del Mundo.                      |
+| **0.8**    | Canvas, tomando los comportamientos aplicables de Infinity Canvas.                                       |
+| **0.9**    | Code + Docs.                                                                                             |
+| **0.10**   | Session + Agents.                                                                                        |
+| **0.11**   | Board + Shipping Mode.                                                                                   |
+| **0.12**   | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design). |
+| **1.0 RC** | Integración completa, regresiones y pulido final.                                                        |
+| **1.0**    | Prototipo aprobado.                                                                                      |
 
 **Regla de avance:** implementación → pruebas → tu feedback → correcciones → aprobación. Si una etapa necesita correcciones, continúa como `0.8.1`, `0.8.2`, etc. No se pasa a la siguiente dejando pendientes los problemas de su alcance.
 
@@ -195,9 +195,11 @@ El desglose que señalaste en **OpenCode** queda como referencia para esta etapa
 
 ---
 
-## 0.12 — vista del mundo, barra global y perfil
+## 0.12 — vista de superficies del Mundo, barra global, perfil y sistema de diseño
 
-### Vista de superficies del mundo
+### Vista de superficies del Mundo
+
+Esta vista muestra las seis superficies de un único Mundo (proyecto). El Universo es la vista que reúne todos los Mundos; ambas escalas conservan la navegación aprobada.
 
 El nombre y la representación se trabajan inicialmente en la reconstrucción de 0.7.5. En 0.12 se verifica su integración con las superficies terminadas y se resuelven los ajustes que el usuario apruebe.
 
@@ -224,9 +226,21 @@ El nombre y la representación se trabajan inicialmente en la reconstrucción de
 - Mantener comportamiento adecuado ante campos extensos.
 - Evitar que el perfil esté dominado por herramientas técnicas.
 
-**Definiciones necesarias:** nombre y representación elegidos durante 0.7.5; opciones adicionales del perfil a acordar en 0.12.
+### Sistema de diseño — Atomic Design
 
-**Cierre de 0.12:** orientación, navegación global, perfil y configuración coherentes con las superficies ya aprobadas.
+- Consolidar un sistema de diseño común de Everett mediante Atomic Design, aplicable a todas las superficies y a la interfaz compartida.
+- Centralizar tipografía, colores por función, tamaños, espaciados, radios, bordes, sombras y movimiento mediante tokens de diseño.
+- Componer las interfaces con piezas básicas, combinaciones y conjuntos reutilizables; definir sus variantes según su función y contexto.
+- Consolidar los controles y representaciones existentes en ese sistema, preservando las funciones, la navegación y la dirección visual aprobadas.
+- Mantener un catálogo visual de componentes, variantes y estados para revisar la coherencia del conjunto.
+- Comprobar estados de interacción, teclado, foco, contraste, contenido extenso y adaptación al espacio disponible.
+- Verificar el efecto de los cambios compartidos de tipografía, colores y tamaños en todas las superficies y completar su regresión.
+
+La consolidación transversal corresponde a 0.12. Las iteraciones anteriores construyen las piezas que necesita cada área siguiendo los estilos y componentes compartidos vigentes.
+
+**Definiciones necesarias:** nombre y representación elegidos durante 0.7.5; opciones adicionales del perfil y catálogo de componentes y variantes a acordar en 0.12.
+
+**Cierre de 0.12:** orientación, navegación global, perfil y configuración coherentes con las superficies ya aprobadas; sistema de diseño compartido aplicado y verificado en Everett.
 
 ---
 

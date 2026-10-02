@@ -10,7 +10,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 | 0.9                           | Pendiente                     | Code y Docs.                                                                                                 |
 | 0.10                          | Pendiente                     | Sessions y Agents.                                                                                           |
 | 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                       |
-| 0.12                          | Pendiente                     | Vista del Mundo, barra global, perfil y configuración.                                                       |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).     |
 | 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                    |
 | 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                    |
 
