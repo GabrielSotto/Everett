@@ -70,7 +70,11 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Herramientas de dibujo y formas con controles contextuales.
 - Respetar dimensiones y proporciones del gesto.
 - Mantener selección sin padding ni halos que engorden los objetos.
-- Conexiones desde los anclajes elegidos por el usuario.
+- Cuatro anclajes por material, arriba, abajo, izquierda y derecha; conectar los extremos que elija
+  el usuario. Conectores curvos con recorrido manipulable, incluidos desvíos y vueltas alrededor
+  de materiales. Reajustar los extremos a sus anclajes sin descartar el recorrido elegido.
+- Al hacer hover sobre una conexión, engrosar su trazo y ofrecer una zona de interacción más amplia
+  que la línea visible. Un clic permite escribir o editar texto asociado a la conexión.
 - Selección y eliminación explícita de conexiones.
 - Rechazar conexiones hacia zonas de agente.
 - Undo/Redo desde los atajos reales, diferenciando texto y operaciones del Canvas.
