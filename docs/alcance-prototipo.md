@@ -49,7 +49,7 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 - Mantener las zonas fijas después de crearlas, según la decisión vigente.
 - Propuestas coherentes con el material recibido y la acción solicitada.
 
-Aplicar los estados de densidad de la referencia de Infinity Canvas: (adjunto de referencia no recuperado)
+Aplicar los estados de densidad de la [referencia recuperada de Infinity Canvas](referencias/0.8/infinity-canvas/32-zone-material-density-states.png).
 
 | Materiales | Representación                                         |
 | ---------- | ------------------------------------------------------ |
