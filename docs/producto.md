@@ -35,6 +35,12 @@ acción local. Es el mismo sistema de entrada y salida, con un acoplamiento temp
 
 El nombre y la representación de la vista actualmente llamada `Vista atómica` están en revisión. Se conservan sus mecanismos de navegación y su distribución sin un centro jerárquico.
 
+## Atajos
+
+Los atajos de Everett deben ser configurables por cada usuario. Las combinaciones iniciales son
+valores predeterminados que pueden cambiarse; las indicaciones de la interfaz deben reflejar la
+configuración vigente. La definición de cada iteración concreta las acciones y ajustes de su alcance.
+
 ## Humanos y agentes
 
 El usuario puede trabajar manualmente, delegar una tarea completa o combinar ambas formas. Las capacidades manuales permanecen disponibles. La asistencia aparece en el contexto de la actividad: composer en Code y Docs, zonas y propuestas en Canvas, conversación y coordinación en Sessions.
