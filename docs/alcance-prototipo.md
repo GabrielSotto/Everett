@@ -71,8 +71,9 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Respetar dimensiones y proporciones del gesto.
 - Mantener selección sin padding ni halos que engorden los objetos.
 - Cuatro anclajes por material, arriba, abajo, izquierda y derecha; conectar los extremos que elija
-  el usuario. Conectores curvos con recorrido manipulable, incluidos desvíos y vueltas alrededor
-  de materiales. Reajustar los extremos a sus anclajes sin descartar el recorrido elegido.
+  el usuario. Activar conexiones con L. La 0.8 utiliza conectores curvos con recorrido manipulable,
+  incluidos desvíos y vueltas alrededor de materiales. Reajustar los extremos a sus anclajes sin
+  descartar el recorrido elegido; otros tipos de conector quedan fuera de esta definición.
 - Al hacer hover sobre una conexión, engrosar su trazo y ofrecer una zona de interacción más amplia
   que la línea visible. Un clic permite escribir o editar texto asociado a la conexión.
 - Selección y eliminación explícita de conexiones.
