@@ -113,7 +113,10 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
   tras evaluar la densidad del conjunto; no duplicar el botón de crear comentario en la barra de
   cada material. Conservar los marcadores y la consulta contextual.
 - Propuestas legibles y diferenciadas del contenido aceptado.
-- Aceptar, rechazar y pedir cambios con resultados coherentes.
+- Aceptar, rechazar y pedir cambios mediante una barra compacta de acciones agrupadas. Al pulsar
+  `Pedir cambios`, el mismo contenedor se expande hacia abajo y muestra el campo de texto libre
+  con sugerencias, `Enviar` y `Cancelar`, según C08-PROP-01 de [Canvas 0.8](iteraciones/0.8.md).
+  El campo permanece oculto en reposo; las tres acciones producen resultados coherentes.
 - Cancelar un pedido de cambios conserva la propuesta pendiente.
 - Ninguna propuesta modifica el contenido compartido antes de aceptarse.
 

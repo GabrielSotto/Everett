@@ -57,7 +57,10 @@ El comportamiento sí está descrito en `docs/working-decisions.md`, sección
 
 El alcance de Everett ya exige aceptar, rechazar y pedir cambios, conservar la propuesta al
 cancelar el pedido de cambios y aplicar contenido compartido únicamente después de aceptar.
-La composición del campo abierto se concretará al prototiparlo con estas referencias y reglas.
+Para Everett, el usuario confirmó una barra compacta de tres acciones agrupadas cuyo contenedor
+se expande hacia abajo al pulsar `Pedir cambios`. El campo de texto permanece oculto hasta esa
+acción. La definición confirmada y sus comprobaciones están en C08-PROP-01 de
+[Canvas 0.8](../../../iteraciones/0.8.md).
 
 ## Aplicación al alcance vigente
 
