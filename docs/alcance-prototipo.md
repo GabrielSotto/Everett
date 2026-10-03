@@ -35,7 +35,9 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 
 - Representaciones reconocibles de notas, documentos, PDF, imágenes, videos, enlaces y referencias a otras superficies.
 - Previews, portadas y metadatos cuando estén disponibles.
-- Edición directa de notas y nombres.
+- Edición directa de notas y nombres. Renombrar mediante clic sobre el nombre visible; en documentos
+  referenciados, actualizar el mismo título compartido con Docs, conservando identidad y contenido.
+  En imágenes y videos importados, cambiar su nombre dentro de Everett conserva el archivo original.
 - Selección discreta y controles pertinentes al tipo. Asignar a una zona y quitar del Canvas
   corresponden al menú contextual, separado de los controles visibles al seleccionar.
 - Redimensionar imágenes y videos conservando la relación de aspecto y el contenido completo.

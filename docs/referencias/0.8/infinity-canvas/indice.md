@@ -75,6 +75,9 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   comentar de las barras de los materiales. La entrada y salida utilizan el zoom acoplado de
   Everett, con Alt como embrague cuando la rueda tiene otra acción local. Comentar utiliza C y se
   prueba en el dock, sujeto a evaluar su densidad. Los botones de los mockups no son una lista aprobada.
+- El renombrado usa un clic sobre el nombre visible, según C08-MAT-06 de Canvas 0.8. En documentos
+  referenciados se modifica el mismo título que aparece en Docs. Los gestos o atajos de renombrado
+  que figuren en las imágenes antiguas no sustituyen esta decisión.
 
 ## Puntos para revisar con el usuario
 
@@ -89,7 +92,7 @@ Estas observaciones son propuestas de evaluación, no decisiones confirmadas:
   no se traslada a todo el Canvas.
 - Revisar la utilidad de los puntos de color repetidos en las tarjetas antiguas y la diferenciación
   de notas frente a documentos. Definir su significado antes de trasladarlos.
-- Concretar los detalles de interacción de los controles pertinentes a cada tipo, el renombrado,
+- Concretar los detalles de interacción de los controles pertinentes a cada tipo,
   el menú contextual, nombres largos y previews no disponibles. Comprobar entrada y regreso con
   la navegación acordada. Las imágenes no acreditan esos comportamientos ni una comprobación
   de teclado, foco o contraste de la futura implementación.
