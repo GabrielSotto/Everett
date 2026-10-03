@@ -36,7 +36,9 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 - Representaciones reconocibles de notas, documentos, PDF, imágenes, videos, enlaces y referencias a otras superficies.
 - Previews, portadas y metadatos cuando estén disponibles.
 - Edición directa de notas y nombres.
-- Selección discreta y controles contextuales.
+- Selección discreta y controles pertinentes al tipo. Asignar a una zona y quitar del Canvas
+  corresponden al menú contextual, separado de los controles visibles al seleccionar.
+- Redimensionar imágenes y videos conservando la relación de aspecto y el contenido completo.
 - Conservar identidad y contenido al abrir, referenciar o asignar materiales.
 - Mantener zoom hacia objetos y regreso al contexto espacial de origen.
 - Conservar el zoom acoplado de Everett para entrar y salir de materiales y superficies donde
@@ -67,7 +69,9 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 
 - Consolidar selección, paneo, notas, dibujo, formas y zonas en un dock compacto. Probar comentarios
   en el mismo dock y revisar su ubicación si la cantidad de accesos lo vuelve excesivo.
-- Herramientas de dibujo y formas con controles contextuales.
+- Herramientas de dibujo y formas con controles contextuales, partiendo de las referencias 30 y 31
+  según [Canvas 0.8](iteraciones/0.8.md). Aplicar color y grosor al dibujo, y relleno y borde a las
+  formas; no extender esos controles de estilo a todos los materiales.
 - Respetar dimensiones y proporciones del gesto.
 - Mantener selección sin padding ni halos que engorden los objetos.
 - Cuatro anclajes por material, arriba, abajo, izquierda y derecha; conectar los extremos que elija

@@ -50,6 +50,12 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   comentario junto al material, sin establecer en esa imagen un acceso en la toolbar.
 - La referencia 03 muestra handles de tamaño de zona. Tanto las decisiones posteriores del
   proyecto anterior como el alcance de Everett establecen zonas fijas después de crearlas.
+- La referencia 02 confirma la ubicación de asignar a una zona y eliminar en el menú contextual.
+  Para 0.8, esas acciones se mantienen separadas de los controles que aparecen al seleccionar.
+- Las referencias 30 y 31 son el punto de partida acordado para los controles de dibujo y formas:
+  color y grosor del trazo, y relleno y borde de las formas, respectivamente. Adaptarlos a Everett
+  conservando ese trabajo previo. Esta adopción no incorpora la navegación del producto anterior
+  ni una barra de estilo para notas, documentos, PDF, imágenes o videos.
 - Las referencias 06, 07 y 14 sirven para discutir chat, anclaje, referencias y comentarios. El
   encabezado y el historial deben seguir la [dirección elegida para 0.8](../historial-dropdown.png):
   título con desplegable, una acción de nueva conversación y todos los hilos del Mundo. Room se
@@ -59,7 +65,9 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   del contenido compartido del Mundo, según el alcance vigente.
 - Para imágenes y videos libres, el usuario eligió una [presentación centrada en el contenido](../materiales-libres.png),
   sin marco ni encabezado permanentes, identificación en hover con una demora breve y nombre y
-  acciones al seleccionar. Estas decisiones están recogidas en [Canvas 0.8](../../../iteraciones/0.8.md);
+  tipo al seleccionar. Su redimensionado conserva proporciones y contenido completo. Los controles
+  visibles dependen del tipo, sin una barra genérica de acciones. Estas decisiones están recogidas
+  en [Canvas 0.8](../../../iteraciones/0.8.md);
   no cambian las tarjetas compactas de zonas.
 - Notas, documentos y PDF siguen el [mismo patrón de identificación contextual](../notas-documentos-pdf.png),
   con contenido visible en reposo y sin pies permanentes de metadatos. Los controles concretos
@@ -81,6 +89,7 @@ Estas observaciones son propuestas de evaluación, no decisiones confirmadas:
   no se traslada a todo el Canvas.
 - Revisar la utilidad de los puntos de color repetidos en las tarjetas antiguas y la diferenciación
   de notas frente a documentos. Definir su significado antes de trasladarlos.
-- Concretar selección, controles contextuales, apertura y regreso, nombres largos y previews no
-  disponibles. Las imágenes no acreditan esos comportamientos ni una comprobación de teclado,
-  foco o contraste de la futura implementación.
+- Concretar los detalles de interacción de los controles pertinentes a cada tipo, el renombrado,
+  el menú contextual, nombres largos y previews no disponibles. Comprobar entrada y regreso con
+  la navegación acordada. Las imágenes no acreditan esos comportamientos ni una comprobación
+  de teclado, foco o contraste de la futura implementación.
