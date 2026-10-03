@@ -71,9 +71,10 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 
 - Consolidar selección, paneo, notas, dibujo, formas y zonas en un dock compacto. Probar comentarios
   en el mismo dock y revisar su ubicación si la cantidad de accesos lo vuelve excesivo.
-- Atajos de Canvas configurables, con N para renombrar, C para comentar y L para conectar como
-  valores predeterminados. Conservar la configuración local, permitir restaurar los valores
-  iniciales y resolver colisiones entre acciones del mismo contexto. Los controles y la ayuda
+- Atajos de Canvas configurables, con N para crear notas, C para comentar y L para conectar como
+  valores predeterminados. Renombrar queda sin atajo predeterminado y se accede mediante clic sobre
+  el nombre; el usuario puede asignarle un atajo. Conservar la configuración local, permitir restaurar
+  los valores iniciales y resolver colisiones entre acciones del mismo contexto. Los controles y la ayuda
   muestran las asignaciones vigentes, según [Canvas 0.8](iteraciones/0.8.md).
 - Herramientas de dibujo y formas con controles contextuales, partiendo de las referencias 30 y 31
   según [Canvas 0.8](iteraciones/0.8.md). Aplicar color y grosor al dibujo, y relleno y borde a las
