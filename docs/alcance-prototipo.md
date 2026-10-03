@@ -106,7 +106,8 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 
 ### Comentarios y propuestas
 
-- Comentarios asociados a materiales, con marcador y consulta contextual.
+- Comentarios asociados al material completo, con marcador y consulta contextual. Los comentarios
+  anclados a puntos concretos de imágenes quedan para evaluar después de 1.0.
 - Listado, respuestas y resolución desde el chat anclado.
 - Comentarios con el atajo C. Probar su herramienta en el dock principal y confirmar su ubicación
   tras evaluar la densidad del conjunto; no duplicar el botón de crear comentario en la barra de
@@ -304,5 +305,20 @@ Aplicar [Validación del prototipo](validacion-prototipo.md). Sus exigencias son
 La 1.0 se publica cuando los recorridos acordados funcionan, las superficies representan suficientemente la visión, no quedan correcciones críticas pendientes dentro del alcance y **vos aprobás la prueba libre de la candidata**.
 
 Backend, inferencia, colaboración, autenticación e integraciones reales quedan para el desarrollo del producto.
+
+## Después de 1.0
+
+Ideas conservadas para evaluar, sin una versión de implementación comprometida.
+
+- **Canvas: comentarios anclados a un punto de una imagen.** Permitir señalar el detalle al que se
+  refiere un comentario mediante un marcador en el lugar del clic, manteniendo la imagen entera.
+  Como posible mecanismo para Everett, guardar la posición relativa dentro de la imagen para
+  conservar el anclaje al moverla o redimensionarla. Revisar la legibilidad y cuánto contenido tapa
+  el marcador. El usuario decidió posponer esta exploración; los comentarios de 0.8 se asocian al
+  material completo.
+  Referencias verificadas el 3 de octubre de 2026:
+  [Figma permite fijar comentarios en ubicaciones del lienzo y adjuntarlos a marcos de nivel superior](https://help.figma.com/hc/en-us/articles/360041068574-Add-comments-to-files);
+  [Frame.io permite anclar comentarios a un punto del visor](https://help.frame.io/en/articles/9105251-commenting-on-your-media).
+  Estas fuentes describen sus comportamientos, no confirman el mecanismo interno propuesto para Everett.
 
 **Próximo paso del roadmap: desarrollar 0.8 y cerrar Canvas antes de pasar a 0.9.**

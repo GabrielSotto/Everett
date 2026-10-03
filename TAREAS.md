@@ -14,6 +14,10 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 | 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                    |
 | 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                    |
 
+## Después de 1.0
+
+- Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
+
 ## Correcciones pendientes
 
 Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada superficie permanecen en su etapa del alcance.
