@@ -33,6 +33,32 @@ siendo la base de Everett.
 Se recuperaron las referencias pertinentes a Canvas. Las pantallas de proyectos, cuenta,
 autenticación e invitaciones y el Full Chat permanecen en su fuente original.
 
+## Zonas, propuestas y pedido de cambios
+
+La asignación contextual está representada en la referencia 02. La referencia 03 muestra el
+inspector con agente, instrucción, contexto, actividad y acciones, junto a la propuesta pendiente
+compuesta por materiales y conexiones sobre el Canvas. Varias de las otras imágenes reutilizan
+esa propuesta como contexto. Estas referencias son el punto de partida para adaptar y prototipar
+zonas y propuestas en Everett, aplicando las reglas vigentes de 0.8.
+
+Se revisaron visualmente las 32 imágenes originales el 3 de octubre de 2026. Ninguna muestra
+abierto el campo de `Pedir cambios`. En el proyecto de origen, `docs/design-checklist.md`, sección
+`2.3.2 Diseño Visual Derivado De La Consolidación`, mantiene pendiente el diseño de ese campo
+y sus estados de envío y cancelación.
+
+El comportamiento sí está descrito en `docs/working-decisions.md`, sección
+`Controles De Decisión Del Preview`. Se conserva aquí ese antecedente para el prototipado:
+
+- La propuesta ofrece `Aceptar`, `Pedir cambios` y `Rechazar`.
+- `Pedir cambios` abre un campo compacto con texto libre, dos o tres sugerencias rápidas,
+  `Enviar` y `Cancelar`. El campo tiene tamaño controlado y no se redimensiona manualmente.
+- `Cancelar` cierra el campo y conserva la propuesta pendiente y sus acciones de decisión.
+- `Enviar` solicita la revisión de la propuesta dentro del mismo trabajo.
+
+El alcance de Everett ya exige aceptar, rechazar y pedir cambios, conservar la propuesta al
+cancelar el pedido de cambios y aplicar contenido compartido únicamente después de aceptar.
+La composición del campo abierto se concretará al prototiparlo con estas referencias y reglas.
+
 ## Aplicación al alcance vigente
 
 La referencia **32** recupera el adjunto de densidad que ya estaba adoptado en el alcance de 0.8:
