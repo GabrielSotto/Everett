@@ -116,6 +116,9 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Aceptar, rechazar y pedir cambios mediante una barra compacta de acciones agrupadas. Al pulsar
   `Pedir cambios`, el mismo contenedor se expande hacia abajo y muestra el campo de texto libre
   con sugerencias, `Enviar` y `Cancelar`, según C08-PROP-01 de [Canvas 0.8](iteraciones/0.8.md).
+  Ordenar la barra como `Aceptar`, `Pedir cambios`, `Rechazar`. El campo no admite redimensionado
+  manual ni muestra un tirador; `Cancelar` y `Enviar` comparten dimensiones y alineación,
+  conservando su jerarquía secundaria y principal.
   El campo permanece oculto en reposo; las tres acciones producen resultados coherentes.
 - Cancelar un pedido de cambios conserva la propuesta pendiente.
 - Ninguna propuesta modifica el contenido compartido antes de aceptarse.

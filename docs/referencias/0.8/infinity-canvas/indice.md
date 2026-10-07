@@ -61,6 +61,9 @@ Para Everett, el usuario confirmó una barra compacta de tres acciones agrupadas
 se expande hacia abajo al pulsar `Pedir cambios`. El campo de texto permanece oculto hasta esa
 acción. La definición confirmada y sus comprobaciones están en C08-PROP-01 de
 [Canvas 0.8](../../../iteraciones/0.8.md).
+La [referencia creada para Everett](../propuestas-pedir-cambios.png) muestra ambos estados e
+incorpora las correcciones del usuario: `Pedir cambios` en el centro, campo sin tirador y
+botones inferiores alineados. Esta imagen complementa los antecedentes de Infinity Canvas.
 
 ## Aplicación al alcance vigente
 
