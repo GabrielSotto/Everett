@@ -207,6 +207,8 @@ el 9 de octubre de 2026: interfaz en `C:/Proyectos/codroid/tools/board/web` y gu
 la [captura local](referencias/0.11/board-codroid.jpg) conserva la referencia visual.
 Adaptar esta dirección a Everett combinándola con las vistas y capacidades de propiedades
 previstas a continuación. El diseño concreto de Board se define en 0.11.
+Comprobar la coherencia visual de su tarjeta referenciada en Canvas, elegida para 0.8 en
+[C08-MAT-07](iteraciones/0.8.md).
 
 - Revisar Kanban, tabla y calendario sobre las mismas tareas.
 - Adoptar los patrones de propiedades y vistas de **Notion** que acordamos usar como referencia.
