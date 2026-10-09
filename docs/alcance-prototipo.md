@@ -86,7 +86,9 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
   incluidos desvíos y vueltas alrededor de materiales. Reajustar los extremos a sus anclajes sin
   descartar el recorrido elegido; otros tipos de conector quedan fuera de esta definición.
 - Al hacer hover sobre una conexión, engrosar su trazo y ofrecer una zona de interacción más amplia
-  que la línea visible. Un clic permite escribir o editar texto asociado a la conexión.
+  que la línea visible. Un clic permite escribir o editar texto asociado a la conexión. El texto
+  aparece integrado en el cable, interrumpiendo el trazo bajo las palabras; conserva esa ubicación
+  al mover los materiales o cambiar el zoom, según C08-LINK-02 de [Canvas 0.8](iteraciones/0.8.md).
 - Selección y eliminación explícita de conexiones.
 - Rechazar conexiones hacia zonas de agente.
 - Undo/Redo desde los atajos reales, diferenciando texto y operaciones del Canvas.
