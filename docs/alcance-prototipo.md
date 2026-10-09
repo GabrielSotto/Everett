@@ -201,6 +201,13 @@ El desglose que señalaste en **OpenCode** queda como referencia para esta etapa
 
 ### Board
 
+Tomar como referencia de estructura y estética el tablero de Codroid aportado por el usuario
+el 9 de octubre de 2026: interfaz en `C:/Proyectos/codroid/tools/board/web` y guía en
+`C:/Proyectos/codroid/docs/TABLERO.md`. Se inspeccionaron su Kanban y el detalle de un ticket;
+la [captura local](referencias/0.11/board-codroid.jpg) conserva la referencia visual.
+Adaptar esta dirección a Everett combinándola con las vistas y capacidades de propiedades
+previstas a continuación. El diseño concreto de Board se define en 0.11.
+
 - Revisar Kanban, tabla y calendario sobre las mismas tareas.
 - Adoptar los patrones de propiedades y vistas de **Notion** que acordamos usar como referencia.
 - Buscar, añadir, editar, quitar y organizar propiedades.
