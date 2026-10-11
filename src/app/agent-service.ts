@@ -3,11 +3,11 @@ import { parseShippingIntent, releaseSummary, shippingLabels } from '../domain/s
 import { Store } from './store';
 import type { Intent } from './diagnostics/trace';
 import { ensure } from '../domain/invariants';
+import { materialText } from '../domain/material-content';
 type Channel = 'messages' | 'chat' | 'codeMessages';
 
 /** Simula respuestas locales y aplica sus acciones mediante los comandos compartidos del Mundo. */
 export class AgentService {
-  private sequence = 0;
   private disposed = false;
   private runs = new Map<string, { world: string; intent: Intent }>();
   private jobs = new Map<
@@ -27,9 +27,10 @@ export class AgentService {
     purpose: string,
     tools: string[],
     intent: Intent,
+    context?: { conversation: string; channel: Channel },
   ): string {
     ensure(!this.disposed, 'SERVICE_CLOSED', 'El servicio de agentes está cerrado');
-    const id = 'run-' + ++this.sequence;
+    const id = 'run-' + crypto.randomUUID();
     this.store.dispatch(
       {
         type: 'agent.run.start',
@@ -46,6 +47,7 @@ export class AgentService {
           costUsd: null,
           error: null,
           traceId: intent.interaction,
+          ...context,
         },
       },
       intent,
@@ -93,13 +95,24 @@ export class AgentService {
     intent: Intent,
     plan: string[] | null = null,
     materialIds: string[] = [],
+    conversation?: string,
+    messageId?: string,
   ): void {
     this.store.dispatch(
       {
         type: 'message',
         world,
         channel,
-        message: { id: 'msg-' + ++this.sequence, role, name, text, refs: [], plan, materialIds },
+        message: {
+          id: messageId ?? 'msg-' + crypto.randomUUID(),
+          role,
+          name,
+          text,
+          refs: [],
+          plan,
+          materialIds,
+        },
+        ...(conversation ? { conversation } : {}),
       },
       intent,
     );
@@ -173,11 +186,44 @@ export class AgentService {
       plan,
     };
   }
+  private completeConversation(world: string, id: string, intent: Intent): string {
+    const w = getWorld(this.store.get(), world),
+      run = need(
+        w.runs.find((r) => r.id === id),
+        'Trabajo inexistente',
+      );
+    const thread = need(
+      w.conversations.find((c) => c.id === run.conversation),
+      'Conversación inexistente',
+    );
+    const existing = thread.messages.find((m) => m.id === 'msg-' + id);
+    if (existing) return existing.text;
+    const system = this.system(world, run.purpose, intent),
+      reply = this.response(getWorld(this.store.get(), world), run.purpose);
+    const text = system ?? reply.text;
+    this.message(
+      world,
+      run.channel ?? 'chat',
+      text,
+      'agent',
+      need(
+        w.agents.find((a) => a.id === run.agent),
+        'Agente inexistente',
+      ).name,
+      intent,
+      system ? null : reply.plan,
+      [],
+      thread.id,
+      'msg-' + id,
+    );
+    return text;
+  }
   async converse(
     world: string,
     channel: 'messages' | 'chat',
     text: string,
     materialIds: string[] = [],
+    conversation?: string,
   ): Promise<void> {
     ensure(!this.disposed, 'SERVICE_CLOSED', 'El servicio de agentes está cerrado');
     if (!text.trim() && !materialIds.length) return;
@@ -195,10 +241,17 @@ export class AgentService {
       intent,
       null,
       materialIds,
+      conversation,
     );
     const w = getWorld(this.store.get(), world),
       invoked = w.agents.find((a) => text.toLowerCase().includes('@' + a.name.toLowerCase()));
-    if (channel === 'chat' && w.participants.length > 1 && !invoked) return;
+    const thread = w.conversations.find((c) => c.id === conversation) ?? w.conversations[0];
+    if (
+      (thread?.participants.filter((name) => !w.agents.some((a) => a.name === name)).length ?? 1) >
+        1 &&
+      !invoked
+    )
+      return;
     const agent = invoked ?? w.agents[0];
     if (!agent) return;
     const run = this.startRun(
@@ -207,28 +260,19 @@ export class AgentService {
       text,
       parseShippingIntent(text) ? ['world.shipping', 'board.read'] : ['context.read'],
       intent,
+      { conversation: need(thread, 'Conversación inexistente').id, channel },
     );
     try {
       await Promise.resolve();
       if (this.disposed) return;
-      const system = this.system(world, text, intent),
-        reply = this.response(getWorld(this.store.get(), world), text);
-      this.message(
-        world,
-        channel,
-        system ?? reply.text,
-        'agent',
-        agent.name,
-        intent,
-        system ? null : reply.plan,
-      );
+      this.completeConversation(world, run, intent);
       this.finishRun(world, run, intent);
     } catch (error) {
       this.finishRun(world, run, intent, 'failed', error);
       throw error;
     }
   }
-  async talk(world: string, agentId: string, text: string): Promise<string> {
+  async talk(world: string, agentId: string, text: string, conversation?: string): Promise<string> {
     if (!text.trim()) return '';
     const w = getWorld(this.store.get(), world),
       agent = need(
@@ -236,22 +280,37 @@ export class AgentService {
         'Agente inexistente',
       );
     const intent = this.store.log.intent('hablar con agente', 'AGENTS-03', 'service');
-    const run = this.startRun(world, agent.id, text, ['context.read', 'world.shipping'], intent);
+    const thread = need(
+      w.conversations.find((c) => c.id === conversation) ?? w.conversations[0],
+      'Conversación inexistente',
+    );
+    this.message(
+      world,
+      'messages',
+      text,
+      'user',
+      this.store.get().profile.name,
+      intent,
+      null,
+      [],
+      thread.id,
+    );
+    const run = this.startRun(world, agent.id, text, ['context.read', 'world.shipping'], intent, {
+      conversation: thread.id,
+      channel: 'messages',
+    });
     try {
       await Promise.resolve();
       if (this.disposed) return '';
-      return (
-        this.system(world, text, intent) ??
-        this.response(getWorld(this.store.get(), world), text).text
-      );
+      return this.completeConversation(world, run, intent);
     } catch (error) {
       this.finishRun(world, run, intent, 'failed', error);
       throw error;
     } finally {
-      this.finishRun(world, run, intent);
+      if (!this.disposed) this.finishRun(world, run, intent);
     }
   }
-  async code(world: string, file: string, text: string): Promise<void> {
+  async code(world: string, file: string, text: string, conversation?: string): Promise<void> {
     if (!text.trim()) return;
     const intent = this.store.log.intent('proponer cambios', 'CODE-02', 'service');
     const w = getWorld(this.store.get(), world),
@@ -268,10 +327,30 @@ export class AgentService {
       intent,
     );
     try {
-      this.message(world, 'codeMessages', text, 'user', this.store.get().profile.name, intent);
+      this.message(
+        world,
+        'codeMessages',
+        text,
+        'user',
+        this.store.get().profile.name,
+        intent,
+        null,
+        [],
+        conversation,
+      );
       const system = this.system(world, text, intent);
       if (system) {
-        this.message(world, 'codeMessages', system, 'agent', agent.name, intent);
+        this.message(
+          world,
+          'codeMessages',
+          system,
+          'agent',
+          agent.name,
+          intent,
+          null,
+          [],
+          conversation,
+        );
         return;
       }
       if (w.proposal) throw new Error('Revisá primero la propuesta pendiente.');
@@ -283,6 +362,9 @@ export class AgentService {
           'agent',
           agent.name,
           intent,
+          null,
+          [],
+          conversation,
         );
         return;
       }
@@ -313,6 +395,9 @@ export class AgentService {
           'agent',
           agent.name,
           intent,
+          null,
+          [],
+          conversation,
         );
         return;
       }
@@ -326,7 +411,17 @@ export class AgentService {
         },
         intent,
       );
-      this.message(world, 'codeMessages', summary, 'agent', agent.name, intent);
+      this.message(
+        world,
+        'codeMessages',
+        summary,
+        'agent',
+        agent.name,
+        intent,
+        null,
+        [],
+        conversation,
+      );
     } catch (error) {
       this.finishRun(world, run, intent, 'failed', error);
       throw error;
@@ -335,7 +430,11 @@ export class AgentService {
     }
   }
   process(world: string, id: string): void {
-    this.cancel(world, id);
+    const previous = this.jobs.get(world + ':' + id);
+    if (previous) {
+      clearTimeout(previous.timer);
+      this.jobs.delete(world + ':' + id);
+    }
     const w = getWorld(this.store.get(), world),
       a = need(
         w.assignments.find((a) => a.id === id),
@@ -343,43 +442,56 @@ export class AgentService {
       ),
       node = w.nodes.find((n) => n.id === a.node),
       intent = this.store.log.intent('entregar propuesta', 'OWNER-01', 'service');
-    const run = this.startRun(
-      world,
-      a.agent,
-      a.instruction || 'Material asignado',
-      ['material.read', 'proposal.prepare'],
+    if (a.phase !== 'working') return;
+    const run =
+      a.runId && w.runs.some((r) => r.id === a.runId && r.status === 'running')
+        ? a.runId
+        : this.startRun(
+            world,
+            a.agent,
+            a.instruction || 'Material asignado',
+            ['material.read', 'proposal.prepare'],
+            intent,
+          );
+    const source = a.input ?? (node ? materialText(w, node) : '');
+    const instruction = [a.instruction, a.feedback].filter(Boolean).join('\n');
+    const dueAt = a.dueAt ?? Date.now() + 1600;
+    this.store.dispatch(
+      { type: 'assignment.schedule', world, id, input: source, runId: run, dueAt },
       intent,
     );
-    const source = node?.data.kind === 'note' ? node.data.text : w.objective;
-    const text = /resum/i.test(a.instruction)
+    const text = /resum|breve/i.test(a.feedback || instruction)
       ? source
           .split(/[.!?]\s/)
           .slice(0, 2)
           .join('. ')
-      : /analiz/i.test(a.instruction)
+      : /analiz/i.test(instruction)
         ? `${source}\n\nPregunta pendiente: ${w.tasks[0]?.title ?? '¿Qué debe resolver este material?'}`
         : source +
           '\n\n' +
-          (a.instruction ||
-            'Próximo paso: ' + (w.tasks[0]?.title ?? 'Definir una primera prueba.'));
-    const timer = setTimeout(() => {
-      try {
-        const current = getWorld(this.store.get(), world).assignments.find(
-          (job) => job.id === id && job.revision === a.revision,
-        );
-        if (current)
-          this.store.dispatch(
-            { type: 'assignment.ready', world, id, revision: a.revision, text },
-            intent,
+          (instruction || 'Próximo paso: ' + (w.tasks[0]?.title ?? 'Definir una primera prueba.'));
+    const timer = setTimeout(
+      () => {
+        try {
+          const current = getWorld(this.store.get(), world).assignments.find(
+            (job) => job.id === id && job.revision === a.revision,
           );
-        this.finishRun(world, run, intent, current ? 'completed' : 'cancelled');
-      } catch (error) {
-        this.finishRun(world, run, intent, 'failed', error);
-        this.store.log.error(error, 'AgentService.process', intent);
-      } finally {
-        this.jobs.delete(world + ':' + id);
-      }
-    }, 1600);
+          if (current)
+            this.store.dispatch(
+              { type: 'assignment.ready', world, id, revision: a.revision, text },
+              intent,
+            );
+          this.finishRun(world, run, intent, current ? 'completed' : 'cancelled');
+        } catch (error) {
+          this.finishRun(world, run, intent, 'failed', error);
+          this.store.dispatch({ type: 'assignment.interrupt', world, id }, intent);
+          this.store.log.error(error, 'AgentService.process', intent);
+        } finally {
+          this.jobs.delete(world + ':' + id);
+        }
+      },
+      Math.max(0, dueAt - Date.now()),
+    );
     this.jobs.set(world + ':' + id, { timer, intent, run, world, assignment: id });
   }
   cancel(world: string, id: string): void {
@@ -394,8 +506,49 @@ export class AgentService {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    for (const job of this.jobs.values()) this.cancel(job.world, job.assignment);
-    for (const [id, run] of this.runs) this.finishRun(run.world, id, run.intent, 'cancelled');
+    for (const job of this.jobs.values()) clearTimeout(job.timer);
+    this.jobs.clear();
+    this.runs.clear();
+  }
+  resume(): void {
+    for (const world of this.store.get().worlds) {
+      for (const run of world.runs.filter((r) => r.status === 'running' && r.conversation)) {
+        const intent = this.store.log.intent('continuar conversación', 'C08-STATE-02', 'service');
+        try {
+          this.completeConversation(world.id, run.id, intent);
+          this.finishRun(world.id, run.id, intent);
+        } catch (error) {
+          this.finishRun(world.id, run.id, intent, 'failed', error);
+        }
+      }
+      for (const job of world.assignments)
+        if (job.phase === 'working') {
+          const run = world.runs.find((run) => run.id === job.runId);
+          if (run && (run.status === 'failed' || run.status === 'cancelled'))
+            this.store.dispatch(
+              { type: 'assignment.interrupt', world: world.id, id: job.id },
+              this.store.log.intent('recuperar interrupción confirmada', 'C08-STATE-02', 'service'),
+            );
+          else if (run?.status === 'completed') {
+            if (job.text)
+              this.store.dispatch(
+                {
+                  type: 'assignment.ready',
+                  world: world.id,
+                  id: job.id,
+                  revision: job.revision,
+                  text: job.text,
+                },
+                this.store.log.intent('recuperar resultado registrado', 'C08-STATE-02', 'service'),
+              );
+            else
+              this.store.dispatch(
+                { type: 'assignment.interrupt', world: world.id, id: job.id },
+                this.store.log.intent('recuperar resultado ausente', 'C08-STATE-02', 'service'),
+              );
+          } else this.process(world.id, job.id);
+        }
+    }
   }
   cancelZone(world: string, zoneId: string): void {
     const w = getWorld(this.store.get(), world),

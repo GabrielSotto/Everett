@@ -17,6 +17,30 @@ import type {
 import type { AgentRun } from './operations';
 
 export type Command =
+  | { type: 'assignment.interrupt' | 'assignment.retry'; world: string; id: string }
+  | { type: 'node.rename'; world: string; id: string; name: string }
+  | { type: 'node.duplicate'; world: string; id: string }
+  | {
+      type: 'node.style';
+      world: string;
+      id: string;
+      color: string;
+      thickness: number;
+      fill: boolean;
+      stroke: string;
+    }
+  | { type: 'link.label'; world: string; id: string; text: string }
+  | { type: 'zone.instruction'; world: string; id: string; text: string }
+  | {
+      type: 'assignment.schedule';
+      world: string;
+      id: string;
+      dueAt: number;
+      runId: string;
+      input: string;
+    }
+  | { type: 'conversation.create'; world: string; origin: Surface }
+  | { type: 'conversation.rename'; world: string; id: string; name: string }
   | {
       type: 'world.shipping';
       world: string;
@@ -277,11 +301,13 @@ export type Command =
       world: string;
       channel: 'messages' | 'chat' | 'codeMessages';
       message: Message;
+      conversation?: string;
     }
   | {
       type: 'participant';
       world: string;
       name: string;
+      conversation?: string;
     }
   | {
       type: 'comment';

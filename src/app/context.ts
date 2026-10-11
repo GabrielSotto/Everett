@@ -5,6 +5,7 @@ import type { Intent } from './diagnostics/trace';
 import type { SpatialCamera } from '../spatial/camera';
 import type { AgentService } from './agent-service';
 import type { Ui } from './ui-state';
+import type { LocalStorage } from '../platform/local-storage';
 export { uiState } from './ui-state';
 export type { Ui } from './ui-state';
 export type { Tool } from '../features/canvas/state';
@@ -15,6 +16,8 @@ export interface Context {
   ui: Ui;
   camera: SpatialCamera | null;
   service: AgentService;
+  storage: LocalStorage | null;
+  persist(): void;
   act(
     c: Command,
     verb: string,

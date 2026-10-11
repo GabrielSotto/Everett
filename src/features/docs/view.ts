@@ -1,4 +1,5 @@
 import { parseShippingIntent } from '../../domain/shipping';
+import { conversation } from '../../domain/conversations';
 import type { Context } from '../../app/context';
 import { target, value, type View } from '../../ui/dom';
 import { docsPresentation } from './presentation';
@@ -141,7 +142,7 @@ export class DocsView implements View {
             if (parseShippingIntent(text)) {
               this.busy = true;
               void ctx.service
-                .talk(ctx.world().id, 'eve', text)
+                .talk(ctx.world().id, 'eve', text, conversation(ctx.world(), ctx.ui).id)
                 .then((answer) => {
                   this.response = answer;
                 })

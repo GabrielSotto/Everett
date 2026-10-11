@@ -1,5 +1,6 @@
 import { html } from './dom';
 const paths: Record<string, string> = {
+  draw: '<path d="m4 16 12-12 4 4-12 12-5 1zM14 6l4 4M3 21h18"/>',
   'panel-left': '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/>',
   'panel-right': '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/>',
   status:

@@ -2,6 +2,7 @@ import type { Context } from '../app/context';
 import { bindDictation } from '../platform/dictation';
 import { html } from './dom';
 import { btn, icon } from './icons';
+import { conversation, conversationDraft } from '../domain/conversations';
 export interface ComposerDraft {
   key: string;
   value: string;
@@ -18,6 +19,11 @@ export function composer(
 }
 
 export function composerDraft(ctx: Context, id: string, entity = ''): ComposerDraft {
+  if (id === 'session-composer' || id === 'canvas-chat-composer')
+    return {
+      key: JSON.stringify([ctx.ui.userId, ctx.world().id, conversation(ctx.world(), ctx.ui).id]),
+      value: conversationDraft(ctx.world(), ctx.ui).text,
+    };
   const key = JSON.stringify([ctx.world().id, id, entity]);
   return { key, value: ctx.ui.composerDrafts[key] ?? '' };
 }
@@ -55,7 +61,14 @@ export function bindComposer(root: HTMLElement, signal: AbortSignal, ctx?: Conte
     (e) => {
       if (e.target instanceof HTMLTextAreaElement && e.target.closest('.composer')) {
         const key = e.target.closest<HTMLFormElement>('form')?.dataset.draftKey;
-        if (ctx && key) ctx.ui.composerDrafts[key] = e.target.value;
+        if (ctx && key) {
+          ctx.ui.composerDrafts[key] = e.target.value;
+          if (
+            e.target.id === 'session-composer-input' ||
+            e.target.id === 'canvas-chat-composer-input'
+          )
+            conversationDraft(ctx.world(), ctx.ui).text = e.target.value;
+        }
         e.target.style.height = 'auto';
         e.target.style.height = Math.min(130, e.target.scrollHeight) + 'px';
       }

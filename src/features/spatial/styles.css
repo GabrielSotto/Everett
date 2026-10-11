@@ -1,7 +1,8 @@
 .space {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  /* El foco no debe introducir scroll fuera de la cámara espacial. */
+  overflow: clip;
   background: #04070d;
   touch-action: none;
   cursor: grab;

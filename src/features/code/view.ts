@@ -6,6 +6,7 @@ import { html, target, value, type View } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
 import { contextualComposer, bindComposer, preserveComposerDrafts } from '../../ui/composer';
 import { slot, bindSlot } from '../../ui/slot';
+import { conversation } from '../../domain/conversations';
 function highlight(text: string): string {
   const re =
     /(\/\/[^\n]*|"[^"\n]*"|'[^'\n]*'|\b(?:export|interface|function|const|return|readonly|typeof|throw|new|if|import|from|type|string|number|boolean|unknown)\b|\b\d+\b)/g;
@@ -84,7 +85,7 @@ export class CodeView implements View {
             }
             ctx.ui.code.codeResponse = true;
             void ctx.service
-              .code(ctx.world().id, f.id, text)
+              .code(ctx.world().id, f.id, text, conversation(ctx.world(), ctx.ui).id)
               .catch((error) => ctx.fail(error, 'code.request'));
           }
         }

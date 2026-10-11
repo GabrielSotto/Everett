@@ -1,0 +1,22 @@
+import { nodeTitle, type Material, type WorldSnapshot } from './model';
+export function materialText(world: WorldSnapshot, material: Material): string {
+  const data = material.data;
+  if (data.kind === 'note') return data.text;
+  if (data.kind === 'reference') {
+    const ref = data.ref;
+    return ref.kind === 'document'
+      ? (world.docs.find((d) => d.id === ref.id)?.body ?? '')
+      : ref.kind === 'task'
+        ? [
+            world.tasks.find((t) => t.id === ref.id)?.title,
+            world.tasks.find((t) => t.id === ref.id)?.description,
+          ]
+            .filter(Boolean)
+            .join('\n')
+        : ref.kind === 'file'
+          ? (world.files.find((f) => f.id === ref.id)?.text ?? '')
+          : (world.agents.find((a) => a.id === ref.id)?.role ?? '');
+  }
+  if (data.kind === 'link') return [data.url, data.description].filter(Boolean).join('\n');
+  return nodeTitle(world, material);
+}

@@ -9,6 +9,14 @@ type CanvasCommand = Extract<
   {
     type:
       | 'node.create'
+      | 'assignment.interrupt'
+      | 'assignment.retry'
+      | 'node.rename'
+      | 'node.duplicate'
+      | 'node.style'
+      | 'link.label'
+      | 'zone.instruction'
+      | 'assignment.schedule'
       | 'node.move'
       | 'node.edit'
       | 'node.delete'
@@ -40,6 +48,124 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       'Material inexistente',
     );
   switch (command.type) {
+    case 'assignment.interrupt': {
+      const job = need(
+        world.assignments.find((a) => a.id === command.id),
+        'Trabajo inexistente',
+      );
+      if (job.phase === 'working') job.phase = 'interrupted';
+      break;
+    }
+    case 'assignment.retry': {
+      const job = need(
+        world.assignments.find((a) => a.id === command.id),
+        'Trabajo inexistente',
+      );
+      ensure(job.phase === 'interrupted', 'RETRY', 'El trabajo no está interrumpido');
+      job.phase = 'working';
+      delete job.dueAt;
+      delete job.runId;
+      break;
+    }
+    case 'node.rename': {
+      const material = node(command.id);
+      ensure(
+        !material.owner && !!command.name.trim(),
+        'NAME',
+        'Ingresá un nombre para un material disponible',
+      );
+      if (material.data.kind === 'reference') {
+        const ref = material.data.ref;
+        if (ref.kind === 'document')
+          need(
+            world.docs.find((d) => d.id === ref.id),
+            'Documento inexistente',
+          ).title = command.name.trim();
+        else if (ref.kind === 'task')
+          need(
+            world.tasks.find((t) => t.id === ref.id),
+            'Tarea inexistente',
+          ).title = command.name.trim();
+        else if (ref.kind === 'file')
+          need(
+            world.files.find((f) => f.id === ref.id),
+            'Archivo inexistente',
+          ).name = command.name.trim();
+        else
+          need(
+            world.agents.find((a) => a.id === ref.id),
+            'Agente inexistente',
+          ).name = command.name.trim();
+      } else material.data.title = command.name.trim();
+      break;
+    }
+    case 'node.duplicate': {
+      const original = node(command.id);
+      ensure(!original.owner, 'LOCKED', 'El agente está usando el material');
+      const copy = structuredClone(original);
+      copy.id = uid();
+      copy.x += 28;
+      copy.y += 28;
+      if (copy.data.kind === 'reference') {
+        ensure(
+          copy.data.ref.kind === 'document',
+          'DUPLICATE',
+          'Solo los documentos referenciados se pueden duplicar',
+        );
+        const referenceId = copy.data.ref.id;
+        const doc = structuredClone(
+          need(
+            world.docs.find((d) => d.id === referenceId),
+            'Documento inexistente',
+          ),
+        );
+        doc.id = uid();
+        doc.title += ' — copia';
+        world.docs.push(doc);
+        copy.data.ref.id = doc.id;
+      }
+      world.nodes.push(copy);
+      break;
+    }
+    case 'node.style': {
+      const material = node(command.id);
+      ensure(
+        !material.owner && (material.data.kind === 'shape' || material.data.kind === 'drawing'),
+        'STYLE',
+        'Este material no tiene estilo de trazo',
+      );
+      if (material.data.kind === 'shape' || material.data.kind === 'drawing') {
+        material.data.color = command.color;
+        material.data.thickness = command.thickness;
+        if (material.data.kind === 'shape') {
+          material.data.fill = command.fill;
+          material.data.stroke = command.stroke;
+        }
+      }
+      break;
+    }
+    case 'link.label':
+      need(
+        world.links.find((l) => l.id === command.id),
+        'Conexión inexistente',
+      ).label = command.text;
+      break;
+    case 'zone.instruction':
+      need(
+        world.zones.find((z) => z.id === command.id),
+        'Zona inexistente',
+      ).instruction = command.text;
+      break;
+    case 'assignment.schedule': {
+      const job = need(
+        world.assignments.find((a) => a.id === command.id),
+        'Trabajo inexistente',
+      );
+      job.dueAt = command.dueAt;
+      job.runId = command.runId;
+      job.input = command.input;
+      break;
+    }
     case 'node.create':
       world.nodes.push(command.node);
       break;
@@ -92,10 +218,17 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       );
       world.links = world.links.filter((l) => l.id !== command.id);
       break;
-    case 'node.resize':
-      ensure(!node(command.id).owner, 'LOCKED', 'El agente está usando el material');
-      Object.assign(node(command.id), command.rect);
+    case 'node.resize': {
+      const material = node(command.id);
+      ensure(!material.owner, 'LOCKED', 'El agente está usando el material');
+      if (material.data.kind === 'drawing')
+        material.data.points = material.data.points.map((p) => ({
+          x: (p.x * command.rect.width) / material.width,
+          y: (p.y * command.rect.height) / material.height,
+        }));
+      Object.assign(material, command.rect);
       break;
+    }
     case 'zone.create':
       world.zones.push(command.zone);
       break;
@@ -166,7 +299,10 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         text: '',
         instruction: command.instruction ?? '',
         returnTo: command.returnTo ?? { x: m.x, y: m.y },
-        position: { x: z?.x ?? 300, y: z ? z.y + z.height + 50 : 300 },
+        position: {
+          x: (z?.x ?? 300) + world.assignments.filter((job) => job.agent === a.id).length * 350,
+          y: z ? z.y + z.height + 50 : 300,
+        },
       });
       break;
     }
@@ -183,9 +319,16 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         world.assignments.find((a) => a.id === command.id),
         'Propuesta inexistente',
       );
+      ensure(
+        a.phase === 'ready' && !!command.text.trim(),
+        'REVISION',
+        'La propuesta debe estar lista y el pedido debe tener texto',
+      );
       a.revision++;
       a.phase = 'working';
-      a.instruction = command.text;
+      a.feedback = command.text;
+      delete a.dueAt;
+      delete a.runId;
       break;
     }
     case 'assignment.finish': {
@@ -203,6 +346,13 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       m.x = a.returnTo.x;
       m.y = a.returnTo.y;
       if (command.decision === 'accept') {
+        if (m.data.kind === 'reference' && m.data.ref.kind === 'document') {
+          const documentId = m.data.ref.id;
+          need(
+            world.docs.find((d) => d.id === documentId),
+            'Documento inexistente',
+          ).body = a.text;
+        }
         const result: Material = {
           id: uid(),
           ...a.position,
@@ -218,6 +368,11 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       break;
     }
     case 'comment':
+      ensure(
+        !!command.text.trim() && world.nodes.some((n) => n.id === command.node),
+        'COMMENT',
+        'Elegí un material y escribí un comentario',
+      );
       world.comments.push({
         id: uid(),
         node: command.node,

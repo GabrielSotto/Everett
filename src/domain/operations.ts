@@ -10,4 +10,6 @@ export interface AgentRun {
   costUsd: number | null;
   error: { message: string; stack: string; code: string } | null;
   traceId: string;
+  conversation?: string;
+  channel?: 'messages' | 'chat' | 'codeMessages';
 }

@@ -1,7 +1,10 @@
 import { getWorld, type State, type World } from './model';
 import type { Command } from './command-types';
 
-type CanvasSnapshot = Pick<World, 'nodes' | 'links' | 'zones' | 'comments'>;
+type CanvasSnapshot = Pick<
+  World,
+  'nodes' | 'links' | 'zones' | 'comments' | 'docs' | 'tasks' | 'files' | 'agents'
+>;
 interface Entry {
   before: CanvasSnapshot;
   after: CanvasSnapshot;
@@ -14,6 +17,11 @@ interface Timeline {
 }
 const reversible = new Set<Command['type']>([
   'node.create',
+  'node.rename',
+  'node.duplicate',
+  'node.style',
+  'link.label',
+  'zone.instruction',
   'node.move',
   'node.resize',
   'node.edit',
@@ -30,7 +38,16 @@ const reversible = new Set<Command['type']>([
 ]);
 const barriers = new Set<Command['type']>(['assign', 'assignment.finish']);
 function capture(w: World): CanvasSnapshot {
-  return structuredClone({ nodes: w.nodes, links: w.links, zones: w.zones, comments: w.comments });
+  return structuredClone({
+    nodes: w.nodes,
+    links: w.links,
+    zones: w.zones,
+    comments: w.comments,
+    docs: w.docs,
+    tasks: w.tasks,
+    files: w.files,
+    agents: w.agents,
+  });
 }
 
 /** El historial conserva ediciones del Canvas. Los traspasos de materiales cierran la secuencia reversible. */
@@ -91,17 +108,58 @@ export class CanvasHistory {
       e = (direction === 'undo' ? t.past : t.future).at(-1);
     if (!e) return state;
     const next = structuredClone(state);
-    Object.assign(
-      getWorld(next, world),
-      structuredClone(direction === 'undo' ? e.before : e.after),
-    );
+    const destination = getWorld(next, world);
+    const source = direction === 'undo' ? e.after : e.before;
+    const target = direction === 'undo' ? e.before : e.after;
+    // Aplicar solo el delta de registros compartidos; no rebobinar ediciones ajenas.
+    for (const group of ['docs', 'tasks', 'files', 'agents'] as const) {
+      const sourceItems = source[group] as unknown as unknown as {
+        id: string;
+        [key: string]: unknown;
+      }[];
+      const targetItems = target[group] as unknown as { id: string; [key: string]: unknown }[];
+      const currentItems = destination[group] as unknown as {
+        id: string;
+        [key: string]: unknown;
+      }[];
+      for (const id of new Set([...sourceItems, ...targetItems].map((item) => item.id))) {
+        const a = sourceItems.find((item) => item.id === id),
+          b = targetItems.find((item) => item.id === id);
+        if (JSON.stringify(a) === JSON.stringify(b)) continue;
+        const index = currentItems.findIndex((item) => item.id === id);
+        if (!b && index >= 0) currentItems.splice(index, 1);
+        else if (!a && b && index < 0) currentItems.push(structuredClone(b));
+        else if (a && b && index >= 0)
+          for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+            if (JSON.stringify(a[key]) !== JSON.stringify(b[key]))
+              currentItems[index]![key] = structuredClone(b[key]);
+          }
+      }
+    }
+    const { docs: _docs, tasks: _tasks, files: _files, agents: _agents, ...canvas } = target;
+    Object.assign(destination, structuredClone(canvas));
     return next;
   }
-  commit(world: string, direction: 'undo' | 'redo'): void {
+  commit(world: string, direction: 'undo' | 'redo', state: State): void {
     const t = this.timeline(world),
       source = direction === 'undo' ? t.past : t.future,
       destination = direction === 'undo' ? t.future : t.past;
     const entry = source.pop();
-    if (entry) destination.push(entry);
+    if (!entry) return;
+    const current = getWorld(state, world),
+      from = direction === 'undo' ? entry.after : entry.before,
+      to = direction === 'undo' ? entry.before : entry.after;
+    // Al retirar un registro creado por Canvas, conservar sus últimas ediciones
+    // compartidas para la próxima restauración. Solo confirmar tras validar el estado.
+    for (const group of ['docs', 'tasks', 'files', 'agents'] as const) {
+      const items = from[group] as unknown as { id: string }[];
+      for (let index = 0; index < items.length; index++) {
+        const item = items[index]!;
+        if (to[group].some((other) => other.id === item.id)) continue;
+        const live = current[group].find((other) => other.id === item.id);
+        if (live) items[index] = structuredClone(live);
+      }
+    }
+    destination.push(entry);
   }
 }

@@ -12,6 +12,7 @@ import {
   type Camera,
   type WorldSnapshot,
   type Rect,
+  type State,
 } from '../domain/model';
 import type { Command } from '../domain/command-types';
 import { seed } from '../domain/seed';
@@ -28,12 +29,16 @@ import { Shell } from '../ui/shell';
 import { bindTooltips } from '../ui/tooltips';
 import { SpatialView } from '../features/spatial/view';
 import { CanvasView } from '../features/canvas/view';
+import { MediaView } from '../features/canvas/media-view';
 import { NoteView } from '../features/canvas/note-view';
 import { SessionView } from '../features/session/view';
 import { CodeView } from '../features/code/view';
 import { DocsView } from '../features/docs/view';
 import { BoardView } from '../features/board/view';
 import { AgentsView } from '../features/agents/view';
+import type { Ui } from './ui-state';
+import type { LocalStorage } from '../platform/local-storage';
+import { shortcutCombination } from '../domain/shortcuts';
 export class EverettApp implements Context {
   private readonly lifetime = new AbortController();
   private readonly unsubscribe: () => void;
@@ -50,13 +55,18 @@ export class EverettApp implements Context {
   private navigationLock = 0;
   private wheelIntent = new WheelIntent();
   private noticeTimer: ReturnType<typeof setTimeout> | null = null;
-  constructor(private root: HTMLElement) {
+  constructor(
+    private root: HTMLElement,
+    readonly storage: LocalStorage | null = null,
+    restored?: { state: State; ui: Ui },
+  ) {
     const suppliedSeed = new URLSearchParams(location.search).get('seed');
     const variation =
       suppliedSeed === null
         ? (crypto.getRandomValues(new Uint32Array(1))[0] ?? 0)
         : Number(suppliedSeed) || 0;
-    this.store = new Store(seed(location.hash === '#empty', variation));
+    if (restored) Object.assign(this.ui, restored.ui);
+    this.store = new Store(restored?.state ?? seed(location.hash === '#empty', variation));
     this.service = new AgentService(this.store);
     root.innerHTML =
       '<header id="shell"></header><main id="viewport"><div id="viewport-hud" data-fixed-presentation aria-label="Navegación espacial"></div></main><div id="notification" role="status" aria-live="polite"></div><div id="tooltip" role="tooltip"></div>';
@@ -64,7 +74,7 @@ export class EverettApp implements Context {
     this.shell = new Shell(root.querySelector<HTMLElement>('#shell')!, this);
     const parts = location.hash.replace(/^#\/?/, '').split('/'),
       world = this.store.get().worlds.find((w) => w.id === parts[0]);
-    if (world) {
+    if (world && !restored) {
       this.store.dispatch(
         {
           type: 'navigate',
@@ -84,7 +94,10 @@ export class EverettApp implements Context {
           trace.intent('abrir superficie', 'NAV-01', 'service'),
         );
     }
-    this.unsubscribe = this.store.subscribe((change) => this.changed(change));
+    this.unsubscribe = this.store.subscribe((change) => {
+      this.changed(change);
+      this.persist();
+    });
     this.mount(false);
     this.shell.render();
     this.viewport.addEventListener('wheel', (e) => this.wheel(e), {
@@ -131,14 +144,25 @@ export class EverettApp implements Context {
       },
       { signal: this.lifetime.signal },
     );
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (document.visibilityState === 'hidden') this.flushSave();
+      },
+      { signal: this.lifetime.signal },
+    );
     window.addEventListener(
       'pagehide',
       (event) => {
+        this.flushSave();
         if (!event.persisted) this.dispose();
       },
       { signal: this.lifetime.signal },
     );
     bindTooltips(this.root, this.lifetime.signal);
+    root.addEventListener('input', () => this.persist(), { signal: this.lifetime.signal });
+    root.addEventListener('pointerup', () => this.persist(), { signal: this.lifetime.signal });
+    root.addEventListener('click', () => this.persist(), { signal: this.lifetime.signal });
     window.EverettDebug = Object.freeze({
       snapshot: () => ({
         state: this.store.snapshot(),
@@ -150,6 +174,8 @@ export class EverettApp implements Context {
       logs: () => trace.snapshot(),
     });
     window.__everettReady = true;
+    this.persist();
+    this.service.resume();
     trace.add('application.ready', {
       worldCount: this.store.get().worlds.length,
       route: routeKey(this.store.get().route),
@@ -167,6 +193,46 @@ export class EverettApp implements Context {
     delete window.EverettDebug;
     window.__everettReady = false;
     this.root.replaceChildren();
+  }
+  persist(): void {
+    this.flushSave();
+  }
+  private flushSave(): void {
+    if (!this.storage) return;
+    const state = this.store.snapshot();
+    state.camera = this.currentCamera();
+    void this.storage!.save(state, this.ui)
+      .then(() => {
+        const panel = this.root.querySelector<HTMLElement>('#notification');
+        if (panel?.dataset.storageFailure === 'true') this.notice('Guardado local recuperado.');
+      })
+      .catch((error) => {
+        trace.add('storage.failed', { message: String(error) }, undefined, undefined, 'warn');
+        const panel = this.root.querySelector<HTMLElement>('#notification');
+        if (!panel) return;
+        if (this.noticeTimer !== null) clearTimeout(this.noticeTimer);
+        panel.className = 'visible error';
+        panel.dataset.storageFailure = 'true';
+        panel.textContent = 'No se pudo guardar. El trabajo sigue disponible en esta ventana. ';
+        const retry = document.createElement('button');
+        retry.textContent = 'Reintentar';
+        retry.onclick = () => this.persist();
+        const backup = document.createElement('button');
+        backup.textContent = 'Descargar copia';
+        backup.onclick = () => {
+          void this.storage!.backup(this.store.snapshot(), this.ui)
+            .then((blob) => {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'Everett-respaldo.json';
+              a.click();
+              URL.revokeObjectURL(url);
+            })
+            .catch((error) => this.notice('No se pudo descargar la copia. ' + String(error), true));
+        };
+        panel.append(retry, backup);
+      });
   }
   world(): WorldSnapshot {
     return need(activeWorld(this.store.get()), 'No hay un mundo abierto');
@@ -223,6 +289,7 @@ export class EverettApp implements Context {
     const el = this.root.querySelector<HTMLElement>('#notification');
     if (!el) return;
     if (this.noticeTimer) clearTimeout(this.noticeTimer);
+    delete el.dataset.storageFailure;
     el.textContent = message;
     el.className = 'visible' + (error ? ' error' : '');
     this.noticeTimer = setTimeout(() => el.classList.remove('visible'), 5000);
@@ -233,6 +300,19 @@ export class EverettApp implements Context {
   }
   private changed(change: Change): void {
     if (change.refresh === 'navigation') {
+      const oldRoute = change.beforeRoute;
+      if (oldRoute.kind !== 'universe') {
+        const { chatDrafts: _drafts, ...presentation } = this.ui.chat;
+        this.ui.chatContexts[oldRoute.world] = structuredClone(presentation);
+        if (oldRoute.kind === 'surface' && oldRoute.surface === 'canvas')
+          this.ui.canvasContexts[oldRoute.world] = {
+            camera: this.currentCamera(),
+            selection: this.ui.canvas.selection,
+            selections: [...this.ui.canvas.selections],
+            zone: this.ui.canvas.zoneSelection,
+            link: this.ui.canvas.linkSelection,
+          };
+      }
       this.ui.shell.status = false;
       this.ui.shell.profile = false;
       this.ui.shell.surfaceMenu = false;
@@ -242,10 +322,51 @@ export class EverettApp implements Context {
       this.ui.code.codeResponse = false;
       this.ui.code.currentFile = null;
       this.ui.canvas.selection = null;
+      this.ui.canvas.selections = [];
+      this.ui.canvas.tool = 'select';
       this.ui.canvas.linkStart = null;
       this.ui.canvas.zoneSelection = null;
       this.ui.canvas.linkSelection = null;
       const route = this.store.get().route;
+      if (
+        route.kind !== 'universe' &&
+        (oldRoute.kind === 'universe' || oldRoute.world !== route.world)
+      ) {
+        Object.assign(
+          this.ui.chat,
+          this.ui.chatContexts[route.world] ?? {
+            chatMode: 'closed',
+            chatTab: 'chat',
+            chatCompact: false,
+            chatPosition: { x: 22, y: 160 },
+          },
+        );
+      }
+      if (route.kind === 'surface' && route.surface === 'canvas') {
+        const saved = this.ui.canvasContexts[route.world],
+          world = this.world();
+        if (saved) {
+          this.ui.canvas.selection = world.nodes.some((n) => n.id === saved.selection && !n.owner)
+            ? saved.selection
+            : null;
+          this.ui.canvas.selections = saved.selections.filter((id) =>
+            world.nodes.some((n) => n.id === id && !n.owner),
+          );
+          this.ui.canvas.zoneSelection = world.zones.some((z) => z.id === saved.zone)
+            ? saved.zone
+            : null;
+          this.ui.canvas.linkSelection = world.links.some((l) => l.id === saved.link)
+            ? saved.link
+            : null;
+          if (change.command.type === 'navigate')
+            this.act(
+              { type: 'camera', camera: saved.camera },
+              'recuperar cámara de Canvas',
+              'C08-STATE-01',
+              'service',
+            );
+        }
+      }
       const sibling =
         sameSurface(change.beforeRoute, route) &&
         change.beforeRoute.kind === 'surface' &&
@@ -319,6 +440,7 @@ export class EverettApp implements Context {
     document.body.dataset.mode = r.kind === 'universe' || r.kind === 'world' ? 'space' : 'work';
     if (r.kind === 'universe' || r.kind === 'world') this.view = new SpatialView(scene, this);
     else if (r.kind === 'note') this.view = new NoteView(scene, this);
+    else if (r.kind === 'material') this.view = new MediaView(scene, this);
     else
       switch (r.surface) {
         case 'session':
@@ -353,7 +475,9 @@ export class EverettApp implements Context {
       if (
         route.kind === 'surface' &&
         route.surface === 'canvas' &&
-        !target?.closest('.chat-panel,textarea,input,[contenteditable=true]')
+        !target?.closest(
+          '.canvas-chat,.zone-inspector,.zone-materials,.canvas-context-layer,.proposal,textarea,input,[contenteditable=true]',
+        )
       ) {
         e.preventDefault();
         const rect = this.viewport.getBoundingClientRect();
@@ -361,10 +485,12 @@ export class EverettApp implements Context {
           x: e.clientX - rect.x - rect.width / 2,
           y: e.clientY - rect.y - rect.height / 2,
         });
+        this.persist();
       }
       return;
     }
     e.preventDefault();
+    e.stopPropagation();
     const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
     if (Date.now() < this.navigationLock) return;
     if (this.view instanceof SpatialView) {
@@ -396,6 +522,7 @@ export class EverettApp implements Context {
       );
   }
   private key(e: KeyboardEvent): void {
+    if (e.defaultPrevented || e.isComposing) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       this.ui.shell.searchOpen = !this.ui.shell.searchOpen;
@@ -418,14 +545,16 @@ export class EverettApp implements Context {
         this.shell.render();
         this.render();
       } else if (this.view?.closeTransient?.()) {
+        this.persist();
         return;
       } else if (this.ui.code.codeComposer) {
         this.ui.code.codeComposer = false;
         this.render();
-      } else if (this.ui.chat.chatMode !== 'closed') {
+      } else if (this.view instanceof CanvasView && this.ui.chat.chatMode !== 'closed') {
         this.ui.chat.chatMode = 'closed';
         this.render();
       } else this.back();
+      this.persist();
       return;
     }
     const activeRoute = this.store.get().route;
@@ -445,6 +574,7 @@ export class EverettApp implements Context {
         'keyboard',
       );
       this.ui.canvas.selection = null;
+      this.ui.canvas.selections = [];
       this.ui.canvas.zoneSelection = null;
       this.ui.canvas.linkSelection = null;
       this.render();
@@ -458,11 +588,24 @@ export class EverettApp implements Context {
     }
     const route = this.store.get().route;
     if (route.kind === 'surface' && route.surface === 'canvas') {
-      const key = e.key.toLowerCase();
-      if (key === 'h' || key === 'v' || key === 'n' || key === 'c') {
+      const combination = shortcutCombination(e);
+      const action = Object.keys(this.ui.shortcuts).find(
+        (key) => this.ui.shortcuts[key] && this.ui.shortcuts[key] === combination,
+      );
+      if (action && !e.repeat) {
         e.preventDefault();
-        this.ui.canvas.tool =
-          key === 'h' ? 'hand' : key === 'v' ? 'select' : key === 'n' ? 'note' : 'connect';
+        if (this.view instanceof CanvasView && action === 'comment') {
+          this.view.comment();
+          this.persist();
+          return;
+        }
+        if (this.view instanceof CanvasView && action === 'rename') {
+          this.view.rename();
+          this.persist();
+          return;
+        }
+        if (action === 'hand' || action === 'select' || action === 'note' || action === 'connect')
+          this.ui.canvas.tool = action;
         this.ui.canvas.linkStart = null;
         this.render();
       }

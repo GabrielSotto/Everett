@@ -35,22 +35,15 @@
   box-shadow: 10px 0 35px #493f6006;
 }
 
-.canvas-chat.room {
-  left: 0;
-  right: 0;
-  top: 59px;
-  bottom: 0;
-  border: 0;
-  border-radius: 0;
-  z-index: 44;
-}
-
 .canvas-chat.compact {
   height: 48px !important;
 }
 
 .canvas-chat.compact > .chat-scroll,
 .canvas-chat.compact > .composer,
+.canvas-chat.compact > .chat-draft-area,
+.canvas-chat.compact > .conversation-participants,
+.canvas-chat.compact > #add-person,
 .canvas-chat.compact > .chat-tabs {
   display: none;
 }
@@ -155,32 +148,6 @@
   width: 26px;
   height: 26px;
   background: #9e86b9;
-}
-
-.canvas-chat.room .chat-scroll,
-.canvas-chat.room > .composer {
-  width: min(760px, 100%);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.canvas-chat.room > .composer {
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  margin-bottom: 30px;
-}
-
-.canvas-chat.room .chat-handle {
-  padding: 0 25px;
-}
-
-.canvas-chat.room .chat-handle > div {
-  gap: 8px;
-}
-
-.canvas-chat.room .chat-handle .icon-button {
-  width: 32px;
-  height: 32px;
 }
 
 .canvas-chat #add-person {

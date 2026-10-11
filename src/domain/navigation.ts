@@ -16,10 +16,18 @@ export function initialCamera(route: Route): Camera {
   };
 }
 export function surfaceOf(route: Route): Surface | null {
-  return route.kind === 'note' ? 'canvas' : route.kind === 'surface' ? route.surface : null;
+  return route.kind === 'note' || route.kind === 'material'
+    ? 'canvas'
+    : route.kind === 'surface'
+      ? route.surface
+      : null;
 }
 export function isObject(route: Route): boolean {
-  return route.kind === 'note' || (route.kind === 'surface' && route.entity !== null);
+  return (
+    route.kind === 'note' ||
+    route.kind === 'material' ||
+    (route.kind === 'surface' && route.entity !== null)
+  );
 }
 export function sameSurface(a: Route, b: Route): boolean {
   return (
@@ -31,7 +39,7 @@ export function sameSurface(a: Route, b: Route): boolean {
   );
 }
 export function semanticParent(route: Route): Route {
-  if (route.kind === 'note')
+  if (route.kind === 'note' || route.kind === 'material')
     return { kind: 'surface', world: route.world, surface: 'canvas', entity: null };
   if (route.kind === 'surface')
     return route.entity !== null

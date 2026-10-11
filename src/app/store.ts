@@ -91,7 +91,8 @@ export class Store {
           ? this.canvasHistory.candidate(this.state, command.world, direction)
           : reduce(this.state, command);
       validate(candidate);
-      if (direction && 'world' in command) this.canvasHistory.commit(command.world, direction);
+      if (direction && 'world' in command)
+        this.canvasHistory.commit(command.world, direction, this.state);
       else this.canvasHistory.record(this.state, candidate, command);
       this.state = candidate;
       freezeState(this.state);

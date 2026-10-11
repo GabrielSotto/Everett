@@ -7,9 +7,11 @@ import {
   type Reference,
   type Anchor,
   type Shape,
+  type Camera,
+  nodeTitle,
 } from '../../domain/model';
 import { drawRect, anchorPoint, linkPath } from '../../domain/geometry';
-import { html, target, value, type View } from '../../ui/dom';
+import { html, target, preserveFocus, type View } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
 import {
   materialMarkup,
@@ -25,6 +27,8 @@ import { bindDismiss } from '../../ui/popover';
 import { trace, type Intent } from '../../app/diagnostics/trace';
 import { colors } from './note-colors';
 import { bindPointerCancellation } from '../../ui/pointer-cancellation';
+import { CanvasInteractions } from './interactions';
+import { proposalMarkup } from './proposals';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
@@ -48,7 +52,7 @@ type Drag =
       corner: Corner;
       intent: Intent;
     }
-  | { kind: 'draw'; tool: Tool; start: Point; point: Point; intent: Intent }
+  | { kind: 'draw'; tool: Tool; start: Point; point: Point; points: Point[]; intent: Intent }
   | { kind: 'dock'; start: Point; origin: Point; intent: Intent }
   | {
       kind: 'connect';
@@ -66,10 +70,12 @@ export class CanvasView implements View {
   private drag: Drag | null = null;
   private dock: Point | null = null;
   private revision: string | null = null;
+  private reviewCamera: Camera | null = null;
+  private expansionCamera: Camera | null = null;
   private referenceMenu = false;
-  private quickActions: string | null = null;
   private shapesOpen = false;
   private sequence = 0;
+  private interactions: CanvasInteractions;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -86,28 +92,56 @@ export class CanvasView implements View {
     ctx.camera = this.cam;
     bindDismiss(
       this.abort.signal,
-      () => this.referenceMenu || this.shapesOpen || this.quickActions !== null,
+      () => this.referenceMenu || this.shapesOpen,
       () => {
         this.referenceMenu = false;
         this.shapesOpen = false;
-        this.quickActions = null;
         this.renderDock();
         this.paintSelection();
       },
-      '.reference-menu,.shape-menu,.quick-actions,[data-action=references],[data-action=shapes],[data-action=node-assign]',
+      '.reference-menu,.shape-menu,[data-action=references],[data-action=shapes]',
     );
     this.chat = new CanvasChat(root.querySelector<HTMLElement>('#canvas-chat-host')!, ctx);
+    this.interactions = new CanvasInteractions(root, ctx, this.abort.signal, () => this.camPoint());
     root.addEventListener('pointerdown', (e) => this.down(e), { signal: this.abort.signal });
     root.addEventListener('pointermove', (e) => this.move(e), { signal: this.abort.signal });
     root.addEventListener('pointerup', (e) => this.up(e), { signal: this.abort.signal });
+    root.addEventListener('keydown', (e) => this.materialKey(e), { signal: this.abort.signal });
     bindPointerCancellation(root, this.abort.signal, () => this.cancel());
     root.addEventListener('click', (e) => this.click(e), { signal: this.abort.signal });
     root.addEventListener(
       'dblclick',
       (e) => {
+        if (
+          e.target instanceof Element &&
+          e.target.closest('button,input,textarea,select,.material-identification')
+        )
+          return;
         const element =
           e.target instanceof Element ? e.target.closest<HTMLElement>('[data-node]') : null;
         if (element) this.open(element.dataset.node ?? '');
+      },
+      { signal: this.abort.signal },
+    );
+    root.addEventListener(
+      'input',
+      (e) => {
+        const field = e.target;
+        if (field instanceof HTMLTextAreaElement) {
+          const id = field.closest<HTMLFormElement>('[data-revision]')?.dataset.revision;
+          if (id) ctx.ui.revisionDrafts[id] = field.value;
+          if (field.id === 'zone-instruction' && ctx.ui.canvas.zoneSelection)
+            ctx.act(
+              {
+                type: 'zone.instruction',
+                world: ctx.world().id,
+                id: ctx.ui.canvas.zoneSelection,
+                text: field.value,
+              },
+              'instrucción de zona',
+              'ZONE-01',
+            );
+        }
       },
       { signal: this.abort.signal },
     );
@@ -150,11 +184,104 @@ export class CanvasView implements View {
   private nextId(): string {
     return 'canvas-' + Date.now().toString(36) + '-' + ++this.sequence;
   }
+  private camPoint(): Point {
+    return toWorld({ x: innerWidth / 2, y: innerHeight / 2 }, this.cam.current, this.rect());
+  }
+  comment(): void {
+    this.interactions.comment();
+  }
+  rename(): void {
+    this.interactions.rename();
+  }
+  closeTransient(): boolean {
+    if (this.interactions.close()) return true;
+    if (this.drag || this.ctx.ui.canvas.linkStart) {
+      this.cancel();
+      return true;
+    }
+    if (this.referenceMenu || this.shapesOpen || this.revision) {
+      this.referenceMenu = false;
+      this.shapesOpen = false;
+      this.revision = null;
+      this.restoreExpansion();
+      this.render();
+      return true;
+    }
+    return false;
+  }
   private rect(): DOMRect {
     return this.root.querySelector('#canvas-stage')!.getBoundingClientRect();
   }
   private point(e: PointerEvent): Point {
     return toWorld({ x: e.clientX, y: e.clientY }, this.cam.current, this.rect());
+  }
+  private materialKey(event: KeyboardEvent): void {
+    if (!(event.target instanceof HTMLElement)) return;
+    const element = event.target;
+    if (element.dataset.zone && ['Enter', ' '].includes(event.key)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.select('zone', element.dataset.zone);
+      this.paintSelection();
+      return;
+    }
+    if (
+      element.dataset.anchorNode &&
+      element.dataset.anchor &&
+      ['Enter', ' '].includes(event.key)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      const from = this.ctx.ui.canvas.linkStart,
+        anchor = element.dataset.anchor as Anchor;
+      if (from && from.node !== element.dataset.anchorNode)
+        this.connect(from.node, from.anchor, element.dataset.anchorNode, anchor);
+      else {
+        this.ctx.ui.canvas.linkStart = { node: element.dataset.anchorNode, anchor };
+        element.setAttribute('aria-pressed', 'true');
+      }
+      return;
+    }
+    if (
+      element.dataset.resize !== 'node' ||
+      !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
+    )
+      return;
+    const node = this.ctx.world().nodes.find((n) => n.id === element.dataset.id && !n.owner);
+    if (!node) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const corner = element.dataset.corner as Corner,
+      step = event.shiftKey ? 10 : 2;
+    const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
+    const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
+    let width = Math.max(4, node.width + (corner.includes('w') ? -dx : dx));
+    let height = Math.max(4, node.height + (corner.includes('n') ? -dy : dy));
+    if (node.data.kind === 'image' || node.data.kind === 'video') {
+      const ratio = node.data.ratio;
+      if (dx) height = width / ratio;
+      else width = height * ratio;
+      const scale = Math.max(1, 4 / width, 4 / height);
+      width *= scale;
+      height *= scale;
+    }
+    const rect = {
+      x: corner.includes('w') ? node.x + node.width - width : node.x,
+      y: corner.includes('n') ? node.y + node.height - height : node.y,
+      width,
+      height,
+    };
+    this.ctx.act(
+      { type: 'node.resize', world: this.ctx.world().id, id: node.id, rect },
+      'redimensionar con teclado',
+      'C08-MAT-05',
+      'keyboard',
+    );
+    this.root
+      .querySelector<HTMLElement>(
+        `[data-resize="node"][data-id="${CSS.escape(node.id)}"][data-corner="${corner}"]`,
+      )
+      ?.focus({ preventScroll: true });
   }
   private open(id: string): void {
     const destination = materialRoute(this.ctx.store.get(), this.ctx.world().id, id);
@@ -166,16 +293,63 @@ export class CanvasView implements View {
           ?.getBoundingClientRect(),
       );
   }
-  private select(kind: 'node' | 'zone' | 'link' | null, id: string | null): void {
+  private frameProposal(id: string): void {
+    const job = this.ctx.world().assignments.find((a) => a.id === id);
+    if (!job) return;
+    const height =
+      this.root
+        .querySelector<HTMLElement>(`[data-proposal="${CSS.escape(id)}"]`)
+        ?.getBoundingClientRect().height ?? 430;
+    const z = Math.min(
+      1,
+      (innerWidth - 48) / 320,
+      (innerHeight - 150) / Math.max(430, height / this.cam.current.z),
+    );
+    const rect = this.rect(),
+      camera = {
+        x: -job.position.x * z - 160 * z,
+        y: 24 - rect.height / 2 - job.position.y * z,
+        z,
+      };
+    this.ctx.ui.canvas.zoneSelection = null;
+    this.cam.set(camera, true);
+    this.ctx.act({ type: 'camera', camera }, 'consultar propuesta', 'C08-PROP-01');
+    this.render();
+  }
+  private restoreExpansion(): void {
+    const camera = this.expansionCamera;
+    this.expansionCamera = null;
+    if (camera) {
+      this.cam.set(camera, true);
+      this.ctx.act({ type: 'camera', camera }, 'recuperar encuadre de Canvas', 'C08-PROP-01');
+    }
+  }
+  private select(kind: 'node' | 'zone' | 'link' | null, id: string | null, additive = false): void {
+    const ui = this.ctx.ui.canvas;
+    ui.selections =
+      kind === 'node' && id ? (additive ? [...new Set([...ui.selections, id])] : [id]) : [];
     this.ctx.ui.canvas.selection = kind === 'node' ? id : null;
     this.ctx.ui.canvas.zoneSelection = kind === 'zone' ? id : null;
     this.ctx.ui.canvas.linkSelection = kind === 'link' ? id : null;
+    const data = this.ctx.world().nodes.find((n) => n.id === id)?.data;
+    if (data?.kind === 'drawing' || data?.kind === 'shape') {
+      ui.color = data.color;
+      ui.thickness = data.thickness ?? 1;
+      if (data.kind === 'shape') {
+        ui.stroke = data.stroke ?? data.color;
+        ui.fill = data.fill ?? true;
+      }
+    }
   }
   private down(e: PointerEvent): void {
     if (!(e.target instanceof Element) || e.button !== 0) return;
     const target = e.target,
       ui = this.ctx.ui;
-    if (target.closest('.canvas-chat,.zone-inspector,.quick-actions,.zone-materials details'))
+    if (
+      target.closest(
+        '.canvas-chat,.zone-inspector,.quick-actions,.zone-materials details,video[controls],.canvas-context-layer',
+      )
+    )
       return;
     if (target.closest('[data-action=dock-grip]')) {
       e.preventDefault();
@@ -252,10 +426,15 @@ export class CanvasView implements View {
     const point = this.point(e),
       nodeId = target.closest<HTMLElement>('[data-node]')?.dataset.node,
       zoneId = target.closest<HTMLElement>('[data-zone]')?.dataset.zone;
+    if (ui.canvas.tool === 'comment') {
+      if (nodeId) this.interactions.openComment(nodeId);
+      return;
+    }
     (target.closest<HTMLElement>('[data-node]') ?? this.root).setPointerCapture(e.pointerId);
     if (
       shapeTools.includes(ui.canvas.tool as Shape) ||
       ui.canvas.tool === 'zone' ||
+      ui.canvas.tool === 'drawing' ||
       ui.canvas.tool === 'note'
     ) {
       this.drag = {
@@ -263,6 +442,7 @@ export class CanvasView implements View {
         tool: ui.canvas.tool,
         start: point,
         point,
+        points: [point],
         intent: trace.intent('dibujar', 'DRAW-01'),
       };
     } else if (ui.canvas.tool === 'hand' || (!nodeId && !zoneId)) {
@@ -285,7 +465,7 @@ export class CanvasView implements View {
           ? this.ctx.world().nodes.find((n) => n.id === id && !n.owner)
           : this.ctx.world().zones.find((z) => z.id === id);
       if (!original) return;
-      this.select(kind, id);
+      this.select(kind, id, e.shiftKey);
       this.drag = {
         kind,
         id,
@@ -296,6 +476,7 @@ export class CanvasView implements View {
         intent: trace.intent('mover ' + kind, 'DRAG-02'),
       };
       this.paintSelection();
+      this.renderDock();
     }
   }
   private move(e: PointerEvent): void {
@@ -347,8 +528,23 @@ export class CanvasView implements View {
         y: d.corner.includes('n') ? d.origin.y + dy : d.origin.y + d.origin.height + dy,
       };
       d.rect = drawRect(fixed, moving);
+      const material = this.ctx.world().nodes.find((n) => n.id === d.id);
+      if (material?.data.kind === 'image' || material?.data.kind === 'video') {
+        const sx = d.rect.width / d.origin.width,
+          sy = d.rect.height / d.origin.height;
+        const scale = Math.abs(sx - 1) >= Math.abs(sy - 1) ? sx : sy;
+        const width = d.origin.width * scale,
+          height = d.origin.height * scale;
+        d.rect = {
+          x: d.corner.includes('w') ? fixed.x - width : fixed.x,
+          y: d.corner.includes('n') ? fixed.y - height : fixed.y,
+          width,
+          height,
+        };
+      }
       const element = this.root.querySelector<HTMLElement>(`[data-${d.entity}="${d.id}"]`);
       if (element) this.applyRect(element, d.rect);
+      this.paintLinks({ id: d.id, point: d.rect });
       return;
     }
     if (d.kind === 'node' || d.kind === 'zone') {
@@ -382,6 +578,7 @@ export class CanvasView implements View {
     }
     if (d.kind !== 'draw') return;
     d.point = point;
+    d.points.push(point);
     let preview = this.root.querySelector<HTMLElement>('.draw-preview');
     if (!preview) {
       preview = document.createElement('div');
@@ -389,12 +586,24 @@ export class CanvasView implements View {
       this.root.querySelector('#canvas-plane')?.append(preview);
     }
     this.applyRect(preview, drawRect(d.start, d.point));
+    if (d.tool === 'drawing') {
+      const rect = this.strokeRect(d.points);
+      this.applyRect(preview, rect);
+      preview.innerHTML = `<svg viewBox="0 0 ${rect.width} ${rect.height}" preserveAspectRatio="none"><polyline points="${d.points.map((p) => `${p.x - rect.x},${p.y - rect.y}`).join(' ')}" fill="none" stroke="${this.ctx.ui.canvas.color}" stroke-width="${this.ctx.ui.canvas.thickness}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
     if (shapeTools.includes(d.tool as Shape))
       preview.innerHTML = shapeMarkup({
         id: '',
         ...drawRect(d.start, d.point),
         owner: null,
-        data: { kind: 'shape', shape: d.tool as Shape, color: '#d6dbea' },
+        data: {
+          kind: 'shape',
+          shape: d.tool as Shape,
+          color: this.ctx.ui.canvas.color,
+          stroke: this.ctx.ui.canvas.stroke,
+          thickness: this.ctx.ui.canvas.thickness,
+          fill: this.ctx.ui.canvas.fill,
+        },
       });
   }
   private applyRect(element: HTMLElement, rect: Rect): void {
@@ -404,6 +613,16 @@ export class CanvasView implements View {
       width: rect.width + 'px',
       height: rect.height + 'px',
     });
+  }
+  private strokeRect(points: Point[]): Rect {
+    const xs = points.map((p) => p.x),
+      ys = points.map((p) => p.y);
+    return {
+      x: Math.min(...xs),
+      y: Math.min(...ys),
+      width: Math.max(4, Math.max(...xs) - Math.min(...xs)),
+      height: Math.max(4, Math.max(...ys) - Math.min(...ys)),
+    };
   }
   private up(e: PointerEvent): void {
     const d = this.drag;
@@ -478,7 +697,7 @@ export class CanvasView implements View {
                 point.y > z.y &&
                 point.y < z.y + z.height,
             );
-          if (zone?.agent) this.assign(d.id, zone.agent, '', d.origin);
+          if (zone?.agent) this.assign(d.id, zone.agent, zone.instruction ?? '', d.origin);
         } else {
           const zone = w.zones.find((z) => z.id === d.id)!;
           this.ctx.act(
@@ -499,7 +718,7 @@ export class CanvasView implements View {
       return;
     }
     if (d.kind !== 'draw') return;
-    const rect = drawRect(d.start, d.point),
+    const rect = d.tool === 'drawing' ? this.strokeRect(d.points) : drawRect(d.start, d.point),
       id = this.nextId();
     if (d.tool === 'zone') {
       this.ctx.act(
@@ -520,7 +739,22 @@ export class CanvasView implements View {
         data:
           d.tool === 'note'
             ? { kind: 'note', title: '', text: '', color: colors[0]! }
-            : { kind: 'shape', shape: d.tool as Shape, color: '#d6dbea' },
+            : d.tool === 'drawing'
+              ? {
+                  kind: 'drawing',
+                  title: 'Dibujo',
+                  points: d.points.map((p) => ({ x: p.x - rect.x, y: p.y - rect.y })),
+                  color: this.ctx.ui.canvas.color,
+                  thickness: this.ctx.ui.canvas.thickness,
+                }
+              : {
+                  kind: 'shape',
+                  shape: d.tool as Shape,
+                  color: this.ctx.ui.canvas.color,
+                  stroke: this.ctx.ui.canvas.stroke,
+                  thickness: this.ctx.ui.canvas.thickness,
+                  fill: this.ctx.ui.canvas.fill,
+                },
       };
       this.ctx.act(
         { type: 'node.create', world: w.id, node },
@@ -579,6 +813,8 @@ export class CanvasView implements View {
       if (text.trim()) {
         const id = form.dataset.revision;
         this.revision = null;
+        delete this.ctx.ui.revisionDrafts[id];
+        this.restoreExpansion();
         this.ctx.act(
           { type: 'assignment.revise', world: this.ctx.world().id, id, text },
           'pedir cambios',
@@ -586,18 +822,6 @@ export class CanvasView implements View {
         );
         this.ctx.service.process(this.ctx.world().id, id);
       }
-    } else if (form.id === 'new-comment-form' && this.ctx.ui.canvas.selection) {
-      e.preventDefault();
-      this.ctx.act(
-        {
-          type: 'comment',
-          world: this.ctx.world().id,
-          node: this.ctx.ui.canvas.selection,
-          text: value(this.root, '#new-comment'),
-        },
-        'comentar material',
-        'COMMENT-01',
-      );
     }
   }
   private click(e: MouseEvent): void {
@@ -609,13 +833,34 @@ export class CanvasView implements View {
     switch (t.dataset.action) {
       case 'canvas-tool': {
         const tool = t.dataset.tool;
-        const all: Tool[] = ['select', 'hand', 'note', ...shapeTools, 'zone', 'connect'];
+        const all: Tool[] = ['select', 'hand', 'note', ...shapeTools, 'zone', 'connect', 'drawing'];
         if (all.includes(tool as Tool)) {
+          if (tool !== 'select' && tool !== 'hand') this.select(null, null);
           ctx.ui.canvas.tool = tool as Tool;
           ctx.ui.canvas.linkStart = null;
           this.shapesOpen = false;
           this.render();
         }
+        break;
+      }
+      case 'zone-return': {
+        const job = w.assignments.find((a) => a.node === id);
+        if (job) {
+          ctx.service.cancel(w.id, job.id);
+          ctx.act(
+            { type: 'assignment.finish', world: w.id, id: job.id, decision: 'cancel' },
+            'devolver material',
+            'OWNER-01',
+          );
+        }
+        break;
+      }
+      case 'proposal-reveal': {
+        this.reviewCamera ??= this.cam.current;
+        this.frameProposal(id);
+        this.root
+          .querySelector<HTMLElement>(`[data-proposal="${CSS.escape(id)}"] button`)
+          ?.focus({ preventScroll: true });
         break;
       }
       case 'shapes':
@@ -628,23 +873,6 @@ export class CanvasView implements View {
         ctx.ui.chat.chatPosition = { x: innerWidth - 335, y: innerHeight - 395 };
         this.chat.render();
         break;
-      case 'node-open':
-        this.open(id);
-        break;
-      case 'node-assign':
-        this.quickActions = this.quickActions === id ? null : id;
-        this.paintSelection();
-        break;
-      case 'quick-assign': {
-        const agent = value(this.root, '#quick-agent');
-        const instruction = t.dataset.instruction ?? '';
-        if (agent && this.quickActions) {
-          const node = this.quickActions;
-          this.quickActions = null;
-          this.assign(node, agent, instruction);
-        }
-        break;
-      }
       case 'zone-unbind':
         ctx.service.cancelZone(w.id, id);
         ctx.act(
@@ -659,27 +887,11 @@ export class CanvasView implements View {
           ctx.go({ kind: 'surface', world: w.id, surface: 'agents', entity: zone.agent });
         break;
       }
-      case 'node-delete':
-        ctx.act({ type: 'node.delete', world: w.id, id }, 'eliminar material', 'CANVAS-01');
-        this.select(null, null);
-        this.render();
-        break;
       case 'zone-delete':
         ctx.service.cancelZone(w.id, id);
         ctx.act({ type: 'zone.delete', world: w.id, id }, 'eliminar zona', 'ZONE-01');
         this.select(null, null);
         this.render();
-        break;
-      case 'node-comment':
-        this.root
-          .querySelector('#selection-actions')
-          ?.insertAdjacentHTML(
-            'beforeend',
-            '<form id="new-comment-form" class="comment-compose"><input id="new-comment" placeholder="Comentario…" aria-label="Nuevo comentario"><button type="submit" class="icon-button" aria-label="Guardar comentario">' +
-              icon('up', 14) +
-              '</button></form>',
-          );
-        this.root.querySelector<HTMLInputElement>('#new-comment')?.focus();
         break;
       case 'select-link':
         this.select('link', id);
@@ -690,9 +902,26 @@ export class CanvasView implements View {
         this.select(null, null);
         this.render();
         break;
+      case 'assignment-retry':
+        if (
+          ctx.act(
+            { type: 'assignment.retry', world: w.id, id },
+            'reintentar trabajo',
+            'C08-STATE-02',
+          )
+        )
+          ctx.service.process(w.id, id);
+        break;
       case 'assignment-accept':
       case 'assignment-reject':
       case 'assignment-cancel':
+        if (this.reviewCamera) {
+          const camera = this.reviewCamera;
+          this.reviewCamera = null;
+          this.expansionCamera = null;
+          this.cam.set(camera, true);
+          ctx.act({ type: 'camera', camera }, 'recuperar encuadre de Canvas', 'C08-PROP-01');
+        } else this.restoreExpansion();
         ctx.service.cancel(w.id, id);
         ctx.act(
           {
@@ -713,11 +942,43 @@ export class CanvasView implements View {
       case 'assignment-revise':
         this.revision = id;
         this.render();
-        this.root.querySelector<HTMLTextAreaElement>('[data-revision] textarea')?.focus();
+        {
+          const box = this.root
+              .querySelector<HTMLElement>(`[data-proposal="${CSS.escape(id)}"]`)
+              ?.getBoundingClientRect(),
+            stage = this.rect();
+          if (
+            box &&
+            (box.bottom > stage.bottom - 80 ||
+              box.top < stage.top ||
+              box.left < stage.left ||
+              box.right > stage.right)
+          ) {
+            this.expansionCamera ??= this.cam.current;
+            this.frameProposal(id);
+          }
+        }
+        this.root
+          .querySelector<HTMLTextAreaElement>('[data-revision] textarea')
+          ?.focus({ preventScroll: true });
         break;
+      case 'revision-chip': {
+        const input = this.root.querySelector<HTMLTextAreaElement>('[data-revision] textarea');
+        if (input) {
+          input.value = t.dataset.text ?? '';
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.focus({ preventScroll: true });
+        }
+        break;
+      }
       case 'revision-cancel':
         this.revision = null;
+        this.restoreExpansion();
         this.render();
+        break;
+      case 'canvas-link':
+        this.referenceMenu = false;
+        this.renderDock();
         break;
       case 'references':
         this.referenceMenu = !this.referenceMenu;
@@ -766,6 +1027,30 @@ export class CanvasView implements View {
         connectionMarkup(link, w, link.id === this.ctx.ui.canvas.linkSelection, preview),
       )
       .join('');
+    svg.querySelectorAll<SVGGElement>('[data-link]').forEach((group) => {
+      const path = group.querySelector<SVGPathElement>('.link-line'),
+        text = group.querySelector<SVGTextElement>('.cable-label');
+      if (!path || !text) return;
+      const length = path.getTotalLength(),
+        middle = path.getPointAtLength(length / 2),
+        a = path.getPointAtLength(Math.max(0, length / 2 - 4)),
+        b = path.getPointAtLength(Math.min(length, length / 2 + 4));
+      let angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+      if (angle > 90) angle -= 180;
+      if (angle < -90) angle += 180;
+      text.setAttribute('x', String(middle.x));
+      text.setAttribute('y', String(middle.y));
+      text.setAttribute('transform', `rotate(${angle} ${middle.x} ${middle.y})`);
+      const cut = group.querySelector<SVGRectElement>('.label-cut'),
+        width = text.getComputedTextLength() + 16;
+      if (cut) {
+        cut.setAttribute('x', String(middle.x - width / 2));
+        cut.setAttribute('y', String(middle.y - 11));
+        cut.setAttribute('width', String(width));
+        cut.setAttribute('height', '22');
+        cut.setAttribute('transform', `rotate(${angle} ${middle.x} ${middle.y})`);
+      }
+    });
   }
   private paintSelection(): void {
     const w = this.ctx.world(),
@@ -774,7 +1059,7 @@ export class CanvasView implements View {
     this.root.querySelectorAll<HTMLElement>('[data-node]').forEach((element) => {
       const node = w.nodes.find((n) => n.id === element.dataset.node);
       if (!node) return;
-      const selected = node.id === ui.canvas.selection;
+      const selected = ui.canvas.selections.includes(node.id);
       element.classList.toggle('selected', selected);
       const handles = element.querySelectorAll('.resize-handle');
       if (selected && ui.canvas.tool !== 'connect') {
@@ -791,8 +1076,7 @@ export class CanvasView implements View {
       node = w.nodes.find((n) => n.id === ui.canvas.selection && !n.owner),
       zone = w.zones.find((z) => z.id === ui.canvas.zoneSelection);
     if (!holder) return;
-    if (node)
-      holder.innerHTML = `<div class="material-actions">${node.data.kind !== 'shape' ? btn('node-open', 'expand', 'Entrar al material', `data-id="${node.id}"`) : ''}${btn('node-assign', 'agents', 'Acciones del agente', `data-id="${node.id}"`)}${btn('node-comment', 'comment', 'Comentar', `data-id="${node.id}"`)}${btn('node-delete', 'trash', 'Eliminar material', `data-id="${node.id}"`)}</div>`;
+    if (node) holder.innerHTML = '';
     else if (zone) {
       const agent = w.agents.find((a) => a.id === zone.agent),
         materials = w.nodes.filter((n) => n.owner === zone.agent && !!zone.agent);
@@ -804,24 +1088,30 @@ export class CanvasView implements View {
         )
         .join('')}</select>${
         agent
-          ? `<p class="zone-role">${html(agent.role)}</p><h4>Memoria fijada</h4>${agent.memory
+          ? `<p class="zone-role">${html(agent.role)}</p><label for="zone-instruction">Instrucción</label><textarea id="zone-instruction" rows="3">${html(zone.instruction ?? '')}</textarea><h4>Actividad</h4>${w.assignments
+              .filter((a) => a.agent === agent.id)
+              .map(
+                (a) =>
+                  `<p class="zone-activity"><strong>${html(
+                    w.nodes.find((n) => n.id === a.node)
+                      ? nodeTitle(
+                          w,
+                          w.nodes.find((n) => n.id === a.node)!,
+                        )
+                      : 'Material no disponible',
+                  )}</strong> ${a.phase === 'working' ? 'Procesando' : a.phase === 'interrupted' ? 'Interrumpido' : 'Revisión pendiente'} ${a.phase !== 'working' ? `<button type="button" data-action="proposal-reveal" data-id="${a.id}">Revisar propuesta</button>` : ''}</p>`,
+              )
+              .join('')}<h4>Memoria fijada</h4>${agent.memory
               .slice(0, 3)
               .map((m) => `<p class="zone-memory">${icon('pin', 11)}${html(m)}</p>`)
               .join(
                 '',
-              )}<h4>Materiales · ${materials.length}</h4>${materials.map((n) => `<div class="zone-resource">${icon('note', 13)}${html(n.data.kind === 'note' ? n.data.title || 'Sin título' : 'Material')}</div>`).join('')}<div class="zone-actions">${btn('zone-talk', 'agents', 'Ver agente', `data-id="${zone.id}"`)}${btn('zone-unbind', 'close', 'Quitar agente y devolver materiales', `data-id="${zone.id}"`)}</div>`
+              )}<h4>Materiales · ${materials.length}</h4>${materials.map((n) => `<div class="zone-resource"><span title="${html(nodeTitle(w, n))}">${html(nodeTitle(w, n))}</span><button type="button" data-action="zone-return" data-id="${n.id}" aria-label="Devolver ${html(nodeTitle(w, n))} al Canvas">Devolver</button></div>`).join('')}<div class="zone-actions">${btn('zone-talk', 'agents', 'Ver agente', `data-id="${zone.id}"`)}${btn('zone-unbind', 'close', 'Quitar agente y devolver materiales', `data-id="${zone.id}"`)}</div>`
           : ''
       }</aside>`;
     } else if (ui.canvas.linkSelection)
       holder.innerHTML = `<div class="material-actions">${btn('link-delete', 'trash', 'Eliminar conexión', `data-id="${ui.canvas.linkSelection}"`)}</div>`;
     else holder.innerHTML = '';
-    if (node && this.quickActions === node.id) {
-      const agents = w.agents.filter((a) => w.zones.some((z) => z.agent === a.id));
-      holder.insertAdjacentHTML(
-        'beforeend',
-        `<div class="quick-actions"><select id="quick-agent" aria-label="Agente para la acción">${agents.map((a) => `<option value="${a.id}">${html(a.name)}</option>`).join('')}</select>${agents.length ? ['Resumir', 'Analizar', 'Reorganizar'].map((instruction) => `<button type="button" data-action="quick-assign" data-instruction="${instruction}">${icon('agents', 13)}${instruction}</button>`).join('') : `<button type="button" data-action="canvas-tool" data-tool="zone">Crear una zona</button>`}</div>`,
-      );
-    }
   }
   private clampDock(): void {
     if (!this.dock) return;
@@ -844,22 +1134,52 @@ export class CanvasView implements View {
     if (!holder) return;
     const tools = (
       [
-        ['select', 'select', 'Seleccionar · V'],
-        ['hand', 'hand', 'Panear · H'],
-        ['note', 'note', 'Crear nota · N'],
+        ['select', 'select', 'Seleccionar'],
+        ['hand', 'hand', 'Panear'],
+        ['note', 'note', 'Crear nota'],
       ] as const
     )
       .map(([tool, ico, label]) =>
-        btn('canvas-tool', ico, label, `data-tool="${tool}"`, ctx.ui.canvas.tool === tool),
+        btn(
+          'canvas-tool',
+          ico,
+          label + (ctx.ui.shortcuts[tool] ? ' · ' + ctx.ui.shortcuts[tool] : ''),
+          `data-tool="${tool}"`,
+          ctx.ui.canvas.tool === tool,
+        ),
       )
       .join('');
-    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}<div class="shape-picker">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar · C', 'data-tool="connect"', ctx.ui.canvas.tool === 'connect')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Agregar referencia')}</div><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('session', 20)}</button>${this.referenceMenu ? `<div class="reference-menu">${w.docs.map((d) => `<button data-action="reference-add" data-kind="document" data-id="${d.id}">${icon('docs', 14)}${html(d.title)}</button>`).join('')}${w.files.map((f) => `<button data-action="reference-add" data-kind="file" data-id="${f.id}">${icon('code', 14)}${html(f.name)}</button>`).join('')}${w.tasks.map((t) => `<button data-action="reference-add" data-kind="task" data-id="${t.id}">${icon('board', 14)}${html(t.title)}</button>`).join('')}</div>` : ''}`;
+    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'comment', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), '', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales')}</div><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('session', 20)}</button>${this.referenceMenu ? `<div class="reference-menu"><button type="button" data-action="canvas-import">${icon('image', 14)}Importar imágenes, videos o PDF</button><button type="button" data-action="canvas-link">${icon('link', 14)}Agregar enlace</button>${w.docs.map((d) => `<button data-action="reference-add" data-kind="document" data-id="${d.id}">${icon('docs', 14)}${html(d.title)}</button>`).join('')}${w.files.map((f) => `<button data-action="reference-add" data-kind="file" data-id="${f.id}">${icon('code', 14)}${html(f.name)}</button>`).join('')}${w.tasks.map((t) => `<button data-action="reference-add" data-kind="task" data-id="${t.id}">${icon('board', 14)}${html(t.title)}</button>`).join('')}</div>` : ''}`;
+    const selected = w.nodes.find((n) => n.id === ctx.ui.canvas.selection);
+    if (
+      ctx.ui.canvas.tool === 'drawing' ||
+      shapeTools.includes(ctx.ui.canvas.tool as Shape) ||
+      selected?.data.kind === 'shape' ||
+      selected?.data.kind === 'drawing'
+    ) {
+      const shape =
+        selected?.data.kind === 'shape' || shapeTools.includes(ctx.ui.canvas.tool as Shape);
+      holder.insertAdjacentHTML(
+        'beforeend',
+        `<div class="canvas-style" aria-label="Estilo de dibujo y formas"><label>Color<input type="color" id="draw-color" value="${ctx.ui.canvas.color}"></label><label>Grosor<select id="draw-thickness">${[1, 2, 4, 8].map((n) => `<option ${n === ctx.ui.canvas.thickness ? 'selected' : ''}>${n}</option>`).join('')}</select></label>${shape ? `<label>Borde<input type="color" id="shape-border" value="${ctx.ui.canvas.stroke}"></label><label><input type="checkbox" id="shape-fill" ${ctx.ui.canvas.fill ? 'checked' : ''}>Relleno</label>` : ''}</div>`,
+      );
+    }
+    holder
+      .querySelector('.canvas-tools')
+      ?.classList.toggle('chat-docked', ctx.ui.chat.chatMode === 'docked');
     this.clampDock();
   }
   render(): void {
+    const restoreFocus = preserveFocus(this.root);
     const w = this.ctx.world(),
       plane = this.root.querySelector('#canvas-plane');
     if (!plane) return;
+    const players = new Map(
+      Array.from(
+        plane.querySelectorAll<HTMLVideoElement>('[data-node] video'),
+        (video) => [video.closest<HTMLElement>('[data-node]')!.dataset.node!, video] as const,
+      ),
+    );
     this.root.dataset.tool = this.ctx.ui.canvas.tool;
     // El progreso de un agente puede repintar la vista mientras se consulta un grupo.
     // Conservar su estado por zona y tipo mantiene la consulta abierta.
@@ -887,17 +1207,27 @@ export class CanvasView implements View {
         materialMarkup(
           w,
           n,
-          n.id === this.ctx.ui.canvas.selection,
+          this.ctx.ui.canvas.selections.includes(n.id),
           this.ctx.ui.canvas.tool === 'connect',
         ),
       )
       .join('')}${w.assignments
-      .filter((a) => a.phase === 'ready')
-      .map(
-        (a) =>
-          `<article class="proposal" data-proposal="${a.id}" style="left:${a.position.x}px;top:${a.position.y}px"><p>${html(a.text)}</p>${this.revision === a.id ? `<form data-revision="${a.id}"><textarea aria-label="Cambios solicitados" placeholder="¿Qué ajustamos?"></textarea><div>${btn('revision-cancel', 'close', 'Cancelar pedido de cambios')}<button type="submit" class="icon-button" aria-label="Enviar cambios">${icon('up', 15)}</button></div></form>` : `<div class="proposal-actions">${btn('assignment-accept', 'check', 'Aceptar propuesta', `data-id="${a.id}"`)}${btn('assignment-revise', 'session', 'Pedir cambios', `data-id="${a.id}"`)}${btn('assignment-reject', 'close', 'Rechazar propuesta', `data-id="${a.id}"`)}</div>`}</article>`,
-      )
+      .filter((a) => a.phase !== 'working')
+      .map((a) => proposalMarkup(this.ctx, a, this.revision === a.id))
       .join('')}`;
+    plane.querySelectorAll<HTMLVideoElement>('[data-node] video').forEach((video) => {
+      const id = video.closest<HTMLElement>('[data-node]')!.dataset.node!,
+        previous = players.get(id);
+      if (previous && previous.dataset.asset === video.dataset.asset) {
+        video.replaceWith(previous);
+        players.delete(id);
+      }
+    });
+    players.forEach((video) => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    });
     plane.querySelectorAll<HTMLDetailsElement>('.zone-materials details').forEach((element) => {
       element.open = expanded.has(groupKey(element));
     });
@@ -909,10 +1239,13 @@ export class CanvasView implements View {
     this.paintSelection();
     this.renderDock();
     this.chat.render();
+    this.interactions.hydrate();
+    restoreFocus();
   }
   dispose(): void {
     this.abort.abort();
     this.chat.dispose();
+    this.interactions.dispose();
     this.cam.dispose();
     if (this.ctx.camera === this.cam) this.ctx.camera = null;
   }

@@ -1,7 +1,7 @@
 import type { Point } from '../../domain/model';
 export interface ChatUi {
   chatDrafts: Record<string, { text: string; materials: string[] }>;
-  chatMode: 'closed' | 'quick' | 'docked' | 'room';
+  chatMode: 'closed' | 'quick' | 'docked';
   chatTab: 'chat' | 'comments';
   chatCompact: boolean;
   chatPosition: Point;

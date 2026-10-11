@@ -35,6 +35,14 @@ export function reduce(state: State, command: Command): State {
       applyBoardCommand(next, command);
       break;
     case 'node.create':
+    case 'assignment.interrupt':
+    case 'assignment.retry':
+    case 'node.rename':
+    case 'node.duplicate':
+    case 'node.style':
+    case 'link.label':
+    case 'zone.instruction':
+    case 'assignment.schedule':
     case 'node.move':
     case 'node.edit':
     case 'node.delete':
@@ -77,6 +85,8 @@ export function reduce(state: State, command: Command): State {
       applyAgentsCommand(next, command);
       break;
     case 'message':
+    case 'conversation.create':
+    case 'conversation.rename':
     case 'participant':
       applyConversationsCommand(next, command);
       break;

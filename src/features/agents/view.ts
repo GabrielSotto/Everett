@@ -1,3 +1,4 @@
+import { conversation } from '../../domain/conversations';
 import type { Context } from '../../app/context';
 import { html, target, value, preserveFocus, type View } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
@@ -123,7 +124,7 @@ export class AgentsView implements View {
           }
           this.busy = true;
           void ctx.service
-            .talk(ctx.world().id, a.id, text)
+            .talk(ctx.world().id, a.id, text, conversation(ctx.world(), ctx.ui).id)
             .then((answer) => {
               this.answer = answer;
             })

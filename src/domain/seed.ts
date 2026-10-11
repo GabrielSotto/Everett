@@ -79,6 +79,15 @@ export function emptyWorld(id: string, name: string, seed: number, x: number, y:
     assignments: [],
     comments: [],
     messages: [],
+    conversations: [
+      {
+        id: 'conversation-' + id,
+        name: 'Conversación',
+        origin: 'session',
+        participants: ['Gabi', 'Eve'],
+        messages: [],
+      },
+    ],
     chat: [],
     participants: ['Gabi'],
     codeMessages: [],

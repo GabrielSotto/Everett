@@ -50,14 +50,46 @@ export function validate(s: State): void {
       w.links,
       w.zones,
       w.runs,
+      w.conversations,
     ])
       ensure(
         new Set(group.map((x) => x.id)).size === group.length,
         'DUPLICATE_ENTITY',
         'Identificador duplicado',
       );
+    ensure(w.conversations.length > 0, 'CONVERSATION', 'El Mundo necesita una conversación');
+    for (const thread of w.conversations) {
+      ensure(
+        !!thread.name.trim() &&
+          ['session', 'canvas', 'docs', 'code', 'agents', 'board'].includes(thread.origin),
+        'CONVERSATION',
+        'Conversación inválida',
+      );
+      ensure(
+        new Set(thread.messages.map((m) => m.id)).size === thread.messages.length,
+        'MESSAGE',
+        'Mensaje duplicado',
+      );
+      ensure(
+        new Set(thread.participants).size === thread.participants.length,
+        'PARTICIPANT',
+        'Participante duplicado',
+      );
+    }
     const assigned = new Set<string>();
     for (const a of w.assignments) {
+      ensure(
+        ['working', 'ready', 'interrupted'].includes(a.phase) &&
+          Number.isInteger(a.revision) &&
+          a.revision > 0,
+        'ASSIGNMENT',
+        'Estado de trabajo inválido',
+      );
+      ensure(
+        a.dueAt === undefined || Number.isFinite(a.dueAt),
+        'ASSIGNMENT_TIME',
+        'Vencimiento inválido',
+      );
       const node = need(
         w.nodes.find((n) => n.id === a.node),
         'Material asignado inexistente',
@@ -77,6 +109,49 @@ export function validate(s: State): void {
         'GEOMETRY',
         'Geometría inválida',
       );
+      ensure(
+        ['note', 'shape', 'drawing', 'image', 'video', 'pdf', 'link', 'reference'].includes(
+          n.data.kind,
+        ),
+        'MATERIAL',
+        'Tipo de material desconocido',
+      );
+      if (n.data.kind === 'image' || n.data.kind === 'video' || n.data.kind === 'pdf') {
+        ensure(
+          !!n.data.asset && Number.isFinite(n.data.ratio) && n.data.ratio > 0,
+          'ASSET',
+          'Archivo o proporción inválidos',
+        );
+        if (n.data.kind !== 'pdf')
+          ensure(
+            Math.abs(n.width / n.height - n.data.ratio) < 0.001,
+            'RATIO',
+            'La proporción del archivo debe conservarse',
+          );
+      }
+      if (n.data.kind === 'link') {
+        let url: URL | null = null;
+        try {
+          url = new URL(n.data.url);
+        } catch {}
+        ensure(!!url && ['http:', 'https:'].includes(url.protocol), 'URL', 'Enlace inválido');
+      }
+      if (n.data.kind === 'drawing')
+        ensure(
+          n.data.points.length > 0 &&
+            n.data.points.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y)) &&
+            Number.isFinite(n.data.thickness) &&
+            n.data.thickness > 0,
+          'DRAWING',
+          'Trazo inválido',
+        );
+      if (n.data.kind === 'shape')
+        ensure(
+          n.data.thickness === undefined ||
+            (Number.isFinite(n.data.thickness) && n.data.thickness > 0),
+          'SHAPE',
+          'Grosor inválido',
+        );
       if (n.owner) ensure(assigned.has(n.id), 'ORPHAN', 'Material bloqueado sin trabajo');
       if (n.data.kind === 'reference') {
         const r = n.data.ref;
@@ -148,6 +223,17 @@ export function validate(s: State): void {
   for (const r of [s.route, ...s.history.map((f) => f.route)]) {
     if (r.kind === 'universe') continue;
     const w = getWorld(s, r.world);
+    if (r.kind === 'material')
+      ensure(
+        w.nodes.some(
+          (n) =>
+            n.id === r.entity &&
+            !n.owner &&
+            ['image', 'video', 'pdf', 'link'].includes(n.data.kind),
+        ),
+        'MATERIAL_ROUTE',
+        'Material no disponible',
+      );
     if (r.kind === 'note')
       ensure(
         w.nodes.some((n) => n.id === r.entity && n.data.kind === 'note' && !n.owner),

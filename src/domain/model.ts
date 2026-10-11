@@ -48,7 +48,8 @@ export type Route =
       kind: 'note';
       world: string;
       entity: string;
-    };
+    }
+  | { kind: 'material'; world: string; entity: string };
 export interface Frame {
   route: Route;
   camera: Camera;
@@ -69,8 +70,23 @@ export type NodeData =
   | {
       kind: 'shape';
       shape: Shape;
+      title?: string;
       color: string;
+      fill?: boolean;
+      stroke?: string;
+      thickness?: number;
     }
+  | { kind: 'drawing'; title: string; points: readonly Point[]; color: string; thickness: number }
+  | {
+      kind: 'image' | 'video' | 'pdf';
+      title: string;
+      asset: string;
+      mime: string;
+      ratio: number;
+      preview?: string;
+      duration?: number;
+    }
+  | { kind: 'link'; title: string; url: string; description?: string; preview?: string }
   | {
       kind: 'reference';
       ref: Reference;
@@ -86,23 +102,29 @@ export interface Link {
   to: string;
   fromAnchor: Anchor;
   toAnchor: Anchor;
+  label?: string;
 }
 export interface Zone extends Rect {
   id: string;
   agent: string | null;
   name: string;
+  instruction?: string;
 }
 export interface Assignment {
   id: string;
   agent: string;
   node: string;
   links: Link[];
-  phase: 'working' | 'ready';
+  phase: 'working' | 'ready' | 'interrupted';
   revision: number;
   text: string;
   instruction: string;
   returnTo: Point;
   position: Point;
+  feedback?: string;
+  dueAt?: number;
+  runId?: string;
+  input?: string;
 }
 export interface Document {
   id: string;
@@ -177,7 +199,15 @@ export interface Proposal {
   revision: number;
   summary: string;
 }
+export interface Conversation {
+  id: string;
+  name: string;
+  origin: Surface;
+  participants: string[];
+  messages: Message[];
+}
 export interface World extends Point {
+  conversations: Conversation[];
   shipping: ShippingState;
   id: string;
   name: string;
@@ -210,6 +240,7 @@ export interface World extends Point {
   }[];
 }
 export interface Profile {
+  id?: string;
   name: string;
   bio: string;
   language: 'es-AR' | 'es-ES';
@@ -244,13 +275,15 @@ export function routeKey(r: Route): string {
     ? 'universe'
     : r.kind === 'world'
       ? `world/${r.world}`
-      : r.kind === 'note'
-        ? `${r.world}/note/${r.entity}`
+      : r.kind === 'note' || r.kind === 'material'
+        ? `${r.world}/${r.kind}/${r.entity}`
         : `${r.world}/${r.surface}/${r.entity ?? ''}`;
 }
 export function nodeTitle(w: DeepReadonly<World>, n: Material): string {
   if (n.data.kind === 'note') return n.data.title || 'Sin título';
-  if (n.data.kind === 'shape') return n.data.shape;
+  if (n.data.kind === 'shape') return n.data.title || n.data.shape;
+  if (n.data.kind !== 'reference')
+    return n.data.title || (n.data.kind === 'drawing' ? 'Dibujo' : 'Sin título');
   const ref = n.data.ref;
   return (
     (ref.kind === 'document'
@@ -288,5 +321,7 @@ export function materialRoute(s: DeepReadonly<State>, world: string, id: string)
       ? { kind: 'note', world, entity: id }
       : n.data.kind === 'reference'
         ? referenceRoute(world, n.data.ref)
-        : null;
+        : ['image', 'video', 'pdf', 'link'].includes(n.data.kind)
+          ? { kind: 'material', world, entity: id }
+          : null;
 }

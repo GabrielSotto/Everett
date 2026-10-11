@@ -35,7 +35,6 @@ export class TransitionLayer {
         flex: 'none',
       });
     }
-    host.append(this.ghost);
     const sourceCanvases = scene.querySelectorAll('canvas');
     this.ghost.querySelectorAll('canvas').forEach((target, index) => {
       const original = sourceCanvases[index];
@@ -45,6 +44,39 @@ export class TransitionLayer {
         target.getContext('2d')?.drawImage(original, 0, 0);
       }
     });
+    // El fantasma es una imagen del estado saliente, no otro reproductor activo.
+    // Evitar que cloneNode solicite URLs Blob que la vista libera al desmontarse.
+    const sourceVideos = scene.querySelectorAll('video');
+    this.ghost.querySelectorAll('video').forEach((video, index) => {
+      const original = sourceVideos[index];
+      if (!original) return;
+      const frame = document.createElement('canvas'),
+        style = getComputedStyle(original);
+      frame.className = video.className + ' media-snapshot';
+      frame.width = original.videoWidth || 1;
+      frame.height = original.videoHeight || 1;
+      Object.assign(frame.style, {
+        width: style.width,
+        height: style.height,
+        maxWidth: style.maxWidth,
+        maxHeight: style.maxHeight,
+        display: style.display,
+        objectFit: style.objectFit,
+        margin: style.margin,
+        borderRadius: style.borderRadius,
+      });
+      if (original.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA)
+        frame.getContext('2d')?.drawImage(original, 0, 0);
+      if (original.controls) {
+        const play = video.parentElement?.querySelector<HTMLElement>('.video-play');
+        if (play) play.style.display = 'none';
+      }
+      video.removeAttribute('src');
+      video.querySelectorAll('source').forEach((source) => source.remove());
+      video.load();
+      video.replaceWith(frame);
+    });
+    host.append(this.ghost);
     // cloneNode omite el desplazamiento actual; copiarlo conserva la vista de salida.
     const source = [scene, ...scene.querySelectorAll<HTMLElement>('*')];
     const clone = [this.ghost, ...this.ghost.querySelectorAll<HTMLElement>('*')];

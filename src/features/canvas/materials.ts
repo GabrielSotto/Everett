@@ -6,6 +6,7 @@ import {
   type Point,
   type Link,
   type Anchor,
+  statusNames,
 } from '../../domain/model';
 import { anchorPoint, linkPath, shapeVertices } from '../../domain/geometry';
 import { html } from '../../ui/dom';
@@ -14,7 +15,7 @@ import { materialDensity, materialGroups } from '../../domain/material-density';
 const anchors: Anchor[] = ['north', 'east', 'south', 'west'];
 export function shapeMarkup(material: Material): string {
   if (material.data.kind !== 'shape') return '';
-  const { shape, color } = material.data;
+  const { shape, color, stroke = color, thickness = 1, fill = true } = material.data;
   const content =
     shape === 'ellipse'
       ? '<ellipse cx="50" cy="50" rx="49.5" ry="49.5"/>'
@@ -23,13 +24,19 @@ export function shapeMarkup(material: Material): string {
         : `<polygon points="${shapeVertices(shape)
             .map((p) => `${p.x * 100},${p.y * 100}`)
             .join(' ')}"/>`;
-  return `<svg class="shape-art ${shape}" viewBox="0 0 100 100" preserveAspectRatio="none" fill="${color}" aria-hidden="true">${content}</svg>`;
+  return `<svg class="shape-art ${shape}" viewBox="0 0 100 100" preserveAspectRatio="none" fill="${fill ? color : 'none'}" stroke="${stroke}" stroke-width="${thickness}" aria-hidden="true">${content}</svg>`;
+}
+function drawingMarkup(material: Material): string {
+  if (material.data.kind !== 'drawing') return '';
+  const d = material.data;
+  const point = d.points[0]!;
+  return `<svg class="drawing-art" viewBox="0 0 ${material.width} ${material.height}" aria-hidden="true">${d.points.length === 1 ? `<circle cx="${point.x}" cy="${point.y}" r="${d.thickness / 2}" fill="${d.color}"/>` : `<polyline points="${d.points.map((p) => `${p.x},${p.y}`).join(' ')}" fill="none" stroke="${d.color}" stroke-width="${d.thickness}" stroke-linecap="round" stroke-linejoin="round"/>`}</svg>`;
 }
 export function resizeHandles(kind: 'node' | 'zone', id: string): string {
   return ['nw', 'ne', 'se', 'sw']
     .map(
       (corner) =>
-        `<button type="button" class="resize-handle ${corner}" data-resize="${kind}" data-id="${id}" data-corner="${corner}" aria-label="Redimensionar ${corner}"></button>`,
+        `<button type="button" class="resize-handle ${corner}" data-resize="${kind}" data-id="${id}" data-corner="${corner}" aria-label="Redimensionar ${corner}" title="Redimensionar con las flechas; Shift para pasos mayores"></button>`,
     )
     .join('');
 }
@@ -43,7 +50,19 @@ export function materialMarkup(
   let content: string;
   if (d.kind === 'note') content = `<h3>${html(d.title)}</h3><p>${html(d.text)}</p>`;
   else if (d.kind === 'shape') content = shapeMarkup(material);
-  else {
+  else if (d.kind === 'drawing') content = drawingMarkup(material);
+  else if (d.kind === 'image')
+    content = `<img data-asset="${d.asset}" alt="${html(d.title)}" draggable="false">`;
+  else if (d.kind === 'video')
+    content = `<video data-asset="${d.asset}" preload="metadata" aria-label="${html(d.title)}"></video><button type="button" class="video-play" data-action="video-play" aria-label="Reproducir video">${icon('play', 24)}${d.duration !== undefined ? `<span>${Math.floor(d.duration / 60)}:${String(Math.floor(d.duration % 60)).padStart(2, '0')}</span>` : ''}</button>`;
+  else if (d.kind === 'pdf')
+    content = d.preview
+      ? `<img src="${d.preview}" alt="Primera página de ${html(d.title)}">`
+      : `<div class="pdf-placeholder">${icon('docs', 28)}<strong>${html(d.title)}</strong><span>PDF · sin portada disponible</span></div>`;
+  else if (d.kind === 'link') {
+    const url = new URL(d.url);
+    content = `${d.preview ? `<img src="${html(d.preview)}" alt="">` : ''}<div class="link-material-body">${icon('link', 18)}<span>${html(url.hostname + url.pathname)}${d.description ? `<small>${html(d.description)}</small>` : ''}</span></div>`;
+  } else if (d.kind === 'reference') {
     const ref = d.ref;
     const detail =
       ref.kind === 'document'
@@ -54,7 +73,12 @@ export function materialMarkup(
             ? w.tasks.find((t) => t.id === ref.id)?.description
             : w.agents.find((a) => a.id === ref.id)?.role;
     content = `<div class="reference-type">${icon(ref.kind === 'document' ? 'docs' : ref.kind === 'file' ? 'code' : ref.kind === 'task' ? 'board' : 'agents', 17)}</div><h3>${html(nodeTitle(w, material))}</h3><${ref.kind === 'file' ? 'pre' : 'p'}>${html(detail)}</${ref.kind === 'file' ? 'pre' : 'p'}>`;
-  }
+    if (ref.kind === 'task') {
+      const task = w.tasks.find((t) => t.id === ref.id);
+      if (task)
+        content = `<h3>${html(task.title)}</h3><p>${html(task.description)}</p><div class="task-material-meta"><span>${html(statusNames[task.status])}</span><span>${html(task.priority)}</span><span>${html(task.assignee || 'Sin responsable')}</span></div>`;
+    }
+  } else content = '';
   const comment = w.comments.find((c) => c.node === material.id && !c.resolved);
   const ports = connect
     ? anchors
@@ -64,7 +88,7 @@ export function materialMarkup(
         })
         .join('')
     : '';
-  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind} ${selected ? 'selected' : ''}" data-node="${material.id}" style="left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}${selected && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('comment', 13)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong>${html(comment.text)}</span></button>` : ''}</article>`;
+  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" style="left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('comment', 13)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong>${html(comment.text)}</span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {
   note: { label: 'Notas', icon: 'note' },
@@ -73,6 +97,11 @@ const materialKinds: Record<string, { label: string; icon: Parameters<typeof ico
   task: { label: 'Tareas', icon: 'board' },
   shape: { label: 'Formas', icon: 'shape' },
   agent: { label: 'Agentes', icon: 'agents' },
+  image: { label: 'Imágenes', icon: 'image' },
+  video: { label: 'Videos', icon: 'play' },
+  pdf: { label: 'PDF', icon: 'docs' },
+  drawing: { label: 'Dibujos', icon: 'draw' },
+  link: { label: 'Enlaces', icon: 'link' },
 };
 function assignedPreview(w: WorldSnapshot, n: Material): string {
   const d = n.data,
@@ -90,7 +119,7 @@ function assignedPreview(w: WorldSnapshot, n: Material): string {
               ? w.tasks.find((task) => task.id === d.ref.id)?.description
               : ''
         : '';
-  return `<div class="assigned-preview" data-assigned-id="${n.id}"><strong>${icon(meta.icon, 13)}<span>${html(nodeTitle(w, n))}</span></strong>${d.kind === 'shape' ? shapeMarkup(n) : `<p>${html(text)}</p>`}</div>`;
+  return `<div class="assigned-preview" data-assigned-id="${n.id}"><strong>${icon(meta.icon, 13)}<span>${html(nodeTitle(w, n))}</span></strong>${d.kind === 'shape' ? shapeMarkup(n) : d.kind === 'drawing' ? drawingMarkup(n) : d.kind === 'image' || d.kind === 'video' ? `<${d.kind === 'image' ? 'img' : 'video'} data-asset="${d.asset}" ${d.kind === 'image' ? `alt="${html(d.title)}"` : `aria-label="${html(d.title)}"`}>${d.kind === 'video' ? '</video>' : ''}` : d.kind === 'pdf' && d.preview ? `<img src="${d.preview}" alt="${html(d.title)}">` : `<p>${html(d.kind === 'link' ? d.url : text)}</p>`}</div>`;
 }
 function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {
   if (!nodes.length) return '<span class="drop-label">Arrastrá un material acá</span>';
@@ -128,7 +157,7 @@ function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {
 export function zoneMarkup(w: WorldSnapshot, zone: Zone, selected: boolean): string {
   const agent = w.agents.find((a) => a.id === zone.agent);
   const spacious = zone.width > 185 && zone.height > 120;
-  return `<div class="agent-zone ${selected ? 'selected' : ''}" data-zone="${zone.id}" style="left:${zone.x}px;top:${zone.y}px;width:${zone.width}px;height:${zone.height}px"><div class="zone-heading">${icon(agent ? 'agents' : 'zone', 14)}<span>${html(agent?.name ?? zone.name)}</span></div>${
+  return `<div class="agent-zone ${selected ? 'selected' : ''}" data-zone="${zone.id}" tabindex="0" role="group" aria-label="Zona ${html(agent?.name ?? zone.name)}" style="left:${zone.x}px;top:${zone.y}px;width:${zone.width}px;height:${zone.height}px"><div class="zone-heading">${icon(agent ? 'agents' : 'zone', 14)}<span>${html(agent?.name ?? zone.name)}</span></div>${
     spacious && agent
       ? `<div class="zone-materials">${assignedMaterials(
           w,
@@ -154,5 +183,5 @@ export function connectionMarkup(
     link.fromAnchor,
     link.toAnchor,
   );
-  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}"><path class="link-hit" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" d="${path}"/></g>`;
+  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}">${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse"><rect x="-100000" y="-100000" width="200000" height="200000" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label || 'Editar etiqueta de conexión')}" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" d="${path}" ${link.label ? `mask="url(#mask-${link.id})"` : ''}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}</g>`;
 }

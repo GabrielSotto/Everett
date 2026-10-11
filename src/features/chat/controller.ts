@@ -8,9 +8,16 @@ import { bindDismiss } from '../../ui/popover';
 import { trace, type Intent } from '../../app/diagnostics/trace';
 import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 import type { ChatUi } from './state';
+import { conversation, conversationDraft } from '../../domain/conversations';
+import { ConversationHeader, participantsMarkup } from './history';
+import { motion, reducedMotion } from '../../ui/motion';
+import { composerDraft } from '../../ui/composer';
 export class CanvasChat {
   private abort = new AbortController();
   private people = false;
+  private presentation: ChatUi['chatMode'] = 'closed';
+  private animation: Animation | null = null;
+  private header: ConversationHeader;
   private drag: {
     start: Point;
     origin: Point;
@@ -22,6 +29,7 @@ export class CanvasChat {
     private root: HTMLElement,
     private ctx: Context,
   ) {
+    this.header = new ConversationHeader(ctx, () => this.render(), root, this.abort.signal);
     bindComposer(root, this.abort.signal, ctx);
     bindDismiss(
       this.abort.signal,
@@ -75,11 +83,6 @@ export class CanvasChat {
             u.chat.chatPosition = { x: 325, y: 150 };
             this.render();
             break;
-          case 'chat-room':
-            u.chat.chatMode = u.chat.chatMode === 'room' ? 'quick' : 'room';
-            u.chat.chatCompact = false;
-            this.render();
-            break;
           case 'chat-compact':
             u.chat.chatCompact = !u.chat.chatCompact;
             this.render();
@@ -117,13 +120,18 @@ export class CanvasChat {
           this.draft().text = '';
           this.draft().materials = [];
           void ctx.service
-            .converse(w.id, 'chat', text, materials)
+            .converse(w.id, 'chat', text, materials, conversation(w, ctx.ui).id)
             .catch((error) => ctx.fail(error, 'canvas.chat'));
         }
         if (e.target.id === 'add-person') {
           e.preventDefault();
           ctx.act(
-            { type: 'participant', world: w.id, name: value(root, '#person-name') },
+            {
+              type: 'participant',
+              world: w.id,
+              name: value(root, '#person-name'),
+              conversation: conversation(w, ctx.ui).id,
+            },
             'agregar participante',
             'CHAT-02',
           );
@@ -152,7 +160,7 @@ export class CanvasChat {
         if (
           !(e.target instanceof Element) ||
           !e.target.closest('.chat-handle') ||
-          e.target.closest('button')
+          e.target.closest('button,input')
         )
           return;
         e.preventDefault();
@@ -170,7 +178,7 @@ export class CanvasChat {
           mode,
           intent,
         };
-        panel.classList.remove('docked', 'room');
+        panel.classList.remove('docked');
         panel.classList.add('quick');
         panel.style.width = '310px';
         panel.style.height = ctx.ui.chat.chatCompact ? '48px' : '340px';
@@ -246,11 +254,12 @@ export class CanvasChat {
     this.render();
   }
   private draft(): { text: string; materials: string[] } {
-    return (this.ctx.ui.chat.chatDrafts[this.ctx.world().id] ??= { text: '', materials: [] });
+    return conversationDraft(this.ctx.world(), this.ctx.ui);
   }
   private close(restoreFocus: boolean): void {
     this.ctx.ui.chat.chatMode = 'closed';
     this.render();
+    this.ctx.persist();
     if (restoreFocus)
       this.root.parentElement
         ?.querySelector<HTMLButtonElement>('[data-action="chat-open"]')
@@ -273,9 +282,18 @@ export class CanvasChat {
   render(): void {
     const { ctx } = this,
       u = ctx.ui,
-      w = ctx.world(),
+      source = ctx.world(),
+      w = {
+        ...source,
+        chat: conversation(source, u).messages,
+        participants: conversation(source, u).participants,
+      },
       restore = preserveFocus(this.root),
       draft = this.draft();
+    const previous = this.root.querySelector<HTMLElement>('.canvas-chat')?.getBoundingClientRect();
+    const changedPresentation = this.presentation !== u.chat.chatMode;
+    this.presentation = u.chat.chatMode;
+    this.animation?.cancel();
     if (u.chat.chatMode === 'closed') {
       this.root.innerHTML = '';
       return;
@@ -290,7 +308,7 @@ export class CanvasChat {
     );
     u.chat.chatPosition = p;
     const comments = u.chat.chatMode === 'docked' && u.chat.chatTab === 'comments';
-    this.root.innerHTML = `<section class="canvas-chat ${u.chat.chatMode} ${u.chat.chatCompact ? 'compact' : ''}" style="${u.chat.chatMode === 'quick' ? `left:${p.x}px;top:${p.y}px` : ''}" aria-label="Chat del Canvas"><header class="chat-handle"><span class="chat-grip">${icon('grip', 14)}</span><span class="chat-presence">${w.participants.length > 1 ? w.participants.length + ' personas' : 'Eve'}</span><div>${btn('chat-people', 'user', 'Agregar personas')}${u.chat.chatMode === 'docked' ? btn('chat-undock', 'dock', 'Desacoplar chat') : btn('chat-dock', 'dock', 'Anclar chat')}${btn('chat-room', 'expand', 'Room')}${btn('chat-compact', 'down', 'Contraer chat')}${btn('chat-close', 'close', 'Cerrar chat')}</div></header>${u.chat.chatMode === 'docked' ? `<nav class="chat-tabs">${btn('chat-tab', 'session', 'Conversación', 'data-tab="chat"', !comments)}${btn('chat-tab', 'comment', 'Comentarios', 'data-tab="comments"', comments)}</nav>` : ''}${this.people ? `<form id="add-person"><input id="person-name" aria-label="Nombre del participante" placeholder="Nombre"><button class="icon-button" type="submit" aria-label="Agregar persona">${icon('plus')}</button></form>` : ''}<div class="chat-scroll">${
+    this.root.innerHTML = `<section class="canvas-chat ${u.chat.chatMode} ${u.chat.chatCompact ? 'compact' : ''}" style="${u.chat.chatMode === 'quick' ? `left:${p.x}px;top:${p.y}px` : ''}" aria-label="Chat del Canvas"><header class="chat-handle"><span class="chat-grip">${icon('grip', 14)}</span>${this.header.markup()}<div>${u.chat.chatMode === 'docked' ? btn('chat-people', 'user', 'Agregar personas') : ''}${u.chat.chatMode === 'docked' ? btn('chat-undock', 'dock', 'Desacoplar chat') : btn('chat-dock', 'dock', 'Anclar chat')}${btn('chat-compact', 'down', 'Contraer chat')}${btn('chat-close', 'close', 'Cerrar chat')}</div></header>${participantsMarkup(w.participants)}${u.chat.chatMode === 'docked' ? `<nav class="chat-tabs">${btn('chat-tab', 'session', 'Conversación', 'data-tab="chat"', !comments)}${btn('chat-tab', 'comment', 'Comentarios', 'data-tab="comments"', comments)}</nav>` : ''}${this.people ? `<form id="add-person"><input id="person-name" aria-label="Nombre del participante" placeholder="Nombre"><button class="icon-button" type="submit" aria-label="Agregar persona">${icon('plus')}</button></form>` : ''}<div class="chat-scroll">${
       comments
         ? w.comments
             .map(
@@ -323,8 +341,25 @@ export class CanvasChat {
                   })
                   .join('')}</div>`
               : ''
-          }${composer('canvas-chat-composer', 'Escribí un mensaje…')}</div>`
+          }${composer('canvas-chat-composer', 'Escribí un mensaje…', false, '', composerDraft(ctx, 'canvas-chat-composer'))}</div>`
     }</section>`;
+    const panel = this.root.querySelector<HTMLElement>('.canvas-chat');
+    if (changedPresentation && previous && panel && !reducedMotion()) {
+      const next = panel.getBoundingClientRect();
+      this.animation = panel.animate(
+        [
+          {
+            transform: `translate(${previous.x - next.x}px,${previous.y - next.y}px)`,
+            opacity: 0.75,
+          },
+          { transform: 'none', opacity: 1 },
+        ],
+        { duration: motion.panelOpenMs, easing: motion.panelEase },
+      );
+    }
+    this.root.parentElement
+      ?.querySelector('.canvas-tools')
+      ?.classList.toggle('chat-docked', u.chat.chatMode === 'docked');
     const ta = this.root.querySelector<HTMLTextAreaElement>('#canvas-chat-composer-input');
     if (ta) ta.value = draft.text;
     restore();
@@ -332,6 +367,7 @@ export class CanvasChat {
     if (scroll && !comments) scroll.scrollTop = scroll.scrollHeight;
   }
   dispose(): void {
+    this.animation?.cancel();
     this.abort.abort();
     this.root.innerHTML = '';
   }

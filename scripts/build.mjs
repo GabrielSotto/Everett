@@ -16,6 +16,17 @@ const result = await build({
   format: 'iife',
   platform: 'browser',
   loader: { '.webp': 'dataurl', '.png': 'dataurl' },
+  plugins: [
+    {
+      name: 'pdf-worker-inline',
+      setup(builder) {
+        builder.onLoad({ filter: /pdf\.worker\.mjs$/ }, async (args) => ({
+          contents: await readFile(args.path, 'utf8'),
+          loader: 'text',
+        }));
+      },
+    },
+  ],
   target: 'es2023',
   sourcemap: 'inline',
   metafile: true,

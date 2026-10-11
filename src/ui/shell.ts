@@ -3,19 +3,24 @@ import type { Context } from '../app/context';
 import { profileLimits } from '../domain/profile';
 import { surfaces, surfaceNames, activeWorld } from '../domain/model';
 import { conversationContext } from '../domain/conversation-context';
-import { html, target } from './dom';
+import { conversation } from '../domain/conversations';
+import { html, target, preserveFocus } from './dom';
 import { btn, icon } from './icons';
 import { bindDismiss } from './popover';
 import { PanelMotion } from './panel-motion';
 import { trace } from '../app/diagnostics/trace';
+import { CanvasShortcuts } from './canvas-shortcuts';
+import { shortcutNames } from '../domain/shortcuts';
 
 export class Shell {
   private abort = new AbortController();
   private readonly panels: PanelMotion;
+  private readonly shortcuts: CanvasShortcuts;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
   ) {
+    this.shortcuts = new CanvasShortcuts(ctx, () => this.render(), root, this.abort.signal);
     this.panels = new PanelMotion(root, [
       '.profile-pop',
       '.status-pop',
@@ -90,7 +95,12 @@ export class Shell {
             break;
           case 'profile-tab': {
             const tab = t.dataset.tab;
-            if (tab === 'identity' || tab === 'preferences' || tab === 'tools') {
+            if (
+              tab === 'identity' ||
+              tab === 'preferences' ||
+              tab === 'tools' ||
+              tab === 'settings'
+            ) {
               ui.shell.profileTab = tab;
               this.render();
             }
@@ -129,7 +139,11 @@ export class Shell {
             break;
           case 'shortcuts':
             ctx.notice(
-              'Alt + rueda: entrar / salir · H: panear · V: seleccionar · Ctrl K: buscar · Ctrl Shift D: diagnóstico',
+              'Alt + rueda: entrar / salir · ' +
+                Object.entries(ctx.ui.shortcuts)
+                  .filter(([, key]) => key)
+                  .map(([action, key]) => shortcutNames[action] + ': ' + key)
+                  .join(' · '),
             );
             break;
           case 'search-result': {
@@ -261,10 +275,10 @@ export class Shell {
       return `<div class="popover status-pop"><h3>Estado</h3><dl><dt>Mundos</dt><dd>${s.worlds.length}</dd><dt>En foco</dt><dd>${html(focused?.name ?? (this.ctx.camera?.focused === 'new' ? 'Nuevo mundo' : 'Sin foco'))}</dd></dl></div>`;
     }
     const r = s.route,
-      context = conversationContext(w),
+      context = conversationContext({ ...w, messages: conversation(w, this.ctx.ui).messages }),
       conversational = r.kind === 'surface' && r.surface === 'session';
     const count = (n: number) => n.toLocaleString('es-AR');
-    return `<div class="popover status-pop"><h3>Estado</h3><dl><dt>Mundo</dt><dd>${html(w.name)}</dd><dt>Superficie</dt><dd>${r.kind === 'surface' ? surfaceNames[r.surface] : r.kind === 'note' ? 'Canvas' : 'Superficies'}</dd>${r.kind === 'surface' && r.surface === 'code' ? `<dt>Rama</dt><dd>${html(w.branch)}</dd><dt>Archivos modificados</dt><dd>${w.files.filter((f) => f.text !== f.saved).length}</dd>` : ''}<dt>Agentes trabajando</dt><dd>${new Set(w.runs.filter((run) => run.status === 'running').map((run) => run.agent)).size}</dd><dt>Shipping Mode</dt><dd class="shipping-value">${w.shipping.active ? 'Activo' : 'Desactivado'}</dd></dl>${conversational ? `<section class="context-budget" data-used="${context.used}" data-capacity="${context.capacity}"><h4>Ventana de contexto</h4><div class="budget-value"><strong>${count(context.used)}</strong><span>/ ${count(context.capacity)} tokens</span></div><div class="budget-track"><i style="width:${Math.min(100, (context.used / context.capacity) * 100)}%"></i></div><dl><dt>Conversación</dt><dd>${count(context.conversation)}</dd><dt>Materiales incluidos</dt><dd>${count(context.materials)}</dd><dt>Memoria fijada</dt><dd>${count(context.memory)}</dd><dt>Disponible</dt><dd>${count(context.available)}</dd></dl><small>Estimación por caracteres</small></section>` : ''}<h4>Recursos del mundo</h4><div class="context-resources">${w.docs
+    return `<div class="popover status-pop"><h3>Estado</h3><dl><dt>Mundo</dt><dd>${html(w.name)}</dd><dt>Superficie</dt><dd>${r.kind === 'surface' ? surfaceNames[r.surface] : r.kind === 'note' || r.kind === 'material' ? 'Canvas' : 'Superficies'}</dd>${r.kind === 'surface' && r.surface === 'code' ? `<dt>Rama</dt><dd>${html(w.branch)}</dd><dt>Archivos modificados</dt><dd>${w.files.filter((f) => f.text !== f.saved).length}</dd>` : ''}<dt>Agentes trabajando</dt><dd>${new Set(w.runs.filter((run) => run.status === 'running').map((run) => run.agent)).size}</dd><dt>Shipping Mode</dt><dd class="shipping-value">${w.shipping.active ? 'Activo' : 'Desactivado'}</dd></dl>${conversational ? `<section class="context-budget" data-used="${context.used}" data-capacity="${context.capacity}"><h4>Ventana de contexto</h4><div class="budget-value"><strong>${count(context.used)}</strong><span>/ ${count(context.capacity)} tokens</span></div><div class="budget-track"><i style="width:${Math.min(100, (context.used / context.capacity) * 100)}%"></i></div><dl><dt>Conversación</dt><dd>${count(context.conversation)}</dd><dt>Materiales incluidos</dt><dd>${count(context.materials)}</dd><dt>Memoria fijada</dt><dd>${count(context.memory)}</dd><dt>Disponible</dt><dd>${count(context.available)}</dd></dl><small>Estimación por caracteres</small></section>` : ''}<h4>Recursos del mundo</h4><div class="context-resources">${w.docs
       .slice(0, 3)
       .map((d) => `<span>${icon('docs', 12)}${html(d.title)}</span>`)
       .join('')}${w.files
@@ -276,9 +290,10 @@ export class Shell {
     const p = this.ctx.store.get().profile,
       tab = this.ctx.ui.shell.profileTab,
       w = activeWorld(this.ctx.store.get());
-    return `<div class="popover profile-pop"><div class="profile-identity"><span class="profile-avatar">${html(p.name.slice(0, 1).toUpperCase())}</span><div><strong>${html(p.name)}</strong><small>${this.ctx.store.get().worlds.length} mundos en total · ${this.ctx.store.get().worlds.filter((world) => world.archived).length} archivados</small></div></div><nav class="profile-tabs">${(['identity', 'preferences', 'tools'] as const).map((t) => `<button data-action="profile-tab" data-tab="${t}" class="${t === tab ? 'active' : ''}">${{ identity: 'Perfil', preferences: 'Preferencias', tools: 'Herramientas' }[t]}</button>`).join('')}</nav>${tab === 'identity' ? `<div class="profile-field"><label for="profile-name">Nombre</label><input id="profile-name" aria-label="Nombre de perfil" maxlength="${profileLimits.name}" value="${html(p.name)}"></div><div class="profile-field"><label for="profile-bio">Sobre vos</label><textarea id="profile-bio" rows="4" maxlength="${profileLimits.bio}" aria-label="Descripción del perfil" placeholder="Sobre vos…">${html(p.bio)}</textarea><span class="profile-counter" id="profile-bio-count">${p.bio.length} / ${profileLimits.bio}</span></div>` : tab === 'preferences' ? `<label class="preference-line" for="profile-language">Idioma de dictado<select id="profile-language"><option value="es-AR" ${p.language === 'es-AR' ? 'selected' : ''}>Español · Argentina</option><option value="es-ES" ${p.language === 'es-ES' ? 'selected' : ''}>Español · España</option></select></label>` : `${w ? `<button data-action="archive">${icon('archive', 15)}${w.archived ? 'Desarchivar mundo' : 'Archivar mundo'}</button>` : ''}<button data-action="shortcuts">${icon('help', 15)}Atajos</button><button data-action="diagnostics">${icon('download', 15)}Exportar diagnóstico</button>`}</div>`;
+    return `<div class="popover profile-pop"><div class="profile-identity"><span class="profile-avatar">${html(p.name.slice(0, 1).toUpperCase())}</span><div><strong>${html(p.name)}</strong><small>${this.ctx.store.get().worlds.length} mundos en total · ${this.ctx.store.get().worlds.filter((world) => world.archived).length} archivados</small></div></div><nav class="profile-tabs">${(['identity', 'preferences', 'tools', 'settings'] as const).map((t) => `<button data-action="profile-tab" data-tab="${t}" class="${t === tab ? 'active' : ''}">${{ identity: 'Perfil', preferences: 'Preferencias', tools: 'Herramientas', settings: 'Configuración' }[t]}</button>`).join('')}</nav>${tab === 'settings' ? this.shortcuts.markup() : tab === 'identity' ? `<div class="profile-field"><label for="profile-name">Nombre</label><input id="profile-name" aria-label="Nombre de perfil" maxlength="${profileLimits.name}" value="${html(p.name)}"></div><div class="profile-field"><label for="profile-bio">Sobre vos</label><textarea id="profile-bio" rows="4" maxlength="${profileLimits.bio}" aria-label="Descripción del perfil" placeholder="Sobre vos…">${html(p.bio)}</textarea><span class="profile-counter" id="profile-bio-count">${p.bio.length} / ${profileLimits.bio}</span></div>` : tab === 'preferences' ? `<label class="preference-line" for="profile-language">Idioma de dictado<select id="profile-language"><option value="es-AR" ${p.language === 'es-AR' ? 'selected' : ''}>Español · Argentina</option><option value="es-ES" ${p.language === 'es-ES' ? 'selected' : ''}>Español · España</option></select></label>` : `${w ? `<button data-action="archive">${icon('archive', 15)}${w.archived ? 'Desarchivar mundo' : 'Archivar mundo'}</button>` : ''}<button data-action="shortcuts">${icon('help', 15)}Atajos</button><button data-action="diagnostics">${icon('download', 15)}Exportar diagnóstico</button>`}</div>`;
   }
   render(): void {
+    const restore = preserveFocus(this.root);
     const finishPanels = this.panels.prepare();
     const { ctx } = this,
       ui = ctx.ui,
@@ -287,9 +302,10 @@ export class Shell {
       p = s.profile;
     this.root.className =
       'shell ' + (s.route.kind === 'universe' || s.route.kind === 'world' ? 'dark-shell' : '');
-    this.root.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}<div class="shell-spacer"></div><div class="global-search ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${ui.shell.searchOpen ? btn('search-clear', 'close', 'Cerrar búsqueda') : ''}${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu)}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results"></div>`;
+    this.root.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}<div class="shell-spacer"></div><div class="global-search ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${ui.shell.searchOpen ? btn('search-clear', 'close', 'Cerrar búsqueda') : ''}${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu)}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results"></div>`;
     if (ui.shell.searchOpen && s.route.kind !== 'universe') this.results();
     finishPanels();
+    restore();
   }
   dispose(): void {
     this.panels.dispose();
