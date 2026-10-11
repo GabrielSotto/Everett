@@ -6,13 +6,17 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 | ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.    |
 | Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`. |
-| 0.8                           | Pendiente                     | Canvas.                                                                                                      |
+| 0.8                           | En definición                 | [Canvas: decisiones y pendientes de organización](docs/iteraciones/0.8.md).                                  |
 | 0.9                           | Pendiente                     | Code y Docs.                                                                                                 |
 | 0.10                          | Pendiente                     | Sessions y Agents.                                                                                           |
 | 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                       |
-| 0.12                          | Pendiente                     | Vista del Mundo, barra global, perfil y configuración.                                                       |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).     |
 | 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                    |
 | 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                    |
+
+## Después de 1.0
+
+- Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
 ## Correcciones pendientes
 

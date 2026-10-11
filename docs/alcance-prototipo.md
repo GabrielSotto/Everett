@@ -6,16 +6,16 @@ Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referenci
 
 **0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8 continúa pendiente.
 
-| Versión    | Alcance principal                                                                   |
-| ---------- | ----------------------------------------------------------------------------------- |
-| **0.7.5**  | Reconstrucción modular, tipado, arnés, motion y propuestas para la vista del Mundo. |
-| **0.8**    | Canvas, tomando los comportamientos aplicables de Infinity Canvas.                  |
-| **0.9**    | Code + Docs.                                                                        |
-| **0.10**   | Session + Agents.                                                                   |
-| **0.11**   | Board + Shipping Mode.                                                              |
-| **0.12**   | Vista del mundo, barra global, perfil y configuración.                              |
-| **1.0 RC** | Integración completa, regresiones y pulido final.                                   |
-| **1.0**    | Prototipo aprobado.                                                                 |
+| Versión    | Alcance principal                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| **0.7.5**  | Reconstrucción modular, tipado, arnés, motion y propuestas para la vista del Mundo.                      |
+| **0.8**    | Canvas, tomando los comportamientos aplicables de Infinity Canvas.                                       |
+| **0.9**    | Code + Docs.                                                                                             |
+| **0.10**   | Session + Agents.                                                                                        |
+| **0.11**   | Board + Shipping Mode.                                                                                   |
+| **0.12**   | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design). |
+| **1.0 RC** | Integración completa, regresiones y pulido final.                                                        |
+| **1.0**    | Prototipo aprobado.                                                                                      |
 
 **Regla de avance:** implementación → pruebas → tu feedback → correcciones → aprobación. Si una etapa necesita correcciones, continúa como `0.8.1`, `0.8.2`, etc. No se pasa a la siguiente dejando pendientes los problemas de su alcance.
 
@@ -35,21 +35,38 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 
 - Representaciones reconocibles de notas, documentos, PDF, imágenes, videos, enlaces y referencias a otras superficies.
 - Previews, portadas y metadatos cuando estén disponibles.
-- Edición directa de notas y nombres.
-- Selección discreta y controles contextuales.
+- Edición directa de notas y nombres. Renombrar mediante clic sobre el nombre visible; en documentos
+  referenciados, actualizar el mismo título compartido con Docs, conservando identidad y contenido.
+  También ofrecer Renombrar desde el menú contextual del material, con su atajo cuando el usuario
+  lo haya asignado. En imágenes y videos importados, cambiar su nombre dentro de Everett conserva
+  el archivo original.
+- Selección discreta y controles pertinentes al tipo. Asignar a una zona y quitar del Canvas
+  corresponden al menú contextual del material, separado de los controles visibles al seleccionar.
+  Quitar una referencia a Docs o Board conserva el documento o la tarea original en su superficie.
+- Duplicar crea otra copia del material seleccionado. Para documentos referenciados, crea un
+  documento independiente en Docs y una referencia a esa copia en Canvas. Omitir Duplicar en
+  referencias a tareas de Board para 0.8. Eliminar materiales propios y quitar referencias admiten
+  Deshacer, según C08-MAT-08 de [Canvas 0.8](iteraciones/0.8.md).
+- Redimensionar imágenes y videos conservando la relación de aspecto y el contenido completo.
 - Conservar identidad y contenido al abrir, referenciar o asignar materiales.
 - Mantener zoom hacia objetos y regreso al contexto espacial de origen.
+- Conservar el zoom acoplado de Everett para entrar y salir de materiales y superficies donde
+  corresponda, con Alt como embrague cuando la rueda tiene una acción propia de la superficie.
+  No incorporar un botón de entrar o abrir en la barra de cada material. Aplicar
+  las decisiones de representación y controles de [Canvas 0.8](iteraciones/0.8.md).
 
 ### Zonas de agente
 
-- Inspector con agente, instrucción, contexto, actividad y acciones.
+- Seleccionar una zona abre su inspector con agente, instrucción, contexto, actividad y acciones.
+  Gestionar la zona desde el inspector; el menú contextual corresponde a los materiales,
+  según la distribución confirmada en [Canvas 0.8](iteraciones/0.8.md).
 - Distinguir asignación contextual con acciones rápidas y transferencia mediante arrastre.
 - Mantener exclusividad de uso y estados de procesamiento y revisión.
 - Conservar y devolver materiales al cancelar, rechazar, retirar al agente o eliminar la zona.
 - Mantener las zonas fijas después de crearlas, según la decisión vigente.
 - Propuestas coherentes con el material recibido y la acción solicitada.
 
-Aplicar los estados de densidad de la referencia de Infinity Canvas: (adjunto de referencia no recuperado)
+Aplicar los estados de densidad de la [referencia recuperada de Infinity Canvas](referencias/0.8/infinity-canvas/32-zone-material-density-states.png).
 
 | Materiales | Representación                                         |
 | ---------- | ------------------------------------------------------ |
@@ -61,20 +78,46 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 
 ### Herramientas y conexiones
 
-- Consolidar selección, paneo, notas, dibujo, formas y zonas en un dock compacto.
-- Herramientas de dibujo y formas con controles contextuales.
+- Consolidar selección, paneo, notas, dibujo, formas y zonas en un dock compacto. Probar comentarios
+  en el mismo dock y revisar su ubicación si la cantidad de accesos lo vuelve excesivo.
+- Atajos de Canvas configurables, con N para crear notas, C para comentar y L para conectar como
+  valores predeterminados. Renombrar queda sin atajo predeterminado y se accede mediante clic sobre
+  el nombre; el usuario puede asignarle un atajo. Acceder desde Perfil → Configuración → Atajos,
+  sección Canvas, con una lista de acciones y combinaciones editables; Renombrar aparece con la
+  combinación vacía. Guardar automáticamente la configuración local, permitir restaurar un atajo
+  o todos los valores iniciales y resolver colisiones entre acciones del mismo contexto. Los controles
+  y la ayuda muestran las asignaciones vigentes, según [Canvas 0.8](iteraciones/0.8.md).
+- Herramientas de dibujo y formas con controles contextuales, partiendo de las referencias 30 y 31
+  según [Canvas 0.8](iteraciones/0.8.md). Aplicar color y grosor al dibujo, y relleno y borde a las
+  formas; no extender esos controles de estilo a todos los materiales.
 - Respetar dimensiones y proporciones del gesto.
 - Mantener selección sin padding ni halos que engorden los objetos.
-- Conexiones desde los anclajes elegidos por el usuario.
+- Cuatro anclajes por material, arriba, abajo, izquierda y derecha; conectar los extremos que elija
+  el usuario. Activar conexiones con L. La 0.8 utiliza curvas suaves con sensación de cable y
+  recorrido calculado automáticamente. Reajustar la curva al mover o redimensionar materiales,
+  conservando los anclajes elegidos. La modificación manual del recorrido y las vueltas alrededor
+  de materiales fueron descartadas por el usuario.
+- Al hacer hover sobre una conexión, engrosar su trazo y ofrecer una zona de interacción más amplia
+  que la línea visible. Un clic permite escribir o editar texto asociado a la conexión. El texto
+  aparece integrado en el cable, interrumpiendo el trazo bajo las palabras; conserva esa ubicación
+  al mover los materiales o cambiar el zoom, según C08-LINK-02 de [Canvas 0.8](iteraciones/0.8.md).
 - Selección y eliminación explícita de conexiones.
 - Rechazar conexiones hacia zonas de agente.
 - Undo/Redo desde los atajos reales, diferenciando texto y operaciones del Canvas.
 
-### Quick Chat, chat anclado y Room
+### Quick Chat, chat anclado e historial
 
 - Quick Chat compacto y arrastrable.
 - Incorporación de participantes desde el chat anclado, no desde Quick Chat.
-- **Permitir Quick Chat → Room**, según tu autorización posterior.
+- Retirar Room como modo de Canvas. Conservar la identidad transversal de cada conversación.
+- Retomar la misma conversación al cambiar entre Canvas y Sessions mediante la navegación
+  existente, con sus mensajes, participantes, referencias y borrador. Aplicar esta continuidad
+  en 0.8, según C08-CHAT-11 de [Canvas 0.8](iteraciones/0.8.md).
+- Historial local real con un listado común de conversaciones del Mundo, accesible desde el chat
+  de Canvas mediante un chevron junto al nombre. Los mensajes de la conversación elegida se
+  comparten entre Quick Chat, chat anclado y Sessions, según C08-CHAT-09 y C08-CHAT-11 de
+  [Canvas 0.8](iteraciones/0.8.md).
+- Aplicar las decisiones confirmadas y resolver las definiciones abiertas de [Canvas 0.8](iteraciones/0.8.md).
 - Anclaje y desacoplamiento mediante desplazamiento visible y rápido.
 - Reacomodar el dock para que no quede detrás del chat anclado.
 - Conservar conversación, borradores, participantes y referencias entre estados.
@@ -83,13 +126,38 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 
 ### Comentarios y propuestas
 
-- Comentarios asociados a materiales, con marcador y consulta contextual.
+- Comentarios asociados al material completo, con marcador y consulta contextual. Los comentarios
+  anclados a puntos concretos de imágenes quedan para evaluar después de 1.0.
 - Listado, respuestas y resolución desde el chat anclado.
-- Comentarios fuera del dock principal.
+- Comentarios con el atajo C. Probar su herramienta en el dock principal y confirmar su ubicación
+  tras evaluar la densidad del conjunto; no duplicar el botón de crear comentario en la barra de
+  cada material. Conservar los marcadores y la consulta contextual.
+- Con un material seleccionado, C o el botón del dock abre el campo para comentarlo. Sin selección,
+  activar la herramienta y elegir el material mediante clic. Esc cancela la herramienta o cierra
+  el campo conservando su borrador, según C08-COM-03 de [Canvas 0.8](iteraciones/0.8.md).
 - Propuestas legibles y diferenciadas del contenido aceptado.
-- Aceptar, rechazar y pedir cambios con resultados coherentes.
+- Aceptar, rechazar y pedir cambios mediante una barra compacta de acciones agrupadas. Al pulsar
+  `Pedir cambios`, el mismo contenedor se expande hacia abajo y muestra el campo de texto libre
+  con cuatro sugerencias rápidas, `Enviar` y `Cancelar`, según C08-PROP-01 de [Canvas 0.8](iteraciones/0.8.md).
+  Ordenar la barra como `Aceptar`, `Pedir cambios`, `Rechazar`. El campo no admite redimensionado
+  manual ni muestra un tirador; `Cancelar` y `Enviar` comparten dimensiones y alineación,
+  conservando su jerarquía secundaria y principal.
+  El campo permanece oculto en reposo; las tres acciones producen resultados coherentes.
 - Cancelar un pedido de cambios conserva la propuesta pendiente.
 - Ninguna propuesta modifica el contenido compartido antes de aceptarse.
+
+### Guardado y recuperación
+
+- Guardado automático local del Canvas y de las conversaciones, incluyendo sus borradores y los
+  materiales y archivos necesarios para recuperar referencias con la misma identidad y contenido.
+- Recuperar por usuario cámara, zoom, selección válida y estado del chat. Reiniciar gestos
+  transitorios y conservar las propuestas pendientes y los pedidos de cambios sin enviar.
+- Recuperar el estado actual del trabajo del agente; cerrar el chat o recargar no implica cancelarlo
+  ni marcarlo como interrumpido. La ejecución simulada puede representar continuidad durante la
+  ausencia. Ante una interrupción confirmada, ofrecer Reintentar y Cancelar, evitando duplicar
+  efectos y devolviendo materiales al cancelar, según C08-STATE-02 de [Canvas 0.8](iteraciones/0.8.md).
+- Comunicar fallos de guardado o recuperación sin sobrescribir los datos ni reiniciar silenciosamente
+  el Canvas o el historial. El mecanismo técnico se concreta durante la implementación.
 
 **Cierre de 0.8:** completar el recorrido material → zona → agente → propuesta → revisión, y trabajar con chat, referencias y comentarios sin perder contenido, contexto ni controles.
 
@@ -169,6 +237,15 @@ El desglose que señalaste en **OpenCode** queda como referencia para esta etapa
 
 ### Board
 
+Tomar como referencia de estructura y estética el tablero de Codroid aportado por el usuario
+el 9 de octubre de 2026: interfaz en `C:/Proyectos/codroid/tools/board/web` y guía en
+`C:/Proyectos/codroid/docs/TABLERO.md`. Se inspeccionaron su Kanban y el detalle de un ticket;
+la [captura local](referencias/0.11/board-codroid.jpg) conserva la referencia visual.
+Adaptar esta dirección a Everett combinándola con las vistas y capacidades de propiedades
+previstas a continuación. El diseño concreto de Board se define en 0.11.
+Comprobar la coherencia visual de su tarjeta referenciada en Canvas, elegida para 0.8 en
+[C08-MAT-07](iteraciones/0.8.md).
+
 - Revisar Kanban, tabla y calendario sobre las mismas tareas.
 - Adoptar los patrones de propiedades y vistas de **Notion** que acordamos usar como referencia.
 - Buscar, añadir, editar, quitar y organizar propiedades.
@@ -193,9 +270,11 @@ El desglose que señalaste en **OpenCode** queda como referencia para esta etapa
 
 ---
 
-## 0.12 — vista del mundo, barra global y perfil
+## 0.12 — vista de superficies del Mundo, barra global, perfil y sistema de diseño
 
-### Vista de superficies del mundo
+### Vista de superficies del Mundo
+
+Esta vista muestra las seis superficies de un único Mundo (proyecto). El Universo es la vista que reúne todos los Mundos; ambas escalas conservan la navegación aprobada.
 
 El nombre y la representación se trabajan inicialmente en la reconstrucción de 0.7.5. En 0.12 se verifica su integración con las superficies terminadas y se resuelven los ajustes que el usuario apruebe.
 
@@ -222,9 +301,21 @@ El nombre y la representación se trabajan inicialmente en la reconstrucción de
 - Mantener comportamiento adecuado ante campos extensos.
 - Evitar que el perfil esté dominado por herramientas técnicas.
 
-**Definiciones necesarias:** nombre y representación elegidos durante 0.7.5; opciones adicionales del perfil a acordar en 0.12.
+### Sistema de diseño — Atomic Design
 
-**Cierre de 0.12:** orientación, navegación global, perfil y configuración coherentes con las superficies ya aprobadas.
+- Consolidar un sistema de diseño común de Everett mediante Atomic Design, aplicable a todas las superficies y a la interfaz compartida.
+- Centralizar tipografía, colores por función, tamaños, espaciados, radios, bordes, sombras y movimiento mediante tokens de diseño.
+- Componer las interfaces con piezas básicas, combinaciones y conjuntos reutilizables; definir sus variantes según su función y contexto.
+- Consolidar los controles y representaciones existentes en ese sistema, preservando las funciones, la navegación y la dirección visual aprobadas.
+- Mantener un catálogo visual de componentes, variantes y estados para revisar la coherencia del conjunto.
+- Comprobar estados de interacción, teclado, foco, contraste, contenido extenso y adaptación al espacio disponible.
+- Verificar el efecto de los cambios compartidos de tipografía, colores y tamaños en todas las superficies y completar su regresión.
+
+La consolidación transversal corresponde a 0.12. Las iteraciones anteriores construyen las piezas que necesita cada área siguiendo los estilos y componentes compartidos vigentes.
+
+**Definiciones necesarias:** nombre y representación elegidos durante 0.7.5; opciones adicionales del perfil y catálogo de componentes y variantes a acordar en 0.12.
+
+**Cierre de 0.12:** orientación, navegación global, perfil y configuración coherentes con las superficies ya aprobadas; sistema de diseño compartido aplicado y verificado en Everett.
 
 ---
 
@@ -265,5 +356,20 @@ Aplicar [Validación del prototipo](validacion-prototipo.md). Sus exigencias son
 La 1.0 se publica cuando los recorridos acordados funcionan, las superficies representan suficientemente la visión, no quedan correcciones críticas pendientes dentro del alcance y **vos aprobás la prueba libre de la candidata**.
 
 Backend, inferencia, colaboración, autenticación e integraciones reales quedan para el desarrollo del producto.
+
+## Después de 1.0
+
+Ideas conservadas para evaluar, sin una versión de implementación comprometida.
+
+- **Canvas: comentarios anclados a un punto de una imagen.** Permitir señalar el detalle al que se
+  refiere un comentario mediante un marcador en el lugar del clic, manteniendo la imagen entera.
+  Como posible mecanismo para Everett, guardar la posición relativa dentro de la imagen para
+  conservar el anclaje al moverla o redimensionarla. Revisar la legibilidad y cuánto contenido tapa
+  el marcador. El usuario decidió posponer esta exploración; los comentarios de 0.8 se asocian al
+  material completo.
+  Referencias verificadas el 3 de octubre de 2026:
+  [Figma permite fijar comentarios en ubicaciones del lienzo y adjuntarlos a marcos de nivel superior](https://help.figma.com/hc/en-us/articles/360041068574-Add-comments-to-files);
+  [Frame.io permite anclar comentarios a un punto del visor](https://help.frame.io/en/articles/9105251-commenting-on-your-media).
+  Estas fuentes describen sus comportamientos, no confirman el mecanismo interno propuesto para Everett.
 
 **Próximo paso del roadmap: desarrollar 0.8 y cerrar Canvas antes de pasar a 0.9.**

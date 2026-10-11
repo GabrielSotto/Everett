@@ -27,7 +27,19 @@ Las distintas interfaces responden a actividades diferentes dentro del mismo Mun
 
 La navegación utiliza zoom, paneo y foco. El usuario enfoca una superficie y entra en ella mediante zoom; el recorrido inverso recupera la escala superior y permite desplazarse hacia otra superficie. La continuidad entre escalas forma parte del funcionamiento aprobado.
 
+Cuando una superficie no tiene zoom ni otra acción propia asignada a la rueda, el gesto de zoom
+entra y sale directamente mediante la navegación de Everett. Si tiene zoom, desplazamiento u
+otra acción propia de rueda, Alt actúa como **embrague**: mientras se mantiene, desacopla esa
+acción local y acopla el gesto a la navegación espacial de Everett. Al soltar Alt se recupera la
+acción local. Es el mismo sistema de entrada y salida, con un acoplamiento temporal según la superficie.
+
 El nombre y la representación de la vista actualmente llamada `Vista atómica` están en revisión. Se conservan sus mecanismos de navegación y su distribución sin un centro jerárquico.
+
+## Atajos
+
+Los atajos de Everett deben ser configurables por cada usuario. Las combinaciones iniciales son
+valores predeterminados que pueden cambiarse; las indicaciones de la interfaz deben reflejar la
+configuración vigente. La definición de cada iteración concreta las acciones y ajustes de su alcance.
 
 ## Humanos y agentes
 
