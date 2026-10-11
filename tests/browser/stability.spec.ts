@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { enterWorld, openSurface } from './interaction-helpers';
+import { enterWorld, openSurface, reachSurface } from './interaction-helpers';
 
 test('UI-STABILITY-01: los remontajes de las seis superficies conservan edición y una única interfaz', async ({
   page,
@@ -15,6 +15,7 @@ test('UI-STABILITY-01: los remontajes de las seis superficies conservan edición
     for (const name of ['Code', 'Canvas', 'Docs', 'Board', 'Agents', 'Session']) {
       const start = Date.now();
       await expect(page.locator('.surface-object')).toHaveCount(6);
+      await reachSurface(page, name);
       await page
         .getByRole('main')
         .getByRole('button', { name, exact: true })
