@@ -43,6 +43,9 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 - Selección discreta y controles pertinentes al tipo. Asignar a una zona y quitar del Canvas
   corresponden al menú contextual del material, separado de los controles visibles al seleccionar.
   Quitar una referencia a Docs o Board conserva el documento o la tarea original en su superficie.
+- Duplicar crea otra copia del material seleccionado. En referencias a Docs o Board, crea otra
+  referencia al mismo original. Eliminar materiales propios y quitar referencias admiten Deshacer,
+  según C08-MAT-08 de [Canvas 0.8](iteraciones/0.8.md).
 - Redimensionar imágenes y videos conservando la relación de aspecto y el contenido completo.
 - Conservar identidad y contenido al abrir, referenciar o asignar materiales.
 - Mantener zoom hacia objetos y regreso al contexto espacial de origen.
@@ -89,9 +92,10 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Respetar dimensiones y proporciones del gesto.
 - Mantener selección sin padding ni halos que engorden los objetos.
 - Cuatro anclajes por material, arriba, abajo, izquierda y derecha; conectar los extremos que elija
-  el usuario. Activar conexiones con L. La 0.8 utiliza conectores curvos con recorrido manipulable,
-  incluidos desvíos y vueltas alrededor de materiales. Reajustar los extremos a sus anclajes sin
-  descartar el recorrido elegido; otros tipos de conector quedan fuera de esta definición.
+  el usuario. Activar conexiones con L. La 0.8 utiliza curvas suaves con sensación de cable y
+  recorrido calculado automáticamente. Reajustar la curva al mover o redimensionar materiales,
+  conservando los anclajes elegidos. La modificación manual del recorrido y las vueltas alrededor
+  de materiales fueron descartadas por el usuario.
 - Al hacer hover sobre una conexión, engrosar su trazo y ofrecer una zona de interacción más amplia
   que la línea visible. Un clic permite escribir o editar texto asociado a la conexión. El texto
   aparece integrado en el cable, interrumpiendo el trazo bajo las palabras; conserva esa ubicación
@@ -105,6 +109,9 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Quick Chat compacto y arrastrable.
 - Incorporación de participantes desde el chat anclado, no desde Quick Chat.
 - Retirar Room como modo de Canvas. Conservar la identidad transversal de cada conversación.
+- Retomar la misma conversación al cambiar entre Canvas y Sessions mediante la navegación
+  existente, con sus mensajes, participantes, referencias y borrador. Aplicar esta continuidad
+  en 0.8, según C08-CHAT-11 de [Canvas 0.8](iteraciones/0.8.md).
 - Historial local real de varias conversaciones, accesible mediante un chevron junto al nombre.
 - Aplicar las decisiones confirmadas y resolver las definiciones abiertas de [Canvas 0.8](iteraciones/0.8.md).
 - Anclaje y desacoplamiento mediante desplazamiento visible y rápido.

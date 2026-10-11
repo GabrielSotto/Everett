@@ -90,6 +90,7 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   La gestión de la zona parte del inspector de la referencia 03. El usuario confirmó menú contextual
   para materiales e inspector para zonas. Para 0.8, asignar y quitar se mantienen separados de
   los controles que aparecen al seleccionar, según C08-MAT-05 de [Canvas 0.8](../../../iteraciones/0.8.md).
+  El comportamiento de Duplicar y Eliminar se concreta en C08-MAT-08 del mismo documento.
 - Las referencias 30 y 31 son el punto de partida acordado para los controles de dibujo y formas:
   color y grosor del trazo, y relleno y borde de las formas, respectivamente. Adaptarlos a Everett
   conservando ese trabajo previo. Esta adopción no incorpora la navegación del producto anterior
