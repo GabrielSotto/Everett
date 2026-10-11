@@ -85,8 +85,10 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   proyecto anterior como el alcance de Everett establecen zonas fijas después de crearlas.
 - La referencia 02 muestra `Assign to zone`, con un submenú de zonas de destino, `Duplicate`,
   `Rename` y `Delete`. Es la base visual revisable del menú contextual de Everett. La acción de
-  eliminar ya aparece en el diseño anterior; su etiqueta no define el comportamiento de Quitar
-  del Canvas para materiales y referencias. Para 0.8, asignar y quitar se mantienen separados de
+  eliminar ya aparece en el diseño anterior; para Everett, quitar una referencia a Docs o Board
+  conserva el documento o la tarea original. Ese menú está sobre un material, no sobre la zona.
+  La gestión de la zona parte del inspector de la referencia 03; la utilidad de un menú contextual
+  sobre la zona sigue en evaluación. Para 0.8, asignar y quitar se mantienen separados de
   los controles que aparecen al seleccionar, según C08-MAT-05 de [Canvas 0.8](../../../iteraciones/0.8.md).
 - Las referencias 30 y 31 son el punto de partida acordado para los controles de dibujo y formas:
   color y grosor del trazo, y relleno y borde de las formas, respectivamente. Adaptarlos a Everett
@@ -112,8 +114,9 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   Everett, con Alt como embrague cuando la rueda tiene otra acción local. Comentar utiliza C y se
   prueba en el dock, sujeto a evaluar su densidad. Los botones de los mockups no son una lista aprobada.
 - El renombrado usa un clic sobre el nombre visible, según C08-MAT-06 de Canvas 0.8. En documentos
-  referenciados se modifica el mismo título que aparece en Docs. Los gestos o atajos de renombrado
-  que figuren en las imágenes antiguas no sustituyen esta decisión.
+  referenciados se modifica el mismo título que aparece en Docs. También se ofrece desde el menú
+  contextual del material; mostrar un atajo cuando el usuario le haya asignado uno. Los gestos o
+  atajos de renombrado que figuren en las imágenes antiguas no sustituyen esta decisión.
 
 ## Puntos para revisar con el usuario
 

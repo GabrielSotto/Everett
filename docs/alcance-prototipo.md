@@ -37,9 +37,12 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 - Previews, portadas y metadatos cuando estén disponibles.
 - Edición directa de notas y nombres. Renombrar mediante clic sobre el nombre visible; en documentos
   referenciados, actualizar el mismo título compartido con Docs, conservando identidad y contenido.
-  En imágenes y videos importados, cambiar su nombre dentro de Everett conserva el archivo original.
+  También ofrecer Renombrar desde el menú contextual del material, con su atajo cuando el usuario
+  lo haya asignado. En imágenes y videos importados, cambiar su nombre dentro de Everett conserva
+  el archivo original.
 - Selección discreta y controles pertinentes al tipo. Asignar a una zona y quitar del Canvas
-  corresponden al menú contextual, separado de los controles visibles al seleccionar.
+  corresponden al menú contextual del material, separado de los controles visibles al seleccionar.
+  Quitar una referencia a Docs o Board conserva el documento o la tarea original en su superficie.
 - Redimensionar imágenes y videos conservando la relación de aspecto y el contenido completo.
 - Conservar identidad y contenido al abrir, referenciar o asignar materiales.
 - Mantener zoom hacia objetos y regreso al contexto espacial de origen.
@@ -50,7 +53,7 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 
 ### Zonas de agente
 
-- Inspector con agente, instrucción, contexto, actividad y acciones.
+- Seleccionar una zona abre su inspector con agente, instrucción, contexto, actividad y acciones.
 - Distinguir asignación contextual con acciones rápidas y transferencia mediante arrastre.
 - Mantener exclusividad de uso y estados de procesamiento y revisión.
 - Conservar y devolver materiales al cancelar, rechazar, retirar al agente o eliminar la zona.
