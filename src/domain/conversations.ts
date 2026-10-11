@@ -1,6 +1,11 @@
 import { need, type WorldSnapshot } from './model';
 import type { Ui } from '../app/ui-state';
 
+/** En el prototipo local: iniciador, agente y después personas invitadas. */
+export function humanParticipants(participants: readonly string[]): string[] {
+  return participants.filter((_, index) => index !== 1);
+}
+
 export function conversation(world: WorldSnapshot, ui: Ui) {
   const active = need(
     world.conversations.find((c) => c.id === ui.conversations[world.id]) ?? world.conversations[0],

@@ -5,7 +5,15 @@ import { btn } from '../../ui/icons';
 import { bindDismiss } from '../../ui/popover';
 
 export function participantsMarkup(names: readonly string[]): string {
-  const namesText = html(names.join(' · '));
+  const namesText = html(
+    names
+      .map((name, index) =>
+        names.filter((other) => other === name).length > 1
+          ? `${name} (${index === 0 ? 'iniciador' : index === 1 ? 'agente' : 'participante'})`
+          : name,
+      )
+      .join(' · '),
+  );
   return `<div class="conversation-participants" role="group" aria-label="Participantes" title="${namesText}" tabindex="0">${namesText}</div>`;
 }
 

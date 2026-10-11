@@ -1,4 +1,5 @@
 import { getWorld, need, type State } from './model';
+import { humanParticipants } from './conversations';
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -81,7 +82,10 @@ export function validate(s: State): void {
         'Mensaje duplicado',
       );
       ensure(
-        new Set(thread.participants).size === thread.participants.length,
+        thread.participants.length >= 2 &&
+          thread.participants.every((name) => typeof name === 'string' && !!name.trim()) &&
+          new Set(humanParticipants(thread.participants)).size ===
+            humanParticipants(thread.participants).length,
         'PARTICIPANT',
         'Participante duplicado',
       );

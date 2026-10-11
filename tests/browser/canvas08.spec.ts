@@ -414,6 +414,39 @@ test('C08-B02: historial compacto, participantes propios y continuidad Canvas �
   expect(w.conversations.find((c) => c.id === first)!.participants).toContain('Persona invitada');
   expect(w.conversations.length).toBe(2);
   await expect(page.getByRole('button', { name: 'Room', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
+  await page.getByLabel('Nombre de perfil', { exact: true }).fill('Eve');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Nueva conversación', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'Participantes', exact: true })).toHaveText(
+    'Eve (iniciador) · Eve (agente)',
+  );
+  await page.getByRole('button', { name: 'Agregar personas', exact: true }).click();
+  await page.getByLabel('Nombre del participante', { exact: true }).fill('Ada');
+  await page.getByRole('button', { name: 'Agregar persona', exact: true }).click();
+  await page.getByLabel('Escribí un mensaje…', { exact: true }).fill('Mensaje sin invocación');
+  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+  state = await snapshot(page);
+  const matchingNames = state.state.worlds
+    .find((world) => world.id === 'scout')!
+    .conversations.at(-1)!;
+  expect(matchingNames.participants).toEqual(['Eve', 'Eve', 'Ada']);
+  expect(matchingNames.messages).toHaveLength(1);
+  await page.getByLabel('Escribí un mensaje…', { exact: true }).fill('@Eve revisá esta idea');
+  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await snapshot(page)).state.worlds
+          .find((world) => world.id === 'scout')!
+          .conversations.at(-1)!
+          .messages.filter((message) => message.role === 'agent').length,
+    )
+    .toBe(1);
+  await openSurface(page, 'Session');
+  await expect(page.getByRole('group', { name: 'Participantes', exact: true })).toHaveText(
+    'Eve (iniciador) · Eve (agente) · Ada',
+  );
 });
 
 test('C08-B03: comentarios privados recuperables, publicación única y conflictos de atajos', async ({

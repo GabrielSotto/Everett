@@ -4,6 +4,7 @@ import { Store } from './store';
 import type { Intent } from './diagnostics/trace';
 import { ensure } from '../domain/invariants';
 import { materialText } from '../domain/material-content';
+import { humanParticipants } from '../domain/conversations';
 type Channel = 'messages' | 'chat' | 'codeMessages';
 
 /** Simula respuestas locales y aplica sus acciones mediante los comandos compartidos del Mundo. */
@@ -246,12 +247,7 @@ export class AgentService {
     const w = getWorld(this.store.get(), world),
       invoked = w.agents.find((a) => text.toLowerCase().includes('@' + a.name.toLowerCase()));
     const thread = w.conversations.find((c) => c.id === conversation) ?? w.conversations[0];
-    if (
-      (thread?.participants.filter((name) => !w.agents.some((a) => a.name === name)).length ?? 1) >
-        1 &&
-      !invoked
-    )
-      return;
+    if ((thread ? humanParticipants(thread.participants).length : 1) > 1 && !invoked) return;
     const agent = invoked ?? w.agents[0];
     if (!agent) return;
     const run = this.startRun(

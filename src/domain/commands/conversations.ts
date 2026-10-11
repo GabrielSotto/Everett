@@ -1,5 +1,6 @@
 import { type State, getWorld, need } from '../model';
 import type { Command } from '../command-types';
+import { humanParticipants } from '../conversations';
 
 type ConversationsCommand = Extract<
   Command,
@@ -42,7 +43,10 @@ export function applyConversationsCommand(state: State, command: ConversationsCo
             : world.conversations[0],
           'Conversación inexistente',
         );
-        if (command.name.trim() && !thread.participants.includes(command.name.trim()))
+        if (
+          command.name.trim() &&
+          !humanParticipants(thread.participants).includes(command.name.trim())
+        )
           thread.participants.push(command.name.trim());
         if (command.name.trim() && !world.participants.includes(command.name.trim()))
           world.participants.push(command.name.trim());

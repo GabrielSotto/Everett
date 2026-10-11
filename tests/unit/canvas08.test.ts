@@ -97,7 +97,7 @@ test('C08-U01: renombrado compartido, duplicado independiente, retirada y Undo/R
   assert.equal(project(store).docs.at(-1)!.body, 'Contenido independiente');
 });
 
-test('C08-U02: conversaciones múltiples no mezclan participantes, mensajes ni borradores personales', () => {
+test('C08-U02: conversaciones múltiples no mezclan participantes, mensajes ni borradores personales', async () => {
   const { store } = setup(),
     ui = uiState();
   const first = project(store).conversations[0]!.id;
@@ -128,6 +128,28 @@ test('C08-U02: conversaciones múltiples no mezclan participantes, mensajes ni b
   assert.equal(conversationDraft(project(store), ui).text, 'Privado A');
   ui.userId = 'another-user';
   assert.equal(conversationDraft(project(store), ui).text, '');
+  store.dispatch(
+    { type: 'profile.edit', profile: { ...store.get().profile, name: 'Eve' } },
+    intent,
+  );
+  store.dispatch({ type: 'conversation.create', world: 'project', origin: 'canvas' }, intent);
+  const sameName = project(store).conversations.at(-1)!;
+  assert.deepEqual(sameName.participants, ['Eve', 'Eve']);
+  store.dispatch(
+    { type: 'participant', world: 'project', conversation: sameName.id, name: 'Ada' },
+    intent,
+  );
+  const service = new AgentService(store);
+  await service.converse('project', 'chat', 'Mensaje sin invocación', [], sameName.id);
+  assert.equal(project(store).conversations.at(-1)!.messages.length, 1);
+  await service.converse('project', 'chat', '@Eve revisá este contexto', [], sameName.id);
+  assert.equal(
+    project(store)
+      .conversations.at(-1)!
+      .messages.filter((m) => m.role === 'agent').length,
+    1,
+  );
+  service.dispose();
 });
 
 test('C08-U03: recargar continúa el mismo trabajo una vez y revisar conserva instrucción y contexto', (context) => {
