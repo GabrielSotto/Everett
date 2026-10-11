@@ -83,8 +83,11 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   comentario junto al material, sin establecer en esa imagen un acceso en la toolbar.
 - La referencia 03 muestra handles de tamaño de zona. Tanto las decisiones posteriores del
   proyecto anterior como el alcance de Everett establecen zonas fijas después de crearlas.
-- La referencia 02 confirma la ubicación de asignar a una zona y eliminar en el menú contextual.
-  Para 0.8, esas acciones se mantienen separadas de los controles que aparecen al seleccionar.
+- La referencia 02 muestra `Assign to zone`, con un submenú de zonas de destino, `Duplicate`,
+  `Rename` y `Delete`. Es la base visual revisable del menú contextual de Everett. La acción de
+  eliminar ya aparece en el diseño anterior; su etiqueta no define el comportamiento de Quitar
+  del Canvas para materiales y referencias. Para 0.8, asignar y quitar se mantienen separados de
+  los controles que aparecen al seleccionar, según C08-MAT-05 de [Canvas 0.8](../../../iteraciones/0.8.md).
 - Las referencias 30 y 31 son el punto de partida acordado para los controles de dibujo y formas:
   color y grosor del trazo, y relleno y borde de las formas, respectivamente. Adaptarlos a Everett
   conservando ese trabajo previo. Esta adopción no incorpora la navegación del producto anterior
