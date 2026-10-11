@@ -4,6 +4,31 @@ import { trace, type Intent } from '../app/diagnostics/trace';
 import { motion, reducedMotion } from './motion';
 type TransitionScope = 'scene' | 'content';
 
+/** Congelar los píxeles antes de liberar las URLs de la vista saliente. */
+function mediaSnapshot(original: HTMLImageElement | HTMLVideoElement): HTMLCanvasElement {
+  const frame = document.createElement('canvas'),
+    style = getComputedStyle(original),
+    image = original instanceof HTMLImageElement;
+  frame.className = original.className + ' media-snapshot' + (image ? ' image-snapshot' : '');
+  frame.width = (image ? original.naturalWidth : original.videoWidth) || 1;
+  frame.height = (image ? original.naturalHeight : original.videoHeight) || 1;
+  Object.assign(frame.style, {
+    width: style.width,
+    height: style.height,
+    maxWidth: style.maxWidth,
+    maxHeight: style.maxHeight,
+    display: style.display,
+    objectFit: style.objectFit,
+    margin: style.margin,
+    borderRadius: style.borderRadius,
+  });
+  const ready = image
+    ? original.complete && original.naturalWidth > 0
+    : original.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+  if (ready) frame.getContext('2d')?.drawImage(original, 0, 0);
+  return frame;
+}
+
 /** Anima la presentación de las rutas y contextos ya confirmados por el dominio. */
 export class TransitionLayer {
   private animations: Animation[] = [];
@@ -44,29 +69,22 @@ export class TransitionLayer {
         target.getContext('2d')?.drawImage(original, 0, 0);
       }
     });
-    // El fantasma es una imagen del estado saliente, no otro reproductor activo.
+    // El fantasma conserva píxeles, sin cargar archivos ni otro reproductor activo.
     // Evitar que cloneNode solicite URLs Blob que la vista libera al desmontarse.
+    const sourceImages = scene.querySelectorAll('img');
+    this.ghost.querySelectorAll('img').forEach((image, index) => {
+      const original = sourceImages[index];
+      if (!original?.src.startsWith('blob:')) return;
+      const frame = mediaSnapshot(original);
+      image.removeAttribute('src');
+      image.removeAttribute('srcset');
+      image.replaceWith(frame);
+    });
     const sourceVideos = scene.querySelectorAll('video');
     this.ghost.querySelectorAll('video').forEach((video, index) => {
       const original = sourceVideos[index];
       if (!original) return;
-      const frame = document.createElement('canvas'),
-        style = getComputedStyle(original);
-      frame.className = video.className + ' media-snapshot';
-      frame.width = original.videoWidth || 1;
-      frame.height = original.videoHeight || 1;
-      Object.assign(frame.style, {
-        width: style.width,
-        height: style.height,
-        maxWidth: style.maxWidth,
-        maxHeight: style.maxHeight,
-        display: style.display,
-        objectFit: style.objectFit,
-        margin: style.margin,
-        borderRadius: style.borderRadius,
-      });
-      if (original.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA)
-        frame.getContext('2d')?.drawImage(original, 0, 0);
+      const frame = mediaSnapshot(original);
       if (original.controls) {
         const play = video.parentElement?.querySelector<HTMLElement>('.video-play');
         if (play) play.style.display = 'none';

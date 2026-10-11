@@ -481,7 +481,27 @@ test('C08-B05: importar conserva bytes, contenido libre, proporciÃ³n y navegaciÃ
   expect(node.width / node.height).toBeCloseTo(2, 4);
   await media.dblclick();
   await expect(page.locator('.media-view img')).toBeVisible();
+  const exitFrame = await page.evaluateHandle(() => {
+    const proof = { pixel: null as number[] | null, blobImages: -1 };
+    const capture = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      document.removeEventListener('keydown', capture);
+      requestAnimationFrame(() => {
+        const ghost = document.querySelector('.transition-ghost');
+        proof.blobImages = ghost?.querySelectorAll('img[src^="blob:"]').length ?? -1;
+        const frame = ghost?.querySelector<HTMLCanvasElement>('.image-snapshot');
+        if (frame)
+          proof.pixel = Array.from(frame.getContext('2d')!.getImageData(160, 80, 1, 1).data);
+      });
+    };
+    document.addEventListener('keydown', capture);
+    return proof;
+  });
   await page.keyboard.press('Escape');
+  await expect.poll(() => exitFrame.evaluate((proof) => proof.pixel)).toEqual([232, 216, 159, 255]);
+  expect(await exitFrame.evaluate((proof) => proof.blobImages)).toBe(0);
+  await exitFrame.dispose();
+  await expect(page.locator('.transition-ghost')).toHaveCount(0);
   await expect(media).toBeVisible();
 });
 
