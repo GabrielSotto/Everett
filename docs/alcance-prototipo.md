@@ -98,7 +98,7 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Quick Chat compacto y arrastrable.
 - Incorporación de participantes desde el chat anclado, no desde Quick Chat.
 - Retirar Room como modo de Canvas. Conservar la identidad transversal de cada conversación.
-- Historial local real de varias conversaciones, accesible mediante un desplegable desde el título.
+- Historial local real de varias conversaciones, accesible mediante un chevron junto al nombre.
 - Aplicar las decisiones confirmadas y resolver las definiciones abiertas de [Canvas 0.8](iteraciones/0.8.md).
 - Anclaje y desacoplamiento mediante desplazamiento visible y rápido.
 - Reacomodar el dock para que no quede detrás del chat anclado.
@@ -124,6 +124,19 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
   El campo permanece oculto en reposo; las tres acciones producen resultados coherentes.
 - Cancelar un pedido de cambios conserva la propuesta pendiente.
 - Ninguna propuesta modifica el contenido compartido antes de aceptarse.
+
+### Guardado y recuperación
+
+- Guardado automático local del Canvas y de las conversaciones, incluyendo sus borradores y los
+  materiales y archivos necesarios para recuperar referencias con la misma identidad y contenido.
+- Recuperar por usuario cámara, zoom, selección válida y estado del chat. Reiniciar gestos
+  transitorios y conservar las propuestas pendientes y los pedidos de cambios sin enviar.
+- Recuperar el estado actual del trabajo del agente; cerrar el chat o recargar no implica cancelarlo
+  ni marcarlo como interrumpido. La ejecución simulada puede representar continuidad durante la
+  ausencia. Ante una interrupción confirmada, ofrecer Reintentar y Cancelar, evitando duplicar
+  efectos y devolviendo materiales al cancelar, según C08-STATE-02 de [Canvas 0.8](iteraciones/0.8.md).
+- Comunicar fallos de guardado o recuperación sin sobrescribir los datos ni reiniciar silenciosamente
+  el Canvas o el historial. El mecanismo técnico se concreta durante la implementación.
 
 **Cierre de 0.8:** completar el recorrido material → zona → agente → propuesta → revisión, y trabajar con chat, referencias y comentarios sin perder contenido, contexto ni controles.
 
