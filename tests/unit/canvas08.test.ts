@@ -6,7 +6,7 @@ import { Store } from '../../src/app/store';
 import { shortcutConflict, canvasDefaults } from '../../src/domain/shortcuts';
 import { uiState } from '../../src/app/ui-state';
 import { conversationDraft } from '../../src/domain/conversations';
-import { materialRoute } from '../../src/domain/model';
+import { materialRoute, materialTitle } from '../../src/domain/model';
 
 test('C08-U01: renombrado compartido, duplicado independiente, retirada y Undo/Redo conservan identidades', () => {
   const { store } = setup();
@@ -81,6 +81,17 @@ test('C08-U01: renombrado compartido, duplicado independiente, retirada y Undo/R
     surface: 'docs',
     entity: copy.id,
   });
+  store.dispatch(
+    {
+      type: 'document.edit',
+      world: 'project',
+      id: copy.id,
+      title: '',
+      body: 'Contenido independiente',
+    },
+    intent,
+  );
+  assert.equal(materialTitle(project(store), copyId), 'Sin título');
   store.dispatch({ type: 'canvas.undo', world: 'project' }, intent);
   assert.ok(project(store).nodes.some((n) => n.id === copyId));
   assert.equal(project(store).docs.at(-1)!.body, 'Contenido independiente');

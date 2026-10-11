@@ -100,6 +100,12 @@ test('C08-B01: nombre alcanzable, identidad Docs, copia independiente y retirada
   await expect(page.getByLabel('Contenido del documento', { exact: true })).toHaveValue(
     'Solo esta copia',
   );
+  await page.getByLabel('Título del documento', { exact: true }).fill('');
+  await page.keyboard.press('Escape');
+  await chat.getByRole('button', { name: 'Sin título', exact: true }).click();
+  await expect(page.getByLabel('Contenido del documento', { exact: true })).toHaveValue(
+    'Solo esta copia',
+  );
   await page.getByLabel('Título del documento', { exact: true }).fill('Nombre conservado en Docs');
   await page.keyboard.press('Escape');
   await expect(

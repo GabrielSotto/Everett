@@ -288,15 +288,15 @@ export function nodeTitle(w: DeepReadonly<World>, n: Material): string {
   return referenceTitle(w, n.data.ref) ?? 'Referencia';
 }
 function referenceTitle(w: DeepReadonly<World>, ref: Reference): string | null {
-  return (
-    (ref.kind === 'document'
+  const title =
+    ref.kind === 'document'
       ? w.docs.find((d) => d.id === ref.id)?.title
       : ref.kind === 'file'
         ? w.files.find((f) => f.id === ref.id)?.name
         : ref.kind === 'task'
           ? w.tasks.find((t) => t.id === ref.id)?.title
-          : w.agents.find((a) => a.id === ref.id)?.name) ?? null
-  );
+          : w.agents.find((a) => a.id === ref.id)?.name;
+  return title === undefined ? null : title.trim() ? title : 'Sin título';
 }
 /** Una referencia del chat conserva el registro compartido al retirar su representación. */
 export function materialTitle(w: DeepReadonly<World>, id: string): string {
