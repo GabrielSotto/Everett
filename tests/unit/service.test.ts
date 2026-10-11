@@ -31,7 +31,7 @@ test('SERVICE-02: una revisión nueva recibe únicamente su propia respuesta', (
   const service = new AgentService(store);
   const assignment = assign(store, worldId);
   service.process(worldId, assignment);
-  context.mock.timers.tick(500);
+  context.mock.timers.tick(1600);
   store.dispatch(
     { type: 'assignment.revise', world: worldId, id: assignment, text: 'Analizar' },
     intent,
@@ -44,11 +44,11 @@ test('SERVICE-02: una revisión nueva recibe únicamente su propia respuesta', (
   assert.match(project(store).assignments[0]!.text, /Pregunta pendiente/);
   assert.deepEqual(
     project(store).runs.map((run) => run.status),
-    ['cancelled', 'completed'],
+    ['completed', 'completed'],
   );
 });
 
-test('SERVICE-03: cerrar el servicio cancela temporizadores y respuestas ya solicitadas', async (context) => {
+test('SERVICE-03: cerrar la ventana libera temporizadores y conserva el trabajo recuperable', async (context) => {
   context.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 1000 });
   const { store, worldId } = setup();
   const service = new AgentService(store);
@@ -61,7 +61,7 @@ test('SERVICE-03: cerrar el servicio cancela temporizadores y respuestas ya soli
   await reply;
   context.mock.timers.tick(3000);
   assert.deepEqual(store.snapshot(), before);
-  assert.ok(project(store).runs.every((run) => run.status === 'cancelled'));
+  assert.ok(project(store).runs.every((run) => run.status === 'running'));
   assert.equal(project(store).shipping.active, false);
   await assert.rejects(service.converse(worldId, 'messages', 'Otro pedido'), /cerrado/);
 });

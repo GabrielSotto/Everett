@@ -20,6 +20,8 @@ const sourceHashes = [
   'playwright.config.ts',
   'scripts/test-browser.mjs',
   'scripts/artifact-evidence.mjs',
+  'scripts/canvas-contracts.mjs',
+  'docs/iteraciones/0.8.md',
   'scripts/output-runs.mjs',
   'scripts/run-process.mjs',
   'package.json',

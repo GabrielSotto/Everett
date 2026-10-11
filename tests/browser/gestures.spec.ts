@@ -45,6 +45,23 @@ for (const reason of ['pointercancel', 'capture-loss', 'window-blur'] as const) 
           }),
         )
         .toBe(0);
+      // La inercia aprobada usa requestAnimationFrame, fuera de document.getAnimations().
+      let previous: { x: number; y: number } | null = null,
+        settled = 0;
+      await expect
+        .poll(
+          async () => {
+            const current = await page.evaluate(() => window.EverettDebug!.snapshot().camera);
+            settled =
+              previous && Math.hypot(current.x - previous.x, current.y - previous.y) < 0.01
+                ? settled + 1
+                : 0;
+            previous = current;
+            return settled;
+          },
+          { intervals: [100] },
+        )
+        .toBeGreaterThanOrEqual(3);
       const before = await page.evaluate(() => window.EverettDebug!.snapshot().camera);
       await page.mouse.move(980, 610, { steps: 6 });
       // Dos lecturas separadas permiten detectar un gesto que continúa sin botón pulsado.
@@ -67,6 +84,7 @@ for (const reason of ['pointercancel', 'capture-loss', 'window-blur'] as const) 
     await openSurface(page, 'Canvas');
     const note = page.locator('.material[data-node="note-b"]');
     const original = await note.boundingBox();
+    await note.click();
     const contents = await note.innerText();
     const links = await page
       .locator('.canvas-links .link-line')
@@ -155,7 +173,7 @@ test('UI-LINK-01: conexiones propias, vacías y canceladas no agregan enlaces y 
 }) => {
   await enterWorld(page);
   await openSurface(page, 'Canvas');
-  await page.getByRole('button', { name: 'Conectar · C', exact: true }).click();
+  await page.getByRole('button', { name: 'Conectar · L', exact: true }).click();
   const first = page.locator('.material[data-node="note-a"]');
   const second = page.locator('.material[data-node="note-b"]');
   const source = first.getByRole('button', { name: 'Anclaje south', exact: true });

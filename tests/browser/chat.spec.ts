@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { enterWorld, openSurface } from './interaction-helpers';
 
-test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick Chat, anclaje y Room', async ({
+test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick Chat, anclaje y Sessions', async ({
   page,
 }) => {
   await enterWorld(page);
@@ -13,22 +13,36 @@ test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick C
   await chat.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(chat.locator('.chat-message.user').last()).toContainText('Mensaje de continuidad');
   await composer.fill('Borrador todavía sin enviar');
-  await chat.getByRole('button', { name: 'Room', exact: true }).click();
-  await expect(chat).toHaveClass(/room/);
   await expect(composer).toHaveValue('Borrador todavía sin enviar');
   await chat.getByRole('button', { name: 'Anclar chat', exact: true }).click();
   await chat.getByRole('button', { name: 'Agregar personas', exact: true }).click();
   await chat.getByRole('textbox', { name: 'Nombre del participante', exact: true }).fill('Ada');
   await chat.getByRole('button', { name: 'Agregar persona', exact: true }).click();
-  await expect(chat.locator('.chat-presence')).toHaveText('2 personas');
+  expect(
+    await page.evaluate(
+      () =>
+        window.EverettDebug!.snapshot().state.worlds.find((w) => w.id === 'scout')!
+          .conversations[0]!.participants,
+    ),
+  ).toContain('Ada');
   await chat.getByRole('button', { name: 'Desacoplar chat', exact: true }).click();
   await expect(chat).toHaveClass(/quick/);
   await expect(composer).toHaveValue('Borrador todavía sin enviar');
-  await openSurface(page, 'Docs');
+  await openSurface(page, 'Session');
+  await expect(page.getByLabel('Escribí lo que tenés en mente…', { exact: true })).toHaveValue(
+    'Borrador todavía sin enviar',
+  );
+  await expect(page.locator('.message.user')).toContainText('Mensaje de continuidad');
   await openSurface(page, 'Canvas');
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   await expect(composer).toHaveValue('Borrador todavía sin enviar');
-  await expect(chat.locator('.chat-presence')).toHaveText('2 personas');
+  expect(
+    await page.evaluate(
+      () =>
+        window.EverettDebug!.snapshot().state.worlds.find((w) => w.id === 'scout')!
+          .conversations[0]!.participants,
+    ),
+  ).toContain('Ada');
   await expect(chat.locator('.chat-message.user')).toHaveCount(1);
 });
 
@@ -43,6 +57,11 @@ test('UI-CHAT-02: arrastrar al chat referencia el material conservando propiedad
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
+  await expect
+    .poll(() =>
+      chat.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length),
+    )
+    .toBe(0);
   const start = (await note.boundingBox())!;
   await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
   await page.mouse.down();
@@ -54,11 +73,11 @@ test('UI-CHAT-02: arrastrar al chat referencia el material conservando propiedad
   await expect(note.locator('p')).toHaveText(content);
   expect((await note.boundingBox())!.x).toBeCloseTo(before.x, 1);
   expect((await note.boundingBox())!.y).toBeCloseTo(before.y, 1);
-  await chat.getByRole('button', { name: 'Room', exact: true }).click();
+  await chat.getByRole('button', { name: 'Desacoplar chat', exact: true }).click();
   await expect(chat.locator('.chat-reference-list')).toContainText(
     'Recuperar evidencia útil para una tarea',
   );
-  await chat.getByRole('button', { name: 'Room', exact: true }).click();
+  await chat.getByRole('button', { name: 'Anclar chat', exact: true }).click();
   await expect(chat.locator('.chat-reference-list')).toContainText(
     'Recuperar evidencia útil para una tarea',
   );

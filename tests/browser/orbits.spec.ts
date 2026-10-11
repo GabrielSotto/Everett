@@ -11,7 +11,7 @@ async function focusWorld(page: Page, name = 'Resource Scout'): Promise<void> {
     const box = (await world.boundingBox())!;
     return Math.abs(box.x + box.width / 2 - page.viewportSize()!.width / 2);
   };
-  // El clic automático desplaza el contenedor si se ejecuta mientras el Mundo sigue entrando.
+  // Esperar al destino permite contrastar el centro y la oclusión de la órbita.
   await expect.poll(offset).toBeLessThan(0.1);
   await page.getByRole('button', { name: 'Cerrar búsqueda', exact: true }).click();
   await world.click();

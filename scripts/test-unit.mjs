@@ -42,6 +42,8 @@ await withTestRun(root, 'unitarias', async ({ runId, directory: destination }) =
         'docs/asset-manifest.json',
         'Everett-0.7.5.html',
         'scripts/test-unit.mjs',
+        'scripts/canvas-contracts.mjs',
+        'docs/iteraciones/0.8.md',
         'scripts/run-process.mjs',
         'scripts/output-runs.mjs',
         'scripts/package.ps1',

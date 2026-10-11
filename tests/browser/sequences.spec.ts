@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { enterWorld, openSurface } from './interaction-helpers';
+import { enterWorld, openSurface, assignMaterial } from './interaction-helpers';
 import { seededOrder } from './resource-probe';
 
 for (const [seed, reducedMotion] of [
@@ -84,9 +84,7 @@ test('UI-SEQUENCE-02: una respuesta pendiente atraviesa otras superficies y la r
   await openSurface(page, 'Canvas');
   const note = page.locator('.material[data-node="note-a"]');
   const original = await note.locator('p').innerText();
-  await note.click();
-  await page.getByRole('button', { name: 'Acciones del agente', exact: true }).click();
-  await page.getByRole('button', { name: 'Analizar', exact: true }).click();
+  await assignMaterial(page, 'note-a', 'Analizar');
   await expect(page.getByRole('status', { name: 'Agente trabajando', exact: true })).toBeVisible();
   await openSurface(page, 'Docs');
   await page

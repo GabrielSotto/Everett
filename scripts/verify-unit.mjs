@@ -3,6 +3,7 @@ import { glob, readFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyRunIdentity, verifySourceHashes } from './artifact-evidence.mjs';
+import { verifyCanvasCoverage, verifyContractInventory } from './canvas-contracts.mjs';
 import { parseTapSummary } from './test-evidence.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -16,6 +17,11 @@ if (result.timedOut || result.signal || result.startError)
   throw new Error('El proceso no finalizó normalmente.');
 const tap = await readFile(resolve(dirname(reportPath), 'stdout.tap'), 'utf8');
 const summary = parseTapSummary(tap, result.exitCode);
+verifyContractInventory(await readFile(resolve(root, 'docs/iteraciones/0.8.md'), 'utf8'));
+verifyCanvasCoverage(
+  'unit',
+  [...tap.matchAll(/^# Subtest: (.+)$/gm)].map((match) => match[1]),
+);
 if (JSON.stringify(summary) !== JSON.stringify(result.summary))
   throw new Error('El resumen no coincide con la salida del proceso.');
 const discovered = [];

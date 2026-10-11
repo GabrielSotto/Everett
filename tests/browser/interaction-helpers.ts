@@ -20,3 +20,17 @@ export async function openSurface(page: Page, name: string): Promise<void> {
   await page.locator('.surface-menu').getByRole('button', { name, exact: true }).click();
   await expect(page.locator('.transition-ghost')).toHaveCount(0);
 }
+
+export async function assignMaterial(
+  page: Page,
+  id: string,
+  instruction = 'Resumir',
+): Promise<void> {
+  await page.locator(`.material[data-node="${id}"]`).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Asignar a una zona', exact: false }).click();
+  await page
+    .getByRole('menu', { name: 'Destinos del Mundo', exact: true })
+    .getByRole('menuitem', { name: instruction, exact: true })
+    .first()
+    .click();
+}

@@ -81,6 +81,16 @@ test('CANVAS-04: respuestas antiguas no sustituyen la revisión en curso', () =>
   const assignment = project(store).assignments[0];
   assert.ok(assignment);
   store.dispatch(
+    {
+      type: 'assignment.ready',
+      world: 'project',
+      id: assignment.id,
+      revision: 1,
+      text: 'Primera propuesta',
+    },
+    intent,
+  );
+  store.dispatch(
     { type: 'assignment.revise', world: 'project', id: assignment.id, text: 'Revisar' },
     intent,
   );

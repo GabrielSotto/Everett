@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { enterWorld, openSurface } from './interaction-helpers';
+import { enterWorld, openSurface, assignMaterial } from './interaction-helpers';
 
 for (const action of ['Quitar agente y devolver materiales', 'Eliminar zona']) {
   test(`UI-ZONE-01 ${action}: devuelve el material completo y cancela el trabajo`, async ({
@@ -14,9 +14,7 @@ for (const action of ['Quitar agente y devolver materiales', 'Eliminar zona']) {
     const links = await page
       .locator('.canvas-links .link-line')
       .evaluateAll((elements) => elements.map((e) => e.getAttribute('d')));
-    await note.click();
-    await page.getByRole('button', { name: 'Acciones del agente', exact: true }).click();
-    await page.getByRole('button', { name: 'Analizar', exact: true }).click();
+    await assignMaterial(page, 'note-a', 'Analizar');
     const zone = page.locator('.agent-zone');
     await expect(zone.locator('[data-assigned-id="note-a"]')).toBeVisible();
     await zone.click({ position: { x: 12, y: 12 } });
@@ -46,9 +44,7 @@ test('UI-ZONE-02: aceptar crea el resultado y devuelve el original sin reemplaza
   const note = page.locator('.material[data-node="note-a"]');
   const original = await note.locator('p').innerText();
   const count = await page.locator('.material').count();
-  await note.click();
-  await page.getByRole('button', { name: 'Acciones del agente', exact: true }).click();
-  await page.getByRole('button', { name: 'Analizar', exact: true }).click();
+  await assignMaterial(page, 'note-a', 'Analizar');
   const proposal = page.locator('.proposal');
   await expect(proposal).toBeVisible();
   const proposed = await proposal.locator('p').innerText();
@@ -78,7 +74,7 @@ test('UI-ZONE-03: cruza 0, 1, 6, 7, 15 y 16 materiales y vuelve sin perder ident
     await page.mouse.click(720, 180);
     const note = page.locator('.material.selected');
     created.push((await note.getAttribute('data-node'))!);
-    await page.getByRole('button', { name: 'Entrar al material', exact: true }).click();
+    await note.dblclick();
     await page
       .getByRole('textbox', { name: 'Título de la nota', exact: true })
       .fill(`Material ${count}`);
@@ -87,9 +83,7 @@ test('UI-ZONE-03: cruza 0, 1, 6, 7, 15 y 16 materiales y vuelve sin perder ident
       .fill(`Contenido ${count}`);
     await page.keyboard.press('Escape');
     await expect(page.locator('.transition-ghost')).toHaveCount(0);
-    await page.locator(`.material[data-node="${created.at(-1)}"]`).click();
-    await page.getByRole('button', { name: 'Acciones del agente', exact: true }).click();
-    await page.getByRole('button', { name: 'Resumir', exact: true }).click();
+    await assignMaterial(page, created.at(-1)!, 'Resumir');
     await expect(layout).toHaveAttribute('data-material-count', String(count));
     await expect(page.locator('.proposal')).toHaveCount(count);
     if ([1, 6, 7, 15, 16].includes(count)) {
@@ -109,6 +103,9 @@ test('UI-ZONE-03: cruza 0, 1, 6, 7, 15 y 16 materiales y vuelve sin perder ident
     Array.from({ length: 16 }, (_, i) => `Material ${i + 1}`),
   );
   for (let remaining = 15; remaining >= 0; remaining--) {
+    // Las propuestas conservan su lugar espacial; el inspector permite alcanzar las lejanas.
+    await zone.click({ position: { x: 12, y: 12 } });
+    await page.locator('.zone-inspector [data-action=proposal-reveal]').last().click();
     await page
       .locator('.proposal')
       .last()

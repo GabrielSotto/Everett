@@ -11,6 +11,17 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         if (message.type() === 'error') errors.push(message.text());
       });
       try {
+        // El HTML autónomo incluye bytes de imágenes y el worker PDF. Conservar el
+        // cuerpo realmente cargado evita la expulsión de la caché CDP de 10 MiB.
+        const network = await page.context().newCDPSession(page);
+        await network.send('Network.enable', {
+          maxTotalBufferSize: 64 * 1024 * 1024,
+          maxResourceBufferSize: 32 * 1024 * 1024,
+        });
+        let documentRequest: string | null = null;
+        network.on('Network.responseReceived', (event) => {
+          if (event.type === 'Document') documentRequest = event.requestId;
+        });
         const baseURL = testInfo.project.use.baseURL;
         if (!baseURL) throw new Error('Falta la URL de la prueba.');
         const manifest = JSON.parse(await readFile('dist/build-manifest.json', 'utf8')) as {
@@ -23,8 +34,12 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
         const response = await page.goto(url.href);
         expect(response?.ok()).toBe(true);
         if (!response) throw new Error('La navegación no recibió el HTML.');
+        if (!documentRequest) throw new Error('CDP no registró el documento cargado.');
+        const loaded = await network.send('Network.getResponseBody', {
+          requestId: documentRequest,
+        });
         const hash = createHash('sha256')
-          .update(await response.body())
+          .update(Buffer.from(loaded.body, loaded.base64Encoded ? 'base64' : 'utf8'))
           .digest('hex');
         expect(hash, 'El documento cargado debe coincidir con el HTML del manifiesto').toBe(
           manifest.sha256,

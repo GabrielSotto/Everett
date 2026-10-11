@@ -25,6 +25,9 @@ async function focusWorld(page: Page): Promise<string> {
       }),
     )
     .toBeLessThan(0.1);
+  expect(
+    await page.locator('#space').evaluate((space) => [space.scrollLeft, space.scrollTop]),
+  ).toEqual([0, 0]);
   return id!;
 }
 
@@ -60,15 +63,18 @@ for (const [surface, label] of [
     await expect(page.locator('.surface-object')).toHaveCount(6);
     await expect(page.locator('.transition-ghost')).toHaveCount(0);
     const worldRoute = await page.locator('#viewport').getAttribute('data-route');
-    if (surface === 'agents') {
+    if (surface === 'agents' || surface === 'board') {
       const before = await page.evaluate(() => window.EverettDebug!.snapshot().camera.y);
+      const dy = surface === 'agents' ? 220 : -200;
       await page.mouse.move(720, 400);
       await page.mouse.down();
-      await page.mouse.move(720, 620, { steps: 12 });
+      await page.mouse.move(720, 400 + dy, { steps: 12 });
       await page.mouse.up();
       await expect
-        .poll(() => page.evaluate(() => window.EverettDebug!.snapshot().camera.y))
-        .toBeGreaterThan(before + 100);
+        .poll(async () =>
+          Math.abs((await page.evaluate(() => window.EverettDebug!.snapshot().camera.y)) - before),
+        )
+        .toBeGreaterThan(100);
     }
     await page
       .locator('.surface-object')

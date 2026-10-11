@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inside, verifyBuild, verifySourceHashes } from './artifact-evidence.mjs';
+import { verifyCanvasCoverage, verifyContractInventory } from './canvas-contracts.mjs';
 import { browserSpecs, verifyBrowserReport } from './browser-evidence.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -39,6 +40,11 @@ const specs = verifyBrowserReport(report, {
   sha256: manifest.sha256,
   ids: browserSpecs(inventory.suites).map((spec) => spec.id),
 });
+verifyContractInventory(await readFile(resolve(root, 'docs/iteraciones/0.8.md'), 'utf8'));
+verifyCanvasCoverage(
+  'browser',
+  specs.map((spec) => spec.title),
+);
 await verifySourceHashes(root, report.config.metadata.sourceHashes);
 const recordedPaths = report.config.metadata.sourceHashes.map((item) => item.path).sort();
 const currentPaths = inventory.config.metadata.sourceHashes.map((item) => item.path).sort();

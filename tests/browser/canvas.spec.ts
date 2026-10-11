@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { enterWorld, openSurface } from './interaction-helpers';
+import { enterWorld, openSurface, assignMaterial } from './interaction-helpers';
 
 test('UI-CANVAS-01: el doble clic abre la nota, conserva la edición y regresa al origen', async ({
   page,
@@ -71,9 +71,7 @@ test('UI-CANVAS-03: rechazar una propuesta devuelve la nota y sus conexiones sin
   const before = await note.locator('p').innerText();
   const position = (await note.boundingBox())!;
   const connections = await page.locator('.canvas-links [data-link]').count();
-  await note.click();
-  await page.getByRole('button', { name: 'Acciones del agente', exact: true }).click();
-  await page.getByRole('button', { name: 'Resumir', exact: true }).click();
+  await assignMaterial(page, 'note-a', 'Resumir');
   await expect(note).toHaveCount(0);
   const assigned = page.locator('[data-assigned-id="note-a"]');
   await expect(assigned).toContainText(before);
@@ -139,7 +137,7 @@ test('UI-CANVAS-05: redimensionar y conectar conserva los anclajes y admite hist
   await page.mouse.up();
   expect((await second.boundingBox())!.width - before.width).toBeCloseTo(40, 0);
   expect((await second.boundingBox())!.height - before.height).toBeCloseTo(30, 0);
-  await page.getByRole('button', { name: 'Conectar · C', exact: true }).click();
+  await page.getByRole('button', { name: 'Conectar · L', exact: true }).click();
   const count = await page.locator('.canvas-links [data-link]').count();
   const source = (await first
     .getByRole('button', { name: 'Anclaje south', exact: true })
