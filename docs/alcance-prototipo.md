@@ -114,6 +114,9 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Comentarios con el atajo C. Probar su herramienta en el dock principal y confirmar su ubicación
   tras evaluar la densidad del conjunto; no duplicar el botón de crear comentario en la barra de
   cada material. Conservar los marcadores y la consulta contextual.
+- Con un material seleccionado, C o el botón del dock abre el campo para comentarlo. Sin selección,
+  activar la herramienta y elegir el material mediante clic. Esc cancela la herramienta o cierra
+  el campo conservando su borrador, según C08-COM-03 de [Canvas 0.8](iteraciones/0.8.md).
 - Propuestas legibles y diferenciadas del contenido aceptado.
 - Aceptar, rechazar y pedir cambios mediante una barra compacta de acciones agrupadas. Al pulsar
   `Pedir cambios`, el mismo contenedor se expande hacia abajo y muestra el campo de texto libre
