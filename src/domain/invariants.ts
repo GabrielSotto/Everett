@@ -58,6 +58,16 @@ export function validate(s: State): void {
         'Identificador duplicado',
       );
     ensure(w.conversations.length > 0, 'CONVERSATION', 'El Mundo necesita una conversación');
+    for (const [id, ref] of Object.entries(w.referenceTargets ?? {}))
+      ensure(
+        !!id &&
+          !!ref &&
+          ['document', 'file', 'task', 'agent'].includes(ref.kind) &&
+          typeof ref.id === 'string' &&
+          !!ref.id.trim(),
+        'REFERENCE_TARGET',
+        'Destino de referencia inválido',
+      );
     for (const thread of w.conversations) {
       ensure(
         !!thread.name.trim() &&

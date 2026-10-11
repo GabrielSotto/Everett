@@ -1,5 +1,5 @@
 import type { Context } from '../../app/context';
-import { materialRoute, nodeTitle, type Point } from '../../domain/model';
+import { materialRoute, materialTitle, type Point } from '../../domain/model';
 import { html, target, value, preserveFocus } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
 import { composer, bindComposer } from '../../ui/composer';
@@ -323,8 +323,7 @@ export class CanvasChat {
                   m.materialIds ?? []
                 )
                   .map((id) => {
-                    const n = w.nodes.find((n) => n.id === id);
-                    return `<button class="chat-reference" data-action="chat-ref-open" data-id="${id}">${icon('note', 12)}${html(n ? nodeTitle(w, n) || 'Sin título' : 'Material no disponible')}</button>`;
+                    return `<button class="chat-reference" data-action="chat-ref-open" data-id="${id}">${icon('note', 12)}${html(materialTitle(w, id))}</button>`;
                   })
                   .join('')}</article>`,
             )
@@ -336,8 +335,7 @@ export class CanvasChat {
             draft.materials.length
               ? `<div class="chat-reference-list">${draft.materials
                   .map((id) => {
-                    const n = w.nodes.find((n) => n.id === id);
-                    return `<span class="chat-reference">${icon('note', 12)}${html(n ? nodeTitle(w, n) || 'Sin título' : 'Material no disponible')}${btn('chat-ref-remove', 'close', 'Quitar referencia', `data-id="${id}"`)}</span>`;
+                    return `<span class="chat-reference">${icon('note', 12)}${html(materialTitle(w, id))}${btn('chat-ref-remove', 'close', 'Quitar referencia', `data-id="${id}"`)}</span>`;
                   })
                   .join('')}</div>`
               : ''

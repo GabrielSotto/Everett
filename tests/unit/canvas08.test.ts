@@ -6,6 +6,7 @@ import { Store } from '../../src/app/store';
 import { shortcutConflict, canvasDefaults } from '../../src/domain/shortcuts';
 import { uiState } from '../../src/app/ui-state';
 import { conversationDraft } from '../../src/domain/conversations';
+import { materialRoute } from '../../src/domain/model';
 
 test('C08-U01: renombrado compartido, duplicado independiente, retirada y Undo/Redo conservan identidades', () => {
   const { store } = setup();
@@ -74,6 +75,12 @@ test('C08-U01: renombrado compartido, duplicado independiente, retirada y Undo/R
   assert.equal(project(store).docs.at(-1)!.body, 'Contenido independiente');
   store.dispatch({ type: 'node.delete', world: 'project', id: copyId }, intent);
   assert.ok(project(store).docs.some((d) => d.id === copy.id));
+  assert.deepEqual(materialRoute(store.get(), 'project', copyId), {
+    kind: 'surface',
+    world: 'project',
+    surface: 'docs',
+    entity: copy.id,
+  });
   store.dispatch({ type: 'canvas.undo', world: 'project' }, intent);
   assert.ok(project(store).nodes.some((n) => n.id === copyId));
   assert.equal(project(store).docs.at(-1)!.body, 'Contenido independiente');

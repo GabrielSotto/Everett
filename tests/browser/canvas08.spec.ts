@@ -70,16 +70,60 @@ test('C08-B01: nombre alcanzable, identidad Docs, copia independiente y retirada
   current = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
   expect(current.docs.find((d) => d.id === copyId)!.title).toBe('Copia independiente');
   expect(current.docs.find((d) => d.id === copyId)!.body).toBe('Solo esta copia');
+  await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
+  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
+  await expect
+    .poll(() =>
+      chat.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length),
+    )
+    .toBe(0);
+  const copyBox = (await page.locator(`[data-node="${copy.id}"]`).boundingBox())!;
+  await page.mouse.move(copyBox.x + copyBox.width / 2, copyBox.y + copyBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(180, 300, { steps: 12 });
+  await page.mouse.up();
+  await expect(chat.locator('.chat-reference-list')).toContainText('Copia independiente');
+  await chat
+    .getByRole('textbox', { name: 'Escribí un mensaje…', exact: true })
+    .fill('Revisar este material');
+  await chat.getByRole('button', { name: 'Enviar', exact: true }).click();
   await contextAction(page, copy.id, 'Quitar del Canvas');
   current = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
   expect(current.docs.find((d) => d.id === copyId)!.body).toBe('Solo esta copia');
   expect(current.docs.find((d) => d.id === original.id)!.body).toBe(
     'Contenido común\nSegundo párrafo',
   );
-  await page.keyboard.press('Control+z');
-  await expect(page.locator(`[data-node="${copy.id}"]`)).toBeVisible();
-  await page.keyboard.press('Control+Shift+z');
+  await reload(page);
   await expect(page.locator(`[data-node="${copy.id}"]`)).toHaveCount(0);
+  await chat.getByRole('button', { name: 'Copia independiente', exact: true }).click();
+  await expect(page.getByLabel('Contenido del documento', { exact: true })).toHaveValue(
+    'Solo esta copia',
+  );
+  await page.getByLabel('Título del documento', { exact: true }).fill('Nombre conservado en Docs');
+  await page.keyboard.press('Escape');
+  await expect(
+    chat.getByRole('button', { name: 'Nombre conservado en Docs', exact: true }),
+  ).toBeVisible();
+  await openSurface(page, 'Session');
+  await page.getByRole('button', { name: 'Nombre conservado en Docs', exact: true }).click();
+  await expect(page.getByLabel('Contenido del documento', { exact: true })).toHaveValue(
+    'Solo esta copia',
+  );
+  await page.keyboard.press('Escape');
+  await openSurface(page, 'Canvas');
+  // La recarga reinicia el historial de gestos; recuperar la retirada que ahora verificamos.
+  await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
+  await page
+    .locator('.reference-menu')
+    .getByRole('button', { name: 'Nombre conservado en Docs', exact: true })
+    .click();
+  const renewed = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!.nodes.at(-1)!;
+  await contextAction(page, renewed.id, 'Quitar del Canvas');
+  await page.keyboard.press('Control+z');
+  await expect(page.locator(`[data-node="${renewed.id}"]`)).toBeVisible();
+  await page.keyboard.press('Control+Shift+z');
+  await expect(page.locator(`[data-node="${renewed.id}"]`)).toHaveCount(0);
   await expect(page.locator('.material-actions')).toHaveCount(0);
 });
 

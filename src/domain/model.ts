@@ -220,6 +220,7 @@ export interface World extends Point {
   tasks: Task[];
   agents: Agent[];
   nodes: Material[];
+  referenceTargets?: Record<string, Reference>;
   links: Link[];
   zones: Zone[];
   assignments: Assignment[];
@@ -284,7 +285,9 @@ export function nodeTitle(w: DeepReadonly<World>, n: Material): string {
   if (n.data.kind === 'shape') return n.data.title || n.data.shape;
   if (n.data.kind !== 'reference')
     return n.data.title || (n.data.kind === 'drawing' ? 'Dibujo' : 'Sin título');
-  const ref = n.data.ref;
+  return referenceTitle(w, n.data.ref) ?? 'Referencia';
+}
+function referenceTitle(w: DeepReadonly<World>, ref: Reference): string | null {
   return (
     (ref.kind === 'document'
       ? w.docs.find((d) => d.id === ref.id)?.title
@@ -292,8 +295,14 @@ export function nodeTitle(w: DeepReadonly<World>, n: Material): string {
         ? w.files.find((f) => f.id === ref.id)?.name
         : ref.kind === 'task'
           ? w.tasks.find((t) => t.id === ref.id)?.title
-          : w.agents.find((a) => a.id === ref.id)?.name) ?? 'Referencia'
+          : w.agents.find((a) => a.id === ref.id)?.name) ?? null
   );
+}
+/** Una referencia del chat conserva el registro compartido al retirar su representación. */
+export function materialTitle(w: DeepReadonly<World>, id: string): string {
+  const node = w.nodes.find((n) => n.id === id),
+    ref = w.referenceTargets?.[id];
+  return node ? nodeTitle(w, node) : (ref && referenceTitle(w, ref)) || 'Material no disponible';
 }
 export function referenceRoute(world: string, ref: Reference): Route {
   return {
@@ -311,10 +320,12 @@ export function referenceRoute(world: string, ref: Reference): Route {
   };
 }
 export function materialRoute(s: DeepReadonly<State>, world: string, id: string): Route | null {
-  const n = need(
-    getWorld(s, world).nodes.find((n) => n.id === id),
-    'Material inexistente',
-  );
+  const source = getWorld(s, world),
+    n = source.nodes.find((n) => n.id === id);
+  if (!n) {
+    const ref = source.referenceTargets?.[id];
+    return ref && referenceTitle(source, ref) !== null ? referenceRoute(world, ref) : null;
+  }
   return n.owner
     ? null
     : n.data.kind === 'note'

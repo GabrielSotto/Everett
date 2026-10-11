@@ -5,7 +5,7 @@ import { contextualComposer, bindComposer, preserveComposerDrafts } from '../../
 import { slot, tools, slotToggle, bindSlot } from '../../ui/slot';
 import { conversation, conversationDraft } from '../../domain/conversations';
 import { ConversationHeader, participantsMarkup } from '../chat/history';
-import { materialRoute, nodeTitle } from '../../domain/model';
+import { materialRoute, materialTitle } from '../../domain/model';
 export class SessionView implements View {
   private abort = new AbortController();
   private header: ConversationHeader;
@@ -110,12 +110,11 @@ export class SessionView implements View {
     const w = this.ctx.world();
     return ids
       .map((id) => {
-        const n = w.nodes.find((n) => n.id === id);
         return (
           '<span class="chat-reference"><button type="button" data-action="session-ref-open" data-id="' +
           html(id) +
           '">' +
-          html(n ? nodeTitle(w, n) : 'Material no disponible') +
+          html(materialTitle(w, id)) +
           '</button>' +
           (draft
             ? btn('session-ref-remove', 'close', 'Quitar referencia', 'data-id="' + html(id) + '"')

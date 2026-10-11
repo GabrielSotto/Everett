@@ -183,7 +183,10 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       break;
     }
     case 'node.delete': {
-      ensure(!node(command.id).owner, 'LOCKED', 'Cancelar el trabajo antes de quitar el material');
+      const material = node(command.id);
+      ensure(!material.owner, 'LOCKED', 'Cancelar el trabajo antes de quitar el material');
+      if (material.data.kind === 'reference')
+        (world.referenceTargets ??= {})[material.id] = { ...material.data.ref };
       world.nodes = world.nodes.filter((x) => x.id !== command.id);
       world.links = world.links.filter((l) => l.from !== command.id && l.to !== command.id);
       world.comments = world.comments.filter((x) => x.node !== command.id);
