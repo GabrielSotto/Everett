@@ -54,6 +54,8 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 ### Zonas de agente
 
 - Seleccionar una zona abre su inspector con agente, instrucción, contexto, actividad y acciones.
+  Gestionar la zona desde el inspector; el menú contextual corresponde a los materiales,
+  según la distribución confirmada en [Canvas 0.8](iteraciones/0.8.md).
 - Distinguir asignación contextual con acciones rápidas y transferencia mediante arrastre.
 - Mantener exclusividad de uso y estados de procesamiento y revisión.
 - Conservar y devolver materiales al cancelar, rechazar, retirar al agente o eliminar la zona.

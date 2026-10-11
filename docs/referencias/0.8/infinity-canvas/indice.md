@@ -87,8 +87,8 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   `Rename` y `Delete`. Es la base visual revisable del menú contextual de Everett. La acción de
   eliminar ya aparece en el diseño anterior; para Everett, quitar una referencia a Docs o Board
   conserva el documento o la tarea original. Ese menú está sobre un material, no sobre la zona.
-  La gestión de la zona parte del inspector de la referencia 03; la utilidad de un menú contextual
-  sobre la zona sigue en evaluación. Para 0.8, asignar y quitar se mantienen separados de
+  La gestión de la zona parte del inspector de la referencia 03. El usuario confirmó menú contextual
+  para materiales e inspector para zonas. Para 0.8, asignar y quitar se mantienen separados de
   los controles que aparecen al seleccionar, según C08-MAT-05 de [Canvas 0.8](../../../iteraciones/0.8.md).
 - Las referencias 30 y 31 son el punto de partida acordado para los controles de dibujo y formas:
   color y grosor del trazo, y relleno y borde de las formas, respectivamente. Adaptarlos a Everett
