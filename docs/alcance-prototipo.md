@@ -113,7 +113,10 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Retomar la misma conversación al cambiar entre Canvas y Sessions mediante la navegación
   existente, con sus mensajes, participantes, referencias y borrador. Aplicar esta continuidad
   en 0.8, según C08-CHAT-11 de [Canvas 0.8](iteraciones/0.8.md).
-- Historial local real de varias conversaciones, accesible mediante un chevron junto al nombre.
+- Historial local real con un listado común de conversaciones del Mundo, accesible desde el chat
+  de Canvas mediante un chevron junto al nombre. Los mensajes de la conversación elegida se
+  comparten entre Quick Chat, chat anclado y Sessions, según C08-CHAT-09 y C08-CHAT-11 de
+  [Canvas 0.8](iteraciones/0.8.md).
 - Aplicar las decisiones confirmadas y resolver las definiciones abiertas de [Canvas 0.8](iteraciones/0.8.md).
 - Anclaje y desacoplamiento mediante desplazamiento visible y rápido.
 - Reacomodar el dock para que no quede detrás del chat anclado.
