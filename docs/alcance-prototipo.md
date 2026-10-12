@@ -267,6 +267,10 @@ aprobadas de Everett y aplicando los criterios transversales de
 Seleccionar y adaptar los patrones que ayuden a esas actividades; cada
 función adicional necesita una definición de alcance antes de implementarse.
 
+La [propuesta visual 1](referencias/0.11/propuesta-board-01.md) presenta una vista cotidiana y
+el mismo tablero con el inspector de trazabilidad de un bug abierto. Contiene datos de ejemplo
+y permanece pendiente de revisión y aprobación del usuario.
+
 - Revisar Kanban, tabla y calendario sobre las mismas tareas.
 - Adoptar los patrones de propiedades y vistas de **Notion** que acordamos usar como referencia.
 - Buscar, añadir, editar, quitar y organizar propiedades.
