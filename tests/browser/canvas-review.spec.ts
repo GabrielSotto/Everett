@@ -306,6 +306,10 @@ test('C08-B24: herramientas se desactivan, cursor propio, grosor visual y formas
   const style = page.getByLabel('Estilo de dibujo y formas', { exact: true });
   await expect(style).toBeVisible();
   expect(await style.evaluate((el) => getComputedStyle(el, '::after').content)).not.toBe('none');
+  await testInfo.attach('estilo-formas-activo', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
   await shapes.click();
   expect((await snapshot(page)).ui.canvas.tool).toBe('select');
   const connect = page.getByRole('button', { name: 'Conectar · L', exact: true });
@@ -438,6 +442,33 @@ test('C08-B27: configuración de atajos permite regresar, quitar y restaurar sin
   await expect(page.getByRole('region', { name: 'Atajos de Canvas', exact: true })).toBeVisible();
   const key = page.getByLabel('Atajo de Crear nota', { exact: true });
   await expect(key).toHaveValue('N');
+  const renameKey = page.getByLabel('Atajo de Renombrar', { exact: true });
+  await renameKey.press('Control+Shift+R');
+  await expect(renameKey).toHaveValue('Ctrl+Shift+R');
+  const keySpace = await renameKey.evaluate((el) => {
+    const input = el as HTMLInputElement;
+    const style = getComputedStyle(input);
+    const measure = document.createElement('canvas').getContext('2d')!;
+    measure.font = style.font;
+    return {
+      available: input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+      text: measure.measureText(input.value).width,
+    };
+  });
+  expect(keySpace.available).toBeGreaterThanOrEqual(keySpace.text);
+  await page.getByRole('button', { name: 'Quitar atajo de Renombrar', exact: true }).click();
+  expect(
+    await renameKey.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      const style = getComputedStyle(input);
+      const measure = document.createElement('canvas').getContext('2d')!;
+      measure.font = style.font;
+      return (
+        input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) >=
+        measure.measureText(input.placeholder).width
+      );
+    }),
+  ).toBe(true);
   await page.getByRole('button', { name: 'Quitar atajo de Crear nota', exact: true }).click();
   await expect(key).toHaveValue('');
   await page.getByRole('button', { name: 'Restaurar atajo de Crear nota', exact: true }).click();

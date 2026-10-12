@@ -790,6 +790,9 @@
   padding-right: 30px;
   width: 100%;
 }
+.shortcut-key:not(:has(button)) input {
+  padding-right: 8px;
+}
 .shortcut-key button {
   position: absolute;
   right: 2px;
@@ -805,7 +808,7 @@
   font-size: 11px;
 }
 .shortcut-row input {
-  width: 64px;
+  width: 100%;
   min-height: 30px;
   border: 1px solid var(--line);
   border-radius: 5px;
