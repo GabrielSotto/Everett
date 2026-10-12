@@ -67,7 +67,9 @@ test('UI-ZONE-03: cruza 0, 1, 6, 7, 15 y 16 materiales y vuelve sin perder ident
   await openSurface(page, 'Canvas');
   const zone = page.locator('.agent-zone');
   const layout = zone.locator('[data-density]');
-  await expect(zone.getByText('Arrastrá un material acá', { exact: true })).toBeVisible();
+  const empty = zone.locator('.drop-label');
+  await expect(empty).toBeVisible();
+  await expect(empty).toContainText('Arrastrá un material acá');
   const created: string[] = [];
   for (let count = 1; count <= 16; count++) {
     await page.getByRole('button', { name: 'Crear nota · N', exact: true }).click();
@@ -117,7 +119,10 @@ test('UI-ZONE-03: cruza 0, 1, 6, 7, 15 y 16 materiales y vuelve sin perder ident
         'data-density',
         remaining <= 6 ? 'previews' : remaining <= 15 ? 'types' : 'summary',
       );
-    } else await expect(zone.getByText('Arrastrá un material acá', { exact: true })).toBeVisible();
+    } else {
+      await expect(empty).toBeVisible();
+      await expect(empty).toContainText('Arrastrá un material acá');
+    }
   }
   for (const [index, id] of created.entries()) {
     const note = page.locator(`.material[data-node="${id}"]`);
