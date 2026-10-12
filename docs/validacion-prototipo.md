@@ -138,3 +138,5 @@ Inspección local del 28 de septiembre de 2026:
 - La conversación recuperada no incluye los adjuntos originales ni un paquete verificable de 0.8.
 
 Este inventario acredita existencia y posibilidad de recuperar esas fuentes. No se han ejecutado build, typecheck, pruebas funcionales, pruebas de navegador ni revisión visual de 0.7.5 en esta inspección.
+
+La corrección 0.8.4 exige C08-U11/U12 y C08-B41–B43: selección mediante arrastre desde el fondo, grupo de tres materiales, movimiento y eliminación atómicos, transferencia completa a zona y devolución tras recarga; rectángulo inverso y aditivo, Shift + clic, cámara estable al seleccionar y cancelación mediante Esc y pointercancel. El video debe pintar un fotograma del archivo antes de Play y tras recuperar material antiguo o copias; se comparan píxeles del preview y un contraejemplo vacío, bytes originales y estado de reproducción a distintas escalas. ReadyState, duración o éxito al pulsar Play no acreditan esa representación en reposo.

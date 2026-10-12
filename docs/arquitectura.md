@@ -91,3 +91,5 @@ Un fallo de guardado conserva el estado en memoria y ofrece Reintentar y Descarg
 Cada funcionalidad conserva sus estilos en `src/features/`. `src/styles/` reúne fundamentos, shell, controles compartidos y reglas de adaptación que afectan a varias vistas. `main.css` declara las importaciones en el orden de cascada recuperado; los módulos complementarios conservan los ajustes que dependen de ese orden.
 
 Las vistas coordinan eventos y estado local. Las plantillas con una responsabilidad separable, como la página y la lista de Docs, reciben datos de presentación y producen el marcado. Las reglas de dominio permanecen fuera de esas plantillas.
+
+Los comandos de grupo de Canvas validan y publican una sola transición del Store. Cada material transferido mantiene su trabajo y su identidad propios. Los previews de video son cachés derivadas del archivo inmutable: asset.preview actualiza la representación y su persistencia sin remontar la interfaz ni alterar reproducción, cámara o gestos activos. El historial conserva esa caché al recuperar posiciones y contenido.
