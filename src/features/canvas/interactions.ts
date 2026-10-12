@@ -220,16 +220,13 @@ export class CanvasInteractions {
             const video = button.closest('[data-node]')?.querySelector('video');
             if (video) {
               button.setAttribute('disabled', '');
-              void video
-                .play()
-                .then(() => {
-                  if (!this.disposed && video.isConnected) video.controls = true;
-                })
-                .catch(() => {
-                  button.removeAttribute('disabled');
-                  if (!this.disposed && video.isConnected)
-                    ctx.notice('No se pudo reproducir este video. Verificá su formato.', true);
-                });
+              video.controls = true;
+              void video.play().catch(() => {
+                video.controls = false;
+                button.removeAttribute('disabled');
+                if (!this.disposed && video.isConnected)
+                  ctx.notice('No se pudo reproducir este video. Verificá su formato.', true);
+              });
             }
             break;
           }
