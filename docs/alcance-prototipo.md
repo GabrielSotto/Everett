@@ -271,10 +271,21 @@ La [propuesta visual 1](referencias/0.11/propuesta-board-01.md) presenta una vis
 el mismo tablero con el inspector de trazabilidad de un bug abierto. Contiene datos de ejemplo
 y permanece pendiente de revisión y aprobación del usuario.
 
+El feedback del 12 de octubre elige la disposición con inspector lateral como base, con un
+botón para ampliar la misma ficha a pantalla completa y regresar conservando el contexto.
+La disposición con detalle inferior quedó descartada. La dirección combina la claridad de
+tickets de Linear con la flexibilidad de propiedades y vistas de Notion. La
+[propuesta revisada](referencias/0.11/propuesta-board-02.md) concreta esos criterios con datos
+de ejemplo; la imagen y los mecanismos propuestos siguen pendientes de evaluación del usuario.
+
 - Revisar Kanban, tabla y calendario sobre las mismas tareas.
 - Adoptar los patrones de propiedades y vistas de **Notion** que acordamos usar como referencia.
 - Buscar, añadir, editar, quitar y organizar propiedades.
 - Mantener estado, prioridad, responsable, creador, fechas, origen y propiedades personalizadas.
+- Permitir que una persona cree una tarea y la asigne a sí misma, a otra persona o a un agente.
+  Distinguir al creador del responsable y permitir definir una fecha límite.
+- Crear y personalizar vistas sobre el mismo trabajo: filtros, orden, agrupación y propiedades
+  visibles. Permitir añadir propiedades y definir sus tipos; el catálogo se concreta en 0.11.
 - Resolver consistentemente clic para abrir/editar y arrastre para mover.
 - Permitir paneo sin interferir con el movimiento de tarjetas.
 - Corregir contadores pegados al borde y contenido fuera de pantalla.
@@ -294,10 +305,19 @@ corrección y prevención de regresiones. Ofrecer un resumen claro y acceso prog
 Mantener identidad, vistas y relación con Shipping sobre el mismo trabajo. Estos campos y
 comportamientos son candidatos; su alcance concreto permanece pendiente.
 
+Las hipótesis deben identificar a la persona o agente que las formuló, cuándo lo hizo y su
+contexto o evidencia; conservar su estado de verificación y distinguirlas de una causa
+comprobada. La investigación debe tener un responsable explícito. El selector de persona o
+agente y la preparación de la acción se proponen en la ficha revisada; abrir un bug o consultar
+una hipótesis no inicia una ejecución.
+
 ### Shipping Mode
 
 - Conservar el toggle discreto en Board y el estado global del mundo.
 - Mejorar la presentación de bloqueantes, trabajo necesario, revisión y tareas listas.
+- Al activarlo, dar prioridad efectiva al trabajo necesario para lanzar: destacar primero los
+  bloqueantes y priorizar el resto del alcance de lanzamiento. El trabajo posterior permanece
+  accesible en un nivel secundario, conservando las propiedades y vistas del mismo trabajo.
 - Hacer claras las cantidades y su relación con las tareas.
 - Mantener accesible el trabajo posterior.
 - Conservar activación y desactivación mediante agente sobre el mismo estado compartido.
