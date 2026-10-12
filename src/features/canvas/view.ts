@@ -1456,7 +1456,7 @@ export class CanvasView implements View {
         x = stage.left + stage.width / 2 + camera.x + job.position.x * camera.z,
         y = stage.top + stage.height / 2 + camera.y + job.position.y * camera.z,
         width = proposal.offsetWidth * scale,
-        height = Math.min(proposal.scrollHeight + 2, innerHeight - 170) * scale;
+        height = proposal.offsetHeight * scale;
       if (
         this.dock.x < x + width + 12 &&
         this.dock.x + rect.width > x - 12 &&
@@ -1551,7 +1551,7 @@ export class CanvasView implements View {
         `<button type="button" role="menuitem" data-action="${action}" ${attributes}>${icon(symbol, 16)}<span>${html(label)}</span></button>`;
       holder.insertAdjacentHTML(
         'beforeend',
-        `<div class="dock-more-menu" role="menu" aria-label="Más herramientas de Canvas">${shapeTools.map((shape) => item('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`)).join('')}${item('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"')}${item('canvas-comment', 'comment', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''))}${item('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"')}${item('references', 'plus', 'Incorporar materiales')}</div>`,
+        `<div class="dock-more-menu" role="menu" aria-label="Más herramientas de Canvas">${shapeTools.map((shape) => item('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`)).join('')}${item('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"')}${item('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''))}${item('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"')}${item('references', 'plus', 'Incorporar materiales')}</div>`,
       );
       const menu = holder.querySelector<HTMLElement>('.dock-more-menu')!,
         bounds = dock.getBoundingClientRect();
@@ -1615,7 +1615,10 @@ export class CanvasView implements View {
     const heights = new Map(
       Array.from(this.root.querySelectorAll<HTMLElement>('[data-proposal]'), (el) => [
         el.dataset.proposal!,
-        el.querySelector<HTMLElement>('.proposal-decision')?.offsetHeight ?? 0,
+        {
+          decision: el.querySelector<HTMLElement>('.proposal-decision')?.offsetHeight ?? 0,
+          preview: el.querySelector<HTMLElement>('.proposal-preview')?.offsetHeight ?? 0,
+        },
       ]),
     );
     this.proposalMotions.forEach((animation) => animation.cancel());
@@ -1703,14 +1706,33 @@ export class CanvasView implements View {
         const previous = heights.get(el.dataset.proposal!),
           panel = el.querySelector<HTMLElement>('.proposal-decision'),
           height = panel?.offsetHeight ?? 0;
-        if (panel && previous !== undefined && Math.abs(previous - height) > 1)
+        if (panel && previous !== undefined && Math.abs(previous.decision - height) > 1) {
+          const opening = height > previous.decision;
+          const preview = el.querySelector<HTMLElement>('.proposal-preview');
+          const previewHeight = preview?.offsetHeight ?? 0;
+          const options = {
+            duration: opening ? motion.panelOpenMs : motion.panelCloseMs,
+            easing: motion.panelEase,
+          };
+          if (preview && Math.abs(previous.preview - previewHeight) > 1)
+            this.proposalMotions.set(
+              el.dataset.proposal! + ':preview',
+              preview.animate(
+                [
+                  { height: previous.preview + 'px', flex: '0 0 auto' },
+                  { height: previewHeight + 'px', flex: '0 0 auto' },
+                ],
+                options,
+              ),
+            );
           this.proposalMotions.set(
             el.dataset.proposal!,
-            panel.animate([{ height: previous + 'px' }, { height: height + 'px' }], {
-              duration: height > previous ? motion.panelOpenMs : motion.panelCloseMs,
-              easing: motion.panelEase,
-            }),
+            panel.animate(
+              [{ height: previous.decision + 'px' }, { height: height + 'px' }],
+              options,
+            ),
           );
+        }
       });
     restoreFocus();
   }

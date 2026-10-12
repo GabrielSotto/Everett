@@ -55,8 +55,11 @@ test('C08-B22: etiquetar conserva los píxeles del cable y un editor compacto si
   const actions = await editor
     .locator('button')
     .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().toJSON()));
-  expect(actions).toHaveLength(2);
-  expect(Math.abs(actions[0]!.y - actions[1]!.y)).toBeLessThan(1);
+  expect(actions).toHaveLength(3);
+  await expect(
+    editor.getByRole('button', { name: 'Eliminar conexión', exact: true }),
+  ).toBeVisible();
+  expect(actions.every((action) => Math.abs(action.y - actions[0]!.y) < 1)).toBe(true);
   for (const button of actions) expect(button.width).toBeLessThanOrEqual(36);
   await page.getByLabel('Etiqueta de conexión', { exact: true }).fill('Juan');
   await editor.getByRole('button', { name: 'Guardar', exact: true }).click();

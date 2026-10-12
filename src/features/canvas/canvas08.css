@@ -229,7 +229,7 @@
   height: 24px;
   right: 0;
   top: 0;
-  translate: 50% -50%;
+  translate: calc(12px / var(--canvas-zoom)) calc(-12px / var(--canvas-zoom));
   scale: calc(1 / var(--canvas-zoom));
   transform-origin: top right;
   background: var(--raised);
@@ -881,11 +881,6 @@
 .inspector-head > span {
   min-width: 0;
   overflow: hidden;
-}
-.inspector-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .inspector-head > div {
   display: flex;

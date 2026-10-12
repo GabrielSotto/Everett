@@ -134,6 +134,12 @@ test('C08-B34: nota legible en los cinco colores, texto pintado, guardado autom�
     .poll(() => title.evaluate((el) => getComputedStyle(el).color))
     .toBe('rgb(37, 49, 60)');
   expect(await painted()).toBeGreaterThan(80);
+  const bodyBitmap = png.sync.read(await body.screenshot());
+  let bodyInk = 0;
+  for (let i = 0; i < bodyBitmap.data.length; i += 4)
+    if (bodyBitmap.data[i]! < 90 && bodyBitmap.data[i + 1]! < 90 && bodyBitmap.data[i + 2]! < 90)
+      bodyInk++;
+  expect(bodyInk).toBeGreaterThan(80);
   await testInfo.attach('nota-contraste-real', {
     body: await page.screenshot(),
     contentType: 'image/png',
@@ -392,10 +398,32 @@ test('C08-B38: chips en una línea durante aperturas repetidas, decisión suave 
   await assignMaterial(page, 'note-b', 'Analizar');
   await review(page);
   for (const reduced of [false, true])
-    for (const width of [1440, 390, 300]) {
+    for (const [width, height] of [
+      [1440, 900],
+      [390, 668],
+      [300, 500],
+    ] as const) {
       await page.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' });
-      await page.setViewportSize({ width, height: 900 });
+      await page.setViewportSize({ width, height });
       await expect(page.locator('.proposal')).toBeVisible();
+      // Aislar el gesto del reencuadre que provoca resize; luego repetir
+      // aperturas rápidas, incluida la inversión de una contracción en curso.
+      await expect
+        .poll(async () => (await page.locator('.proposal').boundingBox())!.x)
+        .toBeCloseTo((width - Math.min(560, width - 24)) / 2, 1);
+      await expect
+        .poll(async () => (await page.locator('.proposal').boundingBox())!.y)
+        .toBeCloseTo(83, 1);
+      await expect
+        .poll(() =>
+          page
+            .locator('.proposal')
+            .evaluate(
+              (el) =>
+                el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
+            ),
+        )
+        .toBe(0);
       for (let pass = 0; pass < 2; pass++) {
         const sampling = page.evaluate(async () => {
           const frames = [];
@@ -420,6 +448,10 @@ test('C08-B38: chips en una línea durante aperturas repetidas, decisión suave 
                   .getAttribute('aria-pressed') === 'true',
               width: box.width,
               height: box.height,
+              previewHeight: document.querySelector('.proposal-preview')!.getBoundingClientRect()
+                .height,
+              previewAnimations: document.querySelector('.proposal-preview')!.getAnimations()
+                .length,
               chips,
               animations: document.querySelector('.proposal-decision')!.getAnimations().length,
             });
@@ -439,8 +471,17 @@ test('C08-B38: chips en una línea durante aperturas repetidas, decisión suave 
           expect(new Set(frames.map((f) => Math.round(f.height))).size).toBeGreaterThan(3);
         } else expect(frames.every((f) => f.animations === 0)).toBe(true);
         const opening = frames.filter((frame) => frame.active);
-        for (let i = 1; i < opening.length; i++)
+        if (!reduced && width !== 1440) {
+          expect(opening.some((frame) => frame.previewAnimations > 0)).toBe(true);
+          expect(
+            new Set(opening.map((frame) => Math.round(frame.previewHeight))).size,
+          ).toBeGreaterThan(3);
+        }
+        if (reduced) expect(frames.every((frame) => frame.previewAnimations === 0)).toBe(true);
+        for (let i = 1; i < opening.length; i++) {
           expect(opening[i]!.height - opening[i - 1]!.height).toBeGreaterThanOrEqual(-1);
+          expect(opening[i]!.previewHeight - opening[i - 1]!.previewHeight).toBeLessThanOrEqual(1);
+        }
         await testInfo.attach('chips-' + width + '-' + reduced + '-' + pass, {
           body: JSON.stringify(frames),
           contentType: 'application/json',
@@ -513,6 +554,21 @@ test('C08-B39: Formas enlaza su menú y estado, lápiz continuo desde la primera
     await page.mouse.move(100, 300);
     await page.mouse.wheel(0, delta);
     await expect.poll(async () => (await marker.boundingBox())!.width).toBeCloseTo(24, 1);
+    const anchoring = await marker.evaluate((el) => {
+      const node = el.closest<HTMLElement>('[data-node]')!,
+        box = node.getBoundingClientRect(),
+        marker = el.getBoundingClientRect(),
+        scale = box.width / node.offsetWidth,
+        style = getComputedStyle(node);
+      return {
+        x: marker.x + marker.width / 2,
+        y: marker.y + marker.height / 2,
+        anchorX: box.right - parseFloat(style.borderRightWidth) * scale,
+        anchorY: box.top + parseFloat(style.borderTopWidth) * scale,
+      };
+    });
+    expect(Math.abs(anchoring.x - anchoring.anchorX)).toBeLessThan(1);
+    expect(Math.abs(anchoring.y - anchoring.anchorY)).toBeLessThan(1);
   }
   await testInfo.attach('comentario-sin-crecer-con-zoom', {
     body: await page.screenshot(),
