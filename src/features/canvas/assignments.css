@@ -1,11 +1,11 @@
 /* Canvas: zonas y asignación de materiales */
 .canvas-stage {
-  background-color: var(--surface);
-  background-image: radial-gradient(#70889542 0.7px, transparent 0.7px);
+  background-color: #252a30;
+  background-image: radial-gradient(#a6b4c454 0.8px, transparent 0.9px);
 }
 .agent-zone {
-  background: #536b7814;
-  border-color: #8a9bac66;
+  background: #3d4855a6;
+  border-color: #8a9bacbb;
   border-radius: 16px;
 }
 .agent-zone.selected {
@@ -34,13 +34,22 @@
   color: var(--note-ink);
 }
 .material.reference {
-  background: var(--panel);
-  border-color: var(--line);
+  background: #3a4957;
+  border-color: #71839488;
   color: var(--text);
 }
 .material.reference p,
 .material.reference pre {
   color: var(--muted);
+}
+.material[data-reference-kind='document'] {
+  background: #f5f3ef;
+  color: #29313d;
+  border-color: #e1ded6;
+}
+.material[data-reference-kind='document'] p,
+.material[data-reference-kind='document'] .reference-type {
+  color: #475363;
 }
 .material.shape-material {
   padding: 0 !important;
@@ -62,9 +71,12 @@
 .shape-menu,
 .reference-menu,
 .chat-launch {
-  background: #354856;
-  color: var(--muted);
-  border-color: var(--line);
+  background: #465360;
+  color: #eff3f7;
+  border-color: #8595a699;
+}
+.canvas-tools {
+  box-shadow: 0 6px 20px #0005;
 }
 .material-actions {
   max-width: calc(100% - 30px);

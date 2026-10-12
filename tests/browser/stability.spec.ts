@@ -60,7 +60,7 @@ test('UI-A11Y-01: Quick Chat conserva borrador y controles alcanzables al contra
   await expect(composer).not.toBeInViewport();
   await expect(page.locator('#canvas-chat-composer-input')).toBeHidden();
   await expect(chat.getByRole('textbox')).toHaveCount(0);
-  await chat.getByRole('button', { name: 'Contraer chat', exact: true }).click();
+  await chat.getByRole('button', { name: 'Desplegar chat', exact: true }).click();
   await expect(composer).toHaveValue('Borrador largo\n'.repeat(20));
   await page.setViewportSize({ width: 360, height: 640 });
   await expect

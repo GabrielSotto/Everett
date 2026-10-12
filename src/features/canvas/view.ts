@@ -29,6 +29,7 @@ import { colors } from './note-colors';
 import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 import { CanvasInteractions } from './interactions';
 import { proposalMarkup } from './proposals';
+import { motion, reducedMotion } from '../../ui/motion';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
@@ -701,6 +702,7 @@ export class CanvasView implements View {
       return;
     }
     if (d.kind === 'dock') {
+      this.renderDock();
       trace.add('drag.finished', { component: 'canvas-tools', position: this.dock }, d.intent);
       return;
     }
@@ -1217,18 +1219,27 @@ export class CanvasView implements View {
       holder.innerHTML = `<div class="material-actions">${btn('link-delete', 'trash', 'Eliminar conexión', `data-id="${ui.canvas.linkSelection}"`)}</div>`;
     else holder.innerHTML = '';
   }
-  private clampDock(): void {
+  private clampDock(avoidChat = false): void {
     if (!this.dock) return;
     const rect = this.root.querySelector('.canvas-tools')?.getBoundingClientRect() ?? {
       width: Math.min(306, innerWidth - 24),
       height: 48,
     };
-    this.dock = bound(this.dock, rect, {
-      x: 0,
-      y: 59,
-      width: innerWidth,
-      height: innerHeight - 59,
-    });
+    const chat = this.root.querySelector<HTMLElement>('.canvas-chat.docked');
+    const chatBottom = chat ? 59 + chat.offsetHeight : 0;
+    const left =
+      avoidChat && chat && !this.chatHidden() && this.dock.y < chatBottom + 12
+        ? chat.offsetWidth
+        : 0;
+    this.dock = bound(
+      this.dock,
+      rect,
+      { x: left, y: 59, width: innerWidth - left, height: innerHeight - 59 },
+      Math.max(
+        0,
+        Math.min(12, (innerWidth - left - rect.width) / 2, (innerHeight - 59 - rect.height) / 2),
+      ),
+    );
   }
   private chatHidden(panel = this.root.dataset.canvasPanel ?? ''): boolean {
     const mode = this.ctx.ui.chat.chatMode;
@@ -1238,6 +1249,9 @@ export class CanvasView implements View {
     return innerWidth - Math.min(310, innerWidth - 76) < width + 48;
   }
   private renderDock(): void {
+    const previous = this.dock
+      ? this.root.querySelector('.canvas-tools')?.getBoundingClientRect()
+      : null;
     this.clampDock();
     const { ctx } = this,
       w = ctx.world(),
@@ -1291,6 +1305,11 @@ export class CanvasView implements View {
       dock.style.bottom = vertical ? 'auto' : '23px';
       dock.style.transform = vertical ? 'translateY(-50%)' : 'translateX(-50%)';
     }
+    this.clampDock(true);
+    if (this.dock) {
+      dock.style.left = `${this.dock.x}px`;
+      dock.style.top = `${this.dock.y}px`;
+    }
     if (this.dockMore && compact) {
       const item = (action: string, symbol: string, label: string, attributes = ''): string =>
         `<button type="button" role="menuitem" data-action="${action}" ${attributes}>${icon(symbol, 16)}<span>${html(label)}</span></button>`;
@@ -1303,10 +1322,16 @@ export class CanvasView implements View {
       menu.style.left = `${Math.max(12, Math.min(innerWidth - menu.offsetWidth - 12, vertical ? bounds.left - menu.offsetWidth - 8 : bounds.left + bounds.width / 2 - menu.offsetWidth / 2))}px`;
       menu.style.top = `${Math.max(70, Math.min(innerHeight - menu.offsetHeight - 12, vertical ? bounds.top : bounds.top - menu.offsetHeight - 8))}px`;
     } else this.dockMore = false;
-    this.clampDock();
-    if (this.dock) {
-      dock.style.left = `${this.dock.x}px`;
-      dock.style.top = `${this.dock.y}px`;
+    if (this.dock && previous && !reducedMotion()) {
+      const current = dock.getBoundingClientRect();
+      if (Math.hypot(previous.x - current.x, previous.y - current.y) > 1)
+        dock.animate(
+          [
+            { translate: `${previous.x - current.x}px ${previous.y - current.y}px` },
+            { translate: '0px 0px' },
+          ],
+          { duration: motion.panelOpenMs, easing: motion.panelEase },
+        );
     }
   }
   render(): void {

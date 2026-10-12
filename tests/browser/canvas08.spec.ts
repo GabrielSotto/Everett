@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
-import { enterWorld, openSurface, assignMaterial } from './interaction-helpers';
+import { enterWorld, openSurface, assignMaterial, undockChat } from './interaction-helpers';
 import { pdfFixture, videoFixture, storedFixture } from './canvas-fixtures';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
@@ -14,6 +14,17 @@ async function canvas(page: Page): Promise<void> {
 async function reload(page: Page): Promise<void> {
   await page.reload();
   await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
+}
+async function toggleHistory(page: Page): Promise<void> {
+  const button = page.getByRole('button', { name: 'Historial de conversaciones', exact: true });
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  const closed = await button.locator('path').getAttribute('d');
+  await button.click();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  expect(await button.locator('path').getAttribute('d')).not.toBe(closed);
+  await button.click();
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await expect(button.locator('path')).toHaveAttribute('d', closed!);
 }
 async function contextAction(page: Page, id: string, name: string): Promise<void> {
   await page.locator(`.material[data-node="${id}"]`).click({ button: 'right' });
@@ -350,6 +361,7 @@ test('C08-B02: historial compacto, participantes propios y continuidad Canvas â†
   await canvas(page);
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await toggleHistory(page);
   await page.getByRole('button', { name: 'Agregar personas', exact: true }).click();
   await page.getByLabel('Nombre del participante', { exact: true }).fill('Persona invitada');
   await page.getByRole('button', { name: 'Agregar persona', exact: true }).click();
@@ -387,6 +399,7 @@ test('C08-B02: historial compacto, participantes propios y continuidad Canvas â†
     'Borrador original N C L',
   );
   await openSurface(page, 'Session');
+  await toggleHistory(page);
   await expect(page.getByRole('group', { name: 'Participantes', exact: true })).toContainText(
     'Persona invitada',
   );
@@ -1158,7 +1171,7 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
     await chat.getByRole('button', { name: 'Contraer chat', exact: true }).click();
     await expect(chat).toHaveClass(/compact/);
     await checkDock(width);
-    await chat.getByRole('button', { name: 'Contraer chat', exact: true }).click();
+    await chat.getByRole('button', { name: 'Desplegar chat', exact: true }).click();
     await expect(composer).toHaveValue('El mismo borrador en cada ancho');
   }
   await page.setViewportSize({ width: 300, height: 760 });
@@ -1192,6 +1205,7 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
   await page.mouse.down();
   await page.mouse.move(90, 390, { steps: 12 });
   await page.mouse.up();
+  await expect.poll(async () => (await toolbar.boundingBox())!.x).toBeGreaterThanOrEqual(322);
   await toolbar.getByRole('button', { name: 'Formas', exact: true }).click();
   expect(
     await page.locator('.shape-menu').evaluate((element) => {
@@ -1203,4 +1217,173 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
   ).toBe(true);
   await page.getByRole('button', { name: 'Elipse', exact: true }).click();
   expect((await snapshot(page)).ui.canvas.tool).toBe('ellipse');
+});
+
+test('C08-B20: desplegar identifica su estado, aparta el dock manual y permite desacoplar por arrastre', async ({
+  page,
+}, testInfo) => {
+  await canvas(page);
+  await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
+  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
+  const composer = chat.getByRole('textbox', { name: 'EscribÃ­ un mensajeâ€¦', exact: true });
+  await composer.fill('Borrador conservado al apartar herramientas');
+  await expect(chat.getByRole('button', { name: 'Desacoplar chat', exact: true })).toHaveCount(0);
+  const collapse = chat.getByRole('button', { name: 'Contraer chat', exact: true });
+  const down = await collapse.locator('path').getAttribute('d');
+  await expect(collapse).toHaveAttribute('aria-expanded', 'true');
+  await collapse.click();
+  const expand = chat.getByRole('button', { name: 'Desplegar chat', exact: true });
+  await expect(expand).toHaveAttribute('aria-expanded', 'false');
+  expect(await expand.locator('path').getAttribute('d')).not.toBe(down);
+  await expect(collapse).toHaveCount(0);
+  const dock = page.getByRole('toolbar', { name: 'Herramientas de Canvas', exact: true });
+  const grip = (await dock.locator('.dock-grip').boundingBox())!;
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(90, 390, { steps: 12 });
+  await page.mouse.up();
+  const before = (await dock.boundingBox())!;
+  expect(before.x).toBeLessThan(310);
+  await testInfo.attach('chat-contraido-dock-manual', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  const movement = page.evaluate(
+    () =>
+      new Promise<{ x: number; y: number; width: number; height: number; count: number }[]>(
+        (resolve) => {
+          const sample = () => {
+            const dock = document.querySelector('.canvas-tools')!;
+            const r = dock.getBoundingClientRect();
+            return {
+              x: r.x,
+              y: r.y,
+              width: r.width,
+              height: r.height,
+              count: document.querySelectorAll('.canvas-tools').length,
+            };
+          };
+          const frames = [sample()];
+          const capture = (event: MouseEvent) => {
+            if (
+              !(event.target instanceof Element) ||
+              !event.target.closest('[data-action=chat-compact]')
+            )
+              return;
+            document.removeEventListener('click', capture, true);
+            const start = performance.now();
+            const record = (time: number) => {
+              frames.push(sample());
+              if (time - start >= 320) resolve(frames);
+              else requestAnimationFrame(record);
+            };
+            requestAnimationFrame(record);
+          };
+          document.addEventListener('click', capture, true);
+        },
+      ),
+  );
+  await expand.click();
+  const frames = await movement;
+  expect(frames.length).toBeGreaterThan(3);
+  for (let i = 1; i < frames.length; i++) {
+    const frame = frames[i]!,
+      previous = frames[i - 1]!;
+    expect(frame.count).toBe(1);
+    expect(frame.x).toBeGreaterThanOrEqual(previous.x - 0.5);
+    expect(frame.width).toBeCloseTo(frames[0]!.width, 0);
+    expect(frame.height).toBeCloseTo(frames[0]!.height, 0);
+  }
+  await testInfo.attach('movimiento-dock-cuadros', {
+    body: Buffer.from(JSON.stringify(frames, null, 2)),
+    contentType: 'application/json',
+  });
+  await expect
+    .poll(() =>
+      dock.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length),
+    )
+    .toBe(0);
+  const after = (await dock.boundingBox())!;
+  const chatBox = (await chat.boundingBox())!;
+  expect(after.x).toBeGreaterThanOrEqual(chatBox.x + chatBox.width + 12);
+  expect(after.y).toBeCloseTo(before.y, 0);
+  expect(
+    await dock.locator('.dock-grip').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return !!document
+        .elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)
+        ?.closest('.dock-grip');
+    }),
+  ).toBe(true);
+  await expect(composer).toHaveValue('Borrador conservado al apartar herramientas');
+  await testInfo.attach('chat-desplegado-dock-apartado', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  await undockChat(page);
+  await toggleHistory(page);
+  await expect(composer).toHaveValue('Borrador conservado al apartar herramientas');
+  await chat.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await chat.getByRole('button', { name: 'Contraer chat', exact: true }).click();
+  await chat.getByRole('button', { name: 'Desplegar chat', exact: true }).click();
+  expect(await dock.evaluate((el) => el.getAnimations().length)).toBe(0);
+  await expect(composer).toHaveValue('Borrador conservado al apartar herramientas');
+});
+
+test('C08-B21: fondo punteado, zonas, notas, documentos y dock conservan contraste propio', async ({
+  page,
+}, testInfo) => {
+  await canvas(page);
+  const colors = await page.evaluate(() => {
+    const style = (selector: string) => getComputedStyle(document.querySelector(selector)!);
+    const stage = style('.canvas-stage');
+    const note = style('.material.note');
+    const doc = style('.material[data-reference-kind=document]');
+    const dock = style('.canvas-tools');
+    const zone = style('.agent-zone');
+    return {
+      stage: stage.backgroundColor,
+      pattern: stage.backgroundImage,
+      spacing: stage.backgroundSize,
+      note: note.backgroundColor,
+      noteText: style('.material.note p').color,
+      doc: doc.backgroundColor,
+      docText: style('.material[data-reference-kind=document] p').color,
+      dock: dock.backgroundColor,
+      dockText: dock.color,
+      zone: zone.backgroundColor,
+      border: zone.borderTopColor,
+    };
+  });
+  const rgb = (color: string): number[] => color.match(/[\d.]+/g)!.map(Number);
+  const luminance = (color: string): number => {
+    const values = rgb(color),
+      backdrop = rgb(colors.stage),
+      alpha = values[3] ?? 1;
+    const linear = values.slice(0, 3).map((n, i) => {
+      const channel = (n * alpha + backdrop[i]! * (1 - alpha)) / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    return linear[0]! * 0.2126 + linear[1]! * 0.7152 + linear[2]! * 0.0722;
+  };
+  const contrast = (a: string, b: string): number => {
+    const values = [luminance(a), luminance(b)].sort((a, b) => b - a);
+    return (values[0]! + 0.05) / (values[1]! + 0.05);
+  };
+  expect(colors.pattern).toContain('radial-gradient');
+  expect(colors.spacing).not.toBe('auto');
+  expect(contrast(colors.note, colors.stage)).toBeGreaterThan(8);
+  expect(contrast(colors.doc, colors.stage)).toBeGreaterThan(8);
+  expect(contrast(colors.dock, colors.stage)).toBeGreaterThan(1.7);
+  expect(contrast(colors.zone, colors.stage)).toBeGreaterThan(1.3);
+  expect(contrast(colors.border, colors.stage)).toBeGreaterThan(3);
+  expect(contrast(colors.noteText, colors.note)).toBeGreaterThan(4.5);
+  expect(contrast(colors.docText, colors.doc)).toBeGreaterThan(4.5);
+  expect(contrast(colors.dockText, colors.dock)).toBeGreaterThan(4.5);
+  await testInfo.attach('canvas-contraste-materiales', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
 });

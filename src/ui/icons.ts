@@ -20,6 +20,7 @@ const paths: Record<string, string> = {
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
   down: '<path d="m6 9 6 6 6-6"/>',
+  'chevron-up': '<path d="m6 15 6-6 6 6"/>',
   filter: '<path d="M4 6h16M7 12h10M10 18h4"/>',
   activity: '<path d="M2 12h5l3-8 4 16 3-8h5"/>',
   grid: '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/>',

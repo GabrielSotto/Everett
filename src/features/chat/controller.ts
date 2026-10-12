@@ -79,11 +79,6 @@ export class CanvasChat {
             u.chat.chatCompact = false;
             this.render();
             break;
-          case 'chat-undock':
-            u.chat.chatMode = 'quick';
-            u.chat.chatPosition = { x: 325, y: 150 };
-            this.render();
-            break;
           case 'chat-compact':
             u.chat.chatCompact = !u.chat.chatCompact;
             this.render();
@@ -310,7 +305,7 @@ export class CanvasChat {
     );
     u.chat.chatPosition = p;
     const comments = u.chat.chatMode === 'docked' && u.chat.chatTab === 'comments';
-    this.root.innerHTML = `<section class="canvas-chat ${u.chat.chatMode} ${u.chat.chatCompact ? 'compact' : ''}" style="${u.chat.chatMode === 'quick' ? `left:${p.x}px;top:${p.y}px` : ''}" aria-label="Chat del Canvas"><header class="chat-handle"><span class="chat-grip">${icon('grip', 14)}</span>${this.header.markup()}<div>${u.chat.chatMode === 'docked' ? btn('chat-people', 'user', 'Agregar personas') : ''}${u.chat.chatMode === 'docked' ? btn('chat-undock', 'dock', 'Desacoplar chat') : btn('chat-dock', 'dock', 'Anclar chat')}${btn('chat-compact', 'down', 'Contraer chat')}${btn('chat-close', 'close', 'Cerrar chat')}</div></header>${participantsMarkup(w.participants)}${u.chat.chatMode === 'docked' ? `<nav class="chat-tabs">${btn('chat-tab', 'session', 'Conversación', 'data-tab="chat"', !comments)}${btn('chat-tab', 'comment', 'Comentarios', 'data-tab="comments"', comments)}</nav>` : ''}${this.people ? `<form id="add-person"><input id="person-name" aria-label="Nombre del participante" placeholder="Nombre"><button class="icon-button" type="submit" aria-label="Agregar persona">${icon('plus')}</button></form>` : ''}<div class="chat-scroll">${
+    this.root.innerHTML = `<section class="canvas-chat ${u.chat.chatMode} ${u.chat.chatCompact ? 'compact' : ''}" style="${u.chat.chatMode === 'quick' ? `left:${p.x}px;top:${p.y}px` : ''}" aria-label="Chat del Canvas"><header class="chat-handle"><span class="chat-grip">${icon('grip', 14)}</span>${this.header.markup()}<div>${u.chat.chatMode === 'docked' ? btn('chat-people', 'user', 'Agregar personas') : btn('chat-dock', 'dock', 'Anclar chat')}${btn('chat-compact', u.chat.chatCompact ? 'chevron-up' : 'down', u.chat.chatCompact ? 'Desplegar chat' : 'Contraer chat', `aria-expanded="${!u.chat.chatCompact}"`)}${btn('chat-close', 'close', 'Cerrar chat')}</div></header>${participantsMarkup(w.participants)}${u.chat.chatMode === 'docked' ? `<nav class="chat-tabs">${btn('chat-tab', 'session', 'Conversación', 'data-tab="chat"', !comments)}${btn('chat-tab', 'comment', 'Comentarios', 'data-tab="comments"', comments)}</nav>` : ''}${this.people ? `<form id="add-person"><input id="person-name" aria-label="Nombre del participante" placeholder="Nombre"><button class="icon-button" type="submit" aria-label="Agregar persona">${icon('plus')}</button></form>` : ''}<div class="chat-scroll">${
       comments
         ? w.comments
             .map(

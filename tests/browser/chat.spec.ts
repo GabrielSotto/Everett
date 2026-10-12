@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { enterWorld, openSurface } from './interaction-helpers';
+import { enterWorld, openSurface, undockChat } from './interaction-helpers';
 
 test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick Chat, anclaje y Sessions', async ({
   page,
@@ -25,7 +25,7 @@ test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick C
           .conversations[0]!.participants,
     ),
   ).toContain('Ada');
-  await chat.getByRole('button', { name: 'Desacoplar chat', exact: true }).click();
+  await undockChat(page);
   await expect(chat).toHaveClass(/quick/);
   await expect(composer).toHaveValue('Borrador todavía sin enviar');
   await openSurface(page, 'Session');
@@ -73,7 +73,7 @@ test('UI-CHAT-02: arrastrar al chat referencia el material conservando propiedad
   await expect(note.locator('p')).toHaveText(content);
   expect((await note.boundingBox())!.x).toBeCloseTo(before.x, 1);
   expect((await note.boundingBox())!.y).toBeCloseTo(before.y, 1);
-  await chat.getByRole('button', { name: 'Desacoplar chat', exact: true }).click();
+  await undockChat(page);
   await expect(chat.locator('.chat-reference-list')).toContainText(
     'Recuperar evidencia útil para una tarea',
   );
