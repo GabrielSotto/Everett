@@ -10,6 +10,7 @@ import { html, target, editable } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
 import { sampleFiles } from './sample-media';
 import { pdfPreview } from '../../platform/pdf-preview';
+import { videoPreview } from '../../platform/video-preview';
 
 /** Interacciones contextuales; los gestos y la cámara permanecen en CanvasView. */
 export class CanvasInteractions {
@@ -20,6 +21,8 @@ export class CanvasInteractions {
   private disposed = false;
   private menuMaterial: string | null = null;
   private loadingSamples = false;
+  private previews = new Map<string, Promise<string>>();
+  private previewAbort = new AbortController();
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -241,6 +244,23 @@ export class CanvasInteractions {
             });
             this.hydrate();
             break;
+          case 'video-preview-retry': {
+            const asset = button.dataset.asset;
+            if (!asset || !ctx.storage) break;
+            this.previews.delete(asset);
+            const status = button.closest('.video-preview-status');
+            if (status) status.textContent = 'Preparando vista previa…';
+            void ctx.storage
+              .asset(asset)
+              .then((blob) => this.prepareVideoPreview(asset, blob))
+              .catch(() =>
+                ctx.notice(
+                  'No se pudo recuperar el archivo. Reintentá desde su aviso de recuperación.',
+                  true,
+                ),
+              );
+            break;
+          }
         }
       },
       { signal },
@@ -670,6 +690,15 @@ export class CanvasInteractions {
               ratio = video.videoWidth / video.videoHeight;
               if (Number.isFinite(video.duration)) duration = video.duration;
               else if (sampleDuration) duration = sampleDuration;
+              try {
+                preview = await videoPreview(file, this.previewAbort.signal);
+              } catch {
+                if (!this.disposed)
+                  this.ctx.notice(
+                    'El video se conserva; no se pudo preparar su vista previa.',
+                    true,
+                  );
+              }
               video.removeAttribute('src');
               video.load();
             }
@@ -742,6 +771,11 @@ export class CanvasInteractions {
         if (!pending) {
           pending = this.ctx.storage!.asset(id).then((blob) => {
             if (this.disposed) return '';
+            if (
+              element instanceof HTMLVideoElement &&
+              !element.closest('[data-node],[data-proposed-node]')?.querySelector('.video-poster')
+            )
+              this.prepareVideoPreview(id, blob);
             const url = URL.createObjectURL(blob);
             this.ownedUrls.add(url);
             return url;
@@ -775,6 +809,55 @@ export class CanvasInteractions {
           });
       });
   }
+  private prepareVideoPreview(asset: string, blob: Blob): void {
+    if (this.disposed || this.previews.has(asset)) return;
+    const world = this.ctx.world().id;
+    const pending = videoPreview(blob, this.previewAbort.signal);
+    this.previews.set(asset, pending);
+    void pending
+      .then((preview) => {
+        if (this.disposed) return;
+        if (
+          !this.ctx.act(
+            { type: 'asset.preview', world, asset, preview },
+            'recuperar vista previa del video',
+            'C08-MAT-02',
+            'service',
+          )
+        )
+          return;
+        this.root.querySelectorAll<HTMLVideoElement>('video[data-asset]').forEach((video) => {
+          if (video.dataset.asset !== asset) return;
+          video.poster = preview;
+          const parent = video.parentElement;
+          if (!parent?.classList.contains('material')) return;
+          let poster = parent.querySelector<HTMLImageElement>('.video-poster');
+          if (!poster) {
+            poster = document.createElement('img');
+            poster.className = 'video-poster';
+            poster.alt = 'Vista previa de ' + (video.getAttribute('aria-label') ?? 'video');
+            poster.draggable = false;
+            video.after(poster);
+          }
+          poster.src = preview;
+          parent.querySelector('.video-preview-status')?.remove();
+        });
+      })
+      .catch(() => {
+        if (this.disposed) return;
+        this.root.querySelectorAll<HTMLElement>('[data-asset]').forEach((el) => {
+          if (el.dataset.asset === asset) {
+            const status = el.parentElement?.querySelector('.video-preview-status');
+            if (status)
+              status.innerHTML = `<span>Vista previa no disponible</span><button type="button" data-action="video-preview-retry" data-asset="${html(asset)}">Reintentar vista previa</button>`;
+          }
+        });
+        this.ctx.notice(
+          'No se pudo preparar la vista previa del video. Podés reproducirlo o reintentar.',
+          true,
+        );
+      });
+  }
   close(): boolean {
     const active = this.overlay.childElementCount > 0 || this.ctx.ui.canvas.tool === 'comment';
     this.ctx.ui.canvas.commentTarget = null;
@@ -793,6 +876,8 @@ export class CanvasInteractions {
   }
   dispose(): void {
     this.disposed = true;
+    this.previewAbort.abort();
+    this.previews.clear();
     this.cancelHover();
     this.root.querySelectorAll<HTMLVideoElement>('video').forEach((video) => {
       video.pause();

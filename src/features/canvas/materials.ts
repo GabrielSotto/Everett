@@ -55,7 +55,7 @@ export function materialMarkup(
   else if (d.kind === 'image')
     content = `<img data-asset="${d.asset}" alt="${html(d.title)}" draggable="false">`;
   else if (d.kind === 'video')
-    content = `<video data-asset="${d.asset}" preload="metadata" aria-label="${html(d.title)}" draggable="false"></video><button type="button" class="video-play" data-action="video-play" aria-label="Reproducir video" disabled>${icon('play', 24)}</button>${d.duration !== undefined ? `<span class="video-duration">${Math.floor(d.duration / 60)}:${String(Math.floor(d.duration % 60)).padStart(2, '0')}</span>` : ''}`;
+    content = `<video data-asset="${d.asset}" preload="auto" aria-label="${html(d.title)}" draggable="false"></video>${d.preview ? `<img class="video-poster" src="${html(d.preview)}" alt="Vista previa de ${html(d.title)}" draggable="false">` : `<div class="video-preview-status" role="status">Preparando vista previa…</div>`}<button type="button" class="video-play" data-action="video-play" aria-label="Reproducir video" disabled>${icon('play', 24)}</button>${d.duration !== undefined ? `<span class="video-duration">${Math.floor(d.duration / 60)}:${String(Math.floor(d.duration % 60)).padStart(2, '0')}</span>` : ''}`;
   else if (d.kind === 'pdf')
     content = d.preview
       ? `<img src="${d.preview}" alt="Primera página de ${html(d.title)}">`
@@ -172,13 +172,13 @@ export function connectionMarkup(
   link: Link,
   w: WorldSnapshot,
   selected: boolean,
-  preview?: { id: string; point: Point },
+  preview: readonly { id: string; point: Point }[] = [],
 ): string {
   const a = w.nodes.find((n) => n.id === link.from),
     b = w.nodes.find((n) => n.id === link.to);
   if (!a || !b || a.owner || b.owner) return '';
-  const from = preview?.id === a.id ? { ...a, ...preview.point } : a;
-  const to = preview?.id === b.id ? { ...b, ...preview.point } : b;
+  const from = { ...a, ...preview.find((item) => item.id === a.id)?.point };
+  const to = { ...b, ...preview.find((item) => item.id === b.id)?.point };
   const path = linkPath(
     anchorPoint(from, link.fromAnchor),
     anchorPoint(to, link.toAnchor),

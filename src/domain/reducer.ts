@@ -47,6 +47,10 @@ export function reduce(state: State, command: Command): State {
     case 'zone.rename':
     case 'assignment.schedule':
     case 'node.move':
+    case 'nodes.move':
+    case 'nodes.delete':
+    case 'nodes.assign':
+    case 'asset.preview':
     case 'node.edit':
     case 'node.delete':
     case 'link.create':

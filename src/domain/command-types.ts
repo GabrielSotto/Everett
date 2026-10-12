@@ -120,6 +120,16 @@ export type Command =
       id: string;
       point: Point;
     }
+  | { type: 'nodes.move'; world: string; nodes: { id: string; point: Point }[] }
+  | { type: 'nodes.delete'; world: string; nodes: string[] }
+  | {
+      type: 'nodes.assign';
+      world: string;
+      nodes: { id: string; returnTo: Point }[];
+      agent: string;
+      instruction: string;
+    }
+  | { type: 'asset.preview'; world: string; asset: string; preview: string }
   | {
       type: 'node.edit';
       world: string;

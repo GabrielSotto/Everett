@@ -639,12 +639,16 @@ export class EverettApp implements Context {
       if ((e.key === 'Delete' || e.key === 'Backspace') && this.ui.canvas.selection) {
         e.preventDefault();
         this.act(
-          { type: 'node.delete', world: route.world, id: this.ui.canvas.selection },
+          this.ui.canvas.selections.length > 1
+            ? { type: 'nodes.delete', world: route.world, nodes: this.ui.canvas.selections }
+            : { type: 'node.delete', world: route.world, id: this.ui.canvas.selection },
           'quitar material',
           'CANVAS-01',
           'keyboard',
         );
         this.ui.canvas.selection = null;
+        this.ui.canvas.selections = [];
+        this.render();
       }
     }
   }

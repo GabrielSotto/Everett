@@ -1232,3 +1232,40 @@
   height: auto;
   margin: 16px auto;
 }
+
+.selection-box {
+  position: absolute;
+  pointer-events: none;
+  border: calc(1px / var(--canvas-zoom)) solid var(--accent);
+  background: #b5a4d91a;
+  z-index: 10;
+}
+
+.video-poster {
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+  pointer-events: none;
+}
+.video-preview-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  padding: 14px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  pointer-events: none;
+}
+.material:has(video[controls]) :is(.video-poster, .video-preview-status) {
+  display: none;
+}
+
+.video-preview-status button {
+  pointer-events: auto;
+  padding: 5px 9px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}

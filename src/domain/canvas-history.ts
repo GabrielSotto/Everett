@@ -25,6 +25,8 @@ const reversible = new Set<Command['type']>([
   'zone.instruction',
   'zone.rename',
   'node.move',
+  'nodes.move',
+  'nodes.delete',
   'node.resize',
   'node.edit',
   'node.delete',
@@ -38,7 +40,7 @@ const reversible = new Set<Command['type']>([
   'comment.reply',
   'comment.resolve',
 ]);
-const barriers = new Set<Command['type']>(['assign', 'assignment.finish']);
+const barriers = new Set<Command['type']>(['assign', 'nodes.assign', 'assignment.finish']);
 function capture(w: World): CanvasSnapshot {
   return structuredClone({
     nodes: w.nodes,
@@ -71,6 +73,19 @@ export class CanvasHistory {
     if (!('world' in command)) return;
     const t = this.timeline(command.world);
     const oldWorld = getWorld(before, command.world);
+    if (command.type === 'asset.preview') {
+      // El fotograma es una caché del archivo inmutable, independiente de las ediciones.
+      for (const entry of [...t.past, ...t.future])
+        for (const snapshot of [entry.before, entry.after])
+          for (const material of snapshot.nodes)
+            if (
+              material.data.kind === 'video' &&
+              material.data.asset === command.asset &&
+              !material.data.preview
+            )
+              material.data.preview = command.preview;
+      return;
+    }
     const zoneAgent =
       command.type === 'zone.delete' || command.type === 'zone.agent'
         ? oldWorld.zones.find((z) => z.id === command.id)?.agent

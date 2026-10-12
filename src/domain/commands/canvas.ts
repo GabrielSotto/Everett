@@ -23,6 +23,10 @@ type CanvasCommand = Extract<
       | 'zone.rename'
       | 'assignment.schedule'
       | 'node.move'
+      | 'nodes.move'
+      | 'nodes.delete'
+      | 'nodes.assign'
+      | 'asset.preview'
       | 'node.edit'
       | 'node.delete'
       | 'link.create'
@@ -53,6 +57,59 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       'Material inexistente',
     );
   switch (command.type) {
+    case 'nodes.move':
+    case 'nodes.assign':
+    case 'nodes.delete': {
+      const ids = command.type === 'nodes.delete' ? command.nodes : command.nodes.map((n) => n.id);
+      ensure(
+        ids.length > 0 && new Set(ids).size === ids.length,
+        'SELECTION',
+        'Elegí materiales distintos',
+      );
+      for (const id of ids)
+        ensure(!node(id).owner, 'LOCKED', 'Un material está siendo usado por un agente');
+      // Store publica el candidato completo después de validar todo el grupo.
+      if (command.type === 'nodes.move')
+        for (const item of command.nodes)
+          applyCanvasCommand(state, {
+            type: 'node.move',
+            world: world.id,
+            id: item.id,
+            point: item.point,
+          });
+      else if (command.type === 'nodes.delete')
+        for (const id of command.nodes)
+          applyCanvasCommand(state, { type: 'node.delete', world: world.id, id });
+      else
+        for (const item of command.nodes)
+          applyCanvasCommand(state, {
+            type: 'assign',
+            world: world.id,
+            node: item.id,
+            agent: command.agent,
+            instruction: command.instruction,
+            returnTo: item.returnTo,
+          });
+      break;
+    }
+    case 'asset.preview': {
+      ensure(
+        /^data:image\/(jpeg|png);base64,/.test(command.preview),
+        'PREVIEW',
+        'Vista previa de archivo inválida',
+      );
+      for (const material of [
+        ...world.nodes,
+        ...world.assignments.flatMap((job) => job.output?.map((d) => d.material) ?? []),
+      ])
+        if (
+          material.data.kind === 'video' &&
+          material.data.asset === command.asset &&
+          !material.data.preview
+        )
+          material.data.preview = command.preview;
+      break;
+    }
     case 'assignment.interrupt': {
       const job = need(
         world.assignments.find((a) => a.id === command.id),

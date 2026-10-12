@@ -46,8 +46,11 @@ export class MediaView implements View {
           } else {
             const media = document.createElement(d.kind === 'video' ? 'video' : 'img');
             media.src = this.url;
-            if (media instanceof HTMLVideoElement) media.controls = true;
-            else media.alt = d.title;
+            if (media instanceof HTMLVideoElement) {
+              media.controls = true;
+              media.preload = 'auto';
+              if (d.preview) media.poster = d.preview;
+            } else media.alt = d.title;
             host.replaceWith(media);
           }
         })

@@ -30,12 +30,14 @@ import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 import { CanvasInteractions } from './interactions';
 import { proposalMarkup } from './proposals';
 import { sameConnection } from '../../domain/link-identity';
+import { materialsInRect } from '../../domain/material-selection';
 import { motion, reducedMotion } from '../../ui/motion';
 import { strokePicker } from './stroke-picker';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
   | { kind: 'pan' }
+  | { kind: 'selection'; start: Point; point: Point; before: string[]; additive: boolean }
   | { kind: 'reconnect'; id: string; end: 'from' | 'to'; start: Point; distance: number }
   | {
       kind: 'node' | 'zone';
@@ -45,6 +47,8 @@ type Drag =
       point: Point;
       distance: number;
       intent: Intent;
+      origins?: { id: string; point: Point }[];
+      additive?: boolean;
     }
   | {
       kind: 'resize';
@@ -436,8 +440,19 @@ export class CanvasView implements View {
   private select(kind: 'node' | 'zone' | 'link' | null, id: string | null, additive = false): void {
     const ui = this.ctx.ui.canvas;
     ui.selections =
-      kind === 'node' && id ? (additive ? [...new Set([...ui.selections, id])] : [id]) : [];
-    this.ctx.ui.canvas.selection = kind === 'node' ? id : null;
+      kind === 'node' && id
+        ? additive
+          ? ui.selections.includes(id)
+            ? ui.selections.filter((existing) => existing !== id)
+            : [...ui.selections, id]
+          : [id]
+        : [];
+    this.ctx.ui.canvas.selection =
+      kind === 'node'
+        ? ui.selections.includes(id ?? '')
+          ? id
+          : (ui.selections.at(-1) ?? null)
+        : null;
     this.ctx.ui.canvas.zoneSelection = kind === 'zone' ? id : null;
     this.ctx.ui.canvas.linkSelection = kind === 'link' ? id : null;
     const data = this.ctx.world().nodes.find((n) => n.id === id)?.data;
@@ -577,13 +592,23 @@ export class CanvasView implements View {
         points: [point],
         intent: trace.intent('dibujar', 'DRAW-01'),
       };
-    } else if (ui.canvas.tool === 'hand' || (!nodeId && !zoneId)) {
+    } else if (ui.canvas.tool === 'hand') {
       this.select(null, null);
       this.paintSelection();
       this.drag = { kind: 'pan' };
       this.cam.start({ x: e.clientX, y: e.clientY });
       this.root.classList.add('panning');
       this.root.style.cursor = 'grabbing';
+    } else if (!nodeId && !zoneId) {
+      this.drag = {
+        kind: 'selection',
+        start: point,
+        point,
+        before: [...ui.canvas.selections],
+        additive: e.shiftKey,
+      };
+      if (!e.shiftKey) this.select(null, null);
+      this.paintSelection();
     } else {
       if (!nodeId && zoneId) {
         this.select('zone', zoneId);
@@ -597,7 +622,14 @@ export class CanvasView implements View {
           ? this.ctx.world().nodes.find((n) => n.id === id && !n.owner)
           : this.ctx.world().zones.find((z) => z.id === id);
       if (!original) return;
-      this.select(kind, id, e.shiftKey);
+      if (kind === 'node' && ui.canvas.selections.includes(id) && !e.shiftKey)
+        ui.canvas.selection = id;
+      else this.select(kind, id, e.shiftKey);
+      if (kind === 'node' && !ui.canvas.selections.includes(id)) {
+        this.paintSelection();
+        this.ctx.persist();
+        return;
+      }
       this.drag = {
         kind,
         id,
@@ -606,6 +638,15 @@ export class CanvasView implements View {
         point: { x: original.x, y: original.y },
         distance: 0,
         intent: trace.intent('mover ' + kind, 'DRAG-02'),
+        ...(kind === 'node'
+          ? {
+              origins: this.ctx
+                .world()
+                .nodes.filter((n) => !n.owner && ui.canvas.selections.includes(n.id))
+                .map((n) => ({ id: n.id, point: { x: n.x, y: n.y } })),
+              additive: e.shiftKey,
+            }
+          : {}),
       };
       this.paintSelection();
       this.renderDock();
@@ -636,6 +677,25 @@ export class CanvasView implements View {
       return;
     }
     const point = this.point(e);
+    if (d.kind === 'selection') {
+      d.point = point;
+      const rect = drawRect(d.start, point, 0);
+      let box = this.root.querySelector<HTMLElement>('.selection-box');
+      if (!box) {
+        box = document.createElement('div');
+        box.className = 'selection-box';
+        box.setAttribute('aria-hidden', 'true');
+        this.root.querySelector('#canvas-plane')?.append(box);
+      }
+      this.applyRect(box, rect);
+      const selected = materialsInRect(this.ctx.world().nodes, rect);
+      const ui = this.ctx.ui.canvas;
+      ui.selections = [...new Set([...(d.additive ? d.before : []), ...selected])];
+      ui.selection = ui.selections.at(-1) ?? null;
+      ui.zoneSelection = ui.linkSelection = null;
+      this.paintSelection();
+      return;
+    }
     if (d.kind === 'reconnect') {
       d.distance = Math.hypot(e.clientX - d.start.x, e.clientY - d.start.y);
       const link = this.ctx.world().links.find((link) => link.id === d.id);
@@ -703,19 +763,27 @@ export class CanvasView implements View {
       }
       const element = this.root.querySelector<HTMLElement>(`[data-${d.entity}="${d.id}"]`);
       if (element) this.applyRect(element, d.rect);
-      this.paintLinks({ id: d.id, point: d.rect });
+      this.paintLinks([{ id: d.id, point: d.rect }]);
       return;
     }
     if (d.kind === 'node' || d.kind === 'zone') {
       d.point = { x: d.origin.x + point.x - d.start.x, y: d.origin.y + point.y - d.start.y };
-      d.distance = Math.hypot(point.x - d.start.x, point.y - d.start.y);
-      const element = this.root.querySelector<HTMLElement>(`[data-${d.kind}="${d.id}"]`);
-      if (element) {
-        element.style.left = d.point.x + 'px';
-        element.style.top = d.point.y + 'px';
+      d.distance = Math.hypot(point.x - d.start.x, point.y - d.start.y) * this.cam.current.z;
+      const positions = d.origins?.map((item) => ({
+        id: item.id,
+        point: { x: item.point.x + point.x - d.start.x, y: item.point.y + point.y - d.start.y },
+      })) ?? [{ id: d.id, point: d.point }];
+      for (const item of positions) {
+        const element = this.root.querySelector<HTMLElement>(
+          `[data-${d.kind}="${CSS.escape(item.id)}"]`,
+        );
+        if (element) {
+          element.style.left = item.point.x + 'px';
+          element.style.top = item.point.y + 'px';
+        }
       }
       if (d.kind === 'node') {
-        this.paintLinks({ id: d.id, point: d.point });
+        this.paintLinks(positions);
         const chat = this.root.querySelector('.canvas-chat.docked');
         chat?.classList.toggle(
           'reference-drop-ready',
@@ -792,6 +860,17 @@ export class CanvasView implements View {
     this.root.style.removeProperty('cursor');
     if (this.root.hasPointerCapture(e.pointerId)) this.root.releasePointerCapture(e.pointerId);
     const w = this.ctx.world();
+    if (d.kind === 'selection') {
+      this.root.querySelector('.selection-box')?.remove();
+      if (Math.hypot(d.point.x - d.start.x, d.point.y - d.start.y) * this.cam.current.z < 3) {
+        this.ctx.ui.canvas.selections = d.additive ? d.before : [];
+        this.ctx.ui.canvas.selection = this.ctx.ui.canvas.selections.at(-1) ?? null;
+        this.paintSelection();
+      }
+      this.renderDock();
+      this.ctx.persist();
+      return;
+    }
     if (d.kind === 'pan') {
       this.cam.stop();
       this.ctx.act({ type: 'camera', camera: this.cam.current }, 'panear', 'DRAG-02');
@@ -859,20 +938,14 @@ export class CanvasView implements View {
     if (d.kind === 'node' || d.kind === 'zone') {
       const chat = document.elementFromPoint(e.clientX, e.clientY)?.closest('.canvas-chat.docked');
       this.root.querySelector('.canvas-chat')?.classList.remove('reference-drop-ready');
-      if (d.kind === 'node' && d.distance > 1 && chat) {
-        this.chat.reference(d.id);
+      if (d.kind === 'node' && d.distance > 3 && chat) {
+        for (const item of d.origins ?? [{ id: d.id, point: d.origin }])
+          this.chat.reference(item.id);
         this.render();
         return;
       }
-      if (d.distance > 1) {
+      if (d.distance > 3) {
         if (d.kind === 'node') {
-          this.ctx.act(
-            { type: 'node.move', world: w.id, id: d.id, point: d.point },
-            'mover material',
-            'DRAG-02',
-            'pointer',
-            d.intent.interaction,
-          );
           const point = this.point(e),
             zone = w.zones.find(
               (z) =>
@@ -882,7 +955,47 @@ export class CanvasView implements View {
                 point.y > z.y &&
                 point.y < z.y + z.height,
             );
-          if (zone?.agent) this.assign(d.id, zone.agent, zone.instruction ?? '', d.origin);
+          const origins = d.origins ?? [{ id: d.id, point: d.origin }];
+          if (zone?.agent) {
+            const assigned = this.ctx.act(
+              {
+                type: 'nodes.assign',
+                world: w.id,
+                agent: zone.agent,
+                instruction: zone.instruction ?? '',
+                nodes: origins.map((item) => ({ id: item.id, returnTo: item.point })),
+              },
+              'transferir materiales a zona',
+              'OWNER-01',
+              'pointer',
+              d.intent.interaction,
+            );
+            if (assigned) {
+              const jobs = this.ctx
+                .world()
+                .assignments.filter((job) => origins.some((item) => item.id === job.node));
+              for (const job of jobs) this.ctx.service.process(w.id, job.id);
+              this.select(null, null);
+              this.render();
+            } else this.render();
+          } else {
+            const positions = origins.map((item) => ({
+              id: item.id,
+              point: {
+                x: item.point.x + d.point.x - d.origin.x,
+                y: item.point.y + d.point.y - d.origin.y,
+              },
+            }));
+            this.ctx.act(
+              positions.length > 1
+                ? { type: 'nodes.move', world: w.id, nodes: positions }
+                : { type: 'node.move', world: w.id, id: d.id, point: d.point },
+              'mover materiales',
+              'DRAG-02',
+              'pointer',
+              d.intent.interaction,
+            );
+          }
         } else {
           const zone = w.zones.find((z) => z.id === d.id)!;
           this.ctx.act(
@@ -899,7 +1012,11 @@ export class CanvasView implements View {
           );
         }
         trace.add('drag.finished', { component: d.kind, id: d.id, to: d.point }, d.intent);
-      } else this.paintSelection();
+      } else {
+        if (d.kind === 'node' && !d.additive) this.select('node', d.id);
+        this.paintSelection();
+        this.ctx.persist();
+      }
       return;
     }
     if (d.kind !== 'draw') return;
@@ -965,6 +1082,10 @@ export class CanvasView implements View {
   }
   private cancel(): void {
     if (!this.drag && !this.ctx.ui.canvas.linkStart) return;
+    if (this.drag?.kind === 'selection') {
+      this.ctx.ui.canvas.selections = this.drag.before;
+      this.ctx.ui.canvas.selection = this.drag.before.at(-1) ?? null;
+    }
     this.drag = null;
     this.ctx.ui.canvas.linkStart = null;
     this.cam.stop();
@@ -990,19 +1111,6 @@ export class CanvasView implements View {
     );
     this.ctx.ui.canvas.linkStart = null;
     this.render();
-  }
-  private assign(node: string, agent: string, instruction = '', returnTo?: Point): void {
-    const world = this.ctx.world().id;
-    if (
-      this.ctx.act(
-        { type: 'assign', world, node, agent, instruction, ...(returnTo ? { returnTo } : {}) },
-        'asignar material',
-        'OWNER-01',
-      )
-    ) {
-      const job = this.ctx.world().assignments.at(-1);
-      if (job) this.ctx.service.process(world, job.id);
-    }
   }
   private submit(e: SubmitEvent): void {
     if (!(e.target instanceof HTMLFormElement)) return;
@@ -1261,7 +1369,7 @@ export class CanvasView implements View {
       }
     }
   }
-  private paintLinks(preview?: { id: string; point: Point }): void {
+  private paintLinks(preview: readonly { id: string; point: Point }[] = []): void {
     const svg = this.root.querySelector('.canvas-links');
     if (!svg) return;
     const w = this.ctx.world();
