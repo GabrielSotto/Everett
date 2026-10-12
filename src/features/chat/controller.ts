@@ -28,6 +28,7 @@ export class CanvasChat {
   constructor(
     private root: HTMLElement,
     private ctx: Context,
+    private layoutChanged: () => void,
   ) {
     this.header = new ConversationHeader(ctx, () => this.render(), root, this.abort.signal);
     bindComposer(root, this.abort.signal, ctx);
@@ -35,7 +36,7 @@ export class CanvasChat {
       this.abort.signal,
       () => ctx.ui.chat.chatMode === 'quick' && !this.drag,
       (source) => this.close(source === 'keyboard'),
-      '.canvas-chat,[data-action=chat-open],.dictation-consent',
+      '.canvas-chat,[data-action=chat-open],.dictation-consent,.zone-inspector,.proposal,[data-zone]',
     );
     root.addEventListener(
       'input',
@@ -296,6 +297,7 @@ export class CanvasChat {
     this.animation?.cancel();
     if (u.chat.chatMode === 'closed') {
       this.root.innerHTML = '';
+      this.layoutChanged();
       return;
     }
     const p = bound(
@@ -355,9 +357,7 @@ export class CanvasChat {
         { duration: motion.panelOpenMs, easing: motion.panelEase },
       );
     }
-    this.root.parentElement
-      ?.querySelector('.canvas-tools')
-      ?.classList.toggle('chat-docked', u.chat.chatMode === 'docked');
+    this.layoutChanged();
     const ta = this.root.querySelector<HTMLTextAreaElement>('#canvas-chat-composer-input');
     if (ta) ta.value = draft.text;
     restore();

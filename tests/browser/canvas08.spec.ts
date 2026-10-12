@@ -701,7 +701,8 @@ test('C08-B07: enlace sin preview, tarjeta Board compartida y dock alcanzable en
       return !!dock && dock.x >= 0 && dock.x + dock.width <= 390;
     })
     .toBe(true);
-  for (const button of await page.locator('.canvas-tools button').all())
+  // Las herramientas que desbordan se comprueban desde su menú en C08-B19.
+  for (const button of await page.locator('.canvas-tools button:visible').all())
     expect((await button.boundingBox())!.width).toBeGreaterThanOrEqual(34);
 });
 
@@ -915,4 +916,237 @@ test('C08-B16: teclado opera materiales, tiradores, zonas y anclajes sin activar
   await expect(
     page.getByRole('complementary', { name: 'Inspector de zona', exact: true }),
   ).toBeVisible();
+});
+
+test('C08-B17: zoom real conserva propuestas y menús de tamaño operable dentro de la ventana', async ({
+  page,
+}, testInfo) => {
+  await canvas(page);
+  await assignMaterial(page, 'note-a');
+  await expect(page.getByRole('button', { name: 'Aceptar propuesta', exact: true })).toBeVisible();
+  await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
+  const proposal = page.locator('.proposal');
+  for (const zoom of [1, 2, 4, 6]) {
+    const before = (await proposal.boundingBox())!,
+      current = (await snapshot(page)).camera.z;
+    if (zoom !== current) {
+      await page.mouse.move(before.x - 5, before.y - 5);
+      await page.mouse.wheel(0, -Math.log(zoom / current) / 0.00165);
+      await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(zoom, 2);
+    }
+    const bounds = (await proposal.boundingBox())!;
+    expect(bounds.width).toBeGreaterThanOrEqual(300);
+    expect(bounds.width).toBeLessThanOrEqual(321);
+    const accept = (await proposal
+      .getByRole('button', { name: 'Aceptar propuesta', exact: true })
+      .boundingBox())!;
+    expect(accept.height).toBeGreaterThanOrEqual(33);
+    expect(accept.height).toBeLessThanOrEqual(40);
+    expect(accept.width).toBeLessThanOrEqual(110);
+    await page.locator('[data-node="note-b"]').press('Shift+F10');
+    const menu = page.getByRole('menu', { name: 'Acciones del material', exact: true });
+    await expect(menu).toBeVisible();
+    await expect
+      .poll(() =>
+        menu.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length),
+      )
+      .toBe(0);
+    const menuBounds = (await menu.boundingBox())!;
+    expect(menuBounds.width).toBeLessThanOrEqual(225);
+    expect(menuBounds.x).toBeGreaterThanOrEqual(10);
+    expect(menuBounds.y).toBeGreaterThanOrEqual(68);
+    expect(menuBounds.x + menuBounds.width).toBeLessThanOrEqual(page.viewportSize()!.width - 10);
+    expect(menuBounds.y + menuBounds.height).toBeLessThanOrEqual(page.viewportSize()!.height - 10);
+    await menu.getByRole('menuitem', { name: 'Renombrar', exact: true }).click();
+    await expect(page.getByLabel('Nombre del material', { exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+  }
+  await proposal.getByRole('button', { name: 'Pedir cambios', exact: true }).click();
+  await page
+    .getByLabel('Cambios solicitados', { exact: true })
+    .fill('Conservar el contexto y revisar el contenido');
+  await testInfo.attach('propuesta-zoom', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  await page.getByRole('button', { name: 'Cancelar pedido de cambios', exact: true }).click();
+  await expect(proposal).toBeVisible();
+});
+
+test('C08-B18: inspector, propuesta y chat comparten ventanas estrechas sin tapar sus controles', async ({
+  page,
+}, testInfo) => {
+  await canvas(page);
+  await assignMaterial(page, 'note-a');
+  await expect(page.getByRole('button', { name: 'Aceptar propuesta', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
+  await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+  await expect(page.getByRole('region', { name: 'Chat del Canvas', exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Cerrar inspector de zona', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Chat del Canvas', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
+  await chat
+    .getByRole('textbox', { name: 'Escribí un mensaje…', exact: true })
+    .fill('Borrador conservado mientras reviso la zona');
+  const thread = (await snapshot(page)).state.worlds
+    .find((w) => w.id === 'scout')!
+    .conversations.at(-1)!.id;
+  for (const width of [1250, 760, 390]) {
+    await page.setViewportSize({ width, height: 760 });
+    await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+    const inspector = page.getByRole('complementary', { name: 'Inspector de zona', exact: true });
+    await expect(inspector).toBeVisible();
+    const box = (await inspector.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(10);
+    expect(box.x + box.width).toBeLessThanOrEqual(width - 10);
+    expect(box.width).toBeLessThanOrEqual(271);
+    if (width >= 700) {
+      await expect(chat).toBeVisible();
+      const chatBounds = (await chat.boundingBox())!;
+      expect(chatBounds.x + chatBounds.width + 8).toBeLessThanOrEqual(box.x);
+    } else await expect(chat).toBeHidden();
+    await inspector.getByRole('button', { name: 'Cerrar inspector de zona', exact: true }).click();
+    await expect(chat).toBeVisible();
+    await expect(
+      chat.getByRole('textbox', { name: 'Escribí un mensaje…', exact: true }),
+    ).toHaveValue('Borrador conservado mientras reviso la zona');
+    expect(
+      (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!.conversations.at(-1)!.id,
+    ).toBe(thread);
+  }
+  await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
+  await expect(chat).toBeHidden();
+  await page.getByRole('button', { name: 'Pedir cambios', exact: true }).click();
+  for (const height of [760, 500]) {
+    await page.setViewportSize({ width: 390, height });
+    const proposal = (await page.locator('.proposal').boundingBox())!,
+      dock = (await page.locator('.canvas-tools').boundingBox())!;
+    expect(proposal.x).toBeGreaterThanOrEqual(10);
+    expect(proposal.x + proposal.width).toBeLessThanOrEqual(380);
+    expect(proposal.y).toBeGreaterThanOrEqual(59);
+    expect(proposal.y + proposal.height).toBeLessThanOrEqual(dock.y);
+    const content = (await page.locator('.proposal > p').boundingBox())!;
+    expect(content.height).toBeGreaterThanOrEqual(47);
+    expect(content.y).toBeGreaterThanOrEqual(proposal.y);
+    expect(content.y + content.height).toBeLessThanOrEqual(proposal.y + proposal.height);
+    const send = page.getByRole('button', { name: 'Enviar cambios', exact: true });
+    await expect(send).toBeInViewport({ ratio: 1 });
+    expect((await send.boundingBox())!.height).toBeGreaterThanOrEqual(33);
+  }
+  await testInfo.attach('paneles-estrechos', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  expect(
+    await page.locator('.revision-buttons button').evaluateAll((buttons) =>
+      buttons.every((button) => {
+        const r = button.getBoundingClientRect();
+        return [r.x + 3, r.right - 3].every(
+          (x) => document.elementFromPoint(x, r.y + r.height / 2)?.closest('button') === button,
+        );
+      }),
+    ),
+  ).toBe(true);
+  await page.getByRole('button', { name: 'Cerrar revisión de propuesta', exact: true }).click();
+  await expect(chat).toBeVisible();
+  expect(
+    (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!.assignments[0]!.phase,
+  ).toBe('ready');
+  await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
+  await page.getByRole('button', { name: 'Pedir cambios', exact: true }).click();
+  await page.getByRole('button', { name: 'Cancelar pedido de cambios', exact: true }).click();
+  await page.getByRole('button', { name: 'Rechazar propuesta', exact: true }).click();
+  await expect(chat).toBeVisible();
+  await expect(chat.getByRole('textbox', { name: 'Escribí un mensaje…', exact: true })).toHaveValue(
+    'Borrador conservado mientras reviso la zona',
+  );
+});
+
+test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre 1250 y 300 px', async ({
+  page,
+}, testInfo) => {
+  await canvas(page);
+  const toolbar = page.getByRole('toolbar', { name: 'Herramientas de Canvas', exact: true });
+  const checkDock = async (width: number, chatRight = 0): Promise<void> => {
+    await expect
+      .poll(async () => {
+        const box = await toolbar.boundingBox();
+        return (
+          !!box &&
+          box.x >= 0 &&
+          box.y >= 59 &&
+          box.x + box.width <= width &&
+          box.y + box.height <= 760
+        );
+      })
+      .toBe(true);
+    const boxes = await toolbar
+      .locator('button:visible')
+      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().toJSON()));
+    expect(boxes.length).toBeGreaterThanOrEqual(5);
+    for (const box of boxes) {
+      expect(box.width).toBeGreaterThanOrEqual(35);
+      expect(box.height).toBeGreaterThanOrEqual(35);
+    }
+    const horizontal = boxes.every((box) => Math.abs(box.y - boxes[0]!.y) < 1),
+      vertical = boxes.every((box) => Math.abs(box.x - boxes[0]!.x) < 1);
+    expect(horizontal || vertical).toBe(true);
+    const bounds = (await toolbar.boundingBox())!;
+    if (chatRight) expect(bounds.x).toBeGreaterThanOrEqual(chatRight + 8);
+    if (horizontal) expect(bounds.x + bounds.width - boxes.at(-1)!.right).toBeLessThanOrEqual(12);
+  };
+  for (const width of [1250, 801, 800, 799, 650, 390, 360, 300]) {
+    await page.setViewportSize({ width, height: 760 });
+    await checkDock(width);
+  }
+  await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
+  const menu = page.getByRole('menu', { name: 'Más herramientas de Canvas', exact: true });
+  await expect(menu.getByRole('menuitem', { name: 'Conectar · L', exact: true })).toBeInViewport();
+  await menu.getByRole('menuitem', { name: 'Conectar · L', exact: true }).click();
+  expect((await snapshot(page)).ui.canvas.tool).toBe('connect');
+  await page.keyboard.press('v');
+  await page.getByRole('button', { name: 'Más herramientas', exact: true }).press('Enter');
+  await page.keyboard.press('End');
+  await expect(
+    menu.getByRole('menuitem', { name: 'Incorporar materiales', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Más herramientas', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
+  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true }),
+    composer = chat.getByRole('textbox', { name: 'Escribí un mensaje…', exact: true });
+  await composer.fill('El mismo borrador en cada ancho');
+  for (const width of [300, 360, 390, 650, 799, 800, 801, 1250]) {
+    await page.setViewportSize({ width, height: 760 });
+    let chatWidth = 0;
+    await expect
+      .poll(async () => {
+        const r = await chat.evaluateAll((elements) =>
+          elements[0]?.getBoundingClientRect().toJSON(),
+        );
+        chatWidth = r?.width ?? 0;
+        return r ? r.y + r.height : 0;
+      })
+      .toBe(760);
+    await checkDock(width, chatWidth);
+    await expect(chat.getByRole('button', { name: 'Enviar', exact: true })).toBeInViewport({
+      ratio: 1,
+    });
+    await expect(composer).toHaveValue('El mismo borrador en cada ancho');
+    await chat.getByRole('button', { name: 'Contraer chat', exact: true }).click();
+    await expect(chat).toHaveClass(/compact/);
+    await checkDock(width);
+    await chat.getByRole('button', { name: 'Contraer chat', exact: true }).click();
+    await expect(composer).toHaveValue('El mismo borrador en cada ancho');
+  }
+  await page.setViewportSize({ width: 300, height: 760 });
+  await testInfo.attach('dock-chat-300', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
 });

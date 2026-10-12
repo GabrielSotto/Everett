@@ -20,6 +20,7 @@ export class CanvasInteractions {
     this.overlay = document.createElement('div');
     this.overlay.className = 'canvas-context-layer';
     root.append(this.overlay);
+    window.addEventListener('resize', () => this.fitOverlay(), { signal });
     root.addEventListener(
       'contextmenu',
       (event) => {
@@ -361,7 +362,14 @@ export class CanvasInteractions {
     this.hoverTimer = null;
   }
   private position(point: Point): string {
-    return `left:${Math.max(12, Math.min(innerWidth - 280, point.x))}px;top:${Math.max(70, Math.min(innerHeight - 270, point.y))}px`;
+    return `left:${Math.max(12, point.x)}px;top:${Math.max(70, point.y)}px`;
+  }
+  private fitOverlay(): void {
+    const panel = this.overlay.firstElementChild;
+    if (!(panel instanceof HTMLElement)) return;
+    // Las dimensiones de layout no incluyen la animación de entrada del menú.
+    panel.style.left = `${Math.max(12, Math.min(innerWidth - panel.offsetWidth - 12, parseFloat(panel.style.left)))}px`;
+    panel.style.top = `${Math.max(70, Math.min(innerHeight - panel.offsetHeight - 12, parseFloat(panel.style.top)))}px`;
   }
   private materialPoint(id: string): Point {
     const rect = this.root
@@ -376,8 +384,11 @@ export class CanvasInteractions {
     if (!node) return;
     this.ctx.ui.canvas.selection = id;
     this.ctx.ui.canvas.selections = [id];
+    this.ctx.ui.canvas.zoneSelection = null;
+    this.ctx.ui.canvas.linkSelection = null;
     this.ctx.render();
     this.overlay.innerHTML = `<form class="canvas-context-form" data-rename="${id}" style="${this.position(this.materialPoint(id))}"><label for="material-name">Nombre del material</label><input id="material-name" value="${html(nodeTitle(this.ctx.world(), node))}"><button type="submit">Guardar</button><button type="button" data-action="context-close">Cancelar</button></form>`;
+    this.fitOverlay();
     this.overlay.querySelector<HTMLInputElement>('input')?.select();
   }
   private menu(id: string, point: Point): void {
@@ -386,9 +397,12 @@ export class CanvasInteractions {
     this.menuMaterial = id;
     this.ctx.ui.canvas.selection = id;
     this.ctx.ui.canvas.selections = [id];
+    this.ctx.ui.canvas.zoneSelection = null;
+    this.ctx.ui.canvas.linkSelection = null;
     this.ctx.render();
     this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button>${node.data.kind !== 'reference' || node.data.ref.kind === 'document' ? `<button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button>` : ''}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
-    this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus();
+    this.fitOverlay();
+    this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
   private zoneMenu(id: string): void {
     this.menuMaterial = id;
@@ -402,7 +416,8 @@ export class CanvasInteractions {
         )
         .join('') || '<p>No hay zonas en este Mundo.</p>'
     }</div>`;
-    this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus();
+    this.fitOverlay();
+    this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
   comment(): void {
     const ui = this.ctx.ui.canvas;
@@ -420,9 +435,13 @@ export class CanvasInteractions {
     ui.tool = 'select';
     ui.selection = id;
     ui.selections = [id];
+    ui.zoneSelection = null;
+    ui.linkSelection = null;
+    this.ctx.render();
     ui.commentTarget = id;
     this.overlay.innerHTML = `<form id="new-comment-form" class="canvas-context-form comment-compose" style="${this.position(this.materialPoint(id))}"><label for="new-comment">Comentario sobre el material</label><textarea id="new-comment" aria-label="Nuevo comentario" rows="3">${html(this.ctx.ui.commentDrafts[this.commentKey()] ?? '')}</textarea><div><button type="button" data-action="context-close">Cancelar</button><button type="submit" aria-label="Publicar comentario">Publicar</button></div></form>`;
-    this.overlay.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+    this.fitOverlay();
+    this.overlay.querySelector<HTMLTextAreaElement>('textarea')?.focus({ preventScroll: true });
   }
   private commentKey(): string {
     return JSON.stringify([
@@ -439,11 +458,13 @@ export class CanvasInteractions {
       ),
       rect = path?.getBoundingClientRect();
     this.overlay.innerHTML = `<form class="canvas-context-form" data-label="${id}" style="${this.position(rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : this.materialPoint(link.from))}"><label for="cable-text">Etiqueta de conexión</label><input id="cable-text" value="${html(link.label ?? '')}"><button type="submit">Guardar</button><button type="button" data-action="context-close">Cancelar</button></form>`;
-    this.overlay.querySelector<HTMLInputElement>('input')?.focus();
+    this.fitOverlay();
+    this.overlay.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
   }
   private linkForm(): void {
     this.overlay.innerHTML = `<form id="canvas-new-link" class="canvas-context-form" style="${this.position({ x: innerWidth / 2 - 140, y: innerHeight / 2 - 80 })}"><label for="canvas-link-url">Dirección del enlace</label><input id="canvas-link-url" type="url" required placeholder="https://"><button type="submit">Agregar enlace</button><button type="button" data-action="context-close">Cancelar</button></form>`;
-    this.overlay.querySelector<HTMLInputElement>('input')?.focus();
+    this.fitOverlay();
+    this.overlay.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
   }
   private create(data: Material['data'], width: number, height: number): void {
     const point = this.center(),
