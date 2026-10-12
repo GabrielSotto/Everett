@@ -8,8 +8,122 @@ import { uiState } from '../../src/app/ui-state';
 import { conversationDraft } from '../../src/domain/conversations';
 import { materialRoute, materialTitle } from '../../src/domain/model';
 import { anchorPoint } from '../../src/domain/geometry';
-import { arrangeProposals } from '../../src/domain/proposal-layout';
+import { proposalOverlaps, arrangeProposals, proposalSize } from '../../src/domain/proposal-layout';
 import type { Material } from '../../src/domain/model';
+import { canvasProposal } from '../../src/domain/canvas-proposal';
+
+test('C08-U07: reconectar modifica el mismo vínculo, conserva etiqueta y admite Undo/Redo sin destinos inválidos', () => {
+  const { store } = setup();
+  const third = { ...project(store).nodes[0]!, id: 'third', x: 300 };
+  store.dispatch({ type: 'node.create', world: 'project', node: structuredClone(third) }, intent);
+  store.dispatch({ type: 'link.label', world: 'project', id: 'link', text: 'Juan' }, intent);
+  const original = structuredClone(project(store).links[0]!);
+  store.dispatch(
+    {
+      type: 'link.reconnect',
+      world: 'project',
+      id: 'link',
+      end: 'to',
+      node: 'third',
+      anchor: 'north',
+    },
+    intent,
+  );
+  assert.deepEqual(project(store).links, [{ ...original, to: 'third', toAnchor: 'north' }]);
+  store.dispatch({ type: 'canvas.undo', world: 'project' }, intent);
+  assert.deepEqual(project(store).links, [original]);
+  store.dispatch({ type: 'canvas.redo', world: 'project' }, intent);
+  const snapshot = store.snapshot();
+  for (const node of ['zone', 'note-a', 'missing']) {
+    assert.throws(() =>
+      store.dispatch(
+        { type: 'link.reconnect', world: 'project', id: 'link', end: 'to', node, anchor: 'north' },
+        intent,
+      ),
+    );
+    assert.deepEqual(store.snapshot(), snapshot);
+  }
+  store.dispatch(
+    {
+      type: 'link.create',
+      world: 'project',
+      from: 'note-a',
+      to: 'note-b',
+      fromAnchor: 'east',
+      toAnchor: 'west',
+    },
+    intent,
+  );
+  assert.throws(() =>
+    store.dispatch(
+      {
+        type: 'link.reconnect',
+        world: 'project',
+        id: 'link',
+        end: 'to',
+        node: 'note-b',
+        anchor: 'west',
+      },
+      intent,
+    ),
+  );
+  store.dispatch(
+    { type: 'assign', world: 'project', node: 'note-b', agent: 'eve', instruction: 'Resumir' },
+    intent,
+  );
+  assert.throws(() =>
+    store.dispatch(
+      {
+        type: 'link.reconnect',
+        world: 'project',
+        id: 'link',
+        end: 'to',
+        node: 'note-b',
+        anchor: 'north',
+      },
+      intent,
+    ),
+  );
+  assert.equal(project(store).links[0]!.id, 'link');
+  assert.equal(project(store).links[0]!.label, 'Juan');
+});
+
+test('C08-U08: propuesta reproducible usa el material y busca espacio junto a la zona sin desplazar contenido', () => {
+  const source = 'Capturar información con su fuente.\nConservar decisiones y preguntas abiertas.';
+  const analysis = canvasProposal(source, 'Analizar');
+  assert.match(analysis, /Observaciones del material/);
+  assert.match(analysis, /Capturar información con su fuente/);
+  assert.match(analysis, /Conservar decisiones y preguntas abiertas/);
+  assert.equal(canvasProposal(source, 'Analizar'), analysis);
+  assert.match(canvasProposal(source, 'Analizar', 'Más breve'), /^Resumen\n/);
+  assert.match(canvasProposal('', 'Resumir'), /no contiene texto disponible/);
+  const { store } = setup();
+  store.dispatch(
+    { type: 'assign', world: 'project', node: 'note-a', agent: 'eve', instruction: 'Analizar' },
+    intent,
+  );
+  const world = store.snapshot().worlds.find((world) => world.id === 'project')!;
+  const zone = world.zones[0]!;
+  world.nodes.push({
+    ...world.nodes[1]!,
+    id: 'obstruction',
+    x: zone.x,
+    y: zone.y + zone.height + 20,
+    width: 1000,
+    height: 1600,
+  });
+  const before = structuredClone(world.nodes);
+  arrangeProposals(world);
+  const card = { ...world.assignments[0]!.position, ...proposalSize };
+  assert.ok(
+    world.nodes.filter((node) => !node.owner).every((node) => !proposalOverlaps(card, node)),
+  );
+  assert.ok(!proposalOverlaps(card, zone));
+  const dx = Math.max(0, zone.x - card.x - card.width, card.x - zone.x - zone.width);
+  const dy = Math.max(0, zone.y - card.y - card.height, card.y - zone.y - zone.height);
+  assert.equal(Math.hypot(dx, dy), 24);
+  assert.deepEqual(world.nodes, before);
+});
 
 test('C08-U06: anclajes sobre el contenido, zona con nombre propio y propuestas sin cubrir resultados', () => {
   const drawing: Material = {
@@ -67,7 +181,12 @@ test('C08-U06: anclajes sobre el contenido, zona con nombre propio y propuestas 
   });
   const originalPosition = { ...job.position };
   arrangeProposals(world);
-  assert.ok(job.position.y >= originalPosition.y + 184);
+  assert.ok(
+    !proposalOverlaps(
+      { ...job.position, ...proposalSize },
+      { ...originalPosition, width: 280, height: 160 },
+    ),
+  );
   assert.deepEqual(world.nodes.at(-1)!.data, {
     kind: 'note',
     title: 'Resultado aceptado',
@@ -163,7 +282,7 @@ test('C08-U01: renombrado compartido, duplicado independiente, retirada y Undo/R
     },
     intent,
   );
-  assert.equal(materialTitle(project(store), copyId), 'Sin título');
+  assert.equal(materialTitle(project(store), copyId), 'Sin nombre');
   store.dispatch({ type: 'canvas.undo', world: 'project' }, intent);
   assert.ok(project(store).nodes.some((n) => n.id === copyId));
   assert.equal(project(store).docs.at(-1)!.body, 'Contenido independiente');

@@ -281,10 +281,7 @@ export function routeKey(r: Route): string {
         : `${r.world}/${r.surface}/${r.entity ?? ''}`;
 }
 export function nodeTitle(w: DeepReadonly<World>, n: Material): string {
-  if (n.data.kind === 'note') return n.data.title || 'Sin título';
-  if (n.data.kind === 'shape') return n.data.title || n.data.shape;
-  if (n.data.kind !== 'reference')
-    return n.data.title || (n.data.kind === 'drawing' ? 'Dibujo' : 'Sin título');
+  if (n.data.kind !== 'reference') return n.data.title?.trim() || 'Sin nombre';
   return referenceTitle(w, n.data.ref) ?? 'Referencia';
 }
 function referenceTitle(w: DeepReadonly<World>, ref: Reference): string | null {
@@ -296,7 +293,7 @@ function referenceTitle(w: DeepReadonly<World>, ref: Reference): string | null {
         : ref.kind === 'task'
           ? w.tasks.find((t) => t.id === ref.id)?.title
           : w.agents.find((a) => a.id === ref.id)?.name;
-  return title === undefined ? null : title.trim() ? title : 'Sin título';
+  return title === undefined ? null : title.trim() ? title : 'Sin nombre';
 }
 /** Una referencia del chat conserva el registro compartido al retirar su representación. */
 export function materialTitle(w: DeepReadonly<World>, id: string): string {

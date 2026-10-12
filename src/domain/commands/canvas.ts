@@ -16,6 +16,7 @@ type CanvasCommand = Extract<
       | 'node.duplicate'
       | 'node.style'
       | 'link.label'
+      | 'link.reconnect'
       | 'zone.instruction'
       | 'zone.rename'
       | 'assignment.schedule'
@@ -144,6 +145,38 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
           material.data.stroke = command.stroke;
         }
       }
+      break;
+    }
+    case 'link.reconnect': {
+      const link = need(
+        world.links.find((l) => l.id === command.id),
+        'Conexión inexistente',
+      );
+      const destination = node(command.node);
+      const other = node(command.end === 'from' ? link.to : link.from);
+      ensure(
+        !destination.owner && !other.owner && destination.id !== other.id,
+        'LINK',
+        'Elegir dos materiales disponibles',
+      );
+      const next = {
+        ...link,
+        [command.end]: destination.id,
+        [command.end === 'from' ? 'fromAnchor' : 'toAnchor']: command.anchor,
+      };
+      ensure(
+        !world.links.some(
+          (l) =>
+            l.id !== link.id &&
+            l.from === next.from &&
+            l.to === next.to &&
+            l.fromAnchor === next.fromAnchor &&
+            l.toAnchor === next.toAnchor,
+        ),
+        'LINK',
+        'Ya existe una conexión entre esos anclajes',
+      );
+      Object.assign(link, next);
       break;
     }
     case 'link.label':

@@ -45,6 +45,7 @@ export function materialMarkup(
   material: Material,
   selected: boolean,
   connect: boolean,
+  resize = true,
 ): string {
   const d = material.data;
   let content: string;
@@ -54,7 +55,7 @@ export function materialMarkup(
   else if (d.kind === 'image')
     content = `<img data-asset="${d.asset}" alt="${html(d.title)}" draggable="false">`;
   else if (d.kind === 'video')
-    content = `<video data-asset="${d.asset}" preload="metadata" aria-label="${html(d.title)}"></video><button type="button" class="video-play" data-action="video-play" aria-label="Reproducir video">${icon('play', 24)}${d.duration !== undefined ? `<span>${Math.floor(d.duration / 60)}:${String(Math.floor(d.duration % 60)).padStart(2, '0')}</span>` : ''}</button>`;
+    content = `<video data-asset="${d.asset}" preload="metadata" aria-label="${html(d.title)}" draggable="false"></video><button type="button" class="video-play" data-action="video-play" aria-label="Reproducir video">${icon('play', 24)}</button>${d.duration !== undefined ? `<span class="video-duration">${Math.floor(d.duration / 60)}:${String(Math.floor(d.duration % 60)).padStart(2, '0')}</span>` : ''}`;
   else if (d.kind === 'pdf')
     content = d.preview
       ? `<img src="${d.preview}" alt="Primera página de ${html(d.title)}">`
@@ -76,7 +77,7 @@ export function materialMarkup(
     if (ref.kind === 'task') {
       const task = w.tasks.find((t) => t.id === ref.id);
       if (task)
-        content = `<h3>${html(task.title)}</h3><p>${html(task.description)}</p><div class="task-material-meta"><span>${html(statusNames[task.status])}</span><span>${html(task.priority)}</span><span>${html(task.assignee || 'Sin responsable')}</span></div>`;
+        content = `<div class="task-material-kind">${icon('board', 12)} Tarea</div><h3>${html(task.title)}</h3><p>${html(task.description)}</p><div class="task-material-meta"><span title="Estado: ${html(statusNames[task.status])}" aria-label="Estado: ${html(statusNames[task.status])}">${icon('status', 12)}${html(statusNames[task.status])}</span><span title="Prioridad: ${html(task.priority)}" aria-label="Prioridad: ${html(task.priority)}">${icon('flag', 12)}${html(task.priority)}</span><span title="Responsable: ${html(task.assignee || 'Sin responsable')}" aria-label="Responsable: ${html(task.assignee || 'Sin responsable')}">${icon('user', 12)}${html(task.assignee || 'Sin responsable')}</span></div>`;
     }
   } else content = '';
   const comment = w.comments.find((c) => c.node === material.id && !c.resolved);
@@ -88,7 +89,7 @@ export function materialMarkup(
         })
         .join('')
     : '';
-  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : ''} style="left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('annotation', 13)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong>${html(comment.text)}</span></button>` : ''}</article>`;
+  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : ''} style="left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('annotation', 13)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong>${html(comment.text)}</span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {
   note: { label: 'Notas', icon: 'note' },
@@ -122,7 +123,8 @@ function assignedPreview(w: WorldSnapshot, n: Material): string {
   return `<div class="assigned-preview" data-assigned-id="${n.id}"><strong>${icon(meta.icon, 13)}<span>${html(nodeTitle(w, n))}</span></strong>${d.kind === 'shape' ? shapeMarkup(n) : d.kind === 'drawing' ? drawingMarkup(n) : d.kind === 'image' || d.kind === 'video' ? `<${d.kind === 'image' ? 'img' : 'video'} data-asset="${d.asset}" ${d.kind === 'image' ? `alt="${html(d.title)}"` : `aria-label="${html(d.title)}"`}>${d.kind === 'video' ? '</video>' : ''}` : d.kind === 'pdf' && d.preview ? `<img src="${d.preview}" alt="${html(d.title)}">` : `<p>${html(d.kind === 'link' ? d.url : text)}</p>`}</div>`;
 }
 function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {
-  if (!nodes.length) return '<span class="drop-label">Arrastrá un material acá</span>';
+  if (!nodes.length)
+    return '<span class="drop-label">Arrastrá un material acá<span>El agente lo usará como contexto</span></span>';
   const mode = materialDensity(nodes.length),
     groups = materialGroups(nodes);
   const grouped = groups
@@ -183,5 +185,16 @@ export function connectionMarkup(
     link.fromAnchor,
     link.toAnchor,
   );
-  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}">${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse" mask-type="luminance"><rect class="mask-base" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label || 'Editar etiqueta de conexión')}" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" d="${path}" ${link.label ? `mask="url(#mask-${link.id})"` : ''}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}</g>`;
+  const ends = selected
+    ? (['from', 'to'] as const)
+        .map((end) => {
+          const point = anchorPoint(
+            end === 'from' ? from : to,
+            end === 'from' ? link.fromAnchor : link.toAnchor,
+          );
+          return `<g class="link-endpoint" transform="translate(${point.x},${point.y})" tabindex="0" role="button" aria-label="Reconectar ${end === 'from' ? 'origen' : 'destino'}" data-action="link-endpoint" data-id="${link.id}" data-end="${end}"><circle class="endpoint-hit"/><circle class="endpoint-dot"/></g>`;
+        })
+        .join('')
+    : '';
+  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}">${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse" mask-type="luminance"><rect class="mask-base" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label || 'Editar etiqueta de conexión')}" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" d="${path}" ${link.label ? `mask="url(#mask-${link.id})"` : ''}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}${ends}</g>`;
 }

@@ -88,6 +88,7 @@ test('UI-CANVAS-03: rechazar una propuesta devuelve la nota y sus conexiones sin
   await expect(assigned).toHaveCount(0);
   await expect(page.locator('.proposal')).toHaveCount(0);
   await expect(page.locator('.canvas-links [data-link]')).toHaveCount(connections);
+  await expect.poll(async () => (await note.boundingBox())!.x).toBeCloseTo(position.x, 1);
   const returned = (await note.boundingBox())!;
   expect(returned.x).toBeCloseTo(position.x, 1);
   expect(returned.y).toBeCloseTo(position.y, 1);

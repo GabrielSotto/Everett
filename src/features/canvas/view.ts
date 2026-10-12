@@ -35,6 +35,7 @@ const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
   | { kind: 'pan' }
+  | { kind: 'reconnect'; id: string; end: 'from' | 'to'; start: Point; distance: number }
   | {
       kind: 'node' | 'zone';
       id: string;
@@ -98,6 +99,7 @@ export class CanvasView implements View {
           this.cableZoom = camera.z;
           this.paintCableLabels();
         }
+        this.positionLinkActions();
       }
     });
     ctx.camera = this.cam;
@@ -304,6 +306,7 @@ export class CanvasView implements View {
       return;
     }
     if (
+      this.ctx.ui.canvas.tool === 'connect' &&
       element.dataset.anchorNode &&
       element.dataset.anchor &&
       ['Enter', ' '].includes(event.key)
@@ -371,12 +374,12 @@ export class CanvasView implements View {
           ?.getBoundingClientRect(),
       );
   }
-  private frameProposal(id: string): void {
+  private frameProposal(id: string, keepZoom = false): void {
     const job = this.ctx.world().assignments.find((a) => a.id === id);
     if (!job) return;
     this.framedProposal = id;
-    const width = Math.min(320, innerWidth - 24),
-      z = 1;
+    const z = keepZoom ? this.cam.destination.z : 1,
+      width = Math.min(320, innerWidth - 24) * Math.min(1, z);
     const rect = this.rect(),
       chat = !this.chatHidden('proposal')
         ? this.root.querySelector('.canvas-chat.docked')?.getBoundingClientRect()
@@ -397,6 +400,23 @@ export class CanvasView implements View {
     const camera = this.expansionCamera;
     this.expansionCamera = null;
     if (camera) {
+      const job = this.ctx.world().assignments.find((job) => job.id === this.framedProposal),
+        panel = this.root.querySelector<HTMLElement>(
+          `[data-proposal="${CSS.escape(this.framedProposal ?? '')}"]`,
+        ),
+        stage = this.rect();
+      if (job && panel) {
+        const x = stage.left + stage.width / 2 + camera.x + job.position.x * camera.z,
+          y = stage.top + stage.height / 2 + camera.y + job.position.y * camera.z,
+          scale = Math.min(1, camera.z);
+        if (
+          x < stage.left ||
+          x + panel.offsetWidth * scale > stage.right ||
+          y < stage.top ||
+          y + Math.min(panel.scrollHeight, innerHeight - 170) * scale > stage.bottom - 80
+        )
+          return;
+      }
       this.cam.set(camera, reducedMotion());
       this.ctx.act({ type: 'camera', camera }, 'recuperar encuadre de Canvas', 'C08-PROP-01');
     }
@@ -435,7 +455,7 @@ export class CanvasView implements View {
       ui = this.ctx.ui;
     if (
       target.closest(
-        '.canvas-chat,.zone-inspector,.quick-actions,.zone-materials details,video[controls],.canvas-context-layer,.dock-more-menu',
+        '.canvas-chat,.zone-inspector,.quick-actions,.zone-materials details,.canvas-context-layer,.dock-more-menu',
       )
     )
       return;
@@ -450,6 +470,29 @@ export class CanvasView implements View {
       };
       this.root.setPointerCapture(e.pointerId);
       return;
+    }
+    const endpoint = target.closest<SVGElement>('[data-end]');
+    if (
+      endpoint?.dataset.id &&
+      (endpoint.dataset.end === 'from' || endpoint.dataset.end === 'to')
+    ) {
+      e.preventDefault();
+      this.drag = {
+        kind: 'reconnect',
+        id: endpoint.dataset.id,
+        end: endpoint.dataset.end,
+        start: { x: e.clientX, y: e.clientY },
+        distance: 0,
+      };
+      endpoint.closest('.connection')?.classList.add('reconnecting');
+      this.root.setPointerCapture(e.pointerId);
+      return;
+    }
+    const video = target.closest('video[controls]');
+    // Conservar la franja de controles nativos; el resto del fotograma es arrastrable.
+    if (video) {
+      const box = video.getBoundingClientRect();
+      if (e.clientY >= box.bottom - Math.min(42 * this.cam.current.z, box.height / 2)) return;
     }
     const port = target.closest<HTMLElement>('[data-anchor]');
     if (ui.canvas.tool === 'connect' && port?.dataset.anchorNode && port.dataset.anchor) {
@@ -592,6 +635,32 @@ export class CanvasView implements View {
       return;
     }
     const point = this.point(e);
+    if (d.kind === 'reconnect') {
+      d.distance = Math.hypot(e.clientX - d.start.x, e.clientY - d.start.y);
+      const link = this.ctx.world().links.find((link) => link.id === d.id);
+      const from = this.ctx.world().nodes.find((node) => node.id === link?.from);
+      const to = this.ctx.world().nodes.find((node) => node.id === link?.to);
+      const group = this.root.querySelector(`[data-link="${CSS.escape(d.id)}"]`);
+      if (link && from && to && group) {
+        const path = linkPath(
+          d.end === 'from' ? point : anchorPoint(from, link.fromAnchor),
+          d.end === 'to' ? point : anchorPoint(to, link.toAnchor),
+          link.fromAnchor,
+          link.toAnchor,
+        );
+        group
+          .querySelectorAll('path')
+          .forEach((pathElement) => pathElement.setAttribute('d', path));
+        const handle = group.querySelector(`[data-end=${d.end}]`);
+        handle?.setAttribute('transform', `translate(${point.x},${point.y})`);
+        this.paintCableLabels();
+        const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-anchor]');
+        this.root
+          .querySelectorAll('.connection-port')
+          .forEach((port) => port.classList.toggle('reconnect-target', port === target));
+      }
+      return;
+    }
     if (d.kind === 'connect') {
       d.distance = Math.hypot(e.clientX - d.start.x, e.clientY - d.start.y);
       const source = this.ctx.world().nodes.find((n) => n.id === d.node);
@@ -730,6 +799,30 @@ export class CanvasView implements View {
     if (d.kind === 'dock') {
       this.renderDock();
       trace.add('drag.finished', { component: 'canvas-tools', position: this.dock }, d.intent);
+      return;
+    }
+    if (d.kind === 'reconnect') {
+      const port = document
+        .elementFromPoint(e.clientX, e.clientY)
+        ?.closest<HTMLElement>('[data-anchor]');
+      if (d.distance > 3 && port?.dataset.anchorNode && port.dataset.anchor)
+        this.ctx.act(
+          {
+            type: 'link.reconnect',
+            world: w.id,
+            id: d.id,
+            end: d.end,
+            node: port.dataset.anchorNode,
+            anchor: port.dataset.anchor as Anchor,
+          },
+          'reconectar extremo',
+          'C08-LINK-01',
+        );
+      if (d.distance > 3) this.render();
+      else {
+        this.root.querySelector('.reconnecting')?.classList.remove('reconnecting');
+        this.interactions.reconnect(d.id, d.end);
+      }
       return;
     }
     if (d.kind === 'connect') {
@@ -1026,7 +1119,7 @@ export class CanvasView implements View {
         break;
       case 'select-link':
         this.select('link', id);
-        this.paintSelection();
+        this.render();
         break;
       case 'link-delete':
         ctx.act({ type: 'link.delete', world: w.id, id }, 'eliminar conexión', 'LINK-01');
@@ -1074,19 +1167,22 @@ export class CanvasView implements View {
         this.revision = id;
         this.render();
         {
-          const box = this.root
-              .querySelector<HTMLElement>(`[data-proposal="${CSS.escape(id)}"]`)
-              ?.getBoundingClientRect(),
+          const panel = this.root.querySelector<HTMLElement>(`[data-proposal="${CSS.escape(id)}"]`),
+            box = panel?.getBoundingClientRect(),
             stage = this.rect();
+          const finalHeight = panel
+            ? Math.min(panel.scrollHeight + 2, innerHeight - 170) * Math.min(1, this.cam.current.z)
+            : 0;
           if (
             box &&
-            (box.bottom > stage.bottom - 80 ||
+            (box.top + finalHeight > stage.bottom - 80 ||
               box.top < stage.top ||
               box.left < stage.left ||
               box.right > stage.right)
           ) {
             this.expansionCamera ??= this.cam.current;
-            this.frameProposal(id);
+            this.reviewCamera ??= this.cam.current;
+            this.frameProposal(id, true);
           }
         }
         this.root
@@ -1159,6 +1255,25 @@ export class CanvasView implements View {
       )
       .join('');
     this.paintCableLabels();
+    this.positionLinkActions();
+  }
+  private positionLinkActions(): void {
+    const button = this.root.querySelector<HTMLElement>('.link-actions');
+    const path = this.root.querySelector<SVGPathElement>(
+      `[data-link="${CSS.escape(this.ctx.ui.canvas.linkSelection ?? '')}"] .link-line`,
+    );
+    if (!button || !path) return;
+    const middle = path.getPointAtLength(path.getTotalLength() / 2),
+      matrix = path.getScreenCTM();
+    if (!matrix) return;
+    const point = new DOMPoint(middle.x, middle.y).matrixTransform(matrix);
+    const chat = this.root.querySelector<HTMLElement>('.canvas-chat.docked');
+    const left =
+      chat && !this.chatHidden() && point.y < chat.getBoundingClientRect().bottom
+        ? chat.getBoundingClientRect().right + 8
+        : 12;
+    button.style.left = Math.max(left, Math.min(innerWidth - 48, point.x - 16)) + 'px';
+    button.style.top = Math.max(70, Math.min(innerHeight - 48, point.y + 18)) + 'px';
   }
   private paintCableLabels(): void {
     const svg = this.root.querySelector('.canvas-links');
@@ -1230,7 +1345,7 @@ export class CanvasView implements View {
       const selected = ui.canvas.selections.includes(node.id);
       element.classList.toggle('selected', selected);
       const handles = element.querySelectorAll('.resize-handle');
-      if (selected && ui.canvas.tool !== 'connect') {
+      if (selected && ui.canvas.tool === 'select') {
         if (!handles.length)
           element.insertAdjacentHTML('beforeend', resizeHandles('node', node.id));
       } else handles.forEach((handle) => handle.remove());
@@ -1248,7 +1363,7 @@ export class CanvasView implements View {
     else if (zone) {
       const agent = w.agents.find((a) => a.id === zone.agent),
         materials = w.nodes.filter((n) => n.owner === zone.agent && !!zone.agent);
-      holder.innerHTML = `<aside class="zone-inspector" aria-label="Inspector de zona"><div class="inspector-head"><span>${icon('zone', 15)}<span class="inspector-name" title="${html(zone.name)}">${html(zone.name)}</span></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar panel de zona')}</div></div><label for="zone-name">Nombre</label><input id="zone-name" aria-label="Nombre de la zona" value="${html(zone.name)}"><label for="zone-agent">Agente</label><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
+      holder.innerHTML = `<aside class="zone-inspector" aria-label="Inspector de zona"><div class="inspector-head"><span>${icon('zone', 15)}<span class="inspector-name" title="${html(zone.name)}">${html(zone.name)}</span></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar panel de zona')}</div></div><label for="zone-name">Nombre de la zona</label><input id="zone-name" aria-label="Nombre de la zona" value="${html(zone.name)}"><label for="zone-agent">Agente asignado</label><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
         .filter((a) => !a.templateId || a.id === zone.agent)
         .map(
           (a) =>
@@ -1267,19 +1382,20 @@ export class CanvasView implements View {
                           w.nodes.find((n) => n.id === a.node)!,
                         )
                       : 'Material no disponible',
-                  )}</strong> ${a.phase === 'working' ? 'Procesando' : a.phase === 'interrupted' ? 'Interrumpido' : 'Revisión pendiente'} ${a.phase !== 'working' ? `<button type="button" data-action="proposal-reveal" data-id="${a.id}">Revisar propuesta</button>` : ''}</p>`,
+                  )}</strong><span class="zone-job-state">${a.phase === 'working' ? 'Procesando' : a.phase === 'interrupted' ? 'Interrumpido' : 'Propuesta lista para revisar'} · ${html(a.instruction || 'Organizar el material')}</span> ${a.phase !== 'working' ? `<button type="button" data-action="proposal-reveal" data-id="${a.id}">Revisar propuesta</button>` : ''}</p>`,
               )
               .join('')}<h4>Memoria fijada</h4>${agent.memory
               .slice(0, 3)
               .map((m) => `<p class="zone-memory">${icon('pin', 11)}${html(m)}</p>`)
               .join(
                 '',
-              )}<h4>Materiales · ${materials.length}</h4>${materials.map((n) => `<div class="zone-resource"><span title="${html(nodeTitle(w, n))}">${html(nodeTitle(w, n))}</span><button type="button" data-action="zone-return" data-id="${n.id}" aria-label="Devolver ${html(nodeTitle(w, n))} al Canvas">Devolver</button></div>`).join('')}<div class="zone-actions">${btn('zone-talk', 'agents', 'Ver agente', `data-id="${zone.id}"`)}${btn('zone-unbind', 'close', 'Quitar agente y devolver materiales', `data-id="${zone.id}"`)}</div>`
+              )}<h4>Materiales · ${materials.length}</h4>${materials.map((n) => `<div class="zone-resource"><span title="${html(nodeTitle(w, n))}">${html(nodeTitle(w, n))}</span><button type="button" data-action="zone-return" data-id="${n.id}" aria-label="Devolver ${html(nodeTitle(w, n))} al Canvas">Devolver</button></div>`).join('')}<div class="zone-actions"><button type="button" data-action="zone-talk" data-id="${zone.id}">${icon('agents', 14)}Ver agente</button><button type="button" data-action="zone-unbind" data-id="${zone.id}" aria-label="Quitar agente y devolver materiales">${icon('unplug', 14)}Retirar agente</button><small>Retirar al agente devuelve sus materiales al Canvas.</small></div>`
           : ''
       }</aside>`;
-    } else if (ui.canvas.linkSelection)
-      holder.innerHTML = `<div class="material-actions">${btn('link-delete', 'trash', 'Eliminar conexión', `data-id="${ui.canvas.linkSelection}"`)}</div>`;
-    else holder.innerHTML = '';
+    } else if (ui.canvas.linkSelection) {
+      holder.innerHTML = `<div class="link-actions">${btn('link-delete', 'trash', 'Eliminar conexión', `data-id="${ui.canvas.linkSelection}"`)}</div>`;
+      this.positionLinkActions();
+    } else holder.innerHTML = '';
   }
   private clampDock(avoidChat = false): void {
     if (!this.dock) return;
@@ -1509,7 +1625,8 @@ export class CanvasView implements View {
           w,
           n,
           this.ctx.ui.canvas.selections.includes(n.id),
-          this.ctx.ui.canvas.tool === 'connect',
+          this.ctx.ui.canvas.tool === 'connect' || !!this.ctx.ui.canvas.linkSelection,
+          this.ctx.ui.canvas.tool === 'select',
         ),
       )
       .join('')}${w.assignments

@@ -30,6 +30,14 @@ export type Command =
       stroke: string;
     }
   | { type: 'link.label'; world: string; id: string; text: string }
+  | {
+      type: 'link.reconnect';
+      world: string;
+      id: string;
+      end: 'from' | 'to';
+      node: string;
+      anchor: Anchor;
+    }
   | { type: 'zone.instruction'; world: string; id: string; text: string }
   | { type: 'zone.rename'; world: string; id: string; name: string }
   | {

@@ -41,7 +41,7 @@ test('SERVICE-02: una revisión nueva recibe únicamente su propia respuesta', (
   assert.equal(project(store).assignments[0]?.phase, 'working');
   context.mock.timers.tick(500);
   assert.equal(project(store).assignments[0]?.phase, 'ready');
-  assert.match(project(store).assignments[0]!.text, /Pregunta pendiente/);
+  assert.match(project(store).assignments[0]!.text, /Pregunta para revisar/);
   assert.deepEqual(
     project(store).runs.map((run) => run.status),
     ['completed', 'completed'],

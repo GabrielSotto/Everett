@@ -42,6 +42,7 @@ export function reduce(state: State, command: Command): State {
     case 'node.duplicate':
     case 'node.style':
     case 'link.label':
+    case 'link.reconnect':
     case 'zone.instruction':
     case 'zone.rename':
     case 'assignment.schedule':

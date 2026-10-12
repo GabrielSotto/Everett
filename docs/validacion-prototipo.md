@@ -98,6 +98,15 @@ contraste de cada control de propuestas, ausencia de movimiento del dock sin col
 toggle de herramientas, cursores, muestras de grosor, nombres independientes de zonas,
 menú del composer, regreso desde atajos y ejemplos multimedia recargables.
 
+Para 0.8.2, C08-U07/U08 y C08-B30–B33 amplían esos controles con arrastre del video
+antes y durante reproducción, regreso espacial y recarga; reconexión por arrastre y
+teclado con identidad, etiqueta, cancelación y Undo/Redo; nombre realmente pintado
+y un contraejemplo de tinta invisible; cursor durante trazos consecutivos; metadatos
+de Board y vacío centrado de zona. C08-B23 registra filas y ancho en los fotogramas
+intermedios de Pedir cambios, además de altura. La propuesta identifica su contexto
+y resultado, conserva el contenido recibido hasta una decisión explícita y permanece
+cerca de su zona sin desplazar otros materiales.
+
 El arnés forma parte del sistema que se debe validar. Debe detectar y reportar correctamente:
 
 - Un proceso que falla, no inicia, se interrumpe o excede su tiempo.

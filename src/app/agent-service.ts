@@ -4,6 +4,7 @@ import { Store } from './store';
 import type { Intent } from './diagnostics/trace';
 import { ensure } from '../domain/invariants';
 import { materialText } from '../domain/material-content';
+import { canvasProposal } from '../domain/canvas-proposal';
 import { humanParticipants } from '../domain/conversations';
 type Channel = 'messages' | 'chat' | 'codeMessages';
 
@@ -456,16 +457,7 @@ export class AgentService {
       { type: 'assignment.schedule', world, id, input: source, runId: run, dueAt },
       intent,
     );
-    const text = /resum|breve/i.test(a.feedback || instruction)
-      ? source
-          .split(/[.!?]\s/)
-          .slice(0, 2)
-          .join('. ')
-      : /analiz/i.test(instruction)
-        ? `${source}\n\nPregunta pendiente: ${w.tasks[0]?.title ?? '¿Qué debe resolver este material?'}`
-        : source +
-          '\n\n' +
-          (instruction || 'Próximo paso: ' + (w.tasks[0]?.title ?? 'Definir una primera prueba.'));
+    const text = canvasProposal(source, instruction, a.feedback);
     const timer = setTimeout(
       () => {
         try {

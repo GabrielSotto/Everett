@@ -10,6 +10,7 @@ import {
   undockChat,
 } from './interaction-helpers';
 import { storedFixture } from './canvas-fixtures';
+import { proposalSize } from '../../src/domain/proposal-layout';
 
 const png = createRequire(import.meta.url)(
   resolve('node_modules/playwright-core/lib/utilsBundle.js'),
@@ -154,18 +155,35 @@ test('C08-B23: propuestas separadas de resultados, contraste de controles y expa
     (node) =>
       node.data.kind === 'note' && node.x === first.position.x && node.y === first.position.y,
   )!;
-  expect(job.position.y).toBeGreaterThanOrEqual(result.y + result.height + 16);
+  expect(
+    job.position.x + 336 <= result.x ||
+      job.position.x >= result.x + result.width + 16 ||
+      job.position.y + proposalSize.height + 16 <= result.y ||
+      job.position.y >= result.y + result.height + 16,
+  ).toBe(true);
   await page.locator('[data-zone=zone-eve]').click();
   await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
   const proposal = page.locator('.proposal');
   const measureMotion = async (action: string, direction: 1 | -1, duration: number) => {
     const sampling = proposal.evaluate(async () => {
-      const frames: { height: number; count: number; durations: number[] }[] = [];
+      const frames: {
+        height: number;
+        width: number;
+        rows: number;
+        count: number;
+        durations: number[];
+      }[] = [];
       for (let i = 0; i < 40; i++) {
         await new Promise(requestAnimationFrame);
         const el = document.querySelector<HTMLElement>('.proposal')!;
         frames.push({
           height: el.getBoundingClientRect().height,
+          width: el.getBoundingClientRect().width,
+          rows: new Set(
+            Array.from(el.querySelectorAll('.revision-suggestions button'), (button) =>
+              Math.round(button.getBoundingClientRect().top),
+            ),
+          ).size,
           count: document.querySelectorAll('.proposal').length,
           durations: el
             .getAnimations()
@@ -177,6 +195,11 @@ test('C08-B23: propuestas separadas de resultados, contraste de controles y expa
     await page.getByRole('button', { name: action, exact: true }).click();
     const frames = await sampling;
     expect(frames.every((frame) => frame.count === 1)).toBe(true);
+    expect(frames.every((frame) => frame.rows <= 1)).toBe(true);
+    expect(
+      Math.max(...frames.map((frame) => frame.width)) -
+        Math.min(...frames.map((frame) => frame.width)),
+    ).toBeLessThan(1);
     expect(frames.some((frame) => frame.durations.includes(duration))).toBe(true);
     expect(new Set(frames.map((frame) => Math.round(frame.height))).size).toBeGreaterThan(3);
     for (let i = 1; i < frames.length; i++)
@@ -196,6 +219,17 @@ test('C08-B23: propuestas separadas de resultados, contraste de controles y expa
     .toBe(true);
   await expect.poll(() => snapshot(page).then((state) => state.camera.z)).toBeCloseTo(1, 4);
   await measureMotion('Pedir cambios', 1, 250);
+  const expanded = (await proposal.boundingBox())!;
+  expect(expanded.height).toBeLessThanOrEqual(proposalSize.height);
+  for (const material of await page.locator('.material').all()) {
+    const rect = (await material.boundingBox())!;
+    expect(
+      expanded.x + expanded.width <= rect.x ||
+        expanded.x >= rect.x + rect.width ||
+        expanded.y + expanded.height <= rect.y ||
+        expanded.y >= rect.y + rect.height,
+    ).toBe(true);
+  }
   await page
     .getByLabel('Cambios solicitados', { exact: true })
     .fill('Conservar contexto y ajustar el enfoque');

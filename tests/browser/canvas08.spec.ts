@@ -119,7 +119,7 @@ test('C08-B01: nombre alcanzable, identidad Docs, copia independiente y retirada
   );
   await page.getByLabel('Título del documento', { exact: true }).fill('');
   await page.keyboard.press('Escape');
-  await chat.getByRole('button', { name: 'Sin título', exact: true }).click();
+  await chat.getByRole('button', { name: 'Sin nombre', exact: true }).click();
   await expect(page.getByLabel('Contenido del documento', { exact: true })).toHaveValue(
     'Solo esta copia',
   );
@@ -279,6 +279,8 @@ test('C08-B10: una interrupción confirmada ofrece Reintentar y conserva trabajo
   expect(restored.assignments[0]!.id).toBe(job.id);
   expect(restored.assignments[0]!.input).toBe(job.input);
   expect(restored.nodes.length).toBe(world.nodes.length);
+  await page.locator('[data-zone=zone-eve]').press('Enter');
+  await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
   await page.getByRole('button', { name: 'Rechazar propuesta', exact: true }).click();
   await expect(page.locator('[data-node="note-a"]')).toBeVisible();
 });

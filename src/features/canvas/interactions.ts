@@ -1,5 +1,11 @@
 import type { Context } from '../../app/context';
-import { nodeTitle, materialRoute, type Material, type Point } from '../../domain/model';
+import {
+  nodeTitle,
+  materialRoute,
+  type Material,
+  type Point,
+  type Anchor,
+} from '../../domain/model';
 import { html, target, editable } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
 import { sampleFiles } from './sample-media';
@@ -48,6 +54,16 @@ export class CanvasInteractions {
     root.addEventListener(
       'keydown',
       (event) => {
+        if (
+          event.target instanceof SVGElement &&
+          event.target.matches('.link-endpoint') &&
+          ['Enter', ' '].includes(event.key)
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.reconnect(event.target.dataset.id ?? '', event.target.dataset.end as 'from' | 'to');
+          return;
+        }
         if (
           event.target instanceof SVGElement &&
           event.target.matches('.link-hit') &&
@@ -191,6 +207,9 @@ export class CanvasInteractions {
           case 'canvas-link':
             this.linkForm();
             break;
+          case 'link-endpoint':
+            this.reconnect(id, button.dataset.end as 'from' | 'to');
+            break;
           case 'select-link':
             this.label(id);
             break;
@@ -283,6 +302,24 @@ export class CanvasInteractions {
               'C08-MAT-06',
             );
           }
+        } else if (form.dataset.reconnect) {
+          const node = form.querySelector<HTMLSelectElement>('[name=node]')!.value;
+          const anchor = form.querySelector<HTMLSelectElement>('[name=anchor]')!.value as Anchor;
+          if (
+            ctx.act(
+              {
+                type: 'link.reconnect',
+                world: ctx.world().id,
+                id: form.dataset.reconnect,
+                end: form.dataset.end as 'from' | 'to',
+                node,
+                anchor,
+              },
+              'reconectar extremo',
+              'C08-LINK-01',
+            )
+          )
+            this.close();
         } else if (form.dataset.label) {
           const text = form.querySelector<HTMLInputElement>('input')?.value ?? '';
           this.overlay.replaceChildren();
@@ -494,6 +531,28 @@ export class CanvasInteractions {
       this.ctx.world().id,
       this.ctx.ui.canvas.commentTarget,
     ]);
+  }
+  reconnect(id: string, end: 'from' | 'to'): void {
+    const link = this.ctx.world().links.find((link) => link.id === id);
+    if (!link) return;
+    const endpoint = this.root
+      .querySelector<SVGElement>(`[data-link="${CSS.escape(id)}"] [data-end=${end}]`)
+      ?.getBoundingClientRect();
+    const other = end === 'from' ? link.to : link.from;
+    const current = end === 'from' ? link.from : link.to;
+    const anchor = end === 'from' ? link.fromAnchor : link.toAnchor;
+    this.overlay.innerHTML = `<form class="canvas-context-form reconnect-form" data-reconnect="${id}" data-end="${end}" style="${this.position(endpoint ?? { x: innerWidth / 2, y: innerHeight / 2 })}"><strong>Reconectar ${end === 'from' ? 'origen' : 'destino'}</strong><label>Material<select name="node" aria-label="Material ${end === 'from' ? 'de origen' : 'de destino'}">${this.ctx
+      .world()
+      .nodes.filter((node) => !node.owner && node.id !== other)
+      .map(
+        (node) =>
+          `<option value="${node.id}" ${node.id === current ? 'selected' : ''}>${html(nodeTitle(this.ctx.world(), node))}</option>`,
+      )
+      .join(
+        '',
+      )}</select></label><label>Anclaje<select name="anchor" aria-label="Anclaje ${end === 'from' ? 'de origen' : 'de destino'}">${(['north', 'east', 'south', 'west'] as const).map((value) => `<option value="${value}" ${anchor === value ? 'selected' : ''}>${{ north: 'Arriba', east: 'Derecha', south: 'Abajo', west: 'Izquierda' }[value]}</option>`).join('')}</select></label><div><button type="button" data-action="context-close">Cancelar</button><button type="submit">Guardar</button></div></form>`;
+    this.fitOverlay();
+    this.overlay.querySelector<HTMLElement>('select')?.focus({ preventScroll: true });
   }
   private label(id: string): void {
     const link = this.ctx.world().links.find((l) => l.id === id);
