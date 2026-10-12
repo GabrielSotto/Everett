@@ -119,6 +119,8 @@ Usar controles negativos para comprobar esos comportamientos. La ausencia de un 
 
 La evidencia debe permitir reproducir el caso. Un resultado anterior, un cambio interno, un mock o la aprobación de 0.7.5 no certifican una entrega nueva.
 
+El feedback de 0.8.2 agrega C08-U09/U10 y C08-B34–B39. Se comprueba tinta realmente pintada en los cinco papeles de nota, con un contraejemplo que la vuelve invisible; Play mantenido y repetido tras recargas a tres escalas; conexiones inversas, papelera durante la edición y botones de historial; previews de los tipos recibidos, aceptación exacta de sus datos, conservación de bytes y pedidos privados; líneas y ancho de chips en cada fotograma, apertura repetida y movimiento reducido; Formas, lápiz desde el primer gesto y marcador de comentario a varios zooms. La propuesta se verifica a 390 × 500 con los botones inferiores completamente alcanzables.
+
 ## Entrega verificable
 
 La entrega incluye HTML, fuentes, arnés ejecutable e informe real de la versión, con instrucciones reproducibles y hashes de los artefactos finales. El informe relaciona requisitos, casos, resultados y evidencias; identifica los fallos, bloqueos y omisiones sin contarlos como aprobados.

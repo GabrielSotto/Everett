@@ -219,11 +219,17 @@ export class CanvasInteractions {
           case 'video-play': {
             const video = button.closest('[data-node]')?.querySelector('video');
             if (video) {
-              video.controls = true;
-              void video.play().catch(() => {
-                if (!this.disposed && video.isConnected)
-                  ctx.notice('No se pudo reproducir este video. Verificá su formato.', true);
-              });
+              button.setAttribute('disabled', '');
+              void video
+                .play()
+                .then(() => {
+                  if (!this.disposed && video.isConnected) video.controls = true;
+                })
+                .catch(() => {
+                  button.removeAttribute('disabled');
+                  if (!this.disposed && video.isConnected)
+                    ctx.notice('No se pudo reproducir este video. Verificá su formato.', true);
+                });
             }
             break;
           }
@@ -575,7 +581,7 @@ export class CanvasInteractions {
   }
   private editForm(kind: 'rename' | 'label', id: string, text: string, point: Point): void {
     const field = kind === 'rename' ? 'material-name' : 'cable-text';
-    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" value="${html(text)}">${btn('context-close', 'close', 'Cancelar')}<button type="submit" class="icon-button" aria-label="Guardar" data-tip="Guardar">${icon('check', 16)}</button></form>`;
+    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" value="${html(text)}">${kind === 'label' ? btn('link-delete', 'trash', 'Eliminar conexión', `data-id="${id}"`) : ''}${btn('context-close', 'close', 'Cancelar')}<button type="submit" class="icon-button" aria-label="Guardar" data-tip="Guardar">${icon('check', 16)}</button></form>`;
   }
   private linkForm(): void {
     this.overlay.innerHTML = `<form id="canvas-new-link" class="canvas-context-form" style="${this.position({ x: innerWidth / 2 - 140, y: innerHeight / 2 - 80 })}"><label for="canvas-link-url">Dirección del enlace</label><input id="canvas-link-url" type="url" required placeholder="https://"><button type="submit">Agregar enlace</button><button type="button" data-action="context-close">Cancelar</button></form>`;
@@ -730,6 +736,10 @@ export class CanvasInteractions {
       .querySelectorAll<HTMLImageElement | HTMLVideoElement>('[data-asset]')
       .forEach((element) => {
         const id = element.dataset.asset;
+        if (element instanceof HTMLVideoElement && element.readyState >= 1) {
+          const play = element.parentElement?.querySelector<HTMLButtonElement>('.video-play');
+          if (play) play.disabled = false;
+        }
         if (!id || element.getAttribute('src')) return;
         let pending = this.urls.get(id);
         if (!pending) {
@@ -743,7 +753,20 @@ export class CanvasInteractions {
         }
         void pending
           .then((url) => {
-            if (!this.disposed && element.isConnected && url) element.src = url;
+            if (!this.disposed && element.isConnected && url) {
+              element.src = url;
+              if (element instanceof HTMLVideoElement) {
+                const button =
+                  element.parentElement?.querySelector<HTMLButtonElement>('.video-play');
+                if (button) {
+                  const ready = (): void => {
+                    button.disabled = false;
+                  };
+                  if (element.readyState >= 1) ready();
+                  else element.addEventListener('loadedmetadata', ready, { once: true });
+                }
+              }
+            }
           })
           .catch(() => {
             if (!element.isConnected) return;

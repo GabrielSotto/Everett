@@ -1,3 +1,4 @@
+import { proposalMaterials } from '../domain/proposal-materials';
 import { getWorld, need, type Message, type WorldSnapshot } from '../domain/model';
 import { parseShippingIntent, releaseSummary, shippingLabels } from '../domain/shipping';
 import { Store } from './store';
@@ -458,6 +459,7 @@ export class AgentService {
       intent,
     );
     const text = canvasProposal(source, instruction, a.feedback);
+    const output = proposalMaterials(w, { ...a, text });
     const timer = setTimeout(
       () => {
         try {
@@ -466,7 +468,7 @@ export class AgentService {
           );
           if (current)
             this.store.dispatch(
-              { type: 'assignment.ready', world, id, revision: a.revision, text },
+              { type: 'assignment.ready', world, id, revision: a.revision, text, output },
               intent,
             );
           this.finishRun(world, run, intent, current ? 'completed' : 'cancelled');

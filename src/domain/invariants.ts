@@ -92,6 +92,31 @@ export function validate(s: State): void {
     }
     const assigned = new Set<string>();
     for (const a of w.assignments) {
+      if (a.output) {
+        ensure(
+          a.output.length > 0 &&
+            a.output.length <= 12 &&
+            new Set(a.output.map((draft) => draft.material.id)).size === a.output.length,
+          'PROPOSAL_OUTPUT',
+          'Materiales de propuesta inválidos',
+        );
+        for (const draft of a.output) {
+          ensure(
+            !draft.material.owner && !w.nodes.some((n) => n.id === draft.material.id),
+            'PROPOSAL_IDENTITY',
+            'El resultado pendiente debe conservar una identidad independiente',
+          );
+          if (draft.document)
+            ensure(
+              draft.material.data.kind === 'reference' &&
+                draft.material.data.ref.kind === 'document' &&
+                draft.material.data.ref.id === draft.document.id &&
+                typeof draft.document.body === 'string',
+              'PROPOSAL_DOCUMENT',
+              'Documento de propuesta inválido',
+            );
+        }
+      }
       ensure(
         ['working', 'ready', 'interrupted'].includes(a.phase) &&
           Number.isInteger(a.revision) &&
@@ -117,7 +142,10 @@ export function validate(s: State): void {
         'Agente inexistente',
       );
     }
-    for (const n of w.nodes) {
+    for (const n of [
+      ...w.nodes,
+      ...w.assignments.flatMap((a) => a.output?.map((draft) => draft.material) ?? []),
+    ]) {
       ensure(
         [n.x, n.y, n.width, n.height].every(Number.isFinite) && n.width >= 4 && n.height >= 4,
         'GEOMETRY',

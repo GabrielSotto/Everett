@@ -13,6 +13,7 @@ import type {
   Message,
   ShippingRole,
   Zone,
+  ProposalMaterial,
 } from './model';
 import type { AgentRun } from './operations';
 
@@ -191,6 +192,7 @@ export type Command =
       id: string;
       revision: number;
       text: string;
+      output?: ProposalMaterial[];
     }
   | {
       type: 'assignment.revise';

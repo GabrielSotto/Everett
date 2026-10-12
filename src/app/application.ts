@@ -634,7 +634,8 @@ export class EverettApp implements Context {
         this.render();
         return;
       }
-      if (e.key === 'Delete' && this.ui.canvas.selection) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && this.ui.canvas.selection) {
+        e.preventDefault();
         this.act(
           { type: 'node.delete', world: route.world, id: this.ui.canvas.selection },
           'quitar material',

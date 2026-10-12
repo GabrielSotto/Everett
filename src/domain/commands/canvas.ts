@@ -4,6 +4,8 @@ import { ensure } from '../invariants';
 import { releaseZoneMaterials } from '../zone-ownership';
 import { restoreMaterialLinks } from '../material-links';
 import { arrangeProposals } from '../proposal-layout';
+import { sameConnection } from '../link-identity';
+import { proposalMaterials } from '../proposal-materials';
 
 type CanvasCommand = Extract<
   Command,
@@ -126,7 +128,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         doc.title += ' — copia';
         world.docs.push(doc);
         copy.data.ref.id = doc.id;
-      }
+      } else copy.data.title = nodeTitle(world, original) + ' — copia';
       world.nodes.push(copy);
       break;
     }
@@ -165,14 +167,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         [command.end === 'from' ? 'fromAnchor' : 'toAnchor']: command.anchor,
       };
       ensure(
-        !world.links.some(
-          (l) =>
-            l.id !== link.id &&
-            l.from === next.from &&
-            l.to === next.to &&
-            l.fromAnchor === next.fromAnchor &&
-            l.toAnchor === next.toAnchor,
-        ),
+        !world.links.some((l) => l.id !== link.id && sameConnection(l, next)),
         'LINK',
         'Ya existe una conexión entre esos anclajes',
       );
@@ -240,13 +235,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       const a = node(command.from),
         b = node(command.to);
       ensure(a.id !== b.id && !a.owner && !b.owner, 'LINK', 'Elegir dos materiales disponibles');
-      const existing = world.links.some(
-        (l) =>
-          l.from === a.id &&
-          l.to === b.id &&
-          l.fromAnchor === command.fromAnchor &&
-          l.toAnchor === command.toAnchor,
-      );
+      const existing = world.links.some((l) => sameConnection(l, command));
       if (!existing)
         world.links.push({
           id: uid(),
@@ -315,11 +304,8 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         };
         world.agents.push(instance);
         zone.agent = instance.id;
-        if (zone.name === 'Zona') zone.name = instance.name;
       } else {
         zone.agent = command.agent;
-        if (zone.name === 'Zona' && command.agent)
-          zone.name = world.agents.find((a) => a.id === command.agent)!.name;
       }
       break;
     }
@@ -359,6 +345,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       const a = world.assignments.find((a) => a.id === command.id);
       if (a && a.revision === command.revision && a.phase === 'working') {
         a.text = command.text;
+        a.output = command.output ?? proposalMaterials(world, a, true);
         a.phase = 'ready';
       }
       break;
@@ -376,6 +363,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       a.revision++;
       a.phase = 'working';
       a.feedback = command.text;
+      delete a.output;
       delete a.dueAt;
       delete a.runId;
       break;
@@ -395,22 +383,27 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       m.x = a.returnTo.x;
       m.y = a.returnTo.y;
       if (command.decision === 'accept') {
-        if (m.data.kind === 'reference' && m.data.ref.kind === 'document') {
-          const documentId = m.data.ref.id;
-          need(
-            world.docs.find((d) => d.id === documentId),
-            'Documento inexistente',
-          ).body = a.text;
-        }
-        const result: Material = {
-          id: uid(),
-          ...a.position,
-          width: 270,
-          height: 220,
-          owner: null,
-          data: { kind: 'note', title: nodeTitle(world, m), text: a.text, color: '#e4efdf' },
-        };
-        world.nodes.push(result);
+        const results = a.output ?? proposalMaterials(world, a, true);
+        ensure(results.length > 0, 'PROPOSAL_EMPTY', 'La propuesta no contiene materiales');
+        results.forEach((draft, index) => {
+          if (draft.document)
+            Object.assign(
+              need(
+                world.docs.find((d) => d.id === draft.document!.id),
+                'Documento inexistente',
+              ),
+              draft.document,
+            );
+          const result = structuredClone(draft.material);
+          ensure(
+            !world.nodes.some((node) => node.id === result.id),
+            'PROPOSAL_DUPLICATE',
+            'Este resultado ya fue aplicado',
+          );
+          result.x = a.position.x + (index % 2) * 290;
+          result.y = a.position.y + Math.floor(index / 2) * 250;
+          world.nodes.push(result);
+        });
       }
       world.assignments = world.assignments.filter((x) => x.id !== a.id);
       restoreMaterialLinks(world, a.links);

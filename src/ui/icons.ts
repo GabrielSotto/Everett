@@ -1,5 +1,8 @@
 import { html } from './dom';
 const paths: Record<string, string> = {
+  undo: '<path d="M9 4 4 9l5 5M4 9h9a7 7 0 0 1 0 14"/>',
+  redo: '<path d="m15 4 5 5-5 5m5-5h-9a7 7 0 0 0 0 14"/>',
+  bubble: '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H8l-5 3v-7a8.5 8.5 0 1 1 18-4.5z"/>',
   flag: '<path d="M5 21V3m0 1h13l-3 4 3 4H5"/>',
   unplug: '<path d="m5 5 14 14M8 3l3 3M3 8l3 3m7 4 3-3m-6 8 3-3M5 11l6-6m2 14 6-6"/>',
   draw: '<path d="m4 16 12-12 4 4-12 12-5 1zM14 6l4 4M3 21h18"/>',

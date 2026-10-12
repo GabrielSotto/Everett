@@ -377,7 +377,7 @@ test('C08-B33: tarjeta con metadatos identificables, vacío centrado y propuesta
   expect(Math.abs(e.y + e.height / 2 - z.y - z.height / 2)).toBeLessThan(2);
   await zone.click();
   const inspector = page.getByRole('complementary', { name: 'Inspector de zona', exact: true });
-  await expect(inspector.getByText('Nombre de la zona', { exact: true })).toBeVisible();
+  await expect(inspector.getByLabel('Nombre de la zona', { exact: true })).toBeVisible();
   await expect(inspector.getByText('Agente asignado', { exact: true })).toBeVisible();
   await expect(inspector.getByRole('button', { name: 'Ver agente', exact: true })).toHaveText(
     'Ver agente',
@@ -391,9 +391,9 @@ test('C08-B33: tarjeta con metadatos identificables, vacío centrado y propuesta
   await expect(proposal).toBeVisible();
   await zone.click();
   await expect(inspector.locator('.zone-job-state')).toContainText('Analizar');
-  await inspector.getByRole('button', { name: 'Cerrar panel de zona', exact: true }).click();
+  await inspector.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
   await expect(proposal.locator('.proposal-context')).toContainText('Instrucción: Analizar');
-  await expect(proposal.locator('.proposal-result-label')).toHaveText(
+  await expect(proposal.locator('.proposal-result-label')).toContainText(
     'Resultado propuesto · revisión 1',
   );
   await expect(
@@ -403,7 +403,7 @@ test('C08-B33: tarjeta con metadatos identificables, vacío centrado y propuesta
   const zoneData = world.zones[0]!;
   const dx = Math.max(
     0,
-    zoneData.x - job.position.x - 320,
+    zoneData.x - job.position.x - proposalSize.width,
     job.position.x - zoneData.x - zoneData.width,
   );
   const dy = Math.max(

@@ -125,6 +125,12 @@ export interface Assignment {
   dueAt?: number;
   runId?: string;
   input?: string;
+  output?: ProposalMaterial[];
+}
+/** Materiales pendientes. Sus registros compartidos solo se aplican al aceptar. */
+export interface ProposalMaterial {
+  material: Material;
+  document?: Pick<Document, 'id' | 'body'>;
 }
 export interface Document {
   id: string;

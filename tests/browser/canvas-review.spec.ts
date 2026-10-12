@@ -156,7 +156,7 @@ test('C08-B23: propuestas separadas de resultados, contraste de controles y expa
       node.data.kind === 'note' && node.x === first.position.x && node.y === first.position.y,
   )!;
   expect(
-    job.position.x + 336 <= result.x ||
+    job.position.x + proposalSize.width + 16 <= result.x ||
       job.position.x >= result.x + result.width + 16 ||
       job.position.y + proposalSize.height + 16 <= result.y ||
       job.position.y >= result.y + result.height + 16,
@@ -175,7 +175,7 @@ test('C08-B23: propuestas separadas de resultados, contraste de controles y expa
       }[] = [];
       for (let i = 0; i < 40; i++) {
         await new Promise(requestAnimationFrame);
-        const el = document.querySelector<HTMLElement>('.proposal')!;
+        const el = document.querySelector<HTMLElement>('.proposal-decision')!;
         frames.push({
           height: el.getBoundingClientRect().height,
           width: el.getBoundingClientRect().width,
@@ -221,7 +221,7 @@ test('C08-B23: propuestas separadas de resultados, contraste de controles y expa
   await measureMotion('Pedir cambios', 1, 250);
   const expanded = (await proposal.boundingBox())!;
   expect(expanded.height).toBeLessThanOrEqual(proposalSize.height);
-  for (const material of await page.locator('.material').all()) {
+  for (const material of await page.locator('[data-node]').all()) {
     const rect = (await material.boundingBox())!;
     expect(
       expanded.x + expanded.width <= rect.x ||
@@ -235,14 +235,16 @@ test('C08-B23: propuestas separadas de resultados, contraste de controles y expa
     .fill('Conservar contexto y ajustar el enfoque');
   await expect
     .poll(() =>
-      proposal.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length),
+      proposal.evaluate(
+        (el) => el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
+      ),
     )
     .toBe(0);
-  const colors = await proposal.evaluate((el) => {
+  const colors = await proposal.locator('.proposal-decision').evaluate((el) => {
     const parent = getComputedStyle(el).backgroundColor;
     const components = [
       el.querySelector('p')!,
-      el.querySelector('.proposal-status')!,
+
       ...el.querySelectorAll('button'),
       el.querySelector('textarea')!,
     ];

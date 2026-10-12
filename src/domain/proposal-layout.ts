@@ -2,7 +2,7 @@ import type { World, Rect } from './model';
 
 const gap = 24;
 // Reservar también el pedido de cambios expandido, sin agrandar la tarjeta en reposo.
-export const proposalSize = { width: 320, height: 560 } as const;
+export const proposalSize = { width: 560, height: 760 } as const;
 export function proposalOverlaps(a: Rect, b: Rect): boolean {
   return (
     a.x < b.x + b.width + 16 &&
@@ -17,7 +17,11 @@ export function arrangeProposals(world: World): void {
   for (const job of world.assignments) {
     const zone = world.zones.find((zone) => zone.agent === job.agent);
     const origin = zone ?? { ...job.position, width: 0, height: 0 };
-    const xs = new Set([origin.x + origin.width + gap, origin.x - 320 - gap, origin.x]);
+    const xs = new Set([
+      origin.x + origin.width + gap,
+      origin.x - proposalSize.width - gap,
+      origin.x,
+    ]);
     const ys = new Set([
       origin.y,
       origin.y + origin.height + gap,
@@ -25,7 +29,7 @@ export function arrangeProposals(world: World): void {
     ]);
     for (const rect of occupied) {
       xs.add(rect.x + rect.width + gap);
-      xs.add(rect.x - 320 - gap);
+      xs.add(rect.x - proposalSize.width - gap);
       ys.add(rect.y + rect.height + gap);
       ys.add(rect.y - proposalSize.height - gap);
     }

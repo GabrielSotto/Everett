@@ -29,6 +29,7 @@ import { colors } from './note-colors';
 import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 import { CanvasInteractions } from './interactions';
 import { proposalMarkup } from './proposals';
+import { sameConnection } from '../../domain/link-identity';
 import { motion, reducedMotion } from '../../ui/motion';
 import { strokePicker } from './stroke-picker';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
@@ -379,7 +380,7 @@ export class CanvasView implements View {
     if (!job) return;
     this.framedProposal = id;
     const z = keepZoom ? this.cam.destination.z : 1,
-      width = Math.min(320, innerWidth - 24) * Math.min(1, z);
+      width = Math.min((job.output?.length ?? 1) > 1 ? 560 : 320, innerWidth - 24) * Math.min(1, z);
     const rect = this.rect(),
       chat = !this.chatHidden('proposal')
         ? this.root.querySelector('.canvas-chat.docked')?.getBoundingClientRect()
@@ -906,7 +907,11 @@ export class CanvasView implements View {
       id = this.nextId();
     if (d.tool === 'zone') {
       this.ctx.act(
-        { type: 'zone.create', world: w.id, zone: { id, ...rect, name: 'Zona', agent: null } },
+        {
+          type: 'zone.create',
+          world: w.id,
+          zone: { id, ...rect, name: 'Zona sin nombre', agent: null },
+        },
         'dibujar zona',
         'DRAW-01',
         'pointer',
@@ -968,6 +973,16 @@ export class CanvasView implements View {
     this.render();
   }
   private connect(from: string, fromAnchor: Anchor, to: string, toAnchor: Anchor): void {
+    if (
+      this.ctx
+        .world()
+        .links.some((link) => sameConnection(link, { from, fromAnchor, to, toAnchor }))
+    ) {
+      this.ctx.notice('Ya existe una conexión entre esos anclajes.');
+      this.ctx.ui.canvas.linkStart = null;
+      this.render();
+      return;
+    }
     this.ctx.act(
       { type: 'link.create', world: this.ctx.world().id, from, to, fromAnchor, toAnchor },
       'conectar anclajes',
@@ -1020,6 +1035,16 @@ export class CanvasView implements View {
       w = ctx.world(),
       id = t.dataset.id ?? '';
     switch (t.dataset.action) {
+      case 'canvas-undo':
+      case 'canvas-redo':
+        ctx.act(
+          { type: t.dataset.action === 'canvas-undo' ? 'canvas.undo' : 'canvas.redo', world: w.id },
+          'historial del Canvas',
+          'UNDO-01',
+        );
+        this.select(null, null);
+        this.render();
+        break;
       case 'canvas-examples':
         this.referenceMenu = false;
         this.renderDock();
@@ -1122,6 +1147,7 @@ export class CanvasView implements View {
         this.render();
         break;
       case 'link-delete':
+        this.interactions.close();
         ctx.act({ type: 'link.delete', world: w.id, id }, 'eliminar conexión', 'LINK-01');
         this.select(null, null);
         this.render();
@@ -1363,7 +1389,7 @@ export class CanvasView implements View {
     else if (zone) {
       const agent = w.agents.find((a) => a.id === zone.agent),
         materials = w.nodes.filter((n) => n.owner === zone.agent && !!zone.agent);
-      holder.innerHTML = `<aside class="zone-inspector" aria-label="Inspector de zona"><div class="inspector-head"><span>${icon('zone', 15)}<span class="inspector-name" title="${html(zone.name)}">${html(zone.name)}</span></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar panel de zona')}</div></div><label for="zone-name">Nombre de la zona</label><input id="zone-name" aria-label="Nombre de la zona" value="${html(zone.name)}"><label for="zone-agent">Agente asignado</label><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
+      holder.innerHTML = `<aside class="zone-inspector" aria-label="Inspector de zona"><div class="inspector-head"><span>${icon('zone', 15)}<label class="zone-name-label" for="zone-name">Zona</label></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar panel de zona')}</div></div><input id="zone-name" aria-label="Nombre de la zona" placeholder="Zona sin nombre" value="${html(zone.name)}"><label for="zone-agent">Agente asignado</label><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
         .filter((a) => !a.templateId || a.id === zone.agent)
         .map(
           (a) =>
@@ -1444,7 +1470,10 @@ export class CanvasView implements View {
     const mode = this.ctx.ui.chat.chatMode;
     if (!panel || mode === 'closed') return false;
     if (mode === 'quick') return true;
-    const width = panel === 'inspector' ? 270 : 320;
+    const job = this.ctx
+      .world()
+      .assignments.find((a) => a.id === (this.revision ?? this.framedProposal));
+    const width = panel === 'inspector' ? 270 : (job?.output?.length ?? 1) > 1 ? 560 : 320;
     return innerWidth - Math.min(310, innerWidth - 76) < width + 48;
   }
   private renderDock(): void {
@@ -1469,11 +1498,12 @@ export class CanvasView implements View {
           ico,
           label + (ctx.ui.shortcuts[tool] ? ' · ' + ctx.ui.shortcuts[tool] : ''),
           `data-tool="${tool}"`,
-          ctx.ui.canvas.tool === tool,
+          ctx.ui.canvas.tool === tool && !this.shapesOpen,
         ),
       )
       .join('');
-    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'annotation', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', 'data-dock-secondary')}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMenu ? `<div class="reference-menu"><button type="button" data-action="canvas-import">${icon('image', 14)}Importar imágenes, videos o PDF</button><button type="button" data-action="canvas-examples">${icon('image', 14)}Cargar ejemplos multimedia</button><button type="button" data-action="canvas-link">${icon('link', 14)}Agregar enlace</button>${w.docs.map((d) => `<button data-action="reference-add" data-kind="document" data-id="${d.id}">${icon('docs', 14)}${html(d.title)}</button>`).join('')}${w.files.map((f) => `<button data-action="reference-add" data-kind="file" data-id="${f.id}">${icon('code', 14)}${html(f.name)}</button>`).join('')}${w.tasks.map((t) => `<button data-action="reference-add" data-kind="task" data-id="${t.id}">${icon('board', 14)}${html(t.title)}</button>`).join('')}</div>` : ''}`;
+    const history = ctx.store.canvasHistory.status(w.id);
+    holder.innerHTML = `<div class="canvas-history-controls" role="toolbar" aria-label="Historial de cambios de Canvas">${btn('canvas-undo', 'undo', 'Deshacer · Ctrl+Z', history.undo ? '' : 'disabled')}${btn('canvas-redo', 'redo', 'Rehacer · Ctrl+Shift+Z', history.redo ? '' : 'disabled')}</div><div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, this.shapesOpen || shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', 'data-dock-secondary')}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMenu ? `<div class="reference-menu"><button type="button" data-action="canvas-import">${icon('image', 14)}Importar imágenes, videos o PDF</button><button type="button" data-action="canvas-examples">${icon('image', 14)}Cargar ejemplos multimedia</button><button type="button" data-action="canvas-link">${icon('link', 14)}Agregar enlace</button>${w.docs.map((d) => `<button data-action="reference-add" data-kind="document" data-id="${d.id}">${icon('docs', 14)}${html(d.title)}</button>`).join('')}${w.files.map((f) => `<button data-action="reference-add" data-kind="file" data-id="${f.id}">${icon('code', 14)}${html(f.name)}</button>`).join('')}${w.tasks.map((t) => `<button data-action="reference-add" data-kind="task" data-id="${t.id}">${icon('board', 14)}${html(t.title)}</button>`).join('')}</div>` : ''}`;
     const selected = w.nodes.find((n) => n.id === ctx.ui.canvas.selection);
     if (
       ctx.ui.canvas.tool === 'drawing' ||
@@ -1585,7 +1615,7 @@ export class CanvasView implements View {
     const heights = new Map(
       Array.from(this.root.querySelectorAll<HTMLElement>('[data-proposal]'), (el) => [
         el.dataset.proposal!,
-        el.offsetHeight,
+        el.querySelector<HTMLElement>('.proposal-decision')?.offsetHeight ?? 0,
       ]),
     );
     this.proposalMotions.forEach((animation) => animation.cancel());
@@ -1671,11 +1701,12 @@ export class CanvasView implements View {
     if (!reducedMotion())
       plane.querySelectorAll<HTMLElement>('[data-proposal]').forEach((el) => {
         const previous = heights.get(el.dataset.proposal!),
-          height = el.offsetHeight;
-        if (previous !== undefined && Math.abs(previous - height) > 1)
+          panel = el.querySelector<HTMLElement>('.proposal-decision'),
+          height = panel?.offsetHeight ?? 0;
+        if (panel && previous !== undefined && Math.abs(previous - height) > 1)
           this.proposalMotions.set(
             el.dataset.proposal!,
-            el.animate([{ height: previous + 'px' }, { height: height + 'px' }], {
+            panel.animate([{ height: previous + 'px' }, { height: height + 'px' }], {
               duration: height > previous ? motion.panelOpenMs : motion.panelCloseMs,
               easing: motion.panelEase,
             }),

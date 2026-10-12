@@ -1071,7 +1071,7 @@ test('C08-B18: inspector, propuesta y chat comparten ventanas estrechas sin tapa
     expect(proposal.x + proposal.width).toBeLessThanOrEqual(380);
     expect(proposal.y).toBeGreaterThanOrEqual(59);
     expect(proposal.y + proposal.height).toBeLessThanOrEqual(dock.y);
-    const content = (await page.locator('.proposal > p').boundingBox())!;
+    const content = (await page.locator('.proposal-preview').boundingBox())!;
     expect(content.height).toBeGreaterThanOrEqual(47);
     expect(content.y).toBeGreaterThanOrEqual(proposal.y);
     expect(content.y + content.height).toBeLessThanOrEqual(proposal.y + proposal.height);
