@@ -88,11 +88,15 @@ hasta 300 px: chat anclado hasta el borde inferior, dock sin huecos ni filas acc
 controles utilizables, herramientas adicionales alcanzables y borrador conservado al
 contraer/expandir. Medir la representación vigente después de resize y esperar el fin
 de las transiciones antes de comprobar su geometría final; revisar también sus estados
-intermedios. C08-B17–B21 quedan exigidos por la matriz del arnés. La cobertura incluye
+intermedios. C08-B17–B29 quedan exigidos por la matriz del arnés. La cobertura incluye
 el nombre y chevron de contraer/desplegar, desacoplamiento por arrastre, desplazamiento
 del dock colocado manualmente al expandir el chat y contraste entre fondo punteado,
 zonas, materiales y herramientas. Comprobar también la legibilidad del texto sobre
-las superficies diferenciadas.
+las superficies diferenciadas. La corrección 0.8.1 exige también comprobar píxeles
+visibles del cable después de etiquetar, un contraejemplo de máscara inválida,
+contraste de cada control de propuestas, ausencia de movimiento del dock sin colisión,
+toggle de herramientas, cursores, muestras de grosor, nombres independientes de zonas,
+menú del composer, regreso desde atajos y ejemplos multimedia recargables.
 
 El arnés forma parte del sistema que se debe validar. Debe detectar y reportar correctamente:
 

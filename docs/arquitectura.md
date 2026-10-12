@@ -61,6 +61,11 @@ Cada trabajo guarda su revisión, identidad, instrucción, contexto recibido y v
 
 La recuperación comprueba efectos ya registrados antes de reintentar. Una interrupción confirmada se presenta como `Interrumpido`, con Reintentar/Cancelar. Las propuestas recuperadas conservan su aceptación explícita pendiente; cerrar el chat o recargar no cancela al agente.
 
+El posicionamiento de propuestas busca espacio libre sin mover materiales del usuario.
+Store corrige la geometría de propuestas recuperadas antes de congelar el estado; los
+comandos conservan esa separación al modificar contenido. Las máscaras SVG declaran
+su región completa y el foco de una conexión resalta el cable.
+
 ## Persistencia y archivos de Canvas 0.8
 
 `src/platform/local-storage.ts` usa IndexedDB (`everett-canvas`, esquema 1). `worlds` guarda el contenido compartido de los Mundos; `personal` guarda perfil, ruta, cámaras, selección válida, presentación del chat, conversación activa, borradores y atajos por usuario local; `assets` guarda los bytes de imágenes, videos y PDF como Blob. Contenido y contexto personal se confirman juntos en una transacción. La escritura comienza durante el evento que cambió el dato, sin debounce que pueda perder la última edición al recargar.
