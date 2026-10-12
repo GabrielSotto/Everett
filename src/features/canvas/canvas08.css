@@ -747,7 +747,7 @@
 }
 .shortcut-row {
   display: grid;
-  grid-template-columns: 1fr 120px 30px;
+  grid-template-columns: minmax(0, 1fr) 120px 30px;
   gap: 4px;
   align-items: center;
   padding: 7px 0;
@@ -756,6 +756,16 @@
 .shortcut-key {
   position: relative;
   min-width: 0;
+}
+.profile-pop:has(.canvas-shortcuts, [data-action='settings-shortcuts']) {
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.profile-pop:has(.canvas-shortcuts, [data-action='settings-shortcuts']) .profile-tabs {
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .chat-host:has(.chat-composer-menu) {
   z-index: 48;
@@ -806,6 +816,8 @@
 }
 .shortcut-row label {
   font-size: 11px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .shortcut-row input {
   width: 100%;

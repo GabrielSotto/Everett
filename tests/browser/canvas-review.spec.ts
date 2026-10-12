@@ -498,6 +498,16 @@ test('C08-B27: configuración de atajos permite regresar, quitar y restaurar sin
     body: await page.screenshot(),
     contentType: 'image/png',
   });
+  await page.setViewportSize({ width: 300, height: 500 });
+  const reset = page.getByRole('button', { name: 'Restaurar todos', exact: true });
+  await reset.scrollIntoViewIfNeeded();
+  const resetBounds = (await reset.boundingBox())!;
+  expect(resetBounds.y).toBeGreaterThanOrEqual(59);
+  expect(resetBounds.y + resetBounds.height).toBeLessThanOrEqual(500);
+  expect((await page.locator('.shell').boundingBox())!.y).toBe(0);
+  await reset.click();
+  await page.getByRole('button', { name: 'Volver a Configuración', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Atajos', exact: true })).toBeInViewport();
 });
 
 test('C08-B28: nombre de zona independiente del agente y estado de Canvas muestra trabajo real', async ({
