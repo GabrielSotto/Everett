@@ -1022,6 +1022,21 @@ test('C08-B18: inspector, propuesta y chat comparten ventanas estrechas sin tapa
   await page.getByRole('button', { name: 'Pedir cambios', exact: true }).click();
   for (const height of [760, 500]) {
     await page.setViewportSize({ width: 390, height });
+    // CDP puede responder antes del evento resize; esperar su encuadre observable.
+    await expect
+      .poll(async () => {
+        const bounds = await page.locator('.proposal').boundingBox(),
+          tools = await page.locator('.canvas-tools').boundingBox();
+        return (
+          !!bounds &&
+          !!tools &&
+          bounds.x >= 10 &&
+          bounds.x + bounds.width <= 380 &&
+          bounds.y >= 59 &&
+          bounds.y + bounds.height <= tools.y
+        );
+      })
+      .toBe(true);
     const proposal = (await page.locator('.proposal').boundingBox())!,
       dock = (await page.locator('.canvas-tools').boundingBox())!;
     expect(proposal.x).toBeGreaterThanOrEqual(10);
