@@ -268,3 +268,30 @@
 .search-results button:hover {
   background: var(--surface);
 }
+
+.canvas-history-controls {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+.shell:has(.canvas-history-controls) .location {
+  min-width: 0;
+  overflow: hidden;
+}
+@media (max-width: 480px) {
+  .shell:has(.canvas-history-controls) {
+    gap: 3px;
+    padding-inline: 8px;
+  }
+  .shell:has(.canvas-history-controls) .location {
+    margin-left: 0;
+    gap: 3px;
+  }
+  .shell:has(.canvas-history-controls) .location input {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .shell:has(.canvas-history-controls) .location > :is(svg, span) {
+    display: none;
+  }
+}

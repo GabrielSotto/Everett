@@ -204,26 +204,6 @@
 .scene:has([data-label]) .link-actions {
   visibility: hidden;
 }
-.canvas-history-controls {
-  position: fixed;
-  top: 72px;
-  left: 12px;
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--raised);
-  z-index: 43;
-}
-.canvas-history-controls .icon-button {
-  width: 32px;
-  height: 32px;
-}
-.scene:has(.canvas-chat.docked:not(.compact)):not([data-chat-obscured='true'])
-  .canvas-history-controls {
-  left: min(326px, calc(100vw - 90px));
-}
 .comment-marker {
   width: 24px;
   height: 24px;
@@ -232,9 +212,16 @@
   translate: calc(12px / var(--canvas-zoom)) calc(-12px / var(--canvas-zoom));
   scale: calc(1 / var(--canvas-zoom));
   transform-origin: top right;
-  background: var(--raised);
+  background: transparent;
   color: var(--accent);
-  border: 1px solid var(--accent);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.comment-marker > svg {
+  fill: var(--panel);
+  width: 24px;
+  height: 24px;
 }
 .reconnect-form label {
   display: grid;
@@ -599,6 +586,14 @@
 }
 .material .drawing-art {
   overflow: visible;
+}
+/* Un mínimo de un píxel evita que los trazos se disuelvan al reducir la cámara.
+   Puntos, dimensiones y grosor guardado permanecen en coordenadas del Mundo. */
+.material > .drawing-art polyline {
+  stroke-width: max(var(--drawing-thickness), calc(1px / var(--canvas-zoom, 1)));
+}
+.material > .drawing-art circle {
+  r: max(calc(var(--drawing-thickness) / 2), calc(0.5px / var(--canvas-zoom, 1)));
 }
 .assigned-preview :is(img, video) {
   max-width: 100%;
@@ -1236,8 +1231,4 @@
   max-width: 100%;
   height: auto;
   margin: 16px auto;
-}
-
-.scene[data-canvas-panel='proposal'] .canvas-history-controls {
-  visibility: hidden;
 }

@@ -77,7 +77,148 @@ function contrast(ink: string, paper: string) {
 }
 const png = createRequire(import.meta.url)(
   resolve('node_modules/playwright-core/lib/utilsBundle.js'),
-).PNG as { sync: { read(buffer: Buffer): { data: Buffer } } };
+).PNG as { sync: { read(buffer: Buffer): { data: Buffer; width: number; height: number } } };
+
+test('C08-B40: el dibujo conserva un trazo continuo al zoom mínimo y la toolbar superior cabe a 300 píxeles', async ({
+  page,
+}, testInfo) => {
+  await canvas(page);
+  await simple(page, []);
+  const input = await snapshot(page);
+  input.state.camera = { x: 0, y: 0, z: 0.4 };
+  await storedFixture(page, input.state, input.ui);
+  await page.reload();
+  await ready(page);
+  await page.getByRole('button', { name: 'Dibujar', exact: true }).click();
+  await page.getByLabel('Color', { exact: true }).fill('#ffffff');
+  await page.getByRole('button', { name: 'Grosor 4 px', exact: true }).click();
+  const path = [
+    { x: 220, y: 170 },
+    { x: 650, y: 170 },
+    { x: 650, y: 380 },
+    { x: 220, y: 380 },
+    { x: 220, y: 170 },
+    { x: 650, y: 380 },
+  ];
+  await page.mouse.move(path[0]!.x, path[0]!.y);
+  await page.mouse.down();
+  for (const point of path.slice(1)) await page.mouse.move(point.x, point.y, { steps: 60 });
+  await page.mouse.up();
+  await page.getByRole('button', { name: 'Dibujar', exact: true }).click();
+  const original = structuredClone((await world(page)).nodes[0]!);
+  await page.mouse.click(90, 400);
+  await page.mouse.move(440, 270);
+  for (let i = 0; i < 12; i++) await page.mouse.wheel(0, 300);
+  await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(0.1, 5);
+  const art = page.locator('.drawing-art');
+  // La cámara continúa interpolando su posición después de llegar al límite de zoom.
+  await expect
+    .poll(() =>
+      art.evaluate(async (el) => {
+        const before = el.getBoundingClientRect();
+        for (let i = 0; i < 8; i++) await new Promise(requestAnimationFrame);
+        const after = el.getBoundingClientRect();
+        return Math.max(Math.abs(before.x - after.x), Math.abs(before.y - after.y));
+      }),
+    )
+    .toBeLessThan(0.01);
+  const geometry = await art.evaluate((el) => {
+    const r = el.getBoundingClientRect(),
+      view = (el as SVGSVGElement).viewBox.baseVal;
+    return {
+      x: r.x,
+      y: r.y,
+      width: r.width,
+      height: r.height,
+      vw: view.width,
+      vh: view.height,
+      points: [...(el.querySelector('polyline') as SVGPolylineElement).points].map((p) => ({
+        x: p.x,
+        y: p.y,
+      })),
+    };
+  });
+  const coverage = (buffer: Buffer) => {
+    const image = png.sync.read(buffer);
+    let hits = 0,
+      total = 0;
+    for (let i = 1; i < geometry.points.length; i++) {
+      const a = geometry.points[i - 1]!,
+        b = geometry.points[i]!;
+      const ax = geometry.x + (a.x / geometry.vw) * geometry.width,
+        ay = geometry.y + (a.y / geometry.vh) * geometry.height;
+      const bx = geometry.x + (b.x / geometry.vw) * geometry.width,
+        by = geometry.y + (b.y / geometry.vh) * geometry.height;
+      const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay)));
+      for (let j = 0; j <= steps; j++) {
+        const x = ax + ((bx - ax) * j) / steps,
+          y = ay + ((by - ay) * j) / steps;
+        let visible = false;
+        for (let yy = Math.floor(y) - 1; yy <= Math.ceil(y) + 1; yy++)
+          for (let xx = Math.floor(x) - 1; xx <= Math.ceil(x) + 1; xx++) {
+            if (xx < 0 || yy < 0 || xx >= image.width || yy >= image.height) continue;
+            const k = (yy * image.width + xx) * 4;
+            // El suavizado de diagonales reparte la tinta entre píxeles; 110 conserva
+            // su contraste visible. El contraejemplo exige detectar los cortes reales.
+            if (image.data[k]! > 110 && image.data[k + 1]! > 110 && image.data[k + 2]! > 110)
+              visible = true;
+          }
+        total++;
+        if (visible) hits++;
+      }
+    }
+    return hits / total;
+  };
+  const good = await page.screenshot();
+  await testInfo.attach('dibujo-zoom-minimo-continuo', { body: good, contentType: 'image/png' });
+  expect(coverage(good)).toBeGreaterThan(0.99);
+  await art.locator('polyline').evaluate((el) => ((el as SVGElement).style.strokeWidth = '4px'));
+  const broken = await page.screenshot();
+  await testInfo.attach('control-negativo-trazo-subpixel', {
+    body: broken,
+    contentType: 'image/png',
+  });
+  expect(coverage(broken)).toBeLessThan(0.2);
+  await art
+    .locator('polyline')
+    .evaluate((el) => (el as SVGElement).style.removeProperty('stroke-width'));
+  const restored = await page.screenshot();
+  await testInfo.attach('trazo-restaurado', { body: restored, contentType: 'image/png' });
+  await testInfo.attach('medicion-continuidad', {
+    body: JSON.stringify({
+      geometry,
+      good: coverage(good),
+      broken: coverage(broken),
+      restored: coverage(restored),
+      style: await art.locator('polyline').evaluate((el) => getComputedStyle(el).strokeWidth),
+    }),
+    contentType: 'application/json',
+  });
+  expect(coverage(restored)).toBeGreaterThan(0.99);
+  expect((await world(page)).nodes[0]).toEqual(original);
+  await page.reload();
+  await ready(page);
+  expect((await world(page)).nodes[0]).toEqual(original);
+  for (const width of [800, 390, 300]) {
+    await page.setViewportSize({ width, height: 668 });
+    const toolbar = page
+      .locator('#shell')
+      .getByRole('toolbar', { name: 'Historial de cambios de Canvas' });
+    await expect(toolbar).toBeVisible();
+    for (const button of await toolbar.getByRole('button').all()) {
+      const box = (await button.boundingBox())!;
+      expect(box.width).toBeLessThanOrEqual(33);
+      expect(box.height).toBeLessThanOrEqual(33);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+      expect(box.y + box.height).toBeLessThanOrEqual(59);
+    }
+  }
+  await testInfo.attach('toolbar-300px', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+});
 
 test('C08-B34: nota legible en los cinco colores, texto pintado, guardado automático y regreso sin enviar con Enter', async ({
   page,
@@ -262,6 +403,16 @@ test('C08-B36: cables inversos no se duplican, papelera accesible al editar, his
   });
   await trash.click();
   expect(await linkCount()).toBe(1);
+  const history = page.getByRole('toolbar', { name: 'Historial de cambios de Canvas' });
+  await expect(
+    page.locator('#shell').getByRole('toolbar', { name: 'Historial de cambios de Canvas' }),
+  ).toBeVisible();
+  for (const button of await history.getByRole('button').all()) {
+    const box = (await button.boundingBox())!;
+    expect(box.width).toBeLessThanOrEqual(33);
+    expect(box.height).toBeLessThanOrEqual(33);
+    expect(box.y + box.height).toBeLessThanOrEqual(59);
+  }
   await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
   expect(await linkCount()).toBe(2);
   await page.getByRole('button', { name: 'Rehacer · Ctrl+Shift+Z', exact: true }).click();
@@ -550,6 +701,13 @@ test('C08-B39: Formas enlaza su menú y estado, lápiz continuo desde la primera
   await page.getByLabel('Nuevo comentario', { exact: true }).fill('Comentario completo');
   await page.getByRole('button', { name: 'Publicar comentario', exact: true }).click();
   const marker = page.getByRole('button', { name: 'Comentario de Gabi', exact: true });
+  expect(
+    await marker.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return [s.backgroundColor, s.borderWidth, s.boxShadow, s.borderRadius];
+    }),
+  ).toEqual(['rgba(0, 0, 0, 0)', '0px', 'none', '0px']);
+  await expect(marker.locator('svg')).toHaveCount(1);
   for (const delta of [-500, -400, 600]) {
     await page.mouse.move(100, 300);
     await page.mouse.wheel(0, delta);

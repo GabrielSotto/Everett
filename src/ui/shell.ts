@@ -62,6 +62,25 @@ export class Shell {
         if (!t) return;
         const ui = ctx.ui;
         switch (t.dataset.action) {
+          case 'canvas-undo':
+          case 'canvas-redo': {
+            const state = ctx.store.get(),
+              w = activeWorld(state);
+            if (!w || state.route.kind !== 'surface' || state.route.surface !== 'canvas') break;
+            ui.canvas.selection = null;
+            ui.canvas.selections = [];
+            ui.canvas.linkSelection = null;
+            ui.canvas.zoneSelection = null;
+            ctx.act(
+              {
+                type: t.dataset.action === 'canvas-undo' ? 'canvas.undo' : 'canvas.redo',
+                world: w.id,
+              },
+              'historial del Canvas',
+              'UNDO-01',
+            );
+            break;
+          }
           case 'wordmark':
             ctx.act({ type: 'universe' }, 'volver al universo', 'NAV-01');
             break;
@@ -300,9 +319,13 @@ export class Shell {
       s = ctx.store.get(),
       w = activeWorld(s),
       p = s.profile;
+    const history =
+      w && s.route.kind === 'surface' && s.route.surface === 'canvas'
+        ? ctx.store.canvasHistory.status(w.id)
+        : null;
     this.root.className =
       'shell ' + (s.route.kind === 'universe' || s.route.kind === 'world' ? 'dark-shell' : '');
-    this.root.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}<div class="shell-spacer"></div><div class="global-search ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${ui.shell.searchOpen ? btn('search-clear', 'close', 'Cerrar búsqueda') : ''}${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu)}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results"></div>`;
+    this.root.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}${history ? `<div class="canvas-history-controls" role="toolbar" aria-label="Historial de cambios de Canvas">${btn('canvas-undo', 'undo', 'Deshacer · Ctrl+Z', history.undo ? '' : 'disabled')}${btn('canvas-redo', 'redo', 'Rehacer · Ctrl+Shift+Z', history.redo ? '' : 'disabled')}</div>` : ''}<div class="shell-spacer"></div><div class="global-search ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${ui.shell.searchOpen ? btn('search-clear', 'close', 'Cerrar búsqueda') : ''}${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu)}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results"></div>`;
     if (ui.shell.searchOpen && s.route.kind !== 'universe') this.results();
     finishPanels();
     restore();

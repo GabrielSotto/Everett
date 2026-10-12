@@ -92,6 +92,8 @@ test('UI-SEQUENCE-02: una respuesta pendiente atraviesa otras superficies y la r
     .fill('Edición durante el trabajo pendiente');
   await openSurface(page, 'Canvas');
   await expect(page.locator('.proposal')).toHaveCount(1);
+  await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
   await page.getByRole('button', { name: 'Pedir cambios', exact: true }).click();
   await page.getByRole('textbox', { name: 'Cambios solicitados', exact: true }).fill('Resumir');
   await page.getByRole('button', { name: 'Enviar cambios', exact: true }).click();

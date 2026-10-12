@@ -407,13 +407,15 @@ export class EverettApp implements Context {
         );
       this.shell.render();
     } else if (change.refresh === 'content') {
-      const active = activeWorld(this.store.get());
+      const state = this.store.get(),
+        active = activeWorld(state);
       if (!('world' in change.command) || active?.id === change.command.world) this.view?.render();
       if (
         this.ui.shell.status ||
         this.ui.shell.filters ||
         change.command.type === 'world.shipping' ||
-        change.command.type === 'profile.edit'
+        change.command.type === 'profile.edit' ||
+        (state.route.kind === 'surface' && state.route.surface === 'canvas')
       )
         this.shell.render();
     }
