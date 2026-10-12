@@ -1090,12 +1090,14 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
     await expect
       .poll(async () => {
         const box = await toolbar.boundingBox();
+        const count = await toolbar.locator('button:visible').count();
         return (
           !!box &&
           box.x >= 0 &&
           box.y >= 59 &&
           box.x + box.width <= width &&
-          box.y + box.height <= 760
+          box.y + box.height <= 760 &&
+          (width - chatRight < 420 || count === 9)
         );
       })
       .toBe(true);
@@ -1180,7 +1182,12 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
   expect((await snapshot(page)).camera.z).toBe(zoom);
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1250, height: 760 });
-  const grip = (await toolbar.locator('.dock-grip').boundingBox())!;
+  await checkDock(1250, 310);
+  const grip = await toolbar.locator('.dock-grip').evaluateAll((elements) => {
+    const r = elements[0]?.getBoundingClientRect();
+    return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+  });
+  if (!grip) throw new Error('El dock no tiene un tirador visible después del resize.');
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
   await page.mouse.down();
   await page.mouse.move(90, 390, { steps: 12 });
