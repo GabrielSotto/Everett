@@ -476,7 +476,7 @@ export class EverettApp implements Context {
         route.kind === 'surface' &&
         route.surface === 'canvas' &&
         !target?.closest(
-          '.canvas-chat,.zone-inspector,.zone-materials,.canvas-context-layer,.proposal,textarea,input,[contenteditable=true]',
+          '.canvas-chat,.zone-inspector,.zone-materials,.canvas-context-layer,.proposal,.dock-more-menu,.reference-menu,textarea,input,select,[contenteditable=true]',
         )
       ) {
         e.preventDefault();

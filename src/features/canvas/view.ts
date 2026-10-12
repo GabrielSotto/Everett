@@ -113,6 +113,17 @@ export class CanvasView implements View {
       this.renderDock(),
     );
     this.interactions = new CanvasInteractions(root, ctx, this.abort.signal, () => this.camPoint());
+    root.addEventListener(
+      'contextmenu',
+      () => {
+        if (!this.referenceMenu && !this.shapesOpen && !this.dockMore) return;
+        this.referenceMenu = false;
+        this.shapesOpen = false;
+        this.dockMore = false;
+        this.renderDock();
+      },
+      { signal: this.abort.signal },
+    );
     root.addEventListener('pointerdown', (e) => this.down(e), { signal: this.abort.signal });
     root.addEventListener('pointermove', (e) => this.move(e), { signal: this.abort.signal });
     root.addEventListener('pointerup', (e) => this.up(e), { signal: this.abort.signal });

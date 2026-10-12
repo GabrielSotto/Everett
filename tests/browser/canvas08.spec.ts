@@ -1149,4 +1149,19 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
     body: await page.screenshot(),
     contentType: 'image/png',
   });
+  await page.setViewportSize({ width: 300, height: 300 });
+  await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
+  const menuBox = (await menu.boundingBox())!,
+    zoom = (await snapshot(page)).camera.z;
+  expect(
+    await menu.evaluate((element) => {
+      const r = element.getBoundingClientRect();
+      return !!document.elementFromPoint(r.x + r.width / 2, r.y + 25)?.closest('.dock-more-menu');
+    }),
+  ).toBe(true);
+  await page.mouse.move(menuBox.x + menuBox.width / 2, menuBox.y + 25);
+  await page.mouse.wheel(0, 100);
+  await expect.poll(() => menu.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  expect((await snapshot(page)).camera.z).toBe(zoom);
+  await page.keyboard.press('Escape');
 });

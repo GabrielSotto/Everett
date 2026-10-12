@@ -255,7 +255,7 @@
   width: min(224px, calc(100vw - 24px));
   max-height: calc(100vh - 95px);
   overflow: auto;
-  z-index: 35;
+  z-index: 45;
   padding: 4px;
   border: 1px solid var(--line);
   border-radius: 9px;
@@ -299,7 +299,7 @@
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--raised);
-  z-index: 31;
+  z-index: 45;
   max-width: calc(100vw - 24px);
 }
 .canvas-style label {
@@ -309,7 +309,10 @@
   font-size: 11px;
 }
 .shape-menu {
-  z-index: 35;
+  z-index: 45;
+}
+.reference-menu {
+  z-index: 45;
 }
 .canvas-tools:has(.shape-menu) {
   z-index: 32;
