@@ -43,19 +43,46 @@ test('UI-ZONE-02: aceptar crea el resultado y devuelve el original sin reemplaza
   await openSurface(page, 'Canvas');
   const note = page.locator('.material[data-node="note-a"]');
   const original = await note.locator('p').innerText();
-  const count = await page.locator('.material').count();
+  const originalNode = await page.evaluate(() =>
+    window
+      .EverettDebug!.snapshot()
+      .state.worlds.find((w) => w.id === 'scout')!
+      .nodes.find((n) => n.id === 'note-a')!,
+  );
+  const count = await page.locator('.material[data-node]').count();
   await assignMaterial(page, 'note-a', 'Analizar');
+  await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
   const proposal = page.locator('.proposal');
   await expect(proposal).toBeVisible();
-  const proposed = await proposal.locator('p').innerText();
-  expect(proposed).not.toBe(original);
-  await expect(page.locator('.material')).toHaveCount(count - 1);
+  const previews = proposal.locator('[data-proposed-node]');
+  await expect(previews).toHaveCount(2);
+  const proposed = await previews.evaluateAll((elements) =>
+    elements.map((el) => ({
+      id: el.getAttribute('data-proposed-node')!,
+      title: el.querySelector('h3')!.textContent!,
+      text: el.querySelector('p')!.textContent!,
+    })),
+  );
+  for (const draft of proposed) expect(draft.text).not.toBe(original);
+  await expect(page.locator('.material[data-node]')).toHaveCount(count - 1);
   await page.getByRole('button', { name: 'Aceptar propuesta', exact: true }).click();
   await expect(note.locator('p')).toHaveText(original);
-  await expect(page.locator('.material')).toHaveCount(count + 1);
-  await expect(
-    page.locator('.material.note').filter({ has: page.locator('p').filter({ hasText: proposed }) }),
-  ).toHaveCount(1);
+  await expect(page.locator('.material[data-node]')).toHaveCount(count + proposed.length);
+  for (const draft of proposed) {
+    const material = page.locator('[data-node="' + draft.id + '"]');
+    await expect(material).toHaveCount(1);
+    await expect(material.getByRole('heading')).toHaveText(draft.title);
+    await expect(material.locator('p')).toHaveText(draft.text);
+  }
+  expect(
+    await page.evaluate(() =>
+      window
+        .EverettDebug!.snapshot()
+        .state.worlds.find((w) => w.id === 'scout')!
+        .nodes.find((n) => n.id === 'note-a'),
+    ),
+  ).toEqual(originalNode);
   await expect(proposal).toHaveCount(0);
 });
 
