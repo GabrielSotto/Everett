@@ -359,6 +359,16 @@ test('C08-B33: tarjeta con metadatos identificables, vacío centrado y propuesta
   await expect(task.locator('[aria-label^="Responsable:"]')).toHaveText(record.assignee);
   for (const value of await task.locator('.task-material-meta > span').all())
     await expect(value.locator('svg')).toHaveCount(1);
+  const cardBounds = (await task.boundingBox())!;
+  for (const content of await task
+    .locator(':scope > :is(.task-material-kind,h3,p,.task-material-meta)')
+    .all()) {
+    await expect(content).toBeVisible();
+    const box = (await content.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(cardBounds.y);
+    expect(box.y + box.height).toBeLessThanOrEqual(cardBounds.y + cardBounds.height);
+    expect(box.x + box.width).toBeLessThanOrEqual(cardBounds.x + cardBounds.width);
+  }
   const zone = page.locator('[data-zone=zone-eve]');
   const empty = zone.locator('.drop-label');
   const z = (await zone.boundingBox())!,
