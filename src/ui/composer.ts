@@ -14,8 +14,9 @@ export function composer(
   tools = false,
   context = '',
   draft?: ComposerDraft,
+  canvasActions = false,
 ): string {
-  return `<form class="composer" id="${id}"${draft ? ` data-draft-key="${html(draft.key)}"` : ''}><textarea id="${id}-input" rows="1" aria-label="${html(placeholder)}" placeholder="${html(placeholder)}">${html(draft?.value ?? '')}</textarea><div class="composer-bottom"><div>${tools ? btn('tools', 'plus', 'Herramientas') : ''}${btn('mention', 'at', 'Mencionar')}${context ? `<span class="context-chip">${icon('docs', 12)}${html(context)}</span>` : ''}</div><div class="composer-send">${btn('dictate', 'mic', 'Dictar', 'aria-pressed="false"')}<button class="send" type="submit" aria-label="Enviar" data-tip="Enviar">${icon('up', 17)}</button></div></div></form>`;
+  return `<form class="composer" id="${id}"${draft ? ` data-draft-key="${html(draft.key)}"` : ''}><textarea id="${id}-input" rows="1" aria-label="${html(placeholder)}" placeholder="${html(placeholder)}">${html(draft?.value ?? '')}</textarea><div class="composer-bottom"><div>${canvasActions ? btn('chat-actions', 'plus', 'Más acciones de conversación', 'aria-haspopup="menu" aria-expanded="false"') : (tools ? btn('tools', 'plus', 'Herramientas') : '') + btn('mention', 'at', 'Mencionar')}${context ? `<span class="context-chip">${icon('docs', 12)}${html(context)}</span>` : ''}</div><div class="composer-send">${btn('dictate', 'mic', 'Dictar', 'aria-pressed="false"')}<button class="send" type="submit" aria-label="Enviar" data-tip="Enviar">${icon('up', 17)}</button></div></div></form>`;
 }
 
 export function composerDraft(ctx: Context, id: string, entity = ''): ComposerDraft {

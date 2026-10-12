@@ -22,6 +22,7 @@ const reversible = new Set<Command['type']>([
   'node.style',
   'link.label',
   'zone.instruction',
+  'zone.rename',
   'node.move',
   'node.resize',
   'node.edit',

@@ -30,6 +30,7 @@ import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 import { CanvasInteractions } from './interactions';
 import { proposalMarkup } from './proposals';
 import { motion, reducedMotion } from '../../ui/motion';
+import { strokePicker } from './stroke-picker';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
@@ -70,6 +71,9 @@ export class CanvasView implements View {
   private chat: CanvasChat;
   private drag: Drag | null = null;
   private dock: Point | null = null;
+  private dockManual = false;
+  private cableZoom = NaN;
+  private proposalMotions = new Map<string, Animation>();
   private revision: string | null = null;
   private reviewCamera: Camera | null = null;
   private framedProposal: string | null = null;
@@ -90,6 +94,10 @@ export class CanvasView implements View {
       if (plane) {
         plane.style.transform = `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
         plane.style.setProperty('--canvas-zoom', String(camera.z));
+        if (this.cableZoom !== camera.z) {
+          this.cableZoom = camera.z;
+          this.paintCableLabels();
+        }
       }
     });
     ctx.camera = this.cam;
@@ -172,6 +180,21 @@ export class CanvasView implements View {
       'change',
       (e) => {
         if (
+          e.target instanceof HTMLInputElement &&
+          e.target.id === 'zone-name' &&
+          ctx.ui.canvas.zoneSelection
+        )
+          ctx.act(
+            {
+              type: 'zone.rename',
+              world: ctx.world().id,
+              id: ctx.ui.canvas.zoneSelection,
+              name: e.target.value,
+            },
+            'renombrar zona',
+            'ZONE-01',
+          );
+        if (
           e.target instanceof HTMLSelectElement &&
           e.target.id === 'zone-agent' &&
           ctx.ui.canvas.zoneSelection
@@ -196,6 +219,7 @@ export class CanvasView implements View {
     window.addEventListener(
       'resize',
       () => {
+        if (!this.dockManual) this.dock = null;
         this.root.dataset.chatObscured = String(this.chatHidden());
         const proposal = this.revision ?? (this.reviewCamera ? this.framedProposal : null);
         if (proposal) this.frameProposal(proposal);
@@ -365,7 +389,7 @@ export class CanvasView implements View {
         z,
       };
     this.ctx.ui.canvas.zoneSelection = null;
-    this.cam.set(camera, true);
+    this.cam.set(camera, reducedMotion());
     this.ctx.act({ type: 'camera', camera }, 'consultar propuesta', 'C08-PROP-01');
     this.render();
   }
@@ -373,7 +397,7 @@ export class CanvasView implements View {
     const camera = this.expansionCamera;
     this.expansionCamera = null;
     if (camera) {
-      this.cam.set(camera, true);
+      this.cam.set(camera, reducedMotion());
       this.ctx.act({ type: 'camera', camera }, 'recuperar encuadre de Canvas', 'C08-PROP-01');
     }
   }
@@ -383,7 +407,7 @@ export class CanvasView implements View {
     this.reviewCamera = null;
     if (camera) {
       this.expansionCamera = null;
-      this.cam.set(camera, true);
+      this.cam.set(camera, reducedMotion());
       this.ctx.act({ type: 'camera', camera }, 'volver de la revisión de propuesta', 'C08-PROP-01');
     } else this.restoreExpansion();
     this.render();
@@ -552,6 +576,7 @@ export class CanvasView implements View {
       return;
     }
     if (d.kind === 'dock') {
+      this.dockManual = true;
       const element = this.root.querySelector<HTMLElement>('.canvas-tools')!;
       this.dock = bound(
         { x: d.origin.x + e.clientX - d.start.x, y: d.origin.y + e.clientY - d.start.y },
@@ -663,6 +688,7 @@ export class CanvasView implements View {
         data: {
           kind: 'shape',
           shape: d.tool as Shape,
+          title: 'Sin nombre',
           color: this.ctx.ui.canvas.color,
           stroke: this.ctx.ui.canvas.stroke,
           thickness: this.ctx.ui.canvas.thickness,
@@ -807,7 +833,7 @@ export class CanvasView implements View {
             : d.tool === 'drawing'
               ? {
                   kind: 'drawing',
-                  title: 'Dibujo',
+                  title: 'Sin nombre',
                   points: d.points.map((p) => ({ x: p.x - rect.x, y: p.y - rect.y })),
                   color: this.ctx.ui.canvas.color,
                   thickness: this.ctx.ui.canvas.thickness,
@@ -815,6 +841,7 @@ export class CanvasView implements View {
               : {
                   kind: 'shape',
                   shape: d.tool as Shape,
+                  title: 'Sin nombre',
                   color: this.ctx.ui.canvas.color,
                   stroke: this.ctx.ui.canvas.stroke,
                   thickness: this.ctx.ui.canvas.thickness,
@@ -835,7 +862,7 @@ export class CanvasView implements View {
       { operation: 'draw', tool: d.tool, start: d.start, end: d.point, requested: rect, id },
       d.intent,
     );
-    this.ctx.ui.canvas.tool = 'select';
+    if (d.tool === 'note' || d.tool === 'zone') this.ctx.ui.canvas.tool = 'select';
     this.render();
   }
   private cancel(): void {
@@ -900,6 +927,10 @@ export class CanvasView implements View {
       w = ctx.world(),
       id = t.dataset.id ?? '';
     switch (t.dataset.action) {
+      case 'canvas-examples':
+        this.referenceMenu = false;
+        this.renderDock();
+        break;
       case 'dock-more':
         this.dockMore = !this.dockMore;
         this.referenceMenu = false;
@@ -914,7 +945,7 @@ export class CanvasView implements View {
         const all: Tool[] = ['select', 'hand', 'note', ...shapeTools, 'zone', 'connect', 'drawing'];
         if (all.includes(tool as Tool)) {
           if (tool !== 'select' && tool !== 'hand') this.select(null, null);
-          ctx.ui.canvas.tool = tool as Tool;
+          ctx.ui.canvas.tool = ctx.ui.canvas.tool === tool ? 'select' : (tool as Tool);
           ctx.ui.canvas.linkStart = null;
           this.shapesOpen = false;
           this.render();
@@ -945,12 +976,16 @@ export class CanvasView implements View {
         this.closeReview();
         break;
       case 'shapes':
-        this.shapesOpen = !this.shapesOpen;
+        if (shapeTools.includes(ctx.ui.canvas.tool as Shape)) {
+          ctx.ui.canvas.tool = 'select';
+          this.select(null, null);
+          this.shapesOpen = false;
+        } else this.shapesOpen = !this.shapesOpen;
         this.referenceMenu = false;
         this.renderDock();
         break;
       case 'chat-open':
-        this.select(null, null);
+        if (ctx.ui.canvas.zoneSelection) this.select(null, null);
         this.revision = null;
         this.reviewCamera = null;
         this.restoreExpansion();
@@ -1015,7 +1050,7 @@ export class CanvasView implements View {
           const camera = this.reviewCamera;
           this.reviewCamera = null;
           this.expansionCamera = null;
-          this.cam.set(camera, true);
+          this.cam.set(camera, reducedMotion());
           ctx.act({ type: 'camera', camera }, 'recuperar encuadre de Canvas', 'C08-PROP-01');
         } else this.restoreExpansion();
         ctx.service.cancel(w.id, id);
@@ -1123,30 +1158,57 @@ export class CanvasView implements View {
         connectionMarkup(link, w, link.id === this.ctx.ui.canvas.linkSelection, preview),
       )
       .join('');
-    svg.querySelectorAll<SVGGElement>('[data-link]').forEach((group) => {
+    this.paintCableLabels();
+  }
+  private paintCableLabels(): void {
+    const svg = this.root.querySelector('.canvas-links');
+    if (!svg) return;
+    const measured = Array.from(svg.querySelectorAll<SVGGElement>('[data-link]'), (group) => {
       const path = group.querySelector<SVGPathElement>('.link-line'),
         text = group.querySelector<SVGTextElement>('.cable-label');
-      if (!path || !text) return;
+      if (!path || !text) return null;
       const length = path.getTotalLength(),
-        middle = path.getPointAtLength(length / 2),
-        a = path.getPointAtLength(Math.max(0, length / 2 - 4)),
-        b = path.getPointAtLength(Math.min(length, length / 2 + 4));
-      let angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
-      if (angle > 90) angle -= 180;
-      if (angle < -90) angle += 180;
+        middle = path.getPointAtLength(length / 2);
+      return {
+        group,
+        text,
+        middle,
+        bounds: path.getBBox(),
+        textWidth: text.getComputedTextLength(),
+      };
+    });
+    for (const item of measured) {
+      if (!item) continue;
+      const { group, text, middle, bounds, textWidth } = item;
       text.setAttribute('x', String(middle.x));
       text.setAttribute('y', String(middle.y));
-      text.setAttribute('transform', `rotate(${angle} ${middle.x} ${middle.y})`);
+      // Una etiqueta horizontal sigue siendo legible incluso en cables verticales.
+      const zoom = this.cam.current.z;
       const cut = group.querySelector<SVGRectElement>('.label-cut'),
-        width = text.getComputedTextLength() + 16;
+        width = textWidth + 12 / zoom;
       if (cut) {
         cut.setAttribute('x', String(middle.x - width / 2));
-        cut.setAttribute('y', String(middle.y - 11));
+        cut.setAttribute('y', String(middle.y - 10 / zoom));
         cut.setAttribute('width', String(width));
-        cut.setAttribute('height', '22');
-        cut.setAttribute('transform', `rotate(${angle} ${middle.x} ${middle.y})`);
+        cut.setAttribute('height', String(20 / zoom));
       }
-    });
+      const mask = group.querySelector('mask'),
+        base = group.querySelector('.mask-base');
+      if (mask && base) {
+        // La región predeterminada depende del viewport SVG (1 × 1), no del cable.
+        const margin = 16 / zoom;
+        const region = {
+          x: bounds.x - margin,
+          y: bounds.y - margin,
+          width: Math.max(1, bounds.width) + margin * 2,
+          height: Math.max(1, bounds.height) + margin * 2,
+        };
+        for (const [name, value] of Object.entries(region)) {
+          mask.setAttribute(name, String(value));
+          base.setAttribute(name, String(value));
+        }
+      }
+    }
   }
   private paintSelection(): void {
     const w = this.ctx.world(),
@@ -1186,7 +1248,7 @@ export class CanvasView implements View {
     else if (zone) {
       const agent = w.agents.find((a) => a.id === zone.agent),
         materials = w.nodes.filter((n) => n.owner === zone.agent && !!zone.agent);
-      holder.innerHTML = `<aside class="zone-inspector" aria-label="Inspector de zona"><div class="inspector-head"><span>${icon('zone', 15)}<span class="inspector-name" title="${html(zone.name)}">${html(zone.name)}</span></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar inspector de zona')}</div></div><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
+      holder.innerHTML = `<aside class="zone-inspector" aria-label="Inspector de zona"><div class="inspector-head"><span>${icon('zone', 15)}<span class="inspector-name" title="${html(zone.name)}">${html(zone.name)}</span></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar panel de zona')}</div></div><label for="zone-name">Nombre</label><input id="zone-name" aria-label="Nombre de la zona" value="${html(zone.name)}"><label for="zone-agent">Agente</label><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
         .filter((a) => !a.templateId || a.id === zone.agent)
         .map(
           (a) =>
@@ -1240,6 +1302,27 @@ export class CanvasView implements View {
         Math.min(12, (innerWidth - left - rect.width) / 2, (innerHeight - 59 - rect.height) / 2),
       ),
     );
+    const id = this.revision ?? (this.reviewCamera ? this.framedProposal : null);
+    const proposal = id
+      ? this.root.querySelector<HTMLElement>(`[data-proposal="${CSS.escape(id)}"]`)
+      : null;
+    const job = this.ctx.world().assignments.find((assignment) => assignment.id === id);
+    if (avoidChat && proposal && job) {
+      const camera = this.cam.destination,
+        stage = this.rect(),
+        scale = Math.min(1, camera.z),
+        x = stage.left + stage.width / 2 + camera.x + job.position.x * camera.z,
+        y = stage.top + stage.height / 2 + camera.y + job.position.y * camera.z,
+        width = proposal.offsetWidth * scale,
+        height = Math.min(proposal.scrollHeight + 2, innerHeight - 170) * scale;
+      if (
+        this.dock.x < x + width + 12 &&
+        this.dock.x + rect.width > x - 12 &&
+        this.dock.y < y + height + 12 &&
+        this.dock.y + rect.height > y - 12
+      )
+        this.dock.y = innerHeight - rect.height - 12;
+    }
   }
   private chatHidden(panel = this.root.dataset.canvasPanel ?? ''): boolean {
     const mode = this.ctx.ui.chat.chatMode;
@@ -1274,7 +1357,7 @@ export class CanvasView implements View {
         ),
       )
       .join('');
-    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'comment', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', 'data-dock-secondary')}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('session', 20)}</button>${this.referenceMenu ? `<div class="reference-menu"><button type="button" data-action="canvas-import">${icon('image', 14)}Importar imágenes, videos o PDF</button><button type="button" data-action="canvas-link">${icon('link', 14)}Agregar enlace</button>${w.docs.map((d) => `<button data-action="reference-add" data-kind="document" data-id="${d.id}">${icon('docs', 14)}${html(d.title)}</button>`).join('')}${w.files.map((f) => `<button data-action="reference-add" data-kind="file" data-id="${f.id}">${icon('code', 14)}${html(f.name)}</button>`).join('')}${w.tasks.map((t) => `<button data-action="reference-add" data-kind="task" data-id="${t.id}">${icon('board', 14)}${html(t.title)}</button>`).join('')}</div>` : ''}`;
+    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'annotation', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', 'data-dock-secondary')}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMenu ? `<div class="reference-menu"><button type="button" data-action="canvas-import">${icon('image', 14)}Importar imágenes, videos o PDF</button><button type="button" data-action="canvas-examples">${icon('image', 14)}Cargar ejemplos multimedia</button><button type="button" data-action="canvas-link">${icon('link', 14)}Agregar enlace</button>${w.docs.map((d) => `<button data-action="reference-add" data-kind="document" data-id="${d.id}">${icon('docs', 14)}${html(d.title)}</button>`).join('')}${w.files.map((f) => `<button data-action="reference-add" data-kind="file" data-id="${f.id}">${icon('code', 14)}${html(f.name)}</button>`).join('')}${w.tasks.map((t) => `<button data-action="reference-add" data-kind="task" data-id="${t.id}">${icon('board', 14)}${html(t.title)}</button>`).join('')}</div>` : ''}`;
     const selected = w.nodes.find((n) => n.id === ctx.ui.canvas.selection);
     if (
       ctx.ui.canvas.tool === 'drawing' ||
@@ -1286,7 +1369,7 @@ export class CanvasView implements View {
         selected?.data.kind === 'shape' || shapeTools.includes(ctx.ui.canvas.tool as Shape);
       holder.insertAdjacentHTML(
         'beforeend',
-        `<div class="canvas-style" aria-label="Estilo de dibujo y formas"><label>Color<input type="color" id="draw-color" value="${ctx.ui.canvas.color}"></label><label>Grosor<select id="draw-thickness">${[1, 2, 4, 8].map((n) => `<option ${n === ctx.ui.canvas.thickness ? 'selected' : ''}>${n}</option>`).join('')}</select></label>${shape ? `<label>Borde<input type="color" id="shape-border" value="${ctx.ui.canvas.stroke}"></label><label><input type="checkbox" id="shape-fill" ${ctx.ui.canvas.fill ? 'checked' : ''}>Relleno</label>` : ''}</div>`,
+        `<div class="canvas-style" aria-label="Estilo de dibujo y formas"><label>Color<input type="color" id="draw-color" value="${ctx.ui.canvas.color}"></label>${strokePicker(ctx.ui.canvas.thickness)}${shape ? `<label>Borde<input type="color" id="shape-border" value="${ctx.ui.canvas.stroke}"></label><label><input type="checkbox" id="shape-fill" ${ctx.ui.canvas.fill ? 'checked' : ''}>Relleno</label>` : ''}</div>`,
       );
     }
     const dock = holder.querySelector<HTMLElement>('.canvas-tools')!;
@@ -1299,11 +1382,18 @@ export class CanvasView implements View {
     const vertical = available < dock.scrollWidth + 24;
     dock.classList.toggle('vertical-tools', vertical);
     if (!this.dock) {
-      dock.style.left = vertical ? 'auto' : `${chatWidth + available / 2}px`;
+      dock.style.left = vertical ? 'auto' : `${innerWidth / 2}px`;
       dock.style.right = vertical ? '12px' : 'auto';
       dock.style.top = vertical ? `${59 + (innerHeight - 59) / 2}px` : 'auto';
       dock.style.bottom = vertical ? 'auto' : '23px';
       dock.style.transform = vertical ? 'translateY(-50%)' : 'translateX(-50%)';
+      const initial = dock.getBoundingClientRect();
+      this.dock = { x: initial.x, y: initial.y };
+      dock.style.left = `${this.dock.x}px`;
+      dock.style.top = `${this.dock.y}px`;
+      dock.style.right = 'auto';
+      dock.style.bottom = 'auto';
+      dock.style.transform = 'none';
     }
     this.clampDock(true);
     if (this.dock) {
@@ -1322,6 +1412,44 @@ export class CanvasView implements View {
       menu.style.left = `${Math.max(12, Math.min(innerWidth - menu.offsetWidth - 12, vertical ? bounds.left - menu.offsetWidth - 8 : bounds.left + bounds.width / 2 - menu.offsetWidth / 2))}px`;
       menu.style.top = `${Math.max(70, Math.min(innerHeight - menu.offsetHeight - 12, vertical ? bounds.top : bounds.top - menu.offsetHeight - 8))}px`;
     } else this.dockMore = false;
+    const style = holder.querySelector<HTMLElement>('.canvas-style');
+    if (style) {
+      const chosenTrigger = dock.querySelector<HTMLElement>(
+        shapeTools.includes(ctx.ui.canvas.tool as Shape) || selected?.data.kind === 'shape'
+          ? '[data-action=shapes]'
+          : '[data-tool=drawing]',
+      );
+      const trigger = chosenTrigger?.offsetWidth
+        ? chosenTrigger
+        : dock.querySelector<HTMLElement>('[data-action=dock-more]')!;
+      const origin = trigger.getBoundingClientRect();
+      const left = Math.max(
+        12,
+        Math.min(
+          innerWidth - style.offsetWidth - 12,
+          origin.x + origin.width / 2 - style.offsetWidth / 2,
+        ),
+      );
+      const above = origin.top - style.offsetHeight - 12 >= 70;
+      Object.assign(style.style, {
+        left: left + 'px',
+        top:
+          Math.max(
+            70,
+            Math.min(
+              innerHeight - style.offsetHeight - 12,
+              above ? origin.top - style.offsetHeight - 12 : origin.bottom + 12,
+            ),
+          ) + 'px',
+        bottom: 'auto',
+        transform: 'none',
+      });
+      style.classList.toggle('below', !above);
+      style.style.setProperty(
+        '--style-pointer',
+        Math.max(16, Math.min(style.offsetWidth - 16, origin.x + origin.width / 2 - left)) + 'px',
+      );
+    }
     if (this.dock && previous && !reducedMotion()) {
       const current = dock.getBoundingClientRect();
       if (Math.hypot(previous.x - current.x, previous.y - current.y) > 1)
@@ -1338,6 +1466,14 @@ export class CanvasView implements View {
     const restoreFocus = preserveFocus(this.root);
     const w = this.ctx.world(),
       plane = this.root.querySelector('#canvas-plane');
+    const heights = new Map(
+      Array.from(this.root.querySelectorAll<HTMLElement>('[data-proposal]'), (el) => [
+        el.dataset.proposal!,
+        el.offsetHeight,
+      ]),
+    );
+    this.proposalMotions.forEach((animation) => animation.cancel());
+    this.proposalMotions.clear();
     if (!plane) return;
     const players = new Map(
       Array.from(
@@ -1407,14 +1543,31 @@ export class CanvasView implements View {
       element.scrollTop =
         positions.get(element.closest<HTMLElement>('[data-zone]')?.dataset.zone ?? '') ?? 0;
     });
-    this.cam.set(this.cam.current, true);
+    const camera = this.cam.current;
+    (plane as HTMLElement).style.transform =
+      `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
+    (plane as HTMLElement).style.setProperty('--canvas-zoom', String(camera.z));
     this.paintSelection();
     this.renderDock();
     this.chat.render();
     this.interactions.hydrate();
+    if (!reducedMotion())
+      plane.querySelectorAll<HTMLElement>('[data-proposal]').forEach((el) => {
+        const previous = heights.get(el.dataset.proposal!),
+          height = el.offsetHeight;
+        if (previous !== undefined && Math.abs(previous - height) > 1)
+          this.proposalMotions.set(
+            el.dataset.proposal!,
+            el.animate([{ height: previous + 'px' }, { height: height + 'px' }], {
+              duration: height > previous ? motion.panelOpenMs : motion.panelCloseMs,
+              easing: motion.panelEase,
+            }),
+          );
+      });
     restoreFocus();
   }
   dispose(): void {
+    this.proposalMotions.forEach((animation) => animation.cancel());
     this.abort.abort();
     this.chat.dispose();
     this.interactions.dispose();

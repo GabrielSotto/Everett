@@ -3,6 +3,7 @@ import type { Command } from '../command-types';
 import { ensure } from '../invariants';
 import { releaseZoneMaterials } from '../zone-ownership';
 import { restoreMaterialLinks } from '../material-links';
+import { arrangeProposals } from '../proposal-layout';
 
 type CanvasCommand = Extract<
   Command,
@@ -16,6 +17,7 @@ type CanvasCommand = Extract<
       | 'node.style'
       | 'link.label'
       | 'zone.instruction'
+      | 'zone.rename'
       | 'assignment.schedule'
       | 'node.move'
       | 'node.edit'
@@ -156,6 +158,15 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         'Zona inexistente',
       ).instruction = command.text;
       break;
+    case 'zone.rename': {
+      const name = command.name.trim();
+      ensure(name.length > 0, 'ZONE_NAME', 'Ingresá un nombre para la zona');
+      need(
+        world.zones.find((zone) => zone.id === command.id),
+        'Zona inexistente',
+      ).name = name;
+      break;
+    }
     case 'assignment.schedule': {
       const job = need(
         world.assignments.find((a) => a.id === command.id),
@@ -271,10 +282,11 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         };
         world.agents.push(instance);
         zone.agent = instance.id;
-        zone.name = instance.name;
+        if (zone.name === 'Zona') zone.name = instance.name;
       } else {
         zone.agent = command.agent;
-        zone.name = command.agent ? world.agents.find((a) => a.id === command.agent)!.name : 'Zona';
+        if (zone.name === 'Zona' && command.agent)
+          zone.name = world.agents.find((a) => a.id === command.agent)!.name;
       }
       break;
     }
@@ -307,6 +319,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
           y: z ? z.y + z.height + 50 : 300,
         },
       });
+      arrangeProposals(world);
       break;
     }
     case 'assignment.ready': {

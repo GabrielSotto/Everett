@@ -41,14 +41,48 @@ export function shapeVertices(shape: Shape): Point[] {
   ];
 }
 export function anchorPoint(material: Material, anchor: Anchor): Point {
+  if (material.data.kind === 'drawing') {
+    const horizontal = anchor === 'west' || anchor === 'east';
+    const direction = anchor === 'west' || anchor === 'north' ? -1 : 1;
+    const points = material.data.points;
+    const edge = Math.max(...points.map((p) => (horizontal ? p.x : p.y) * direction));
+    const center = (horizontal ? material.height : material.width) / 2;
+    const point = points
+      .filter((p) => Math.abs((horizontal ? p.x : p.y) * direction - edge) < 0.01)
+      .reduce((best, p) =>
+        Math.abs((horizontal ? p.y : p.x) - center) <
+        Math.abs((horizontal ? best.y : best.x) - center)
+          ? p
+          : best,
+      );
+    return { x: material.x + point.x, y: material.y + point.y };
+  }
   let x = anchor === 'west' ? 0 : anchor === 'east' ? 1 : 0.5;
   const y = anchor === 'north' ? 0 : anchor === 'south' ? 1 : 0.5;
-  if (
-    material.data.kind === 'shape' &&
-    material.data.shape === 'triangle' &&
-    (anchor === 'west' || anchor === 'east')
-  )
-    x = anchor === 'west' ? 0.25 : 0.75;
+  if (material.data.kind === 'shape' && ['triangle', 'star'].includes(material.data.shape)) {
+    const vertices = shapeVertices(material.data.shape);
+    const horizontal = anchor === 'west' || anchor === 'east';
+    const intersections: number[] = [];
+    for (let i = 0; i < vertices.length; i++) {
+      const a = vertices[i]!,
+        b = vertices[(i + 1) % vertices.length]!;
+      const start = horizontal ? a.y : a.x,
+        end = horizontal ? b.y : b.x;
+      if (start === end || 0.5 < Math.min(start, end) || 0.5 > Math.max(start, end)) continue;
+      const t = (0.5 - start) / (end - start);
+      intersections.push(
+        (horizontal ? a.x : a.y) + t * ((horizontal ? b.x : b.y) - (horizontal ? a.x : a.y)),
+      );
+    }
+    const value =
+      anchor === 'west' || anchor === 'north'
+        ? Math.min(...intersections)
+        : Math.max(...intersections);
+    return {
+      x: material.x + (horizontal ? value : 0.5) * material.width,
+      y: material.y + (horizontal ? 0.5 : value) * material.height,
+    };
+  }
   return { x: material.x + x * material.width, y: material.y + y * material.height };
 }
 export function linkPath(from: Point, to: Point, fromAnchor: Anchor, toAnchor: Anchor): string {

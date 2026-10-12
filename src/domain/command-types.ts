@@ -31,6 +31,7 @@ export type Command =
     }
   | { type: 'link.label'; world: string; id: string; text: string }
   | { type: 'zone.instruction'; world: string; id: string; text: string }
+  | { type: 'zone.rename'; world: string; id: string; name: string }
   | {
       type: 'assignment.schedule';
       world: string;

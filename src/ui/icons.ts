@@ -20,6 +20,12 @@ const paths: Record<string, string> = {
   arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
   down: '<path d="m6 9 6 6 6-6"/>',
+  'chevron-left': '<path d="m15 6-6 6 6 6"/>',
+  restore: '<path d="M3 11a9 9 0 1 1 2 7M3 4v7h7"/>',
+  conversation: '<path d="M3 3h14v10H8l-5 4zM17 7h4v14l-5-4h-5v-4"/>',
+  annotation: '<path d="M4 3h16v14H9l-5 4z"/><path d="M8 8h8M8 12h5"/>',
+  keyboard:
+    '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h1m3 0h1m3 0h1m3 0h1M6 13h1m3 0h1m3 0h1m3 0h1M7 16h10"/>',
   'chevron-up': '<path d="m6 15 6-6 6 6"/>',
   filter: '<path d="M4 6h16M7 12h10M10 18h4"/>',
   activity: '<path d="M2 12h5l3-8 4 16 3-8h5"/>',

@@ -6,6 +6,7 @@ import { validate } from '../domain/invariants';
 import { trace, Trace, type Intent } from './diagnostics/trace';
 import { traceInput } from './diagnostics/trace-input';
 import { freezeState, type DeepReadonly } from '../domain/readonly';
+import { arrangeProposals } from '../domain/proposal-layout';
 export type Change = {
   command: Command;
   refresh: ReturnType<typeof affectsView>;
@@ -23,6 +24,7 @@ export class Store {
   ) {
     validate(state);
     this.state = structuredClone(state);
+    this.state.worlds.forEach(arrangeProposals);
     freezeState(this.state);
   }
   get(): DeepReadonly<State> {

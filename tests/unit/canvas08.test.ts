@@ -7,6 +7,78 @@ import { shortcutConflict, canvasDefaults } from '../../src/domain/shortcuts';
 import { uiState } from '../../src/app/ui-state';
 import { conversationDraft } from '../../src/domain/conversations';
 import { materialRoute, materialTitle } from '../../src/domain/model';
+import { anchorPoint } from '../../src/domain/geometry';
+import { arrangeProposals } from '../../src/domain/proposal-layout';
+import type { Material } from '../../src/domain/model';
+
+test('C08-U06: anclajes sobre el contenido, zona con nombre propio y propuestas sin cubrir resultados', () => {
+  const drawing: Material = {
+    id: 'drawing',
+    x: 100,
+    y: 200,
+    width: 100,
+    height: 80,
+    owner: null,
+    data: {
+      kind: 'drawing',
+      title: 'Sin nombre',
+      color: '#fff',
+      thickness: 2,
+      points: [
+        { x: 10, y: 20 },
+        { x: 35, y: 3 },
+        { x: 92, y: 65 },
+        { x: 40, y: 75 },
+      ],
+    },
+  };
+  assert.deepEqual(anchorPoint(drawing, 'north'), { x: 135, y: 203 });
+  assert.deepEqual(anchorPoint(drawing, 'west'), { x: 110, y: 220 });
+  assert.deepEqual(anchorPoint(drawing, 'east'), { x: 192, y: 265 });
+  assert.deepEqual(anchorPoint(drawing, 'south'), { x: 140, y: 275 });
+  const triangle: Material = {
+    ...drawing,
+    data: { kind: 'shape', shape: 'triangle', color: '#fff' },
+  };
+  assert.deepEqual(anchorPoint(triangle, 'west'), { x: 125, y: 240 });
+  assert.deepEqual(anchorPoint(triangle, 'east'), { x: 175, y: 240 });
+  const { store } = setup();
+  store.dispatch(
+    { type: 'zone.rename', world: 'project', id: 'zone', name: 'Investigación' },
+    intent,
+  );
+  store.dispatch({ type: 'zone.agent', world: 'project', id: 'zone', agent: 'milo' }, intent);
+  assert.equal(project(store).zones[0]!.name, 'Investigación');
+  assert.equal(project(store).zones[0]!.agent, 'milo');
+  store.dispatch(
+    { type: 'assign', world: 'project', node: 'note-a', agent: 'milo', instruction: 'Analizar' },
+    intent,
+  );
+  const world = store.snapshot().worlds.find((world) => world.id === 'project')!;
+  const job = world.assignments[0]!;
+  world.nodes.push({
+    id: 'accepted',
+    x: job.position.x,
+    y: job.position.y,
+    width: 280,
+    height: 160,
+    owner: null,
+    data: { kind: 'note', title: 'Resultado aceptado', text: 'Conservar', color: '#fff' },
+  });
+  const originalPosition = { ...job.position };
+  arrangeProposals(world);
+  assert.ok(job.position.y >= originalPosition.y + 184);
+  assert.deepEqual(world.nodes.at(-1)!.data, {
+    kind: 'note',
+    title: 'Resultado aceptado',
+    text: 'Conservar',
+    color: '#fff',
+  });
+  assert.equal(job.instruction, 'Analizar');
+  const position = { ...job.position };
+  arrangeProposals(world);
+  assert.deepEqual(job.position, position);
+});
 
 test('C08-U01: renombrado compartido, duplicado independiente, retirada y Undo/Redo conservan identidades', () => {
   const { store } = setup();

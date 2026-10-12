@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { enterWorld, openSurface, undockChat } from './interaction-helpers';
+import { enterWorld, openSurface, undockChat, openPeople } from './interaction-helpers';
 
 test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick Chat, anclaje y Sessions', async ({
   page,
@@ -15,7 +15,7 @@ test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick C
   await composer.fill('Borrador todavía sin enviar');
   await expect(composer).toHaveValue('Borrador todavía sin enviar');
   await chat.getByRole('button', { name: 'Anclar chat', exact: true }).click();
-  await chat.getByRole('button', { name: 'Agregar personas', exact: true }).click();
+  await openPeople(page);
   await chat.getByRole('textbox', { name: 'Nombre del participante', exact: true }).fill('Ada');
   await chat.getByRole('button', { name: 'Agregar persona', exact: true }).click();
   expect(

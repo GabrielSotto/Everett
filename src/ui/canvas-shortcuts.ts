@@ -6,8 +6,9 @@ import {
   shortcutConflict,
 } from '../domain/shortcuts';
 import { html, target } from './dom';
+import { btn } from './icons';
 export class CanvasShortcuts {
-  private page: 'config' | 'shortcuts' | 'canvas' = 'config';
+  private page: 'config' | 'canvas' = 'config';
   private conflict: { action: string; combination: string; other: string } | null = null;
   constructor(
     private ctx: Context,
@@ -21,11 +22,13 @@ export class CanvasShortcuts {
         const button = target(event),
           action = button?.dataset.id ?? '';
         switch (button?.dataset.action) {
-          case 'settings-shortcuts':
-            this.page = 'shortcuts';
+          case 'settings-back':
+            this.page = 'config';
+            this.conflict = null;
             this.render();
+            root.querySelector<HTMLElement>('[data-action=settings-shortcuts]')?.focus();
             break;
-          case 'settings-canvas':
+          case 'settings-shortcuts':
             this.page = 'canvas';
             this.render();
             break;
@@ -93,14 +96,12 @@ export class CanvasShortcuts {
   markup(): string {
     if (this.page === 'config')
       return '<button type="button" data-action="settings-shortcuts">Atajos</button>';
-    if (this.page === 'shortcuts')
-      return '<h3>Atajos</h3><button type="button" data-action="settings-canvas">Canvas</button>';
-    return `<section class="canvas-shortcuts" aria-label="Atajos de Canvas"><h3>Atajos · Canvas</h3><p>Seleccioná un campo y pulsá la combinación. Se guarda automáticamente.</p>${Object.keys(
+    return `<section class="canvas-shortcuts" aria-label="Atajos de Canvas">${btn('settings-back', 'chevron-left', 'Volver a Configuración')}<h3>Atajos · Canvas</h3><p>Seleccioná un campo y pulsá la combinación. Se guarda automáticamente.</p>${Object.keys(
       canvasDefaults,
     )
       .map(
         (action) =>
-          `<div class="shortcut-row"><label for="shortcut-${action}">${shortcutNames[action]}</label><input id="shortcut-${action}" data-shortcut="${action}" aria-label="Atajo de ${shortcutNames[action]}" value="${html(this.ctx.ui.shortcuts[action] ?? '')}" readonly><button type="button" data-action="shortcut-clear" data-id="${action}" aria-label="Quitar atajo de ${shortcutNames[action]}">Quitar</button><button type="button" data-action="shortcut-reset" data-id="${action}" aria-label="Restaurar atajo de ${shortcutNames[action]}">Restaurar</button></div>`,
+          `<div class="shortcut-row"><label for="shortcut-${action}">${shortcutNames[action]}</label><div class="shortcut-key"><input id="shortcut-${action}" data-shortcut="${action}" aria-label="Atajo de ${shortcutNames[action]}" value="${html(this.ctx.ui.shortcuts[action] ?? '')}" placeholder="Sin asignar" readonly>${this.ctx.ui.shortcuts[action] ? btn('shortcut-clear', 'close', 'Quitar atajo de ' + shortcutNames[action], `data-id="${action}"`) : ''}</div>${btn('shortcut-reset', 'restore', 'Restaurar atajo de ' + shortcutNames[action], `data-id="${action}" ${this.ctx.ui.shortcuts[action] === canvasDefaults[action] ? 'disabled' : ''}`)}</div>`,
       )
       .join(
         '',

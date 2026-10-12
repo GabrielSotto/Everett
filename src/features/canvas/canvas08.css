@@ -135,7 +135,7 @@
   stroke-width: calc(3px / var(--canvas-zoom));
 }
 .cable-label {
-  font-size: 12px;
+  font-size: calc(12px / var(--canvas-zoom));
   fill: var(--text);
   pointer-events: all;
   cursor: text;
@@ -222,9 +222,39 @@
   justify-content: flex-end;
   gap: 8px;
 }
+.canvas-context-form.compact-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  width: min(280px, calc(100vw - 24px));
+}
+.compact-edit label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.compact-edit input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+}
+.compact-edit .icon-button {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  padding: 0;
+}
+.canvas-context-form input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
 .canvas-context-form button[type='submit'] {
   background: var(--accent);
-  color: white;
+  color: #292337;
 }
 .canvas-tools {
   width: max-content;
@@ -303,6 +333,61 @@
   z-index: 45;
   max-width: calc(100vw - 24px);
 }
+.canvas-style::after {
+  content: '';
+  position: absolute;
+  left: var(--style-pointer, 50%);
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--raised);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.canvas-style.below::after {
+  top: -6px;
+  bottom: auto;
+  transform: translateX(-50%) rotate(225deg);
+}
+.stroke-picker {
+  display: flex;
+  gap: 2px;
+}
+.stroke-picker button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+}
+.stroke-picker button[aria-pressed='true'] {
+  color: #dfc7f4;
+  background: #b9a5df30;
+}
+.scene[data-tool='drawing'] :is(.canvas-stage, .material, .agent-zone) {
+  cursor:
+    url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"%3E%3Cpath d="M4 23l2-7L20 2l6 6-14 14z" fill="%23f0edf5" stroke="%231e2630" stroke-width="2"/%3E%3Cpath d="M4 23l5-1-4-4z" fill="%231e2630"/%3E%3C/svg%3E')
+      4 23,
+    crosshair;
+}
+.scene[data-tool='comment'] :is(.canvas-stage, .material) {
+  cursor:
+    url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="28" height="28"%3E%3Cpath d="M3 3h21v15H9l-6 6z" fill="%23f0edf5" stroke="%231e2630" stroke-width="2"/%3E%3Cpath d="M8 8h11M8 13h7" stroke="%2346365b" stroke-width="2"/%3E%3C/svg%3E')
+      3 24,
+    crosshair;
+}
+.scene[data-tool='comment'] .agent-zone {
+  cursor: not-allowed;
+}
+.zone-inspector input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  margin: 6px 0 12px;
+}
 .canvas-style label {
   display: flex;
   align-items: center;
@@ -370,8 +455,14 @@
   white-space: nowrap;
 }
 .proposal {
-  color: var(--note-ink);
-  background: #edf3e4;
+  --text: #edf0f7;
+  --muted: #bdc5d6;
+  --note-ink: #edf0f7;
+  --raised: #394657;
+  --surface: #222c39;
+  color: var(--text);
+  background: #323b4a;
+  border-color: #b9a5dfaa;
   opacity: 1;
   width: min(320px, calc(100vw - 24px));
   padding: 14px;
@@ -409,7 +500,7 @@
 }
 .proposal-heading .icon-button {
   flex-shrink: 0;
-  color: #527142;
+  color: #d8c8ee;
   width: 28px;
   height: 28px;
 }
@@ -420,7 +511,7 @@
 .proposal-status {
   display: block;
   font-size: 10px;
-  color: #527142;
+  color: #d8c8ee;
   margin-bottom: 10px;
 }
 .proposal-actions {
@@ -433,15 +524,17 @@
   padding: 8px 5px;
   min-height: 34px;
   border-radius: 6px;
-  background: #ffffff90;
+  background: #ffffff0a;
+  color: var(--text);
   font-size: 11px;
   white-space: nowrap;
 }
 .proposal-actions button:first-child {
-  color: #365128;
+  background: var(--accent);
+  color: #292337;
 }
 .proposal-decision form {
-  animation: revision-enter 150ms ease-out;
+  animation: none;
 }
 .proposal textarea {
   resize: none;
@@ -460,11 +553,12 @@
   margin: 8px 0 14px;
 }
 .revision-suggestions button {
-  border: 1px solid #a1b39166;
+  border: 1px solid #bdc5d655;
   padding: 5px 6px;
   border-radius: 20px;
   font-size: 10px;
-  background: #ffffff60;
+  background: var(--raised);
+  color: var(--text);
 }
 .proposal form > .revision-buttons {
   gap: 8px;
@@ -536,9 +630,9 @@
   margin-bottom: 8px;
 }
 .revision-buttons button.primary {
-  background: #527142;
-  color: white;
-  border-color: #527142;
+  background: var(--accent);
+  color: #292337;
+  border-color: var(--accent);
 }
 .conversation-head {
   display: flex;
@@ -653,11 +747,59 @@
 }
 .shortcut-row {
   display: grid;
-  grid-template-columns: 1fr 64px 48px;
+  grid-template-columns: 1fr 120px 30px;
   gap: 4px;
   align-items: center;
   padding: 7px 0;
   border-bottom: 1px solid var(--line);
+}
+.shortcut-key {
+  position: relative;
+  min-width: 0;
+}
+.chat-host:has(.chat-composer-menu) {
+  z-index: 48;
+}
+.chat-composer-menu {
+  position: fixed;
+  z-index: 48;
+  width: min(250px, calc(100vw - 24px));
+  max-height: calc(100vh - 90px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  background: var(--raised);
+  box-shadow: 0 8px 24px #0004;
+}
+.chat-composer-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  min-height: 36px;
+  width: 100%;
+  text-align: left;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.chat-composer-menu button:is(:hover, :focus-visible) {
+  background: var(--surface);
+}
+.shortcut-key input {
+  padding-right: 30px;
+  width: 100%;
+}
+.shortcut-key button {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.shortcut-row .icon-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
 }
 .shortcut-row label {
   font-size: 11px;
@@ -690,12 +832,6 @@
   from {
     opacity: 0;
     transform: translateY(-3px) scale(0.98);
-  }
-}
-@keyframes revision-enter {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
   }
 }
 @media (prefers-reduced-motion: reduce) {

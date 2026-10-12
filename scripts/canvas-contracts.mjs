@@ -58,6 +58,15 @@ export const canvasCases = [
     contracts: ['C08-CHAT-01', 'C08-CHAT-04', 'C08-CHAT-07', 'C08-KEY-01'],
   },
   { id: 'C08-B21', layer: 'browser', contracts: ['C08-MAT-01', 'C08-MAT-02', 'C08-MAT-06'] },
+  { id: 'C08-U06', layer: 'unit', contracts: ['C08-MAT-05', 'C08-MAT-06', 'C08-PROP-01'] },
+  { id: 'C08-B22', layer: 'browser', contracts: ['C08-LINK-01', 'C08-LINK-02'] },
+  { id: 'C08-B23', layer: 'browser', contracts: ['C08-PROP-01', 'C08-MAT-06'] },
+  { id: 'C08-B24', layer: 'browser', contracts: ['C08-MAT-05', 'C08-LINK-01', 'C08-COM-03'] },
+  { id: 'C08-B25', layer: 'browser', contracts: ['C08-CHAT-07'] },
+  { id: 'C08-B26', layer: 'browser', contracts: ['C08-CHAT-08', 'C08-CHAT-11'] },
+  { id: 'C08-B27', layer: 'browser', contracts: ['C08-KEY-01'] },
+  { id: 'C08-B28', layer: 'browser', contracts: ['C08-MAT-06', 'C08-STATE-02'] },
+  { id: 'C08-B29', layer: 'browser', contracts: ['C08-MAT-01', 'C08-MAT-05', 'C08-STATE-01'] },
 ];
 export function verifyCanvasCoverage(layer, titles) {
   const required = canvasCases.filter((item) => item.layer === layer);

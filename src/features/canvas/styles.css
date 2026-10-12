@@ -252,6 +252,7 @@
 }
 
 .link-hit {
+  outline: none !important;
   stroke: transparent;
   /* El zoom CSS del contenedor HTML queda fuera de non-scaling-stroke. */
   stroke-width: calc(14px / var(--canvas-zoom));
@@ -271,7 +272,7 @@
 }
 
 .connection.selected .link-line {
-  stroke: #5f7da4;
+  stroke: #c5b3e7;
   stroke-width: calc(2px / var(--canvas-zoom));
 }
 

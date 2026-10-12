@@ -1,6 +1,8 @@
 import type { Context } from '../../app/context';
 import { nodeTitle, materialRoute, type Material, type Point } from '../../domain/model';
 import { html, target, editable } from '../../ui/dom';
+import { btn, icon } from '../../ui/icons';
+import { sampleFiles } from './sample-media';
 import { pdfPreview } from '../../platform/pdf-preview';
 
 /** Interacciones contextuales; los gestos y la cámara permanecen en CanvasView. */
@@ -11,6 +13,7 @@ export class CanvasInteractions {
   private ownedUrls = new Set<string>();
   private disposed = false;
   private menuMaterial: string | null = null;
+  private loadingSamples = false;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -24,6 +27,16 @@ export class CanvasInteractions {
     root.addEventListener(
       'contextmenu',
       (event) => {
+        const zone =
+          event.target instanceof Element ? event.target.closest<HTMLElement>('[data-zone]') : null;
+        if (zone && !(event.target instanceof Element && event.target.closest('[data-node]'))) {
+          event.preventDefault();
+          ctx.ui.canvas.zoneSelection = zone.dataset.zone ?? null;
+          ctx.ui.canvas.selection = null;
+          ctx.ui.canvas.selections = [];
+          ctx.render();
+          return;
+        }
         const material =
           event.target instanceof Element ? event.target.closest<HTMLElement>('[data-node]') : null;
         if (!material?.dataset.node) return;
@@ -102,6 +115,16 @@ export class CanvasInteractions {
         const button = target(event),
           id = button?.dataset.id ?? '';
         switch (button?.dataset.action) {
+          case 'draw-thickness':
+            ctx.ui.canvas.thickness = Number(button.dataset.value);
+            this.applyStyle();
+            root
+              .querySelectorAll<HTMLElement>('[data-action=draw-thickness]')
+              .forEach((el) =>
+                el.setAttribute('aria-pressed', String(el.dataset.value === button.dataset.value)),
+              );
+            ctx.persist();
+            break;
           case 'material-rename':
             this.rename(id);
             break;
@@ -161,6 +184,9 @@ export class CanvasInteractions {
             break;
           case 'canvas-import':
             root.querySelector<HTMLInputElement>('#canvas-file-import')?.click();
+            break;
+          case 'canvas-examples':
+            if (!this.loadingSamples) void this.examples();
             break;
           case 'canvas-link':
             this.linkForm();
@@ -233,25 +259,8 @@ export class CanvasInteractions {
           const ui = ctx.ui.canvas;
           ui.color = root.querySelector<HTMLInputElement>('#draw-color')?.value ?? ui.color;
           ui.stroke = root.querySelector<HTMLInputElement>('#shape-border')?.value ?? ui.stroke;
-          ui.thickness = Number(
-            root.querySelector<HTMLSelectElement>('#draw-thickness')?.value ?? ui.thickness,
-          );
           ui.fill = root.querySelector<HTMLInputElement>('#shape-fill')?.checked ?? ui.fill;
-          const material = ctx.world().nodes.find((n) => n.id === ui.selection);
-          if (material && (material.data.kind === 'shape' || material.data.kind === 'drawing'))
-            ctx.act(
-              {
-                type: 'node.style',
-                world: ctx.world().id,
-                id: material.id,
-                color: ui.color,
-                stroke: ui.stroke,
-                thickness: ui.thickness,
-                fill: ui.fill,
-              },
-              'editar estilo',
-              'C08-MAT-05',
-            );
+          this.applyStyle();
           ctx.persist();
         }
       },
@@ -361,6 +370,29 @@ export class CanvasInteractions {
     if (this.hoverTimer !== null) clearTimeout(this.hoverTimer);
     this.hoverTimer = null;
   }
+  private applyStyle(): void {
+    const { ctx } = this,
+      ui = ctx.ui.canvas;
+    const material = ctx.world().nodes.find((node) => node.id === ui.selection);
+    if (
+      ui.tool === 'select' &&
+      material &&
+      (material.data.kind === 'shape' || material.data.kind === 'drawing')
+    )
+      ctx.act(
+        {
+          type: 'node.style',
+          world: ctx.world().id,
+          id: material.id,
+          color: ui.color,
+          thickness: ui.thickness,
+          fill: ui.fill,
+          stroke: ui.stroke,
+        },
+        'editar estilo',
+        'C08-MAT-05',
+      );
+  }
   private position(point: Point): string {
     return `left:${Math.max(12, point.x)}px;top:${Math.max(70, point.y)}px`;
   }
@@ -387,7 +419,15 @@ export class CanvasInteractions {
     this.ctx.ui.canvas.zoneSelection = null;
     this.ctx.ui.canvas.linkSelection = null;
     this.ctx.render();
-    this.overlay.innerHTML = `<form class="canvas-context-form" data-rename="${id}" style="${this.position(this.materialPoint(id))}"><label for="material-name">Nombre del material</label><input id="material-name" value="${html(nodeTitle(this.ctx.world(), node))}"><button type="submit">Guardar</button><button type="button" data-action="context-close">Cancelar</button></form>`;
+    const label = this.root
+      .querySelector<HTMLElement>(`[data-node="${CSS.escape(id)}"] .material-identification button`)
+      ?.getBoundingClientRect();
+    this.editForm(
+      'rename',
+      id,
+      nodeTitle(this.ctx.world(), node),
+      label ? { x: label.x, y: label.y } : this.materialPoint(id),
+    );
     this.fitOverlay();
     this.overlay.querySelector<HTMLInputElement>('input')?.select();
   }
@@ -421,6 +461,11 @@ export class CanvasInteractions {
   }
   comment(): void {
     const ui = this.ctx.ui.canvas;
+    if (ui.tool === 'comment') {
+      ui.tool = 'select';
+      this.ctx.render();
+      return;
+    }
     if (ui.selections.length > 1 || !ui.selection) {
       ui.tool = 'comment';
       this.ctx.render();
@@ -457,17 +502,29 @@ export class CanvasInteractions {
         `[data-link="${CSS.escape(id)}"] .link-line`,
       ),
       rect = path?.getBoundingClientRect();
-    this.overlay.innerHTML = `<form class="canvas-context-form" data-label="${id}" style="${this.position(rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : this.materialPoint(link.from))}"><label for="cable-text">Etiqueta de conexión</label><input id="cable-text" value="${html(link.label ?? '')}"><button type="submit">Guardar</button><button type="button" data-action="context-close">Cancelar</button></form>`;
+    const midpoint = path?.getPointAtLength(path.getTotalLength() / 2),
+      matrix = path?.getScreenCTM();
+    const point =
+      midpoint && matrix
+        ? new DOMPoint(midpoint.x, midpoint.y).matrixTransform(matrix)
+        : rect
+          ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
+          : this.materialPoint(link.from);
+    this.editForm('label', id, link.label ?? '', point);
     this.fitOverlay();
     this.overlay.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
+  }
+  private editForm(kind: 'rename' | 'label', id: string, text: string, point: Point): void {
+    const field = kind === 'rename' ? 'material-name' : 'cable-text';
+    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" value="${html(text)}">${btn('context-close', 'close', 'Cancelar')}<button type="submit" class="icon-button" aria-label="Guardar" data-tip="Guardar">${icon('check', 16)}</button></form>`;
   }
   private linkForm(): void {
     this.overlay.innerHTML = `<form id="canvas-new-link" class="canvas-context-form" style="${this.position({ x: innerWidth / 2 - 140, y: innerHeight / 2 - 80 })}"><label for="canvas-link-url">Dirección del enlace</label><input id="canvas-link-url" type="url" required placeholder="https://"><button type="submit">Agregar enlace</button><button type="button" data-action="context-close">Cancelar</button></form>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
   }
-  private create(data: Material['data'], width: number, height: number): void {
-    const point = this.center(),
+  private create(data: Material['data'], width: number, height: number, position?: Point): string {
+    const point = position ?? this.center(),
       id = 'material-' + crypto.randomUUID();
     this.ctx.act(
       {
@@ -481,9 +538,34 @@ export class CanvasInteractions {
     this.ctx.ui.canvas.selection = id;
     this.ctx.ui.canvas.selections = [id];
     this.ctx.render();
+    return id;
   }
-  private async importFiles(files: File[]): Promise<void> {
-    for (const file of files) {
+  private async examples(): Promise<void> {
+    this.loadingSamples = true;
+    this.ctx.notice('Preparando imagen, video y PDF de ejemplo…');
+    try {
+      const result = await sampleFiles();
+      if (this.disposed) return;
+      await this.importFiles(result.files, true, result.duration);
+      if (!result.duration)
+        this.ctx.notice(
+          'Imagen y PDF incorporados. Este navegador no puede generar el video de ejemplo.',
+          true,
+        );
+    } catch (error) {
+      this.ctx.notice(
+        'No se pudieron generar los ejemplos. ' +
+          (error instanceof Error ? error.message : String(error)),
+        true,
+      );
+    } finally {
+      this.loadingSamples = false;
+    }
+  }
+  private async importFiles(files: File[], frame = false, sampleDuration?: number): Promise<void> {
+    const origin = this.center(),
+      added: string[] = [];
+    for (const [index, file] of files.entries()) {
       try {
         if (!this.ctx.storage) throw new Error('El almacenamiento no está disponible');
         const kind = file.type.startsWith('image/')
@@ -525,6 +607,7 @@ export class CanvasInteractions {
               });
               ratio = video.videoWidth / video.videoHeight;
               if (Number.isFinite(video.duration)) duration = video.duration;
+              else if (sampleDuration) duration = sampleDuration;
               video.removeAttribute('src');
               video.load();
             }
@@ -538,7 +621,7 @@ export class CanvasInteractions {
         const width = Math.min(360, 300 * ratio),
           height = width / ratio;
         const scale = Math.max(1, 4 / width, 4 / height);
-        this.create(
+        const id = this.create(
           {
             kind,
             title: file.name,
@@ -550,7 +633,9 @@ export class CanvasInteractions {
           },
           width * scale,
           height * scale,
+          { x: origin.x + (index % 2) * 390, y: origin.y + Math.floor(index / 2) * 440 },
         );
+        added.push(id);
       } catch (error) {
         this.ctx.notice(
           'No se pudo incorporar el archivo. ' +
@@ -558,6 +643,27 @@ export class CanvasInteractions {
           true,
         );
       }
+    }
+    if (frame && added.length) {
+      const nodes = this.ctx.world().nodes.filter((node) => added.includes(node.id));
+      const left = Math.min(...nodes.map((node) => node.x)),
+        top = Math.min(...nodes.map((node) => node.y));
+      const width = Math.max(...nodes.map((node) => node.x + node.width)) - left,
+        height = Math.max(...nodes.map((node) => node.y + node.height)) - top;
+      const stage = this.root.querySelector('.canvas-stage')!.getBoundingClientRect();
+      const chat = this.root
+        .querySelector('.canvas-chat.docked:not(.compact)')
+        ?.getBoundingClientRect();
+      const areaLeft = chat ? chat.right + 16 : stage.left + 24,
+        areaWidth = stage.right - areaLeft - 24;
+      const z = Math.min(1, areaWidth / (width + 40), (stage.height - 120) / (height + 40));
+      const camera = {
+        x: areaLeft + areaWidth / 2 - (stage.left + stage.width / 2) - (left + width / 2) * z,
+        y: -30 - (top + height / 2) * z,
+        z,
+      };
+      this.ctx.camera?.set(camera, true);
+      this.ctx.act({ type: 'camera', camera }, 'encuadrar ejemplos multimedia', 'C08-MAT-01');
     }
   }
   hydrate(): void {

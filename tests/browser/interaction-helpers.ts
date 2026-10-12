@@ -1,5 +1,9 @@
 import type { Page } from '@playwright/test';
 import { expect } from './fixtures';
+export async function openPeople(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Más acciones de conversación', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Agregar personas', exact: true }).click();
+}
 
 export async function undockChat(page: Page): Promise<void> {
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });

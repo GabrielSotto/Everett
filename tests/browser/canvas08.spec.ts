@@ -1,6 +1,12 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
-import { enterWorld, openSurface, assignMaterial, undockChat } from './interaction-helpers';
+import {
+  enterWorld,
+  openSurface,
+  assignMaterial,
+  undockChat,
+  openPeople,
+} from './interaction-helpers';
 import { pdfFixture, videoFixture, storedFixture } from './canvas-fixtures';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
@@ -209,7 +215,7 @@ test('C08-B09: dibujo libre y formas conservan gesto, estilo e independencia al 
 }) => {
   await canvas(page);
   await page.getByRole('button', { name: 'Dibujar', exact: true }).click();
-  await page.locator('#draw-thickness').selectOption('4');
+  await page.getByRole('button', { name: 'Grosor 4 px', exact: true }).click();
   await page.mouse.move(550, 180);
   await page.mouse.down();
   await page.mouse.move(580, 220, { steps: 4 });
@@ -362,7 +368,7 @@ test('C08-B02: historial compacto, participantes propios y continuidad Canvas �
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
   await toggleHistory(page);
-  await page.getByRole('button', { name: 'Agregar personas', exact: true }).click();
+  await openPeople(page);
   await page.getByLabel('Nombre del participante', { exact: true }).fill('Persona invitada');
   await page.getByRole('button', { name: 'Agregar persona', exact: true }).click();
   await expect(page.getByRole('group', { name: 'Participantes', exact: true })).toContainText(
@@ -434,7 +440,7 @@ test('C08-B02: historial compacto, participantes propios y continuidad Canvas �
   await expect(page.getByRole('group', { name: 'Participantes', exact: true })).toHaveText(
     'Eve (iniciador) · Eve (agente)',
   );
-  await page.getByRole('button', { name: 'Agregar personas', exact: true }).click();
+  await openPeople(page);
   await page.getByLabel('Nombre del participante', { exact: true }).fill('Ada');
   await page.getByRole('button', { name: 'Agregar persona', exact: true }).click();
   await page.getByLabel('Escribí un mensaje…', { exact: true }).fill('Mensaje sin invocación');
@@ -484,7 +490,6 @@ test('C08-B03: comentarios privados recuperables, publicación única y conflict
   await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
   await page.getByRole('button', { name: 'Configuración', exact: true }).click();
   await page.getByRole('button', { name: 'Atajos', exact: true }).click();
-  await page.getByRole('button', { name: 'Canvas', exact: true }).click();
   const rename = page.getByLabel('Atajo de Renombrar', { exact: true });
   await expect(rename).toHaveValue('');
   await rename.press('n');
@@ -876,6 +881,12 @@ test('C08-B15: transferencia real y propuesta de documento requieren aceptación
     .click({ position: { x: 10, y: 10 } });
   await page.setViewportSize({ width: 390, height: 760 });
   await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
+  await expect
+    .poll(async () => {
+      const bounds = await page.locator('.proposal').boundingBox();
+      return !!bounds && bounds.x >= 0 && bounds.x + bounds.width <= 390;
+    })
+    .toBe(true);
   const proposal = (await page.locator('.proposal').boundingBox())!;
   expect(proposal.x).toBeGreaterThanOrEqual(0);
   expect(proposal.x + proposal.width).toBeLessThanOrEqual(390);
@@ -940,6 +951,8 @@ test('C08-B17: zoom real conserva propuestas y menús de tamaño operable dentro
   await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
   await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
   const proposal = page.locator('.proposal');
+  // El encuadre tiene movimiento propio; la rueda siguiente parte de su destino visible.
+  await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(1, 4);
   for (const zoom of [1, 2, 4, 6]) {
     const before = (await proposal.boundingBox())!,
       current = (await snapshot(page)).camera.z;
@@ -996,7 +1009,7 @@ test('C08-B18: inspector, propuesta y chat comparten ventanas estrechas sin tapa
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
   await expect(page.getByRole('region', { name: 'Chat del Canvas', exact: true })).toBeHidden();
-  await page.getByRole('button', { name: 'Cerrar inspector de zona', exact: true }).click();
+  await page.getByRole('button', { name: 'Cerrar panel de zona', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Chat del Canvas', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
@@ -1020,7 +1033,7 @@ test('C08-B18: inspector, propuesta y chat comparten ventanas estrechas sin tapa
       const chatBounds = (await chat.boundingBox())!;
       expect(chatBounds.x + chatBounds.width + 8).toBeLessThanOrEqual(box.x);
     } else await expect(chat).toBeHidden();
-    await inspector.getByRole('button', { name: 'Cerrar inspector de zona', exact: true }).click();
+    await inspector.getByRole('button', { name: 'Cerrar panel de zona', exact: true }).click();
     await expect(chat).toBeVisible();
     await expect(
       chat.getByRole('textbox', { name: 'Escribí un mensaje…', exact: true }),

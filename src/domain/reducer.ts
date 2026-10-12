@@ -10,6 +10,7 @@ import { applyDocumentsCommand } from './commands/documents';
 import { applyCodeCommand } from './commands/code';
 import { applyAgentsCommand } from './commands/agents';
 import { applyConversationsCommand } from './commands/conversations';
+import { arrangeProposals } from './proposal-layout';
 
 export function reduce(state: State, command: Command): State {
   const next = structuredClone(state);
@@ -42,6 +43,7 @@ export function reduce(state: State, command: Command): State {
     case 'node.style':
     case 'link.label':
     case 'zone.instruction':
+    case 'zone.rename':
     case 'assignment.schedule':
     case 'node.move':
     case 'node.edit':
@@ -98,6 +100,7 @@ export function reduce(state: State, command: Command): State {
   if ('world' in command && affectsView(command) !== 'none') {
     const world = next.worlds.find((candidate) => candidate.id === command.world);
     if (!world) throw new Error('Mundo inexistente');
+    arrangeProposals(world);
     world.activity.unshift({ action: command.type, at: new Date().toISOString() });
     world.activity = world.activity.slice(0, 30);
   }

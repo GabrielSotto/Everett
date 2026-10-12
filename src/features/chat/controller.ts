@@ -15,6 +15,7 @@ import { composerDraft } from '../../ui/composer';
 export class CanvasChat {
   private abort = new AbortController();
   private people = false;
+  private actionsOpen = false;
   private presentation: ChatUi['chatMode'] = 'closed';
   private animation: Animation | null = null;
   private header: ConversationHeader;
@@ -32,6 +33,39 @@ export class CanvasChat {
   ) {
     this.header = new ConversationHeader(ctx, () => this.render(), root, this.abort.signal);
     bindComposer(root, this.abort.signal, ctx);
+    bindDismiss(
+      this.abort.signal,
+      () => this.actionsOpen,
+      (source) => {
+        this.actionsOpen = false;
+        this.renderActions();
+        if (source === 'keyboard')
+          root.querySelector<HTMLElement>('[data-action=chat-actions]')?.focus();
+      },
+      '.chat-composer-menu,[data-action=chat-actions]',
+    );
+    root.addEventListener(
+      'keydown',
+      (event) => {
+        if (!(event.target instanceof Element) || !event.target.closest('.chat-composer-menu'))
+          return;
+        const buttons = [
+          ...root.querySelectorAll<HTMLElement>('.chat-composer-menu [role=menuitem]'),
+        ];
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const index = buttons.indexOf(document.activeElement as HTMLElement);
+        buttons[
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? buttons.length - 1
+              : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length
+        ]?.focus();
+      },
+      { signal: this.abort.signal },
+    );
     bindDismiss(
       this.abort.signal,
       () => ctx.ui.chat.chatMode === 'quick' && !this.drag,
@@ -53,7 +87,7 @@ export class CanvasChat {
         this.people = false;
         this.render();
       },
-      '[data-action=chat-people],#add-person',
+      '[data-action=chat-people],#add-person,.chat-composer-menu',
     );
     root.addEventListener(
       'click',
@@ -61,7 +95,25 @@ export class CanvasChat {
         const t = target(e);
         if (!t) return;
         const u = ctx.ui;
+        if (t.closest('.chat-composer-menu')) {
+          this.actionsOpen = false;
+          this.renderActions();
+        }
         switch (t.dataset.action) {
+          case 'chat-actions':
+            this.actionsOpen = !this.actionsOpen;
+            this.renderActions();
+            root.querySelector<HTMLElement>('.chat-composer-menu [role=menuitem]')?.focus();
+            break;
+          case 'chat-ref-selection': {
+            const id = u.canvas.selection;
+            if (id && !this.draft().materials.includes(id)) this.draft().materials.push(id);
+            this.render();
+            break;
+          }
+          case 'chat-session':
+            ctx.go({ kind: 'surface', world: ctx.world().id, surface: 'session', entity: null });
+            break;
           case 'chat-ref-remove':
             this.draft().materials = this.draft().materials.filter((id) => id !== t.dataset.id);
             this.render();
@@ -305,7 +357,7 @@ export class CanvasChat {
     );
     u.chat.chatPosition = p;
     const comments = u.chat.chatMode === 'docked' && u.chat.chatTab === 'comments';
-    this.root.innerHTML = `<section class="canvas-chat ${u.chat.chatMode} ${u.chat.chatCompact ? 'compact' : ''}" style="${u.chat.chatMode === 'quick' ? `left:${p.x}px;top:${p.y}px` : ''}" aria-label="Chat del Canvas"><header class="chat-handle"><span class="chat-grip">${icon('grip', 14)}</span>${this.header.markup()}<div>${u.chat.chatMode === 'docked' ? btn('chat-people', 'user', 'Agregar personas') : btn('chat-dock', 'dock', 'Anclar chat')}${btn('chat-compact', u.chat.chatCompact ? 'chevron-up' : 'down', u.chat.chatCompact ? 'Desplegar chat' : 'Contraer chat', `aria-expanded="${!u.chat.chatCompact}"`)}${btn('chat-close', 'close', 'Cerrar chat')}</div></header>${participantsMarkup(w.participants)}${u.chat.chatMode === 'docked' ? `<nav class="chat-tabs">${btn('chat-tab', 'session', 'Conversación', 'data-tab="chat"', !comments)}${btn('chat-tab', 'comment', 'Comentarios', 'data-tab="comments"', comments)}</nav>` : ''}${this.people ? `<form id="add-person"><input id="person-name" aria-label="Nombre del participante" placeholder="Nombre"><button class="icon-button" type="submit" aria-label="Agregar persona">${icon('plus')}</button></form>` : ''}<div class="chat-scroll">${
+    this.root.innerHTML = `<section class="canvas-chat ${u.chat.chatMode} ${u.chat.chatCompact ? 'compact' : ''}" style="${u.chat.chatMode === 'quick' ? `left:${p.x}px;top:${p.y}px` : ''}" aria-label="Chat del Canvas"><header class="chat-handle"><span class="chat-grip">${icon('grip', 14)}</span>${this.header.markup()}<div>${u.chat.chatMode === 'docked' ? '' : btn('chat-dock', 'dock', 'Anclar chat')}${btn('chat-compact', u.chat.chatCompact ? 'chevron-up' : 'down', u.chat.chatCompact ? 'Desplegar chat' : 'Contraer chat', `aria-expanded="${!u.chat.chatCompact}"`)}${btn('chat-close', 'close', 'Cerrar chat')}</div></header>${participantsMarkup(w.participants)}${u.chat.chatMode === 'docked' ? `<nav class="chat-tabs">${btn('chat-tab', 'conversation', 'Conversación', 'data-tab="chat"', !comments)}${btn('chat-tab', 'annotation', 'Comentarios', 'data-tab="comments"', comments)}</nav>` : ''}${this.people ? `<form id="add-person"><input id="person-name" aria-label="Nombre del participante" placeholder="Nombre"><button class="icon-button" type="submit" aria-label="Agregar persona">${icon('plus')}</button></form>` : ''}<div class="chat-scroll">${
       comments
         ? w.comments
             .map(
@@ -336,7 +388,7 @@ export class CanvasChat {
                   })
                   .join('')}</div>`
               : ''
-          }${composer('canvas-chat-composer', 'Escribí un mensaje…', false, '', composerDraft(ctx, 'canvas-chat-composer'))}</div>`
+          }${composer('canvas-chat-composer', 'Escribí un mensaje…', false, '', composerDraft(ctx, 'canvas-chat-composer'), true)}</div>`
     }</section>`;
     const panel = this.root.querySelector<HTMLElement>('.canvas-chat');
     if (changedPresentation && previous && panel && !reducedMotion()) {
@@ -353,11 +405,34 @@ export class CanvasChat {
       );
     }
     this.layoutChanged();
+    this.renderActions();
     const ta = this.root.querySelector<HTMLTextAreaElement>('#canvas-chat-composer-input');
     if (ta) ta.value = draft.text;
     restore();
     const scroll = this.root.querySelector('.chat-scroll');
     if (scroll && !comments) scroll.scrollTop = scroll.scrollHeight;
+  }
+  private renderActions(): void {
+    this.root.querySelector('.chat-composer-menu')?.remove();
+    const trigger = this.root.querySelector<HTMLElement>('[data-action=chat-actions]');
+    trigger?.setAttribute('aria-expanded', String(this.actionsOpen));
+    if (!this.actionsOpen || !trigger) return;
+    const item = (action: string, symbol: string, label: string) =>
+      `<button type="button" role="menuitem" data-action="${action}">${icon(symbol, 16)}<span>${label}</span></button>`;
+    trigger
+      .closest('form')
+      ?.insertAdjacentHTML(
+        'beforeend',
+        `<div class="chat-composer-menu" role="menu" aria-label="Acciones de conversación">${item('mention', 'at', 'Mencionar')}${this.ctx.ui.chat.chatMode === 'docked' ? item('chat-people', 'user', 'Agregar personas') : ''}${this.ctx.ui.canvas.selection ? item('chat-ref-selection', 'note', 'Referenciar material seleccionado') : ''}${item('chat-session', 'session', 'Ver en Sessions')}</div>`,
+      );
+    const menu = this.root.querySelector<HTMLElement>('.chat-composer-menu')!;
+    const origin = trigger.getBoundingClientRect();
+    menu.style.left = Math.max(12, Math.min(innerWidth - menu.offsetWidth - 12, origin.x)) + 'px';
+    menu.style.top =
+      Math.max(
+        70,
+        Math.min(innerHeight - menu.offsetHeight - 12, origin.top - menu.offsetHeight - 10),
+      ) + 'px';
   }
   dispose(): void {
     this.animation?.cancel();
