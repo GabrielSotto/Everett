@@ -241,10 +241,29 @@ Tomar como referencia de estructura y estética el tablero de Codroid aportado p
 el 9 de octubre de 2026: interfaz en `C:/Proyectos/codroid/tools/board/web` y guía en
 `C:/Proyectos/codroid/docs/TABLERO.md`. Se inspeccionaron su Kanban y el detalle de un ticket;
 la [captura local](referencias/0.11/board-codroid.jpg) conserva la referencia visual.
+El usuario desarrolló ese tablero como prototipo para organizar el trabajo de Codroid y evaluar
+interfaz, funciones y problemas que ayuden a mejorar Board en Everett.
 Adaptar esta dirección a Everett combinándola con las vistas y capacidades de propiedades
 previstas a continuación. El diseño concreto de Board se define en 0.11.
 Comprobar la coherencia visual de su tarjeta referenciada en Canvas, elegida para 0.8 en
 [C08-MAT-07](iteraciones/0.8.md).
+
+Referencia complementaria aportada el 12 de octubre de 2026:
+[Gr8r Studio, publicado por Tanjim](https://x.com/Tanjim38/status/2109638103346381298), con
+[demo](https://gr8r-taskmanagement.vercel.app/) y
+[repositorio inspeccionado](https://github.com/gr8rstudio/gr8r-studio/tree/904205c626918ee96054eb35495c394a60c0c601).
+Se revisaron el post, Kanban, detalle lateral y tabla en el navegador interno, y el código de
+vistas, propiedades, gestos y almacenamiento. Evaluar sus tarjetas compactas, detalle lateral,
+edición contextual, controles compartidos entre vistas y creación y orden manual dentro de
+columnas. La referencia usa propiedades predefinidas; sus adjuntos simulan la carga y conservan
+metadatos, y su almacenamiento silencia los fallos. En el estado inspeccionado no se encontró
+una licencia explícita; la eventual reutilización de código requiere aclarar sus permisos.
+
+**Criterio confirmado de consolidación:** construir una experiencia coherente a partir de las
+necesidades de planificación y seguimiento del Mundo y de los aprendizajes de las referencias.
+Priorizar funcionalidad, eficiencia y claridad de navegación, preservando las capacidades
+aprobadas de Everett. Seleccionar y adaptar los patrones que ayuden a esas actividades; cada
+función adicional necesita una definición de alcance antes de implementarse.
 
 - Revisar Kanban, tabla y calendario sobre las mismas tareas.
 - Adoptar los patrones de propiedades y vistas de **Notion** que acordamos usar como referencia.
@@ -255,6 +274,15 @@ Comprobar la coherencia visual de su tarjeta referenciada en Canvas, elegida par
 - Corregir contadores pegados al borde y contenido fuera de pantalla.
 - Reubicar propiedades y creación de tareas hacia el lateral.
 - Despejar el centro y ordenar su convivencia con Shipping Mode.
+
+**Idea por definir en 0.11 — seguimiento de bugs:** el usuario propuso evaluar su incorporación
+al mismo Board. El modelo actual de Everett contiene tareas genéricas y propiedades
+personalizadas, sin un tipo de bug ni un flujo específico de reproducción y verificación.
+Codroid distingue bugs, los relaciona con otros tickets y conserva evidencia de cierre.
+Evaluar identificación del tipo, pasos de reproducción, resultado esperado y observado,
+severidad diferenciada de prioridad, relación con el trabajo afectado y verificación de la
+corrección. Mantener identidad, vistas y relación con Shipping sobre el mismo trabajo. Estos
+campos y comportamientos son candidatos; su alcance concreto permanece pendiente.
 
 ### Shipping Mode
 
