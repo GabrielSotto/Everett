@@ -55,3 +55,10 @@ El [prompt exacto](board-propuesta-02.prompt.txt) conserva la especificación en
 Los criterios funcionales de referencia se adaptan a Everett; la imagen es una propuesta,
 con texto generado que puede necesitar ajustes de nombres, densidad y espaciado. El alcance
 vigente permanece en [Board](../../alcance-prototipo.md#011--board--shipping-mode).
+
+## Personalizar una vista
+
+La [imagen de personalización](personalizacion-board.md) continúa esta misma base. Muestra
+propiedades visibles por vista, creación de una propiedad compartida y guardado de una vista
+con filtros sobre las mismas tareas. El usuario pidió esta exploración visual sin prototipo;
+su presentación y los mecanismos descritos permanecen pendientes de evaluación.

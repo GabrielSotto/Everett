@@ -1,0 +1,33 @@
+Use case: ui-mockup. Create ONE static high-fidelity desktop image showing how to PERSONALIZE the existing Everett Board and create a filtered view. Edit the attached selected Everett mockup faithfully: same global shell, same project Resource Scout, same dark blue-grey flat palette and lavender accent, same restrained Inter/Segoe UI typography, same general layout with a RIGHT CONTEXTUAL PANEL. Target dimensions 1440 x 1024, natural desktop ratio. Match the selected direction, not a new visual alternative. This is only a visual proposal with example data, not an interactive prototype. Current date Monday 12 October 2026, America/Buenos_Aires; any date shown must be consistent.
+
+The user's hero task is configure visible properties, add a property, and save a new view with filters without crowding the interface. The task inspector is CLOSED and REPLACED by one coherent right-side personalization panel. No modal scrim, no bottom panel, no stacked floating windows, no simultaneous bug investigation inspector. The Board remains clear and readable at left as a preview. Preserve the Everett wordmark and project > Board top navigation, icon-only global search, surfaces icon and avatar G. Keep Board-local left rail with Vistas, Lanzamiento, Mis tareas, Bugs, Calendario, + Nueva vista, and Propiedades. Add a clearly temporary "Bugs de Lara" draft view row with a small subdued "Borrador" tag. All views use the same underlying tasks and stable identities; never show independent duplicated task databases.
+
+Colour/layout invariants: base #202A33, object/card #25313B, panel #27353F, text #E6EDF2, muted #AAB7C2, accent #B9A5DF. No decorative gradients/glows/glassmorphism. Use readable 14–16px body type. Thin monochrome icons. Use spacing and dividers instead of card nesting. Compact form controls, modest 6–8px corners. Do not make every property row a boxed form. Fit all controls comfortably within 1024px height without clipping.
+
+RIGHT PERSONALIZATION PANEL, about 420px wide, with title "Crear vista", top close X. A compact first row "Nombre" and editable value "Bugs de Lara"; next row "Diseño" value "Tablero" with small dropdown. Understated note "Sobre el mismo trabajo".
+Two plain vertically arranged sections only: PROPIEDADES and FILTROS. Do not invent ten navigation tabs.
+
+Properties section title "Propiedades en las tarjetas" and tiny helper "Elegí qué mostrar en esta vista." A five-row checklist with readable property names and light type icons:
+Responsable checked/on,
+Prioridad checked/on,
+Fecha límite unchecked/off,
+Creado por unchecked/off,
+Severidad unchecked/off.
+These toggles hide/show the properties in THIS VIEW; data remains on the original task. Add one concise helper "Ocultar conserva el dato." Avoid trash icons or any suggestion of deleting a hidden property.
+
+Below those rows, ONE expanded inline add-property editor entered by "+ Añadir propiedad": label "Nueva propiedad", a short Name input with "Componente", a compact Type dropdown value "Selección", and a secondary action "Añadir". Explain subtly "Disponible en todas las vistas." This creates a typed property in the shared work schema; visibility is configured per view. No huge type-picker inventory, no sample options list, no giant advanced configuration form, no fake custom property value rendered before it is added. Show how it can be added, while keeping the primary save-view action distinct.
+
+Filters section title "Filtros" and small condition mode "Todas estas condiciones" (AND). Show THREE concise readable condition rows on the same surface, each using simple field/operator/value controls:
+Tipo | es | Bug
+Responsable | es | Lara
+Estado | no es | Completado
+Small "+ Añadir filtro" link beneath. Advanced combinations live behind a quiet "Más opciones" affordance, not expanded. Do not offer global destructive commands. A short footer summary "1 tarea coincide" relates to the preview.
+
+Panel bottom footer: subdued secondary "Cancelar" and the ONE main lavender button "Guardar vista". Do not add a second primary button advertising investigations. Saving the view stores its name, layout, filters and property visibility on the same tasks. Keep all form sections comfortably fitting at readable sizes.
+
+LEFT BOARD PREVIEW, remaining main work width about 825px plus rail 140px: title "Bugs de Lara" with small subdued "Vista previa", compact layout selector Tablero, understated search and Personalizar active. Any Nueva tarea button is secondary/ghost so Guardar vista is the clear primary action in this scene. Current Shipping Mode remains ON from the base and its global summary stays truthful: "Lanzamiento: 6 tareas · 1 bloqueante · 5 pendientes". Below, show visible filter chips "Tipo: Bug", "Responsable: Lara", "Estado: no completado", and an explicit view count "1 resultado". That ONE result is a subset of the six launch tasks, not a new global total.
+
+Five workflow headings retained: Pendiente 0, Planificado 0, En curso 1, En revisión 0, Completado 0. Show ONE selected-free compact BUG-17 card in En curso, title "El PDF no llega a la zona del agente", assignee Lara, priority Media, and a small essential "Bloquea lanzamiento" marker. DO NOT display a due date, creator or severity on this card: they were hidden in the property checklist. Do not change the underlying due date or bug properties. Do not draw custom Componente values because the user has not yet pressed Añadir in the inline creation editor. Leave the other four columns gracefully empty without oversized empty-state cards. Keep original simple vertical dividers and real breathing room.
+At the bottom of the work preview preserve a collapsed "Trabajo posterior · 4 tareas" row to indicate scope and global context. Do not invent additional tasks that contradict filters or counts. No investigation logs, hypotheses or file traces in this scene.
+
+The entire frame should feel like a single logical flow: name the view, choose what its cards show, optionally create a typed property, add a few filters, preview the one matching task, and save. Precise typography, strong alignment, restrained density, clean and intuitive reading order. Use no external explanatory arrows or tutorial labels. Small footer "Propuesta visual · datos de ejemplo" is okay. Produce ONE polished image only.
