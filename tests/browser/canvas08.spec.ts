@@ -1164,4 +1164,21 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
   await expect.poll(() => menu.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   expect((await snapshot(page)).camera.z).toBe(zoom);
   await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 1250, height: 760 });
+  const grip = (await toolbar.locator('.dock-grip').boundingBox())!;
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(90, 390, { steps: 12 });
+  await page.mouse.up();
+  await toolbar.getByRole('button', { name: 'Formas', exact: true }).click();
+  expect(
+    await page.locator('.shape-menu').evaluate((element) => {
+      const r = element.getBoundingClientRect();
+      return !!document
+        .elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)
+        ?.closest('.shape-menu');
+    }),
+  ).toBe(true);
+  await page.getByRole('button', { name: 'Elipse', exact: true }).click();
+  expect((await snapshot(page)).ui.canvas.tool).toBe('ellipse');
 });

@@ -228,6 +228,7 @@
 }
 .canvas-tools {
   width: max-content;
+  z-index: 42;
   flex-wrap: nowrap;
   max-width: calc(100vw - 24px);
   gap: 1px;
@@ -315,7 +316,7 @@
   z-index: 45;
 }
 .canvas-tools:has(.shape-menu) {
-  z-index: 32;
+  z-index: 46;
 }
 .canvas-style input[type='color'] {
   width: 25px;
