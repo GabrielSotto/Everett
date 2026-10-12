@@ -409,10 +409,10 @@ test('C08-B38: chips en una línea durante aperturas repetidas, decisión suave 
       // Aislar el gesto del reencuadre que provoca resize; luego repetir
       // aperturas rápidas, incluida la inversión de una contracción en curso.
       await expect
-        .poll(async () => (await page.locator('.proposal').boundingBox())!.x)
+        .poll(async () => (await page.locator('.proposal').boundingBox())?.x ?? -Infinity)
         .toBeCloseTo((width - Math.min(560, width - 24)) / 2, 1);
       await expect
-        .poll(async () => (await page.locator('.proposal').boundingBox())!.y)
+        .poll(async () => (await page.locator('.proposal').boundingBox())?.y ?? -Infinity)
         .toBeCloseTo(83, 1);
       await expect
         .poll(() =>
