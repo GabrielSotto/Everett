@@ -56,3 +56,36 @@ Quick Chat, chat anclado y Sessions representan el mismo hilo elegido. Los docum
 conservan la identidad de Docs, y la persistencia distingue contenido del Mundo de contexto personal.
 Las respuestas de agentes siguen simuladas, con revisión explícita de propuestas. Los contratos
 de esta implementación permanecen en [Canvas 0.8](iteraciones/0.8.md).
+
+## Trazabilidad y diagnóstico
+
+La trazabilidad es un criterio transversal del producto. Everett debe permitir reconstruir
+el origen y el recorrido de materiales, archivos, tareas, propuestas y ejecuciones, conservando
+su identidad y la relación entre las acciones de personas y agentes. En un traspaso de archivos,
+debe poder consultarse qué archivo intervino, de dónde venía, hacia dónde iba, qué operación se
+intentó y cuál fue su resultado.
+
+Ante un bug o un error de ejecución, la información disponible debe ayudar a identificar qué
+pasó, cómo ocurrió y qué secuencia y condiciones llevaron al fallo. Vincular el problema con
+los elementos y operaciones afectados y con la evidencia necesaria para reproducirlo,
+investigar su causa raíz, verificar la corrección y prevenir su reaparición. Distinguir los
+hechos observados de las hipótesis sobre sus causas; conservar los límites de la evidencia
+cuando no alcance para reconstruir el recorrido completo.
+
+Board representa el seguimiento del problema y enlaza su contexto y evidencia. La trazabilidad
+también debe poder consultarse desde el elemento o la ejecución afectados en las demás
+superficies. El alcance y los mecanismos concretos se definen por iteración.
+
+## Profundidad y simplicidad de uso
+
+La interfaz debe ser sencilla de leer y permitir comprender y realizar las acciones habituales
+desde el primer uso. Presentar las herramientas y el contexto pertinentes a la actividad,
+desplegando detalles y opciones avanzadas a medida que el usuario los necesita o solicita.
+Las configuraciones y la personalización adicionales deben poder habilitarse por elección del
+usuario, manteniendo accesibles las acciones básicas.
+
+Aplicar esta presentación progresiva también al diagnóstico: comunicar el fallo y su efecto
+cuando ocurren, y permitir profundizar desde un resumen claro hacia la secuencia de sucesos,
+los elementos involucrados y la evidencia. Mantener la orientación y el contexto al abrir o
+cerrar ese detalle. La profundidad disponible debe facilitar el trabajo sin saturar la
+superficie con controles permanentes.

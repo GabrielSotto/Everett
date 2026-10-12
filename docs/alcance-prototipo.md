@@ -262,7 +262,9 @@ una licencia explícita; la eventual reutilización de código requiere aclarar 
 **Criterio confirmado de consolidación:** construir una experiencia coherente a partir de las
 necesidades de planificación y seguimiento del Mundo y de los aprendizajes de las referencias.
 Priorizar funcionalidad, eficiencia y claridad de navegación, preservando las capacidades
-aprobadas de Everett. Seleccionar y adaptar los patrones que ayuden a esas actividades; cada
+aprobadas de Everett y aplicando los criterios transversales de
+[profundidad y simplicidad de uso](producto.md#profundidad-y-simplicidad-de-uso).
+Seleccionar y adaptar los patrones que ayuden a esas actividades; cada
 función adicional necesita una definición de alcance antes de implementarse.
 
 - Revisar Kanban, tabla y calendario sobre las mismas tareas.
@@ -281,8 +283,12 @@ personalizadas, sin un tipo de bug ni un flujo específico de reproducción y ve
 Codroid distingue bugs, los relaciona con otros tickets y conserva evidencia de cierre.
 Evaluar identificación del tipo, pasos de reproducción, resultado esperado y observado,
 severidad diferenciada de prioridad, relación con el trabajo afectado y verificación de la
-corrección. Mantener identidad, vistas y relación con Shipping sobre el mismo trabajo. Estos
-campos y comportamientos son candidatos; su alcance concreto permanece pendiente.
+corrección. Aplicar el criterio transversal de [trazabilidad y diagnóstico](producto.md#trazabilidad-y-diagnóstico):
+vincular el bug o error de ejecución con el origen y recorrido de los elementos afectados,
+la secuencia y condiciones del fallo, la investigación de su causa raíz y la evidencia de
+corrección y prevención de regresiones. Ofrecer un resumen claro y acceso progresivo al detalle.
+Mantener identidad, vistas y relación con Shipping sobre el mismo trabajo. Estos campos y
+comportamientos son candidatos; su alcance concreto permanece pendiente.
 
 ### Shipping Mode
 
