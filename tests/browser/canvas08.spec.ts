@@ -352,6 +352,8 @@ test('C08-B12: hover cancelable, comentario sin fondo ni múltiples destinatario
   await page.keyboard.press('Escape');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await assignMaterial(page, 'note-a', 'Analizar');
+  await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
   await page.getByRole('button', { name: 'Pedir cambios', exact: true }).click();
   const cancel = (await page
       .getByRole('button', { name: 'Cancelar pedido de cambios', exact: true })
@@ -519,6 +521,8 @@ test('C08-B04: trabajo pendiente sobrevive recarga, pedido conserva contexto y a
     current = state.state.worlds.find((w) => w.id === 'scout')!.assignments[0]!;
   expect(current.id).toBe(job.id);
   expect(current.runId).toBe(job.runId);
+  await page.getByRole('group', { name: 'Zona Eve', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Revisar propuesta', exact: true }).click();
   await page.getByRole('button', { name: 'Pedir cambios', exact: true }).click();
   const field = page.getByLabel('Cambios solicitados', { exact: true });
   expect(await field.evaluate((el) => getComputedStyle(el).resize)).toBe('none');
