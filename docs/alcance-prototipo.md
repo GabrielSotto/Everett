@@ -4,7 +4,7 @@ Alcance ratificado por el usuario el 28 de septiembre de 2026, a partir de [Desa
 
 Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referencias del diseño acordado. La lectura de la conversación recuperó el texto, pero no sus adjuntos ni los documentos completos de esas referencias. No darlos por inspeccionados.
 
-**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8.1 es candidata para revisión, con las correcciones de Canvas y su gate completo. La evidencia vigente y las aprobaciones pendientes se registran en Tareas.
+**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8.2 es candidata para revisión, con las correcciones del feedback de Canvas sobre 0.8.1 y su gate completo sobre el artefacto actual. La evidencia vigente y las aprobaciones pendientes se registran en Tareas.
 
 | Versión    | Alcance principal                                                                                        |
 | ---------- | -------------------------------------------------------------------------------------------------------- |
@@ -356,6 +356,13 @@ Aplicar [Validación del prototipo](validacion-prototipo.md). Sus exigencias son
 La 1.0 se publica cuando los recorridos acordados funcionan, las superficies representan suficientemente la visión, no quedan correcciones críticas pendientes dentro del alcance y **vos aprobás la prueba libre de la candidata**.
 
 Backend, inferencia, colaboración, autenticación e integraciones reales quedan para el desarrollo del producto.
+
+## Mejoras de Canvas por evaluar
+
+Ideas del feedback de 0.8.1 conservadas para una definición futura, con prioridad baja y sin versión comprometida. No forman parte de 0.8.2:
+
+- **Galería de imágenes:** entrar mediante zoom sobre una selección de varias imágenes y recorrerlas juntas, conservando selección y contexto espacial al regresar.
+- **Bocetos rápidos:** mejorar dibujo y formas para preparar esquemas de interfaz; evaluar ergonomía y precisión de los gestos antes de decidir si hacen falta componentes de wireframes.
 
 ## Después de 1.0
 
