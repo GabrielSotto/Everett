@@ -4,7 +4,7 @@ Alcance ratificado por el usuario el 28 de septiembre de 2026, a partir de [Desa
 
 Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referencias del diseño acordado. La lectura de la conversación recuperó el texto, pero no sus adjuntos ni los documentos completos de esas referencias. No darlos por inspeccionados.
 
-**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8 continúa pendiente.
+**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8.0 es candidata para revisión con alcance y dirección visual confirmados y gate superado.
 
 | Versión    | Alcance principal                                                                                        |
 | ---------- | -------------------------------------------------------------------------------------------------------- |
@@ -117,7 +117,7 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
   de Canvas mediante un chevron junto al nombre. Los mensajes de la conversación elegida se
   comparten entre Quick Chat, chat anclado y Sessions, según C08-CHAT-09 y C08-CHAT-11 de
   [Canvas 0.8](iteraciones/0.8.md).
-- Aplicar las decisiones confirmadas y resolver las definiciones abiertas de [Canvas 0.8](iteraciones/0.8.md).
+- Aplicar y comprobar las decisiones confirmadas de [Canvas 0.8](iteraciones/0.8.md).
 - Anclaje y desacoplamiento mediante desplazamiento visible y rápido.
 - Reacomodar el dock para que no quede detrás del chat anclado.
 - Conservar conversación, borradores, participantes y referencias entre estados.

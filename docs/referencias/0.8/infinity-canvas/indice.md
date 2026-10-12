@@ -119,9 +119,12 @@ Al consultar las demás imágenes, aplicar estas diferencias conocidas:
   contextual del material; mostrar un atajo cuando el usuario le haya asignado uno. Los gestos o
   atajos de renombrado que figuren en las imágenes antiguas no sustituyen esta decisión.
 
-## Puntos para revisar con el usuario
+## Antecedentes de adaptación
 
-Estas observaciones son propuestas de evaluación, no decisiones confirmadas:
+Estas observaciones de planificación orientaron la adaptación de las imágenes. Las decisiones
+confirmadas y la implementación autorizada permanecen en [Canvas 0.8](../../../iteraciones/0.8.md);
+el estado actual y los fallos abiertos están en [Tareas](../../../../TAREAS.md). Este antecedente
+no reabre las decisiones confirmadas ni convierte detalles antiguos de los mockups en requisitos.
 
 - Usar las previews de la referencia 32 como punto de partida y ajustar su composición a la
   interfaz de Everett. Las portadas, imágenes, fotogramas y texto permiten reconocer contenido

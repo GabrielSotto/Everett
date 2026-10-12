@@ -46,7 +46,7 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 | `npm run format`         | Aplica el formato del proyecto.                                                                                |
 | `npm run test:unit`      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                             |
 | `npm run verify:unit`    | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión. |
-| `npm run build`          | Genera `dist/Everett-0.7.5.html` y `dist/build-manifest.json`.                                                 |
+| `npm run build`          | Genera `dist/Everett-0.8.0.html` y `dist/build-manifest.json`.                                                 |
 | `npm run verify:build`   | Comprueba existencia, bytes, hash, versión e identidad de las fuentes del build.                               |
 | `npm run test:browser`   | Ejecuta los recorridos preparados en Playwright sobre la URL indicada en `EVERETT_TEST_URL`.                   |
 | `npm run verify:browser` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.            |
@@ -58,6 +58,16 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 `index.html` contiene los puntos de inserción del script y los estilos. esbuild incorpora los módulos y las imágenes locales al HTML final. La versión procede de `package.json`; el manifiesto registra el hash del HTML, su tamaño y los hashes de sus entradas. El identificador también aparece en la etiqueta `everett-build` del documento y en el diagnóstico exportado.
 
 La carpeta `dist/` es una salida generada. El archivo `Everett-0.7.5.html` de la raíz permanece como referencia original y tiene tratamiento binario en Git para conservar sus bytes.
+
+## Canvas 0.8 y persistencia
+
+IndexedDB conserva contenido compartido, contexto personal y bytes de archivos, según [Arquitectura](arquitectura.md#persistencia-y-archivos-de-canvas-08). El guardado es local al origen y perfil del navegador. Cambiar de puerto, navegador o entre HTTP y file crea otro contexto de almacenamiento. Las copias de emergencia incluyen los assets referenciados; no implican colaboración entre dispositivos. No borrar el almacenamiento para resolver un fallo de recuperación.
+
+PDF.js añade el parser y un worker distribuido con el HTML. El DOM y el navegador no generan por sí solos una portada comprobable ni una lectura de páginas que respete Alt como embrague. El costo es un HTML mayor y la actualización de la dependencia y su licencia; sus versiones quedan fijadas en el lockfile. El build incluye el worker como texto y crea su URL Blob al usarlo.
+
+La matriz obligatoria de contratos está en `scripts/canvas-contracts.mjs`. Los verificadores exigen todos los C08 de la definición y una ejecución única de cada caso mínimo; descubrir una suite antigua o incompleta no certifica 0.8. Las pruebas adversas ingresan por la frontera de IndexedDB con registros reales y reparables; no insertan DOM de prueba en la interfaz.
+
+El arnés obtiene los bytes del documento cargado mediante una sesión CDP con buffers suficientes para el HTML autónomo, y contrasta su SHA-256 con el manifiesto antes de cada recorrido. Conserva el control del artefacto aunque el documento exceda la caché predeterminada de Playwright.
 
 ## Evidencias unitarias
 
@@ -132,8 +142,9 @@ El informe incluido identifica la cobertura y los pendientes de producto. La int
 | `@playwright/test` | Navegador real, acciones, trazas, capturas y aserciones de interfaz.             | Apache-2.0 |
 | `@types/node`      | Tipos de las APIs de Node usadas en pruebas y configuración.                     | MIT        |
 | Prettier           | Formato uniforme sin reglas particulares por archivo.                            | MIT        |
+| `pdfjs-dist`       | Portadas reales y lectura multipágina de PDF importados; worker dentro del HTML. | Apache-2.0 |
 
-Todas son dependencias de desarrollo. La aplicación mantiene su implementación DOM sin dependencias externas de ejecución. Las versiones exactas y sus dependencias transitivas quedan fijadas en el lockfile; actualizar una herramienta requiere repetir las verificaciones afectadas. Playwright añade la descarga y mantenimiento de su navegador de pruebas.
+Todas están declaradas como dependencias de desarrollo. La aplicación mantiene DOM nativo; PDF.js se incorpora al bundle, incluido su worker, sin solicitar código externo en ejecución. Las versiones exactas y sus dependencias transitivas quedan fijadas en el lockfile; actualizar una herramienta requiere repetir las verificaciones afectadas. Playwright añade la descarga y mantenimiento de su navegador de pruebas.
 
 ## Documentación relacionada
 

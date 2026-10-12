@@ -65,7 +65,7 @@ Además del bloque original, cubrir los siguientes riesgos cuando afecten al rec
 - **Límites y densidad.** Probar vacío, 1, 6, 7, 15 y 16 materiales y el paso en ambos sentidos entre representaciones. Verificar tamaños máximos, consulta de grupos, contadores y contenido conservado.
 - **Propiedad, contexto y propuestas.** Diferenciar referencia, asignación contextual y transferencia; impedir uso exclusivo simultáneo indebido. Comprobar cancelación, rechazo, retiro del agente y eliminación de zona con devolución íntegra. Ninguna propuesta cambia contenido compartido antes de aceptarse; cancelar un pedido de cambios mantiene la propuesta pendiente.
 - **Historial y edición.** Probar Undo/Redo mediante atajos reales dentro y fuera de texto editable, secuencias encadenadas y datos conservados al cambiar de objeto o superficie.
-- **Continuidad de chat y navegación.** Conservar conversación, borradores, participantes, referencias, identidad y posición al anclar, desacoplar, convertir a Room, abrir otra superficie y regresar. Arrastrar al chat no transfiere propiedad.
+- **Continuidad de chat y navegación.** Conservar conversación, borradores, participantes, referencias, identidad y posición al anclar, desacoplar, abrir otra superficie y regresar. Canvas 0.8 retira Room. Arrastrar al chat no transfiere propiedad.
 - **Geometría e interacción.** Comprobar anclajes de conexiones, conexiones inválidas, proporciones del gesto, paneo, zoom, selección, límites de arrastre y recuperación de controles. Inspeccionar solapamientos entre dock, chats, paneles y composers.
 - **Estados y recuperación.** Cubrir carga, vacío, éxito, error, cancelación e interrupción donde existan. Comprobar entradas inválidas, fallos de almacenamiento y de recursos externos en los recorridos afectados, sin pérdida silenciosa de contenido.
 - **Accesibilidad y adaptación.** Recorrer teclado, foco, nombres accesibles, contraste y tamaños de ventana pertinentes. Verificar contenido extenso, poco y mucho contenido, controles alcanzables y preferencias de movimiento cuando correspondan.
@@ -76,6 +76,23 @@ Además del bloque original, cubrir los siguientes riesgos cuando afecten al rec
 Definir criterios observables y límites apropiados para cada caso antes de considerarlo aprobado. No sustituir cobertura por una cantidad arbitraria de tests, capturas o tiempo de ejecución.
 
 ## Comprobar también el arnés
+
+Para 0.8, `scripts/canvas-contracts.mjs` relaciona todos los contratos C08 con casos mínimos unitarios y de navegador. Sus controles negativos rechazan la ausencia o duplicación de un caso y una definición sin correspondencia. La ejecución completa conserva además las regresiones de Everett; una suite de 0.7.5 no basta.
+
+Los recorridos de 0.8 comprueban nombre compartido y duplicado independiente de Docs, retirada de referencias, historial común Canvas/Sessions, archivos con bytes recuperables, PDF multipágina, video y dibujo, cables y etiquetas, comentarios con borrador privado, conflictos de atajos y texto sin activar herramientas. Los estados adversos incluyen datos corruptos reparables, trabajos confirmados como interrumpidos, nombres y listas extensos, hover cancelado, selección múltiple y movimiento reducido. Las nuevas incidencias manuales amplían esta cobertura; la matriz no sustituye la auditoría de alcance y revisión visual.
+
+Las regresiones de disposición comprueban rueda real hasta 6×, tamaño visual de propuestas
+y menús, revisión expandida con contenido visible, hit-testing de los extremos de sus
+acciones y convivencia con el inspector y el chat. Verificar 799/800/801 px y anchos
+hasta 300 px: chat anclado hasta el borde inferior, dock sin huecos ni filas accidentales,
+controles utilizables, herramientas adicionales alcanzables y borrador conservado al
+contraer/expandir. Medir la representación vigente después de resize y esperar el fin
+de las transiciones antes de comprobar su geometría final; revisar también sus estados
+intermedios. C08-B17–B21 quedan exigidos por la matriz del arnés. La cobertura incluye
+el nombre y chevron de contraer/desplegar, desacoplamiento por arrastre, desplazamiento
+del dock colocado manualmente al expandir el chat y contraste entre fondo punteado,
+zonas, materiales y herramientas. Comprobar también la legibilidad del texto sobre
+las superficies diferenciadas.
 
 El arnés forma parte del sistema que se debe validar. Debe detectar y reportar correctamente:
 

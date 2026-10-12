@@ -50,3 +50,9 @@ Las propuestas requieren aceptación antes de modificar el contenido compartido.
 ## Continuidad del proyecto
 
 Everett busca permitir que un proyecto se inicie, se desarrolle y madure dentro del mismo entorno. Los cambios deben reflejarse de forma coherente en las superficies que representan los mismos datos. Cambiar de área debe conservar los materiales, actores y contexto necesarios para continuar el trabajo.
+
+Canvas 0.8 implementa continuidad local: cada Mundo tiene su historial común de conversaciones;
+Quick Chat, chat anclado y Sessions representan el mismo hilo elegido. Los documentos referenciados
+conservan la identidad de Docs, y la persistencia distingue contenido del Mundo de contexto personal.
+Las respuestas de agentes siguen simuladas, con revisión explícita de propuestas. Los contratos
+de esta implementación permanecen en [Canvas 0.8](iteraciones/0.8.md).
