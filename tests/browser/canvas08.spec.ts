@@ -23,9 +23,13 @@ async function reload(page: Page): Promise<void> {
 }
 async function chooseLocalFiles(page: Page) {
   const direct = page.getByRole('button', { name: 'Incorporar materiales', exact: true });
-  if (await direct.isVisible()) await direct.click();
-  else {
-    await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
+  await direct
+    .or(page.getByRole('button', { name: 'Más herramientas', exact: true }))
+    .filter({ visible: true })
+    .click();
+  if (
+    await page.getByRole('menuitem', { name: 'Incorporar materiales', exact: true }).isVisible()
+  ) {
     await page.getByRole('menuitem', { name: 'Incorporar materiales', exact: true }).click();
   }
   const [chooser] = await Promise.all([

@@ -1,5 +1,6 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-B46', layer: 'browser', contracts: ['C08-MAT-02', 'C08-MAT-05'] },
   { id: 'UI-HARNESS-03', layer: 'browser', contracts: ['C08-MAT-02'] },
   { id: 'C08-U09', layer: 'unit', contracts: ['C08-LINK-01', 'C08-MAT-08'] },
   { id: 'C08-U10', layer: 'unit', contracts: ['C08-PROP-01', 'C08-STATE-01', 'C08-STATE-02'] },
@@ -114,6 +115,7 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B46': { references: 1, 'reference-add': 1 },
   'C08-B05': { 'canvas-import': 1 },
   'C08-B08': { 'canvas-import': 2 },
   'C08-B29': { 'canvas-examples': 1 },

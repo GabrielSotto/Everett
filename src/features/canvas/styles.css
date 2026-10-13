@@ -398,32 +398,41 @@
 }
 
 .reference-menu {
-  position: absolute;
-  right: 26px;
-  bottom: 90px;
+  position: fixed;
   background: var(--raised);
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: 9px;
   box-shadow: 0 14px 30px #23354a16;
-  padding: 8px;
-  max-width: 340px;
-  max-height: 370px;
-  overflow: auto;
+  padding: 4px;
+  width: min(256px, calc(100vw - 24px));
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
   z-index: 32;
 }
 
 .reference-menu button {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   width: 100%;
-  padding: 10px 12px;
-  font-size: 11px;
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 12px;
   text-align: left;
   border-radius: 6px;
 }
+.reference-menu button svg {
+  flex-shrink: 0;
+}
+.reference-menu button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-.reference-menu button:hover {
+.reference-menu button:hover,
+.reference-menu button:focus-visible {
   background: var(--surface);
 }
 

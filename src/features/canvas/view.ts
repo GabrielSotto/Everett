@@ -113,6 +113,7 @@ export class CanvasView implements View {
       () => this.referenceMenu || this.shapesOpen || this.dockMore,
       (source) => {
         const more = this.dockMore;
+        const references = this.referenceMenu;
         this.referenceMenu = false;
         this.shapesOpen = false;
         this.dockMore = false;
@@ -122,8 +123,10 @@ export class CanvasView implements View {
           this.root
             .querySelector<HTMLElement>('[data-action=dock-more]')
             ?.focus({ preventScroll: true });
+        if (references && source === 'keyboard')
+          this.referenceTrigger()?.focus({ preventScroll: true });
       },
-      '.reference-menu,.shape-menu,.dock-more-menu,[data-action=references],[data-action=shapes],[data-action=dock-more]',
+      '.reference-menu,.shape-menu,.dock-more-menu,[data-action=references],[data-action=shapes],[data-action=dock-more],[data-action=dock-grip]',
     );
     this.chat = new CanvasChat(root.querySelector<HTMLElement>('#canvas-chat-host')!, ctx, () =>
       this.renderDock(),
@@ -288,11 +291,11 @@ export class CanvasView implements View {
   private materialKey(event: KeyboardEvent): void {
     if (!(event.target instanceof HTMLElement)) return;
     const element = event.target;
-    const menu = element.closest('.dock-more-menu');
+    const menu = element.closest('.dock-more-menu,.reference-menu');
     if (menu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
       event.preventDefault();
       event.stopPropagation();
-      const items = Array.from(menu.querySelectorAll<HTMLButtonElement>('[role=menuitem]'));
+      const items = Array.from(menu.querySelectorAll<HTMLButtonElement>('button'));
       const index = items.indexOf(element as HTMLButtonElement);
       items[
         event.key === 'Home'
@@ -300,7 +303,7 @@ export class CanvasView implements View {
           : event.key === 'End'
             ? items.length - 1
             : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
-      ]?.focus({ preventScroll: true });
+      ]?.focus();
       return;
     }
     if (element.dataset.zone && ['Enter', ' '].includes(event.key)) {
@@ -674,6 +677,7 @@ export class CanvasView implements View {
         bottom: 'auto',
         transform: 'none',
       });
+      this.positionReferenceMenu();
       return;
     }
     const point = this.point(e);
@@ -1335,6 +1339,10 @@ export class CanvasView implements View {
         this.referenceMenu = !this.referenceMenu;
         this.shapesOpen = false;
         this.renderDock();
+        if (this.referenceMenu)
+          this.root
+            .querySelector<HTMLElement>('.reference-menu button')
+            ?.focus({ preventScroll: true });
         break;
       case 'reference-add': {
         const kind = t.dataset.kind;
@@ -1574,6 +1582,57 @@ export class CanvasView implements View {
     const width = panel === 'inspector' ? 270 : (job?.output?.length ?? 1) > 1 ? 560 : 320;
     return innerWidth - Math.min(310, innerWidth - 76) < width + 48;
   }
+  private referenceTrigger(): HTMLElement | null {
+    const direct = this.root.querySelector<HTMLElement>('.canvas-tools [data-action=references]');
+    return direct?.offsetWidth
+      ? direct
+      : this.root.querySelector<HTMLElement>('.canvas-tools [data-action=dock-more]');
+  }
+  private referenceMarkup(): string {
+    if (!this.referenceMenu) return '';
+    const world = this.ctx.world();
+    const item = (action: string, symbol: string, name: string, attributes = ''): string =>
+      `<button type="button" data-action="${action}" title="${html(name)}" ${attributes}>${icon(symbol, 14)}<span>${html(name)}</span></button>`;
+    return `<div class="reference-menu" id="canvas-material-picker" role="dialog" aria-label="Incorporar materiales">${item('canvas-import', 'image', 'Importar archivos locales')}${item('canvas-examples', 'image', 'Cargar ejemplos multimedia')}${item('canvas-link', 'link', 'Agregar enlace')}${world.docs.map((doc) => item('reference-add', 'docs', doc.title, `data-kind="document" data-id="${doc.id}"`)).join('')}${world.files.map((file) => item('reference-add', 'code', file.name, `data-kind="file" data-id="${file.id}"`)).join('')}${world.tasks.map((task) => item('reference-add', 'board', task.title, `data-kind="task" data-id="${task.id}"`)).join('')}</div>`;
+  }
+  private positionReferenceMenu(): void {
+    const menu = this.root.querySelector<HTMLElement>('.reference-menu');
+    const trigger = this.referenceTrigger();
+    const dock = this.root.querySelector<HTMLElement>('.canvas-tools');
+    if (!menu || !trigger || !dock) return;
+    const bounds = dock.getBoundingClientRect(),
+      origin = trigger.getBoundingClientRect();
+    const width = Math.min(256, innerWidth - 24);
+    menu.style.width = width + 'px';
+    const leftSpace = bounds.left - 20,
+      rightSpace = innerWidth - bounds.right - 20;
+    const sideways =
+      dock.classList.contains('vertical-tools') &&
+      Math.max(leftSpace, rightSpace) >= Math.min(220, width);
+    const aboveSpace = bounds.top - 78,
+      belowSpace = innerHeight - bounds.bottom - 20;
+    const above = aboveSpace >= belowSpace;
+    menu.style.maxHeight =
+      Math.max(36, Math.min(320, sideways ? innerHeight - 82 : above ? aboveSpace : belowSpace)) +
+      'px';
+    let left: number, top: number;
+    if (sideways) {
+      const before = leftSpace >= Math.min(220, width);
+      menu.style.width = Math.min(width, before ? leftSpace : rightSpace) + 'px';
+      left = before ? bounds.left - menu.offsetWidth - 8 : bounds.right + 8;
+      top = origin.bottom - menu.offsetHeight;
+    } else {
+      left = origin.right - menu.offsetWidth;
+      top = above ? bounds.top - menu.offsetHeight - 8 : bounds.bottom + 8;
+    }
+    Object.assign(menu.style, {
+      left: Math.max(12, Math.min(innerWidth - menu.offsetWidth - 12, left)) + 'px',
+      top: Math.max(70, Math.min(innerHeight - menu.offsetHeight - 12, top)) + 'px',
+    });
+    trigger.setAttribute('aria-expanded', 'true');
+    trigger.setAttribute('aria-controls', 'canvas-material-picker');
+    trigger.setAttribute('aria-haspopup', 'dialog');
+  }
   private renderDock(): void {
     const previous = this.dock
       ? this.root.querySelector('.canvas-tools')?.getBoundingClientRect()
@@ -1600,7 +1659,7 @@ export class CanvasView implements View {
         ),
       )
       .join('');
-    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, this.shapesOpen || shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', 'data-dock-secondary')}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMenu ? `<div class="reference-menu"><button type="button" data-action="canvas-import">${icon('image', 14)}Importar archivos locales</button><button type="button" data-action="canvas-examples">${icon('image', 14)}Cargar ejemplos multimedia</button><button type="button" data-action="canvas-link">${icon('link', 14)}Agregar enlace</button>${w.docs.map((d) => `<button data-action="reference-add" data-kind="document" data-id="${d.id}">${icon('docs', 14)}${html(d.title)}</button>`).join('')}${w.files.map((f) => `<button data-action="reference-add" data-kind="file" data-id="${f.id}">${icon('code', 14)}${html(f.name)}</button>`).join('')}${w.tasks.map((t) => `<button data-action="reference-add" data-kind="task" data-id="${t.id}">${icon('board', 14)}${html(t.title)}</button>`).join('')}</div>` : ''}`;
+    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, this.shapesOpen || shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', `data-dock-secondary aria-haspopup="dialog" aria-expanded="${this.referenceMenu}" aria-controls="canvas-material-picker"`)}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMarkup()}`;
     const selected = w.nodes.find((n) => n.id === ctx.ui.canvas.selection);
     if (
       ctx.ui.canvas.tool === 'drawing' ||
@@ -1693,16 +1752,20 @@ export class CanvasView implements View {
         Math.max(16, Math.min(style.offsetWidth - 16, origin.x + origin.width / 2 - left)) + 'px',
       );
     }
+    this.positionReferenceMenu();
     if (this.dock && previous && !reducedMotion()) {
       const current = dock.getBoundingClientRect();
       if (Math.hypot(previous.x - current.x, previous.y - current.y) > 1)
-        dock.animate(
-          [
-            { translate: `${previous.x - current.x}px ${previous.y - current.y}px` },
-            { translate: '0px 0px' },
-          ],
-          { duration: motion.panelOpenMs, easing: motion.panelEase },
-        );
+        for (const panel of [dock, holder.querySelector<HTMLElement>('.reference-menu')].filter(
+          (element): element is HTMLElement => !!element,
+        ))
+          panel.animate(
+            [
+              { translate: `${previous.x - current.x}px ${previous.y - current.y}px` },
+              { translate: '0px 0px' },
+            ],
+            { duration: motion.panelOpenMs, easing: motion.panelEase },
+          );
     }
   }
   render(): void {
