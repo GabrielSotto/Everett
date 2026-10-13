@@ -1,0 +1,36 @@
+Use case: ui-mockup. Produce ONE static high-fidelity desktop design image of Everett's Board with SHIPPING MODE genuinely transforming the work purpose. Edit the attached selected Everett design; preserve the wordmark, Resource Scout global shell, dark blue-grey/lavender visual language, typography and right inspector with Ampliar. Target dimensions 1440 x 1024, natural desktop ratio. Current date 13 October 2026 in America/Buenos_Aires; example file trace from 12 October may remain historical. This is a visual product proposal, NOT current implemented functionality, and NOT an interactive prototype. Do not depict automatic publishing or deployment.
+
+The user's concern: current Shipping is an accessory (reordered cards, labels, dimmed future cards). In this proposal, Board changes to a DELIVERY CLOSURE workspace. It explains the concrete delivery objective, what prevents delivery, what actionable work remains, what awaits verification and what evidence supports readiness. The mode remains GLOBAL TO THE WORLD, indicated in the top shell, while this image focuses on Board. It changes decisions and the default work hierarchy; it does not merely recolour the original five-column Kanban. Preserve the same tasks, workflow states, owners, dates, IDs, properties, configurable views and links to evidence. Normal Board remains available and its views can be restored when Shipping ends.
+
+Visual constraints: calm flat product UI #202A33 base, #25313B objects, #27353F panel, crisp light #E6EDF2 text, muted #AAB7C2, accent #B9A5DF. Restrained coral only for genuine blocker or failed event. Inter/Segoe UI 14–16px body, stable ticket IDs monospace. Thin monochrome icons; alignment and whitespace before borders; no gradients, glow, glass, dashboards, circular scores, decorative metrics or panels inside panels. The right inspector is the only supporting content area. No bottom drawer and no modal scrim.
+
+Global top shell: Everett, Resource Scout > Board, visibly small "Shipping" mode indicator. Top-right normal search/surfaces/avatar icons. Board-local left rail about 145px: heading "Entrega", active "Cierre", "Alcance", "Comprobaciones", then divider and "Mis tareas", "Bugs", "Tablero completo" and a small view settings control. Do not duplicate Docs/Canvas/Code navigation or pretend these are separate data silos.
+
+Main work area about 825px and right inspector about 450px. Main heading "Primera entrega" with subdued enabled Shipping Mode toggle; an understated "Revisar alcance" action can edit scope but no fake ship-now button. Clear delivery objective underneath: "Capturar y recuperar referencias sin perder archivos". Prominent but compact honest readiness message "Entrega bloqueada" followed by "BUG-17 impide asignar el PDF a Eve". This is meaningful delivery state, not a cosmetic theme. A quiet one-line summary "1 bloqueante · 3 por completar · 1 por verificar · 1 comprobada". A compact clickable line "Criterios de entrega · 1 de 3 verificados". No huge percentage chart. On opening criteria one would see file preservation verified, assigning materials blocked, recovery regression pending; they need NOT all be expanded in this frame.
+
+WORK ORGANIZATION below: THREE plain groups side by side, grouped by delivery responsibility, not new workflow statuses:
+"Desbloquear · 1"
+"Completar · 3"
+"Verificar · 1".
+Each original workflow state is displayed on the ticket itself, so these groups must not overwrite original task states. Tickets are compact with ID/title, owner, original status, due date and only launch-relevant context. Do not show a wall of properties.
+
+Group Desbloquear: selected BUG-17 card "El PDF no llega a la zona del agente", original state "En curso", owner Lara, due 13 oct, small "Bloquea entrega" badge and concise "Desbloquea TASK-23". Lavender selection edge, restrained coral marker. This blocker is given first attention even though its ordinary priority is Media.
+Group Completar:
+TASK-21 "Revisar envío de evidencias", original state Pendiente, Sofía, due 14 oct.
+TASK-22 "Cerrar criterios de lanzamiento", original state Pendiente, Gabi, due 13 oct.
+TASK-23 "Preparar prueba de recuperación", original state Planificado, Sofía, due 13 oct, clear inline dependency "Espera a BUG-17". This cannot be presented as immediately ready to execute. Unlike dimming unrelated tasks, the mode shows precisely what condition unlocks this work.
+Group Verificar:
+TASK-24 "Validar devolución al cancelar", original state En revisión, Eve agent, due 13 oct, short explicit reason "Falta evidencia de regresión". An implementation in review is not ready for delivery until its agreed checks are verified.
+
+Below these groups keep two concise collapsed rows:
+"Comprobadas · 1" (TASK-25 Conservar origen de archivos, Completado, Gabi, evidence available; do not show this whole card unless expanded).
+"Trabajo posterior · 4 tareas".
+There are SIX scoped tasks total: blocker 1 + completion work 3 + awaiting verification 1 + verified done 1. Pending total is five. Four posterior tasks are outside the current delivery and remain accessible, not a set of faded cards intermingled with priorities.
+
+RIGHT CONTEXTUAL INSPECTOR is selected BUG-17 with labelled Ampliar, close and link controls. Title same bug. At the top, plain section "Impacto en la entrega": "Impide cumplir: asignar materiales a Eve sin pérdida" and a navigable row "Desbloquea TASK-23 · Preparar prueba de recuperación". Clearly show why this issue matters to this delivery. Essential properties in compact label/value rows: Estado En curso, Responsable Lara (persona), Prioridad Media, Severidad Alta, Fecha límite 13 oct 2026. The ordinary priority and bug severity are distinct from its role blocking delivery.
+
+Next section "Siguiente paso": concise "Investigar la asignación interrumpida" with executor "Eve · Agente" and status "Pendiente". One clear primary lavender CTA "Preparar investigación con Eve"; small Cambiar executor affordance. This represents preparation/review of a deliberate assignment, not automatic execution. If a person is selected it assigns the investigation to that person. No unassigned omniscient assistant hypotheses.
+
+Below show short observed failure summary "El PDF sigue disponible en Canvas." and two evidence links "brief.pdf · F-42" and "Ejecución EX-28". A collapsed "Hipótesis · Eve · por verificar" keeps author visible without treating the explanation as confirmed. A collapsed "Reproducción y verificación" section keeps deep tools accessible. No expanded long trace in this frame, because the hero is launch decision-making and dependencies. Final short note "Causa raíz pendiente de confirmar" makes readiness truthful.
+
+Simple deliberate hierarchy, no excess tabs, no hundred buttons. Default focus changes from project backlog browsing to resolving blockers, completing necessary scope and validating closure. Saving or filtering a view must not conceal blockers in the global readiness summary. Clearly preserve team's responsibilities and traceable evidence in one shared World. Small footer "Propuesta visual · datos de ejemplo" only. One polished mockup output.

@@ -57,6 +57,19 @@ conservan la identidad de Docs, y la persistencia distingue contenido del Mundo 
 Las respuestas de agentes siguen simuladas, con revisión explícita de propuestas. Los contratos
 de esta implementación permanecen en [Canvas 0.8](iteraciones/0.8.md).
 
+## Shipping Mode
+
+Shipping orienta el Mundo entero a cerrar una entrega. Su activación debe cambiar las
+prioridades de trabajo, la coordinación y el contexto de las acciones de personas y agentes.
+Las superficies representan esa orientación desde su actividad y comparten el mismo estado
+de lanzamiento, alcance y trabajo necesario, conservando la identidad de los elementos.
+
+En Board, el modo debe ayudar a decidir qué impide entregar, qué trabajo hace falta y qué
+queda por comprobar. El diseño concreto se define en el
+[alcance de Board y Shipping](alcance-prototipo.md#011--board--shipping-mode); los mecanismos
+de preparación y comprobación de una entrega siguen en propuesta. El efecto en las demás
+superficies se define en sus áreas, manteniendo este fundamento transversal.
+
 ## Trazabilidad y diagnóstico
 
 La trazabilidad es un criterio transversal del producto. Everett debe permitir reconstruir

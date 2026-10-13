@@ -62,3 +62,9 @@ La [imagen de personalización](personalizacion-board.md) continúa esta misma b
 propiedades visibles por vista, creación de una propiedad compartida y guardado de una vista
 con filtros sobre las mismas tareas. El usuario pidió esta exploración visual sin prototipo;
 su presentación y los mecanismos descritos permanecen pendientes de evaluación.
+
+## Preparar el cierre de una entrega
+
+La [propuesta de Shipping](shipping-board.md) explora cómo cambia la organización de Board
+para orientar las decisiones hacia una entrega: desbloquear, completar el alcance y verificar
+el cierre. Conserva las tareas y su estado propio, con inspector lateral y evidencia contextual.

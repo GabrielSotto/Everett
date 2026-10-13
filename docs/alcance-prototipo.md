@@ -313,6 +313,13 @@ una hipótesis no inicia una ejecución.
 
 ### Shipping Mode
 
+**Fundamento confirmado:** Shipping orienta el Mundo entero al cierre de una entrega,
+según [Producto](producto.md#shipping-mode). Board debe cambiar la organización y las
+decisiones de trabajo para llegar a ese cierre. La
+[propuesta de Shipping en Board](referencias/0.11/shipping-board.md) concreta objetivo de entrega,
+bloqueos y dependencias, trabajo pendiente y verificación con evidencia. Sus agrupaciones y
+mecanismos de preparación permanecen pendientes de evaluación y definición de alcance.
+
 - Conservar el toggle discreto en Board y el estado global del mundo.
 - Mejorar la presentación de bloqueantes, trabajo necesario, revisión y tareas listas.
 - Al activarlo, dar prioridad efectiva al trabajo necesario para lanzar: destacar primero los
