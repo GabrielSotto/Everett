@@ -93,3 +93,5 @@ Cada funcionalidad conserva sus estilos en `src/features/`. `src/styles/` reúne
 Las vistas coordinan eventos y estado local. Las plantillas con una responsabilidad separable, como la página y la lista de Docs, reciben datos de presentación y producen el marcado. Las reglas de dominio permanecen fuera de esas plantillas.
 
 Los comandos de grupo de Canvas validan y publican una sola transición del Store. Cada material transferido mantiene su trabajo y su identidad propios. Los previews de video son cachés derivadas del archivo inmutable: asset.preview actualiza la representación y su persistencia sin remontar la interfaz ni alterar reproducción, cámara o gestos activos. El historial conserva esa caché al recuperar posiciones y contenido.
+
+Los ejemplos multimedia son archivos locales generados para probar el mismo recorrido de importación. Las tres imágenes se alternan con un índice en el contexto personal de Canvas; avanzar la muestra no modifica las imágenes ya incorporadas. Los guardados anteriores sin índice empiezan por el paisaje.
