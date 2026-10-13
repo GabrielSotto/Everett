@@ -1611,9 +1611,11 @@ export class CanvasView implements View {
     menu.style.width = width + 'px';
     const leftSpace = bounds.left - 20,
       rightSpace = innerWidth - bounds.right - 20;
-    const sideways =
-      dock.classList.contains('vertical-tools') &&
-      Math.max(leftSpace, rightSpace) >= Math.min(220, width);
+    const minimumWidth = Math.min(220, width);
+    // La alternativa izquierda debe quedar cerca del disparador, sin cruzar todo el dock.
+    const before =
+      rightSpace < minimumWidth && leftSpace >= minimumWidth && origin.left - bounds.left < 20;
+    const sideways = rightSpace >= minimumWidth || before;
     const aboveSpace = bounds.top - 78,
       belowSpace = innerHeight - bounds.bottom - 20;
     const above = aboveSpace >= belowSpace;
@@ -1622,7 +1624,6 @@ export class CanvasView implements View {
       'px';
     let left: number, top: number;
     if (sideways) {
-      const before = leftSpace >= Math.min(220, width);
       menu.style.width = Math.min(width, before ? leftSpace : rightSpace) + 'px';
       left = before ? bounds.left - menu.offsetWidth - 8 : bounds.right + 8;
       top = origin.bottom - menu.offsetHeight;

@@ -32,6 +32,16 @@ async function geometry(page: Page) {
     'El menú debe permanecer junto a su disparador',
   ).toBeLessThanOrEqual(20);
   expect(gapX > 0 || gapY > 0, 'El menú no debe cubrir su disparador').toBe(true);
+  const dock = (await page.locator('.canvas-tools').boundingBox())!;
+  const overlapX = Math.max(
+    0,
+    Math.min(box.x + box.width, dock.x + dock.width) - Math.max(box.x, dock.x),
+  );
+  const overlapY = Math.max(
+    0,
+    Math.min(box.y + box.height, dock.y + dock.height) - Math.max(box.y, dock.y),
+  );
+  expect(overlapX * overlapY, 'El menú no debe tapar herramientas del dock').toBe(0);
   const viewport = page.viewportSize()!;
   expect(box.x).toBeGreaterThanOrEqual(11);
   expect(box.y).toBeGreaterThanOrEqual(69);
@@ -63,6 +73,12 @@ test('C08-B46: incorporación compacta junto al dock, zoom independiente, bordes
   await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
   await openPicker(page);
   const initial = (await geometry(page)).box;
+  const initialDock = (await page.locator('.canvas-tools').boundingBox())!;
+  expect(
+    initial.x,
+    'Con espacio libre, Incorporar debe quedar al costado derecho del dock',
+  ).toBeGreaterThanOrEqual(initialDock.x + initialDock.width + 7);
+  expect(initial.y + initial.height).toBeGreaterThan(initialDock.y);
   for (const zoom of [0.2, 1, 4]) {
     const current = (await page.evaluate(() => window.EverettDebug!.snapshot())).camera.z;
     await page.mouse.move(30, 200);
@@ -73,6 +89,8 @@ test('C08-B46: incorporación compacta junto al dock, zoom independiente, bordes
     const box = (await geometry(page)).box;
     expect(box.width).toBeCloseTo(initial.width, 1);
     expect(box.height).toBeCloseTo(initial.height, 1);
+    expect(box.x).toBeCloseTo(initial.x, 1);
+    expect(box.y).toBeCloseTo(initial.y, 1);
   }
   await testInfo.attach('incorporacion-junto-al-dock', {
     body: await page.screenshot(),
@@ -83,9 +101,9 @@ test('C08-B46: incorporación compacta junto al dock, zoom independiente, bordes
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
   for (const position of [
-    { x: 600, y: 100 },
-    { x: 1770, y: 410 },
-    { x: 600, y: 780 },
+    { x: 600, y: 100, lateral: true },
+    { x: 1770, y: 410, lateral: false },
+    { x: 600, y: 780, lateral: true },
   ]) {
     const grip = (await page.locator('.dock-grip').boundingBox())!;
     await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
@@ -93,7 +111,11 @@ test('C08-B46: incorporación compacta junto al dock, zoom independiente, bordes
     await page.mouse.move(position.x, position.y, { steps: 12 });
     await page.mouse.up();
     await openPicker(page);
-    const { trigger } = await geometry(page);
+    const { box, trigger } = await geometry(page);
+    if (position.lateral) {
+      const dock = (await page.locator('.canvas-tools').boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(dock.x + dock.width + 7);
+    }
     await trigger.click();
     await expect(page.locator('.reference-menu,.dock-more-menu')).toHaveCount(0);
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
