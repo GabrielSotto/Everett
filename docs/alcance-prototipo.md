@@ -4,7 +4,7 @@ Alcance ratificado por el usuario el 28 de septiembre de 2026, a partir de [Desa
 
 Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referencias del diseño acordado. La lectura de la conversación recuperó el texto, pero no sus adjuntos ni los documentos completos de esas referencias. No darlos por inspeccionados.
 
-**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8.4 corrigió los fallos de video en reposo y selección rectangular detectados al revisar 0.8.3 y superó el gate completo; es candidata para revisión del usuario. La evidencia vigente y las aprobaciones pendientes se registran en Tareas.
+**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. El estado operativo está en [Tareas](../TAREAS.md); 0.8.5 acorta el acceso a la importación local, alterna tres imágenes de ejemplo y amplía la verificación desde el selector de archivos; superó el gate completo y es candidata para revisión del usuario. Se conservan las correcciones de video y selección rectangular. La evidencia vigente y las aprobaciones pendientes se registran en Tareas.
 
 | Versión    | Alcance principal                                                                                        |
 | ---------- | -------------------------------------------------------------------------------------------------------- |
