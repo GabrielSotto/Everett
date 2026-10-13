@@ -21,6 +21,16 @@ async function reload(page: Page): Promise<void> {
   await page.reload();
   await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
 }
+async function chooseLocalFiles(page: Page) {
+  await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: 'Importar archivos locales', exact: true }).click(),
+  ]);
+  expect(chooser.isMultiple()).toBe(true);
+  expect(await chooser.element().evaluate((el) => el.isConnected)).toBe(true);
+  return chooser;
+}
 async function toggleHistory(page: Page): Promise<void> {
   const button = page.getByRole('button', { name: 'Historial de conversaciones', exact: true });
   await expect(button).toHaveAttribute('aria-expanded', 'false');
@@ -156,8 +166,8 @@ test('C08-B08: PDF real multipágina y video importado recuperan bytes y permite
 }) => {
   await canvas(page);
   const video = await videoFixture(context);
-  await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
-  await page.locator('#canvas-file-import').setInputFiles({
+  const pdfChooser = await chooseLocalFiles(page);
+  await pdfChooser.setFiles({
     name: 'Documento con páginas.pdf',
     mimeType: 'application/pdf',
     buffer: pdfFixture(),
@@ -174,9 +184,8 @@ test('C08-B08: PDF real multipágina y video importado recuperan bytes y permite
   await page.mouse.wheel(0, 240);
   await page.keyboard.up('Alt');
   await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'scout/canvas/');
-  await page
-    .locator('#canvas-file-import')
-    .setInputFiles({ name: 'Video libre.webm', mimeType: 'video/webm', buffer: video });
+  const videoChooser = await chooseLocalFiles(page);
+  await videoChooser.setFiles({ name: 'Video libre.webm', mimeType: 'video/webm', buffer: video });
   const material = page.locator('.material.video');
   await expect
     .poll(() => material.locator('video').evaluate((el) => (el as HTMLVideoElement).videoWidth))
@@ -555,12 +564,7 @@ test('C08-B05: importar desde el selector real conserva bytes, contenido libre, 
   page,
 }) => {
   await canvas(page);
-  await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
-  const [chooser] = await Promise.all([
-    page.waitForEvent('filechooser'),
-    page.getByRole('button', { name: 'Importar archivos locales', exact: true }).click(),
-  ]);
-  expect(chooser.isMultiple()).toBe(true);
+  const chooser = await chooseLocalFiles(page);
   await chooser.setFiles({
     name: 'imagen completa.svg',
     mimeType: 'image/svg+xml',
