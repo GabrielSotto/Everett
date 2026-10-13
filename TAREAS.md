@@ -20,7 +20,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Correcciones pendientes
 
-Canvas 0.8.6 es candidata para revisión del usuario en feat/canvas-0.8. Gate completo y arnés ampliado vigentes; cierre e integración pendientes de aprobación explícita. No quedan fallos conocidos abiertos del feedback corregido en este lote.
+Canvas 0.8.7 en preparación en feat/canvas-0.8: apertura lateral del menú de incorporación elegida por el usuario, conservando cercanía y dimensiones. C08-B46 amplía la regresión geométrica. El gate debe renovarse para esta candidata; cierre e integración pendientes de aprobación explícita.
 
 Galería y bocetos rápidos están en [Mejoras de Canvas por evaluar](docs/alcance-prototipo.md#mejoras-de-canvas-por-evaluar), con prioridad baja y sin versión comprometida.
 

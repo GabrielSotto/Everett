@@ -145,6 +145,8 @@ Para 0.8.5, C08-B05 debe abrir el selector desde Importar archivos locales y com
 
 Para 0.8.6, C08-B46 exige que el selector de incorporación quede junto a su disparador y no lo cubra, con dimensiones acotadas dentro de la ventana. Medir su distancia al botón además de su visibilidad, antes y después de zoom, arrastre del dock y resize; probar bordes, chat anclado, lista extensa y nombres largos. Verificar navegación por teclado, acceso al final de la lista, cierre y foco recuperado. La rueda dentro del selector desplaza su lista y conserva la cámara del Canvas.
 
+Para 0.8.7, C08-B46 comprueba también la apertura al costado cuando hay espacio lateral cercano y ausencia de solapamiento con todo el dock. La variante anterior encima del dock debe fallar en el escenario ancho. Conservar las aserciones de cercanía y límites en las posiciones que necesiten la apertura vertical alternativa.
+
 ## Entrada observable y auditoría de recorridos de Canvas
 
 La preparación de fixtures define datos iniciales; no demuestra el acceso del usuario. Un test que alimenta directamente un input puede comprobar procesamiento o recursos, pero no certifica el botón, menú ni selector. El recorrido positivo de importación debe abrir el selector desde la entrada visible y conservar el input conectado.
