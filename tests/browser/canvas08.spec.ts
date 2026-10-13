@@ -22,7 +22,12 @@ async function reload(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
 }
 async function chooseLocalFiles(page: Page) {
-  await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
+  const direct = page.getByRole('button', { name: 'Incorporar materiales', exact: true });
+  if (await direct.isVisible()) await direct.click();
+  else {
+    await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Incorporar materiales', exact: true }).click();
+  }
   const [chooser] = await Promise.all([
     page.waitForEvent('filechooser'),
     page.getByRole('button', { name: 'Importar archivos locales', exact: true }).click(),
@@ -1414,4 +1419,95 @@ test('C08-B21: fondo punteado, zonas, notas, documentos y dock conservan contras
     body: await page.screenshot(),
     contentType: 'image/png',
   });
+});
+
+test('C08-B45: selección vacía, importación múltiple raster y PDF, repetición y formato no admitido desde el selector conservan contenido y bytes', async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await canvas(page);
+  const original = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
+  const sample = page.locator('[data-node=note-a]');
+  const png = await sample.screenshot({ type: 'png' });
+  const jpeg = await sample.screenshot({ type: 'jpeg', quality: 80 });
+  const pdf = pdfFixture();
+  await page.setViewportSize({ width: 390, height: 668 });
+  const empty = await chooseLocalFiles(page);
+  await empty.setFiles([]);
+  expect((await snapshot(page)).state.worlds.find((w) => w.id === 'scout')).toEqual(original);
+  const picker = await chooseLocalFiles(page);
+  await picker.setFiles([
+    { name: 'Imagen.png', mimeType: 'image/png', buffer: png },
+    { name: 'Imagen.jpg', mimeType: 'image/jpeg', buffer: jpeg },
+    { name: 'Material.pdf', mimeType: 'application/pdf', buffer: pdf },
+  ]);
+  await expect
+    .poll(
+      async () => (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!.nodes.length,
+    )
+    .toBe(original.nodes.length + 3);
+  const after = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
+  const added = after.nodes.filter((node) => !original.nodes.some((old) => old.id === node.id));
+  expect(added.map((node) => node.data.kind)).toEqual(['image', 'image', 'pdf']);
+  for (const node of original.nodes)
+    expect(after.nodes.find((n) => n.id === node.id)).toEqual(node);
+  for (const node of added) {
+    const preview = page.locator('[data-node="' + node.id + '"] > img');
+    await expect(preview).toBeVisible();
+    await expect(preview).toBeInViewport({ ratio: 0.99 });
+    await expect
+      .poll(() => preview.evaluate((el) => (el as HTMLImageElement).naturalWidth))
+      .toBeGreaterThan(0);
+  }
+  await expect(page.locator('#canvas-file-import')).toHaveValue('');
+  const assets = added.flatMap((n) => ('asset' in n.data ? [n.data.asset] : []));
+  const readBytes = () =>
+    page.evaluate(async (ids) => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const r = indexedDB.open('everett-canvas', 1);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+      try {
+        const store = db.transaction('assets').objectStore('assets');
+        const blobs = await Promise.all(
+          ids.map(
+            (id) =>
+              new Promise<Blob>((resolve, reject) => {
+                const r = store.get(id);
+                r.onsuccess = () => resolve(r.result as Blob);
+                r.onerror = () => reject(r.error);
+              }),
+          ),
+        );
+        return await Promise.all(
+          blobs.map(async (blob) => Array.from(new Uint8Array(await blob.arrayBuffer()))),
+        );
+      } finally {
+        db.close();
+      }
+    }, assets);
+  expect((await readBytes()).map((bytes) => Buffer.from(bytes))).toEqual([png, jpeg, pdf]);
+  await reload(page);
+  expect((await snapshot(page)).state.worlds.find((w) => w.id === 'scout')).toEqual(after);
+  expect((await readBytes()).map((bytes) => Buffer.from(bytes))).toEqual([png, jpeg, pdf]);
+  const repeat = await chooseLocalFiles(page);
+  await repeat.setFiles({ name: 'Imagen.png', mimeType: 'image/png', buffer: png });
+  await expect
+    .poll(
+      async () => (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!.nodes.length,
+    )
+    .toBe(after.nodes.length + 1);
+  const repeated = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
+  for (const node of after.nodes)
+    expect(repeated.nodes.find((n) => n.id === node.id)).toEqual(node);
+  await expect(page.locator('#canvas-file-import')).toHaveValue('');
+  const unsupported = await chooseLocalFiles(page);
+  await unsupported.setFiles({
+    name: 'No compatible.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('No es multimedia'),
+  });
+  await expect(page.locator('#notification')).toContainText('Incorporá una imagen, video o PDF.');
+  expect((await snapshot(page)).state.worlds.find((w) => w.id === 'scout')).toEqual(repeated);
 });

@@ -295,7 +295,7 @@ export class CanvasInteractions {
         if (event.target instanceof HTMLInputElement && event.target.id === 'canvas-file-import') {
           const files = [...(event.target.files ?? [])];
           event.target.value = '';
-          void this.importFiles(files);
+          void this.importFiles(files, files.length > 1);
         }
         if (event.target.closest('.canvas-style')) {
           const ui = ctx.ui.canvas;
@@ -765,7 +765,7 @@ export class CanvasInteractions {
         z,
       };
       this.ctx.camera?.set(camera, true);
-      this.ctx.act({ type: 'camera', camera }, 'encuadrar ejemplos multimedia', 'C08-MAT-01');
+      this.ctx.act({ type: 'camera', camera }, 'encuadrar materiales incorporados', 'C08-MAT-01');
     }
     return added;
   }
