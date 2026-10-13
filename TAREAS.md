@@ -20,7 +20,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Correcciones pendientes
 
-Canvas 0.8.7 en preparación en feat/canvas-0.8: apertura lateral del menú de incorporación elegida por el usuario, conservando cercanía y dimensiones. C08-B46 amplía la regresión geométrica. El gate debe renovarse para esta candidata; cierre e integración pendientes de aprobación explícita.
+Canvas 0.8.7 es candidata para revisión del usuario en feat/canvas-0.8. Gate completo y arnés ampliado vigentes; cierre e integración pendientes de aprobación explícita. No quedan fallos conocidos abiertos del feedback corregido en este lote.
 
 Galería y bocetos rápidos están en [Mejoras de Canvas por evaluar](docs/alcance-prototipo.md#mejoras-de-canvas-por-evaluar), con prioridad baja y sin versión comprometida.
 
@@ -30,12 +30,12 @@ Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada sup
 
 Registrar aquí cada nuevo fallo abierto con su versión, forma de reproducirlo, resultado esperado y caso de prueba asociado. Al corregirlo, conservar la regresión en `tests/` y retirar el pendiente; Git conserva el cambio. Los resultados de ejecución viven en `output/pruebas/` hasta la siguiente ejecución de su grupo.
 
-## Candidata 0.8.6
+## Candidata 0.8.7
 
-Incorporar materiales abre un selector compacto anclado al + o a Más herramientas, independiente del zoom. Se adapta al dock móvil y los bordes de la ventana, limita su altura y desplaza listas extensas internamente. Nombres completos consultables, recorrido por teclado, segundo clic para cerrar y foco recuperado. Se mantienen importación local, ejemplos alternados y los demás recorridos de Canvas.
+Incorporar materiales prioriza abrir al costado del dock, cerca del disparador: derecha junto a + e izquierda disponible en el dock compacto. Arriba o abajo quedan como alternativa cuando no haya espacio lateral cercano. Se conservan dimensiones, scroll, teclado, cierre, foco, importación local y los demás recorridos de Canvas.
 
-C08-B46 se incorpora a la matriz obligatoria. Comprueba distancia al disparador, dimensiones, zoom 0,2/1/4, dock en distintos bordes, chat anclado, 801/800/799/390/300 px, 30 documentos adicionales con nombres extensos, scroll local, foco y activación real de una referencia con Enter. La versión previa falla con una distancia de 385,75 px. El verificador exige las entradas reales de references y reference-add, junto con la cobertura existente y los controles negativos del arnés.
+C08-B46 amplía la regresión: exige apertura lateral en el escenario ancho y después de mover el dock a lugares con espacio, posición estable con zoom y ningún solapamiento con las herramientas. La variante anterior encima del dock falla. Se conservan cercanía, límites, adaptación a 801/800/799/390/300 px, lista extensa, teclado e incorporación exacta de una referencia. El verificador exige las entradas reales de references y reference-add, junto con la cobertura existente y los controles negativos del arnés.
 
-Pasaron los ocho comandos del gate sobre el HTML actual: 72 unitarias, ejecución 2026-10-13_09-55-11-135Z, y 118 de navegador, ejecución 2026-10-13_09-55-39-379Z, sin omisiones ni reintentos. Incluyen regresión completa, sesión sostenida, recorridos de Canvas y controles adversos del propio arnés. Los verificadores confirmaron las identidades actuales del HTML, las fuentes y la evidencia.
+Pasaron los ocho comandos del gate sobre el HTML actual: 72 unitarias, ejecución 2026-10-13_15-36-29-211Z, y 118 de navegador, ejecución 2026-10-13_15-36-33-039Z, sin omisiones ni reintentos. Incluyen regresión completa, sesión sostenida, recorridos de Canvas y controles adversos del propio arnés. Los verificadores confirmaron las identidades actuales del HTML, las fuentes y la evidencia.
 
-HTML: [dist/Everett-0.8.6.html](dist/Everett-0.8.6.html), build 523b8614201baa78, SHA-256 aed1e506f0dca69aa7a60899c544902d10e7e7775b87572824841517a5f2aaa0. [Revisión visual y de alcance](output/revision/0.8.6/revision.md), [informe](output/informe/informe.md) y paquete candidato en output/paquete. Preview único en 4173. Se conservan las fuentes y los HTML anteriores; dev y la entrega aprobada de 0.7.5 permanecen intactos.
+HTML: [dist/Everett-0.8.7.html](dist/Everett-0.8.7.html), build e0be768f4631d4b3, SHA-256 446ed522e8063eea65f3af7806d04f995fde56d431e76e008535d79860b6a6fe. [Revisión visual y de alcance](output/revision/0.8.7/revision.md), [informe](output/informe/informe.md) y paquete candidato en output/paquete. Preview único en 4173. Se conservan las fuentes y los HTML anteriores; dev y la entrega aprobada de 0.7.5 permanecen intactos.
