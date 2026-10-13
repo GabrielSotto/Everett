@@ -1,10 +1,20 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { test as base, expect } from '@playwright/test';
+import { installControlProbe, type ControlUse } from './control-probe';
 
-export const test = base.extend<{ runtimeErrors: string[] }>({
+export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[] }>({
+  controls: async ({ page }, use) => {
+    const controls: ControlUse[] = [];
+    await page.exposeFunction('__everettControlsCapture', (entry: ControlUse) => {
+      controls.push(entry);
+      if (controls.length > 1024) controls.shift();
+    });
+    await page.addInitScript(installControlProbe);
+    await use(controls);
+  },
   runtimeErrors: [
-    async ({ page }, use, testInfo) => {
+    async ({ page, controls }, use, testInfo) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.stack ?? error.message));
       page.on('console', (message) => {
@@ -64,6 +74,10 @@ export const test = base.extend<{ runtimeErrors: string[] }>({
               .map((entry) => JSON.stringify(entry)),
           );
         }
+        await testInfo.attach('controls-used', {
+          body: JSON.stringify(controls),
+          contentType: 'application/json',
+        });
         await testInfo.attach('runtime-errors', {
           body: JSON.stringify(errors, null, 2),
           contentType: 'application/json',

@@ -21,6 +21,7 @@ const sourceHashes = [
   'scripts/test-browser.mjs',
   'scripts/artifact-evidence.mjs',
   'scripts/canvas-contracts.mjs',
+  'scripts/browser-evidence.mjs',
   'docs/iteraciones/0.8.md',
   'scripts/output-runs.mjs',
   'scripts/run-process.mjs',

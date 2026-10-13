@@ -33,6 +33,7 @@ function valid() {
                     attachments: [
                       { name: 'runtime-errors', body: encoded([]) },
                       { name: 'everett-trace', body: encoded([{ event: 'ready' }]) },
+                      { name: 'controls-used', body: encoded([]) },
                       { name: 'screenshot', path: 'screenshot.png' },
                       { name: 'trace', path: 'trace.zip' },
                     ],
@@ -104,4 +105,30 @@ test('HARNESS-07: el informe de navegador exige todos los casos y el mismo artef
     mutate(report);
     assert.throws(() => verifyBrowserReport(report, expected));
   }
+});
+
+test('HARNESS-14: rechaza controles ausentes, programáticos u ocultos aunque las aserciones y el HTML estén aprobados', () => {
+  const report = valid();
+  const spec = report.suites[0].specs[0];
+  spec.title = 'C08-B05: importación visible';
+  const controls = spec.tests[0].results[0].attachments.find(
+    (item) => item.name === 'controls-used',
+  );
+  for (const uses of [
+    [],
+    [{ action: 'canvas-import', trusted: false, visible: true }],
+    [{ action: 'canvas-import', trusted: true, visible: false }],
+    [{ action: 'otra', trusted: true, visible: true }],
+  ]) {
+    controls.body = encoded(uses);
+    assert.throws(() => verifyBrowserReport(report, expected), /Falta entrada visible/);
+  }
+  controls.body = encoded([{ action: 'canvas-import', trusted: true, visible: true }]);
+  assert.equal(verifyBrowserReport(report, expected).length, 1);
+  controls.body = encoded({ action: 'canvas-import' });
+  assert.throws(() => verifyBrowserReport(report, expected), /Registro de controles inválido/);
+  spec.tests[0].results[0].attachments = spec.tests[0].results[0].attachments.filter(
+    (item) => item.name !== 'controls-used',
+  );
+  assert.throws(() => verifyBrowserReport(report, expected), /Falta controls-used/);
 });

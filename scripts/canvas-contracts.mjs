@@ -1,5 +1,6 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'UI-HARNESS-03', layer: 'browser', contracts: ['C08-MAT-02'] },
   { id: 'C08-U09', layer: 'unit', contracts: ['C08-LINK-01', 'C08-MAT-08'] },
   { id: 'C08-U10', layer: 'unit', contracts: ['C08-PROP-01', 'C08-STATE-01', 'C08-STATE-02'] },
   { id: 'C08-B34', layer: 'browser', contracts: ['C08-MAT-03', 'C08-MAT-04', 'C08-STATE-01'] },
@@ -11,6 +12,7 @@ export const canvasCases = [
   { id: 'C08-B40', layer: 'browser', contracts: ['C08-MAT-05', 'C08-MAT-08', 'C08-STATE-01'] },
   { id: 'C08-B41', layer: 'browser', contracts: ['C08-MAT-05', 'C08-MAT-08', 'C08-STATE-01'] },
   { id: 'C08-B42', layer: 'browser', contracts: ['C08-MAT-05', 'C08-STATE-01'] },
+  { id: 'C08-B45', layer: 'browser', contracts: ['C08-MAT-02', 'C08-STATE-02'] },
   { id: 'C08-B44', layer: 'browser', contracts: ['C08-MAT-02', 'C08-STATE-02'] },
   { id: 'C08-B43', layer: 'browser', contracts: ['C08-MAT-02', 'C08-MAT-03', 'C08-STATE-02'] },
   { id: 'C08-U11', layer: 'unit', contracts: ['C08-MAT-05', 'C08-MAT-08'] },
@@ -108,4 +110,38 @@ export function verifyContractInventory(document) {
     throw new Error(
       'La matriz del arnés no coincide con todos los contratos C08 de la definición mantenida.',
     );
+}
+
+/** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
+export const canvasControlRequirements = {
+  'C08-B05': { 'canvas-import': 1 },
+  'C08-B08': { 'canvas-import': 2 },
+  'C08-B29': { 'canvas-examples': 1 },
+  'C08-B35': { 'video-play': 6 },
+  'C08-B44': { 'canvas-examples': 4 },
+  'C08-B45': { 'canvas-import': 4 },
+  'C08-B24': { 'canvas-tool': 1, shapes: 1, 'canvas-comment': 1 },
+  'C08-B04': { 'assignment-revise': 2, 'assignment-accept': 1 },
+  'C08-B23': { 'assignment-revise': 1 },
+  'C08-B41': { 'canvas-undo': 1, 'canvas-redo': 1 },
+};
+export function verifyCanvasControls(title, controls) {
+  if (
+    !Array.isArray(controls) ||
+    controls.some(
+      (item) =>
+        !item ||
+        typeof item.action !== 'string' ||
+        typeof item.trusted !== 'boolean' ||
+        typeof item.visible !== 'boolean',
+    )
+  )
+    throw new Error('Registro de controles inválido: ' + title);
+  const id = title.match(/^C08-B\d+/)?.[0];
+  for (const [action, minimum] of Object.entries(canvasControlRequirements[id] ?? {})) {
+    const count = controls.filter(
+      (item) => item.action === action && item.trusted && item.visible,
+    ).length;
+    if (count < minimum) throw new Error('Falta entrada visible ' + action + ' en ' + title);
+  }
 }

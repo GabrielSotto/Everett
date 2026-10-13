@@ -1,3 +1,4 @@
+import { verifyCanvasControls } from './canvas-contracts.mjs';
 export function browserSpecs(suites) {
   if (!Array.isArray(suites)) throw new Error('Falta el inventario de pruebas de navegador.');
   return suites.flatMap((suite) => [...(suite.specs ?? []), ...browserSpecs(suite.suites ?? [])]);
@@ -48,9 +49,14 @@ export function verifyBrowserReport(report, expected) {
       )
     )
       throw new Error(`El caso ${spec.title} no acredita el HTML cargado.`);
-    for (const name of ['runtime-errors', 'everett-trace', 'screenshot', 'trace'])
+    for (const name of ['runtime-errors', 'everett-trace', 'controls-used', 'screenshot', 'trace'])
       if (!result.attachments?.some((item) => item.name === name))
         throw new Error(`Falta ${name} en ${spec.title}.`);
+    const controls = result.attachments.find((item) => item.name === 'controls-used');
+    verifyCanvasControls(
+      spec.title,
+      JSON.parse(Buffer.from(controls.body ?? '', 'base64').toString()),
+    );
     const runtime = result.attachments.find((item) => item.name === 'runtime-errors');
     if (Buffer.from(runtime.body ?? '', 'base64').toString() !== '[]')
       throw new Error(`El caso ${spec.title} registra errores de ejecución.`);

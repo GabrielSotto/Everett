@@ -64,6 +64,7 @@ test('HARNESS-08: rechaza cifras, fechas y capturas del informe distintas de la 
                       attachments: [
                         { name: 'runtime-errors', body: encoded([]) },
                         { name: 'everett-trace', body: encoded([{ event: 'ready' }]) },
+                        { name: 'controls-used', body: encoded([]) },
                         {
                           name: 'screenshot',
                           contentType: 'image/png',

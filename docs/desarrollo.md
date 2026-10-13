@@ -153,3 +153,9 @@ Todas están declaradas como dependencias de desarrollo. La aplicación mantiene
 - [Reconstrucción de 0.7.5](iteraciones/0.7.5.md): alcance y criterios de cierre de esta reconstrucción.
 - [Alcance hasta 1.0](alcance-prototipo.md): etapas y aprobaciones.
 - [Validación](validacion-prototipo.md): exigencias obligatorias del arnés y de la entrega.
+
+## Registro de controles del arnés
+
+tests/browser/control-probe.ts observa clics antes de que los controles reconstruyan su DOM. El runner conserva hasta 1024 registros por caso a través de recargas y los adjunta como controls-used. No añade estado ni modifica la aplicación. scripts/browser-evidence.mjs valida su estructura y las entradas obligatorias de canvasControlRequirements en scripts/canvas-contracts.mjs. Ambos verificadores e identidades de fuentes incluyen esa matriz; el inventario de navegador incluye también el verificador.
+
+La evidencia de controles complementa las aserciones de intención, datos y representación. Los requisitos de entradas visibles, fixtures y auditoría de recorridos están en [Validación](validacion-prototipo.md#entrada-observable-y-auditoría-de-recorridos-de-canvas).
