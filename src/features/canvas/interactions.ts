@@ -626,9 +626,16 @@ export class CanvasInteractions {
     this.loadingSamples = true;
     this.ctx.notice('Preparando imagen, video y PDF de ejemplo…');
     try {
-      const result = await sampleFiles();
+      const result = await sampleFiles(this.ctx.ui.canvas.sampleImageIndex ?? 0);
       if (this.disposed) return;
-      await this.importFiles(result.files, true, result.duration);
+      const added = await this.importFiles(result.files, true, result.duration);
+      if (this.disposed) return;
+      if (
+        this.ctx.world().nodes.some((node) => added.includes(node.id) && node.data.kind === 'image')
+      ) {
+        this.ctx.ui.canvas.sampleImageIndex = result.nextImageIndex;
+        this.ctx.persist();
+      }
       if (!result.duration)
         this.ctx.notice(
           'Imagen y PDF incorporados. Este navegador no puede generar el video de ejemplo.',
@@ -644,7 +651,11 @@ export class CanvasInteractions {
       this.loadingSamples = false;
     }
   }
-  private async importFiles(files: File[], frame = false, sampleDuration?: number): Promise<void> {
+  private async importFiles(
+    files: File[],
+    frame = false,
+    sampleDuration?: number,
+  ): Promise<string[]> {
     const origin = this.center(),
       added: string[] = [];
     for (const [index, file] of files.entries()) {
@@ -708,7 +719,7 @@ export class CanvasInteractions {
         }
         const asset = 'asset-' + crypto.randomUUID();
         await this.ctx.storage.putAsset(asset, file);
-        if (this.disposed) return;
+        if (this.disposed) return added;
         const width = Math.min(360, 300 * ratio),
           height = width / ratio;
         const scale = Math.max(1, 4 / width, 4 / height);
@@ -756,6 +767,7 @@ export class CanvasInteractions {
       this.ctx.camera?.set(camera, true);
       this.ctx.act({ type: 'camera', camera }, 'encuadrar ejemplos multimedia', 'C08-MAT-01');
     }
+    return added;
   }
   hydrate(): void {
     this.root

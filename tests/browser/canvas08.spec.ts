@@ -551,12 +551,17 @@ test('C08-B04: trabajo pendiente sobrevive recarga, pedido conserva contexto y a
   await expect(page.locator('[data-node="note-a"]')).toBeVisible();
 });
 
-test('C08-B05: importar conserva bytes, contenido libre, proporción y navegación tras recargar', async ({
+test('C08-B05: importar desde el selector real conserva bytes, contenido libre, proporción y navegación tras recargar', async ({
   page,
 }) => {
   await canvas(page);
   await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
-  await page.locator('#canvas-file-import').setInputFiles({
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: 'Importar archivos locales', exact: true }).click(),
+  ]);
+  expect(chooser.isMultiple()).toBe(true);
+  await chooser.setFiles({
     name: 'imagen completa.svg',
     mimeType: 'image/svg+xml',
     buffer: Buffer.from(

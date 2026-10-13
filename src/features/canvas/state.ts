@@ -23,6 +23,7 @@ export interface CanvasUi {
   stroke: string;
   thickness: number;
   fill: boolean;
+  sampleImageIndex?: number;
 }
 
 export function createCanvasUi(): CanvasUi {
