@@ -1152,12 +1152,16 @@ export class CanvasView implements View {
         this.renderDock();
         break;
       case 'dock-more':
-        this.dockMore = !this.dockMore;
+        this.dockMore = !this.referenceMenu && !this.dockMore;
         this.referenceMenu = false;
         this.shapesOpen = false;
         this.renderDock();
         this.root
-          .querySelector<HTMLElement>('.dock-more-menu [role=menuitem]')
+          .querySelector<HTMLElement>(
+            this.dockMore
+              ? '.dock-more-menu [role=menuitem]'
+              : '.canvas-tools [data-action=dock-more]',
+          )
           ?.focus({ preventScroll: true });
         break;
       case 'canvas-tool': {
@@ -1343,6 +1347,7 @@ export class CanvasView implements View {
           this.root
             .querySelector<HTMLElement>('.reference-menu button')
             ?.focus({ preventScroll: true });
+        else this.referenceTrigger()?.focus({ preventScroll: true });
         break;
       case 'reference-add': {
         const kind = t.dataset.kind;

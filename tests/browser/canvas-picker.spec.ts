@@ -93,12 +93,24 @@ test('C08-B46: incorporación compacta junto al dock, zoom independiente, bordes
     await page.mouse.move(position.x, position.y, { steps: 12 });
     await page.mouse.up();
     await openPicker(page);
+    const { trigger } = await geometry(page);
+    await trigger.click();
+    await expect(page.locator('.reference-menu,.dock-more-menu')).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toBeFocused();
+    await openPicker(page);
     await geometry(page);
     await page.keyboard.press('Escape');
   }
   for (const width of [801, 800, 799, 390, 300]) {
     await page.emulateMedia({ reducedMotion: width <= 390 ? 'reduce' : 'no-preference' });
     await page.setViewportSize({ width, height: 500 });
+    await openPicker(page);
+    const { trigger } = await geometry(page);
+    await trigger.click();
+    await expect(page.locator('.reference-menu,.dock-more-menu')).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toBeFocused();
     await openPicker(page);
     await geometry(page);
     const menu = page.locator('.reference-menu');
