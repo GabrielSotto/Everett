@@ -143,6 +143,8 @@ La corrección 0.8.4 exige C08-U11/U12 y C08-B41–B43: selección mediante arra
 
 Para 0.8.5, C08-B05 debe abrir el selector desde Importar archivos locales y comprobar selección múltiple antes de importar. C08-B44 incorpora las tres imágenes de ejemplo y completa el ciclo, recupera el índice tras recarga y cambio de superficie, exige previews decodificados visibles y bytes distintos entre imágenes, y conserva sin cambios los materiales y archivos anteriores.
 
+Para 0.8.6, C08-B46 exige que el selector de incorporación quede junto a su disparador y no lo cubra, con dimensiones acotadas dentro de la ventana. Medir su distancia al botón además de su visibilidad, antes y después de zoom, arrastre del dock y resize; probar bordes, chat anclado, lista extensa y nombres largos. Verificar navegación por teclado, acceso al final de la lista, cierre y foco recuperado. La rueda dentro del selector desplaza su lista y conserva la cámara del Canvas.
+
 ## Entrada observable y auditoría de recorridos de Canvas
 
 La preparación de fixtures define datos iniciales; no demuestra el acceso del usuario. Un test que alimenta directamente un input puede comprobar procesamiento o recursos, pero no certifica el botón, menú ni selector. El recorrido positivo de importación debe abrir el selector desde la entrada visible y conservar el input conectado.
