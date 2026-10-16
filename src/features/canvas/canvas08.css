@@ -1307,21 +1307,21 @@
 }
 .canvas-manual-group > button {
   position: absolute;
-  left: 8px;
-  top: 4px;
-  max-width: calc(100% - 16px);
+  left: calc(8px / var(--canvas-zoom));
+  top: calc(4px / var(--canvas-zoom));
+  max-width: calc(100% - 16px / var(--canvas-zoom));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: auto;
-  padding: 4px 6px;
-  font-size: 13px;
+  padding: calc(4px / var(--canvas-zoom)) calc(6px / var(--canvas-zoom));
+  font-size: calc(13px / var(--canvas-zoom));
   color: var(--text);
   cursor: grab;
 }
 .canvas-manual-group small {
   color: var(--muted);
-  margin-left: 8px;
+  margin-left: calc(8px / var(--canvas-zoom));
 }
 .fragment-picker {
   width: min(480px, calc(100vw - 24px));
@@ -1339,9 +1339,12 @@
 }
 .fragment-state {
   display: block;
-  color: var(--accent);
+  color: inherit;
   font-size: 11px;
   margin-bottom: 5px;
+}
+.material[data-reference-kind='document'] .fragment-state {
+  color: #475363;
 }
 .fragment-notice {
   position: absolute;

@@ -210,6 +210,32 @@ test('C08-B57: conjunto manual se renombra, arrastra, recupera y separa sin borr
   await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
   await expect(header).toHaveText(/Arquitectura/);
   await capture(page, info, 'conjunto-manual');
+  for (const zoom of [0.4, 0.1, 1]) {
+    const current = (await snapshot(page)).camera.z;
+    await page.mouse.move(720, 480);
+    await page.mouse.wheel(0, -Math.log(zoom / current) / 0.00165);
+    await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(zoom, 3);
+    const readable = await header.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      return {
+        font:
+          parseFloat(getComputedStyle(el).fontSize) *
+          Number(
+            getComputedStyle(document.querySelector('#canvas-plane')!).getPropertyValue(
+              '--canvas-zoom',
+            ),
+          ),
+        reached: el.contains(
+          document.elementFromPoint(
+            rect.x + Math.min(rect.width / 2, 35),
+            rect.y + rect.height / 2,
+          ),
+        ),
+      };
+    });
+    expect(readable.font).toBeGreaterThanOrEqual(12);
+    expect(readable.reached).toBe(true);
+  }
   await assignMaterial(page, 'g-0');
   expect((await world(page)).canvasGroups![0]!.nodes).toEqual(group.nodes);
   const blockedBox = (await header.boundingBox())!;
@@ -273,6 +299,21 @@ test('C08-B58: referencias a secciones y funciones abren el origen preciso y det
     await expect(page.locator('.fragment-picker')).toHaveCount(0);
     expect((await world(page)).referenceAnchors?.at(-1)?.quote).toBe(quote);
     await expect(page.locator(`[data-node="${id}"]`)).toContainText(quote);
+    const contrast = await page.locator(`[data-node="${id}"] .fragment-state`).evaluate((el) => {
+      const luminance = (color: string) => {
+        const rgb = color
+          .match(/[\d.]+/g)!
+          .slice(0, 3)
+          .map(Number)
+          .map((n) => n / 255)
+          .map((n) => (n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4));
+        return rgb[0]! * 0.2126 + rgb[1]! * 0.7152 + rgb[2]! * 0.0722;
+      };
+      const foreground = luminance(getComputedStyle(el).color),
+        background = luminance(getComputedStyle(el.closest('.material')!).backgroundColor);
+      return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+    });
+    expect(contrast).toBeGreaterThanOrEqual(4.5);
     await page.locator(`[data-node="${id}"]`).focus();
     await page.keyboard.press('Enter');
     const editor = page.locator(kind === 'document' ? '#doc-body' : '#code-editor');

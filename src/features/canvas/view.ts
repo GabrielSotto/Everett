@@ -115,6 +115,7 @@ export class CanvasView implements View {
         if (this.cableZoom !== camera.z) {
           this.cableZoom = camera.z;
           this.paintCableLabels();
+          this.paintGroups();
         }
         this.positionLinkActions();
       }
@@ -1545,6 +1546,12 @@ export class CanvasView implements View {
     layer.innerHTML = (world.canvasGroups ?? [])
       .map((group) => {
         const bounds = groupBounds(world, group, nodes);
+        const zoom = this.cam.current.z;
+        // Encabezado e insets legibles sin agrandar ni separar sus materiales.
+        bounds.x += 16 - 16 / zoom;
+        bounds.width += 32 / zoom - 32;
+        bounds.y += 68 - 68 / zoom;
+        bounds.height += 84 / zoom - 84;
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
         return `<div class="canvas-manual-group ${selected ? 'selected' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><button type="button" data-group="${group.id}" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="${html(group.name)}">${html(group.name)} <small>${group.nodes.length}</small></button></div>`;
       })
