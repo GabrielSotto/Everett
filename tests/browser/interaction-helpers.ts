@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from './fixtures';
+import { navigationTuning } from '../../src/spatial/tuning';
 export async function openPeople(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Más acciones de conversación', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Agregar personas', exact: true }).click();
@@ -35,13 +36,28 @@ export async function enterWorld(page: Page): Promise<void> {
 }
 
 export async function openSurface(page: Page, name: string): Promise<void> {
+  const alternate = page.getByRole('button', { name: 'Superficies', exact: true });
+  if (await alternate.isVisible()) {
+    await alternate.click();
+    await page.locator('.surface-menu').getByRole('button', { name, exact: true }).click();
+    await expect(page.locator('.transition-ghost')).toHaveCount(0);
+    return;
+  }
   const route = page.locator('#viewport');
   for (
     let attempt = 0;
     attempt < 12 && (await route.getAttribute('data-route')) !== 'world/scout';
     attempt++
   ) {
-    await page.keyboard.press('Escape');
+    // Esc cierra paneles de trabajo. El zoom de salida conserva chat y borradores.
+    await page.waitForTimeout(navigationTuning.cooldownMs);
+    const before = await route.getAttribute('data-route');
+    const viewport = page.viewportSize()!;
+    await page.mouse.move(viewport.width - 30, 90);
+    await page.keyboard.down('Alt');
+    await page.mouse.wheel(0, 240);
+    await page.keyboard.up('Alt');
+    await expect(route).not.toHaveAttribute('data-route', before!);
     await expect(page.locator('.transition-ghost')).toHaveCount(0);
   }
   await expect(route).toHaveAttribute('data-route', 'world/scout');
