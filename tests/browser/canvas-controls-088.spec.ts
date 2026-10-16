@@ -579,4 +579,13 @@ test('C08-B54: apertura y reversión continuas, campo conservado y contraejemplo
     body: JSON.stringify(samples),
     contentType: 'application/json',
   });
+  // Escape retira el campo enfocado; su change puede pedir otro render síncrono.
+  await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
+  await page.getByLabel('Nombre de perfil', { exact: true }).fill('Perfil de prueba');
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('button', { name: 'Perfil de Perfil de prueba', exact: true }),
+  ).toBeFocused();
+  expect(await field.evaluate((element) => element.isConnected)).toBe(true);
+  expect((await snapshot(page)).state.profile.name).toBe('Perfil de prueba');
 });

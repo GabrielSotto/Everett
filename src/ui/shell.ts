@@ -17,6 +17,8 @@ export class Shell {
   private abort = new AbortController();
   private readonly panels: PanelMotion;
   private readonly shortcuts: CanvasShortcuts;
+  private rendering = false;
+  private renderPending = false;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -351,6 +353,22 @@ export class Shell {
     return `<div class="popover profile-pop"><div class="profile-identity"><span class="profile-avatar">${html(p.name.slice(0, 1).toUpperCase())}</span><div><strong>${html(p.name)}</strong><small>${this.ctx.store.get().worlds.length} mundos en total · ${this.ctx.store.get().worlds.filter((world) => world.archived).length} archivados</small></div></div><nav class="profile-tabs">${(['identity', 'preferences', 'tools', 'settings'] as const).map((t) => `<button data-action="profile-tab" data-tab="${t}" class="${t === tab ? 'active' : ''}">${{ identity: 'Perfil', preferences: 'Preferencias', tools: 'Herramientas', settings: 'Configuración' }[t]}</button>`).join('')}</nav>${tab === 'settings' ? this.shortcuts.markup() : tab === 'identity' ? `<div class="profile-field"><label for="profile-name">Nombre</label><input id="profile-name" aria-label="Nombre de perfil" maxlength="${profileLimits.name}" value="${html(p.name)}"></div><div class="profile-field"><label for="profile-bio">Sobre vos</label><textarea id="profile-bio" rows="4" maxlength="${profileLimits.bio}" aria-label="Descripción del perfil" placeholder="Sobre vos…">${html(p.bio)}</textarea><span class="profile-counter" id="profile-bio-count">${p.bio.length} / ${profileLimits.bio}</span></div>` : tab === 'preferences' ? `<label class="preference-line" for="profile-language">Idioma de dictado<select id="profile-language"><option value="es-AR" ${p.language === 'es-AR' ? 'selected' : ''}>Español · Argentina</option><option value="es-ES" ${p.language === 'es-ES' ? 'selected' : ''}>Español · España</option></select></label>` : `${w ? `<button data-action="archive">${icon('archive', 15)}${w.archived ? 'Desarchivar mundo' : 'Archivar mundo'}</button>` : ''}<button data-action="shortcuts">${icon('keyboard', 15)}Ayuda de Canvas</button><button data-action="diagnostics">${icon('download', 15)}Exportar diagnóstico</button>`}</div>`;
   }
   render(): void {
+    if (this.rendering) {
+      // Retirar un campo enfocado puede emitir change y actualizar el Store antes de terminar.
+      this.renderPending = true;
+      return;
+    }
+    this.rendering = true;
+    try {
+      do {
+        this.renderPending = false;
+        this.renderContent();
+      } while (this.renderPending);
+    } finally {
+      this.rendering = false;
+    }
+  }
+  private renderContent(): void {
     const restore = preserveFocus(this.root);
     const finishPanels = this.panels.prepare();
     const { ctx } = this,
