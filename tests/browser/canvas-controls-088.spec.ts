@@ -494,7 +494,14 @@ test('C08-B53: referencias renombradas, destino de otro Mundo y materiales asign
   expect((await world(page)).assignments[0]).toEqual(job);
   // Entrada adversa de recuperación: un trabajo conservado cuyo agente ya no tiene zona.
   const orphan = await snapshot(page);
-  orphan.state.worlds.find((item) => item.id === 'scout')!.zones = [];
+  const orphanWorld = orphan.state.worlds.find((item) => item.id === 'scout')!;
+  orphanWorld.zones = [];
+  const originalAgent = orphanWorld.agents.find((agent) => agent.id === job.agent)!;
+  const orphanAgent = { ...originalAgent, id: 'orphan-agent', templateId: originalAgent.id };
+  orphanWorld.agents.push(orphanAgent);
+  orphanWorld.assignments[0]!.agent = orphanAgent.id;
+  orphanWorld.nodes.find((node) => node.id === job.node)!.owner = orphanAgent.id;
+  const orphanJob = structuredClone(orphanWorld.assignments[0]!);
   await storedFixture(page, orphan.state, orphan.ui);
   await page.reload();
   await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
@@ -504,7 +511,29 @@ test('C08-B53: referencias renombradas, destino de otro Mundo y materiales asign
   await expect(orphanResult).toContainText('En trabajo');
   await orphanResult.click();
   await expect(page.locator('#notification')).toContainText('agente sin zona');
-  expect((await world(page)).assignments[0]).toEqual(job);
+  await expect(page.locator('#notification')).toContainText('Creá una zona');
+  expect((await world(page)).assignments[0]).toEqual(orphanJob);
+  await page.getByRole('button', { name: 'Dibujar zona', exact: true }).click();
+  await page.mouse.move(80, 150);
+  await page.mouse.down();
+  await page.mouse.move(350, 390, { steps: 10 });
+  await page.mouse.up();
+  await page.getByLabel('Agente de la zona', { exact: true }).selectOption({
+    label: `${orphanAgent.name} · Trabajo sin zona`,
+  });
+  expect((await world(page)).zones[0]?.agent).toBe(orphanAgent.id);
+  const relocatedJob = (await world(page)).assignments[0]!;
+  // El preview se reubica junto a la zona nueva; identidad, contexto y resultado se conservan.
+  expect({ ...relocatedJob, position: orphanJob.position }).toEqual(orphanJob);
+  expect(relocatedJob.position).not.toEqual(orphanJob.position);
+  await expect(page.getByRole('button', { name: 'Revisar propuesta', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Devolver Origen al Canvas', exact: true }).click();
+  const recovered = await world(page);
+  expect(recovered.assignments).toHaveLength(0);
+  expect(recovered.nodes.find((node) => node.id === job.node)?.owner).toBeNull();
+  expect(recovered.nodes.find((node) => node.id === job.node)?.data).toEqual(
+    orphanWorld.nodes.find((node) => node.id === job.node)!.data,
+  );
 });
 
 test('C08-B54: apertura y reversión continuas, campo conservado y contraejemplo de resultado sin tinta', async ({

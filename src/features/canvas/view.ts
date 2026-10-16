@@ -267,8 +267,9 @@ export class CanvasView implements View {
     if (!node) return;
     const zone = node.owner ? world.zones.find((item) => item.agent === node.owner) : null;
     if (node.owner && !zone) {
+      const agent = world.agents.find((item) => item.id === node.owner);
       this.ctx.notice(
-        'El material sigue asignado a un agente sin zona. Abrí Agents para revisar el trabajo y recuperar el material.',
+        `El material sigue asignado a un agente sin zona. Creá una zona y elegí a ${agent?.name ?? 'ese agente'} en Agente asignado para revisar el trabajo y recuperar el material.`,
         true,
       );
       return;
@@ -1596,10 +1597,16 @@ export class CanvasView implements View {
       const agent = w.agents.find((a) => a.id === zone.agent),
         materials = w.nodes.filter((n) => n.owner === zone.agent && !!zone.agent);
       holder.innerHTML = `<aside class="zone-inspector" aria-label="Inspector de zona"><div class="inspector-head"><span>${icon('zone', 15)}<label class="zone-name-label" for="zone-name">Zona</label></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar panel de zona')}</div></div><input id="zone-name" aria-label="Nombre de la zona" placeholder="Zona sin nombre" value="${html(zone.name)}"><label for="zone-agent">Agente asignado</label><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
-        .filter((a) => !a.templateId || a.id === zone.agent)
+        .filter(
+          (a) =>
+            !a.templateId ||
+            a.id === zone.agent ||
+            (w.assignments.some((job) => job.agent === a.id) &&
+              !w.zones.some((item) => item.agent === a.id)),
+        )
         .map(
           (a) =>
-            `<option value="${a.id}" ${zone.agent === a.id ? 'selected' : ''}>${html(a.name)}</option>`,
+            `<option value="${a.id}" ${zone.agent === a.id ? 'selected' : ''}>${html(a.name)}${w.assignments.some((job) => job.agent === a.id) && !w.zones.some((item) => item.agent === a.id) ? ' · Trabajo sin zona' : ''}</option>`,
         )
         .join('')}</select>${
         agent
