@@ -65,7 +65,7 @@ test('UI-DRAFT-02: cambiar de documento o Mundo mantiene borradores independient
     .getByRole('main')
     .getByRole('button', { name: 'Laboratorio de captura', exact: true });
   await expect(other).toBeInViewport();
-  await page.getByRole('button', { name: 'Cerrar búsqueda', exact: true }).click();
+  await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
   await other.click();
   await page.keyboard.press('Enter');
   await expect(page.locator('.transition-ghost')).toHaveCount(0);

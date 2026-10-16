@@ -57,6 +57,8 @@ export default defineConfig({
   use: {
     baseURL: baseURL.href,
     browserName: 'chromium',
+    actionTimeout: 10000,
+    navigationTimeout: 30000,
     viewport: { width: 1440, height: 900 },
     locale: 'es-AR',
     trace: 'on',

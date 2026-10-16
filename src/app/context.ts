@@ -27,6 +27,7 @@ export interface Context {
   ): boolean;
   go(r: Route, origin?: DOMRect, intent?: Intent): void;
   back(intent?: Intent): void;
+  locateMaterial(world: string, id: string): void;
   render(): void;
   renderShell(): void;
   world(): WorldSnapshot;

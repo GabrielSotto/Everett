@@ -279,6 +279,15 @@ export class EverettApp implements Context {
       intent?.interaction,
     );
   }
+  locateMaterial(world: string, id: string): void {
+    const source = this.store.get().worlds.find((item) => item.id === world);
+    if (!source?.nodes.some((node) => node.id === id)) {
+      this.notice('El material ya no está disponible en Canvas.', true);
+      return;
+    }
+    this.go({ kind: 'surface', world, surface: 'canvas', entity: null });
+    if (this.view instanceof CanvasView) this.view.locateMaterial(id);
+  }
   render(): void {
     this.view?.render();
   }
@@ -413,11 +422,15 @@ export class EverettApp implements Context {
       if (
         this.ui.shell.status ||
         this.ui.shell.filters ||
+        this.ui.shell.searchOpen ||
         change.command.type === 'world.shipping' ||
         change.command.type === 'profile.edit' ||
         (state.route.kind === 'surface' && state.route.surface === 'canvas')
       )
         this.shell.render();
+    } else if (change.command.type !== 'camera') {
+      // Las ediciones conservan el DOM del editor; los resultados sí derivan del contenido nuevo.
+      this.shell.refreshSearch();
     }
   }
   private mount(
@@ -527,10 +540,7 @@ export class EverettApp implements Context {
     if (e.defaultPrevented || e.isComposing) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      this.ui.shell.searchOpen = !this.ui.shell.searchOpen;
-      this.shell.render();
-      if (this.ui.shell.searchOpen)
-        this.root.querySelector<HTMLInputElement>('#global-search')?.focus();
+      this.shell.toggleSearch();
       return;
     }
     if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
@@ -546,6 +556,9 @@ export class EverettApp implements Context {
         this.ui.shell.search = '';
         this.shell.render();
         this.render();
+        this.root
+          .querySelector<HTMLElement>('[data-action=search]')
+          ?.focus({ preventScroll: true });
       } else if (this.view?.closeTransient?.()) {
         this.persist();
         return;

@@ -13,7 +13,7 @@ async function focusWorld(page: Page, name = 'Resource Scout'): Promise<void> {
   };
   // Esperar al destino permite contrastar el centro y la oclusión de la órbita.
   await expect.poll(offset).toBeLessThan(0.1);
-  await page.getByRole('button', { name: 'Cerrar búsqueda', exact: true }).click();
+  await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
   await world.click();
   await page.mouse.move(10, 70);
   await expect.poll(offset).toBeLessThan(0.1);
@@ -227,6 +227,6 @@ test('UI-ORBIT-04: atenuar un Mundo con el filtro conserva la oclusión de su ó
     contentType: 'application/json',
   });
   await page.clock.resume();
-  await page.getByRole('button', { name: 'Cerrar búsqueda', exact: true }).click();
+  await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
   await expect(world).not.toHaveClass(/dimmed/);
 });

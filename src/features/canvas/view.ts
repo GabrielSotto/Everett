@@ -23,6 +23,7 @@ import {
 import { CanvasChat } from '../chat/controller';
 import { SpatialCamera } from '../../spatial/camera';
 import { toWorld, bound } from '../../spatial/math';
+import { cameraTuning } from '../../spatial/tuning';
 import { bindDismiss } from '../../ui/popover';
 import { trace, type Intent } from '../../app/diagnostics/trace';
 import { colors } from './note-colors';
@@ -87,6 +88,14 @@ export class CanvasView implements View {
   private referenceMenu = false;
   private shapesOpen = false;
   private dockMore = false;
+  private locatedContext: {
+    camera: Camera;
+    selection: string | null;
+    selections: string[];
+    zone: string | null;
+    link: string | null;
+  } | null = null;
+  private locateMotion: Animation | null = null;
   private sequence = 0;
   private interactions: CanvasInteractions;
   constructor(
@@ -234,7 +243,7 @@ export class CanvasView implements View {
         const proposal = this.revision ?? (this.reviewCamera ? this.framedProposal : null);
         if (proposal) this.frameProposal(proposal);
         this.clampDock();
-        this.renderDock();
+        this.renderDock(false);
       },
       { signal: this.abort.signal },
     );
@@ -252,6 +261,72 @@ export class CanvasView implements View {
   rename(): void {
     this.interactions.rename();
   }
+  locateMaterial(id: string): void {
+    const world = this.ctx.world(),
+      node = world.nodes.find((item) => item.id === id);
+    if (!node) return;
+    const zone = node.owner ? world.zones.find((item) => item.agent === node.owner) : null;
+    if (node.owner && !zone) {
+      this.ctx.notice(
+        'El material sigue asignado a un agente sin zona. Abrí Agents para revisar el trabajo y recuperar el material.',
+        true,
+      );
+      return;
+    }
+    const ui = this.ctx.ui.canvas;
+    this.locatedContext ??= {
+      camera: this.cam.current,
+      selection: ui.selection,
+      selections: [...ui.selections],
+      zone: ui.zoneSelection,
+      link: ui.linkSelection,
+    };
+    this.interactions.close();
+    this.referenceMenu = this.shapesOpen = this.dockMore = false;
+    this.revision = this.reviewCamera = this.expansionCamera = this.framedProposal = null;
+    ui.tool = 'select';
+    ui.linkStart = null;
+    this.select(zone ? 'zone' : 'node', zone?.id ?? node.id);
+    const bounds = zone ?? node,
+      rect = this.rect();
+    const chat = this.root
+      .querySelector('.canvas-chat.docked:not(.compact)')
+      ?.getBoundingClientRect();
+    const left = chat && chat.height > 100 ? chat.right - rect.left : 0;
+    const width = Math.max(100, rect.width - left);
+    const z = Math.max(
+      cameraTuning.minimumZoom,
+      Math.min(1, (width - 48) / bounds.width, (rect.height - 140) / bounds.height),
+    );
+    this.moveToLocated({
+      x: left / 2 - (bounds.x + bounds.width / 2) * z,
+      y: -(bounds.y + bounds.height / 2) * z,
+      z,
+    });
+    this.render();
+    this.root
+      .querySelector<HTMLElement>(
+        `[data-${zone ? 'zone' : 'node'}="${CSS.escape(zone?.id ?? node.id)}"]`,
+      )
+      ?.focus({ preventScroll: true });
+    this.ctx.notice('Material localizado. Esc vuelve a la vista anterior.');
+    this.ctx.persist();
+  }
+  private moveToLocated(camera: Camera): void {
+    this.locateMotion?.cancel();
+    const before = this.cam.current;
+    this.cam.set(camera, true);
+    this.ctx.act({ type: 'camera', camera }, 'localizar material de Canvas', 'C08-STATE-01');
+    const plane = this.root.querySelector<HTMLElement>('#canvas-plane');
+    if (plane && !reducedMotion())
+      this.locateMotion = plane.animate(
+        [
+          { transform: `translate(${before.x}px,${before.y}px) scale(${before.z})` },
+          { transform: `translate(${camera.x}px,${camera.y}px) scale(${camera.z})` },
+        ],
+        { duration: motion.contentMs, easing: motion.panelEase },
+      );
+  }
   closeTransient(): boolean {
     if (this.interactions.close()) return true;
     if (this.drag || this.ctx.ui.canvas.linkStart) {
@@ -265,6 +340,23 @@ export class CanvasView implements View {
       this.revision = null;
       this.restoreExpansion();
       this.render();
+      return true;
+    }
+    if (this.locatedContext) {
+      const saved = this.locatedContext;
+      this.locatedContext = null;
+      const world = this.ctx.world();
+      const valid = (id: string | null): boolean =>
+        world.nodes.some((node) => node.id === id && !node.owner);
+      Object.assign(this.ctx.ui.canvas, {
+        selection: valid(saved.selection) ? saved.selection : null,
+        selections: saved.selections.filter(valid),
+        zoneSelection: world.zones.some((zone) => zone.id === saved.zone) ? saved.zone : null,
+        linkSelection: world.links.some((link) => link.id === saved.link) ? saved.link : null,
+      });
+      this.moveToLocated(saved.camera);
+      this.render();
+      this.ctx.persist();
       return true;
     }
     if (this.ctx.ui.canvas.zoneSelection) {
@@ -469,6 +561,7 @@ export class CanvasView implements View {
     }
   }
   private down(e: PointerEvent): void {
+    this.locateMotion?.cancel();
     if (!(e.target instanceof Element) || e.button !== 0) return;
     const target = e.target,
       ui = this.ctx.ui;
@@ -678,6 +771,8 @@ export class CanvasView implements View {
         transform: 'none',
       });
       this.positionReferenceMenu();
+      this.positionStyle();
+      this.positionShapeMenu();
       return;
     }
     const point = this.point(e);
@@ -1639,10 +1734,80 @@ export class CanvasView implements View {
     trigger.setAttribute('aria-controls', 'canvas-material-picker');
     trigger.setAttribute('aria-haspopup', 'dialog');
   }
-  private renderDock(): void {
-    const previous = this.dock
-      ? this.root.querySelector('.canvas-tools')?.getBoundingClientRect()
-      : null;
+  private positionStyle(): void {
+    const style = this.root.querySelector<HTMLElement>('.canvas-style');
+    const dock = this.root.querySelector<HTMLElement>('.canvas-tools');
+    if (!style || !dock) return;
+    const selected = this.ctx
+      .world()
+      .nodes.find((node) => node.id === this.ctx.ui.canvas.selection);
+    const chosen = dock.querySelector<HTMLElement>(
+      shapeTools.includes(this.ctx.ui.canvas.tool as Shape) || selected?.data.kind === 'shape'
+        ? '[data-action=shapes]'
+        : '[data-tool=drawing]',
+    );
+    const trigger = chosen?.offsetWidth
+      ? chosen
+      : dock.querySelector<HTMLElement>('[data-action=dock-more]')!;
+    this.positionToolPanel(style, trigger, dock);
+  }
+  private positionShapeMenu(): void {
+    const panel = this.root.querySelector<HTMLElement>('.shape-menu');
+    const dock = this.root.querySelector<HTMLElement>('.canvas-tools');
+    const trigger = dock?.querySelector<HTMLElement>('[data-action=shapes]');
+    if (panel && dock && trigger) this.positionToolPanel(panel, trigger, dock);
+  }
+  private positionToolPanel(panel: HTMLElement, trigger: HTMLElement, dock: HTMLElement): void {
+    const origin = trigger.getBoundingClientRect(),
+      bounds = dock.getBoundingClientRect();
+    const chat =
+      !this.chatHidden() && this.ctx.ui.chat.chatMode === 'docked' && !this.ctx.ui.chat.chatCompact
+        ? this.root.querySelector('.canvas-chat.docked')?.getBoundingClientRect()
+        : null;
+    const minimumLeft =
+      chat && innerWidth - chat.right >= panel.offsetWidth + 24 ? chat.right + 12 : 12;
+    const left = Math.max(
+      minimumLeft,
+      Math.min(
+        innerWidth - panel.offsetWidth - 12,
+        origin.x + origin.width / 2 - panel.offsetWidth / 2,
+      ),
+    );
+    const topEdge = dock.classList.contains('vertical-tools') ? bounds.top : origin.top;
+    const bottomEdge = dock.classList.contains('vertical-tools') ? bounds.bottom : origin.bottom;
+    const above = topEdge - panel.offsetHeight - 12 >= 70;
+    Object.assign(panel.style, {
+      left: left + 'px',
+      top:
+        Math.max(
+          70,
+          Math.min(
+            innerHeight - panel.offsetHeight - 12,
+            above ? topEdge - panel.offsetHeight - 12 : bottomEdge + 12,
+          ),
+        ) + 'px',
+      bottom: 'auto',
+      transform: 'none',
+    });
+    panel.classList.toggle('below', !above);
+    panel.style.setProperty(
+      '--style-pointer',
+      Math.max(16, Math.min(panel.offsetWidth - 16, origin.x + origin.width / 2 - left)) + 'px',
+    );
+  }
+  private renderDock(animate = true): void {
+    const restoreFocus = preserveFocus(this.root);
+    if (!animate)
+      for (const panel of this.root.querySelectorAll(
+        '.canvas-tools,.canvas-style,.shape-menu,.reference-menu',
+      ))
+        for (const animation of panel.getAnimations()) animation.cancel();
+    const previousPanels = new Map(
+      ['.canvas-tools', '.canvas-style', '.reference-menu', '.shape-menu'].map(
+        (selector) =>
+          [selector, this.root.querySelector(selector)?.getBoundingClientRect()] as const,
+      ),
+    );
     this.clampDock();
     const { ctx } = this,
       w = ctx.world(),
@@ -1665,13 +1830,14 @@ export class CanvasView implements View {
         ),
       )
       .join('');
-    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, this.shapesOpen || shapeTools.includes(ctx.ui.canvas.tool as Shape))}${this.shapesOpen ? `<div class="shape-menu">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', `data-dock-secondary aria-haspopup="dialog" aria-expanded="${this.referenceMenu}" aria-controls="canvas-material-picker"`)}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div><button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMarkup()}`;
+    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, this.shapesOpen || shapeTools.includes(ctx.ui.canvas.tool as Shape))}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', `data-dock-secondary aria-haspopup="dialog" aria-expanded="${this.referenceMenu}" aria-controls="canvas-material-picker"`)}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div>${this.shapesOpen ? `<div class="shape-menu" role="group" aria-label="Elegir forma">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}<button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMarkup()}`;
     const selected = w.nodes.find((n) => n.id === ctx.ui.canvas.selection);
     if (
-      ctx.ui.canvas.tool === 'drawing' ||
-      shapeTools.includes(ctx.ui.canvas.tool as Shape) ||
-      selected?.data.kind === 'shape' ||
-      selected?.data.kind === 'drawing'
+      !this.shapesOpen &&
+      (ctx.ui.canvas.tool === 'drawing' ||
+        shapeTools.includes(ctx.ui.canvas.tool as Shape) ||
+        selected?.data.kind === 'shape' ||
+        selected?.data.kind === 'drawing')
     ) {
       const shape =
         selected?.data.kind === 'shape' || shapeTools.includes(ctx.ui.canvas.tool as Shape);
@@ -1720,51 +1886,15 @@ export class CanvasView implements View {
       menu.style.left = `${Math.max(12, Math.min(innerWidth - menu.offsetWidth - 12, vertical ? bounds.left - menu.offsetWidth - 8 : bounds.left + bounds.width / 2 - menu.offsetWidth / 2))}px`;
       menu.style.top = `${Math.max(70, Math.min(innerHeight - menu.offsetHeight - 12, vertical ? bounds.top : bounds.top - menu.offsetHeight - 8))}px`;
     } else this.dockMore = false;
-    const style = holder.querySelector<HTMLElement>('.canvas-style');
-    if (style) {
-      const chosenTrigger = dock.querySelector<HTMLElement>(
-        shapeTools.includes(ctx.ui.canvas.tool as Shape) || selected?.data.kind === 'shape'
-          ? '[data-action=shapes]'
-          : '[data-tool=drawing]',
-      );
-      const trigger = chosenTrigger?.offsetWidth
-        ? chosenTrigger
-        : dock.querySelector<HTMLElement>('[data-action=dock-more]')!;
-      const origin = trigger.getBoundingClientRect();
-      const left = Math.max(
-        12,
-        Math.min(
-          innerWidth - style.offsetWidth - 12,
-          origin.x + origin.width / 2 - style.offsetWidth / 2,
-        ),
-      );
-      const above = origin.top - style.offsetHeight - 12 >= 70;
-      Object.assign(style.style, {
-        left: left + 'px',
-        top:
-          Math.max(
-            70,
-            Math.min(
-              innerHeight - style.offsetHeight - 12,
-              above ? origin.top - style.offsetHeight - 12 : origin.bottom + 12,
-            ),
-          ) + 'px',
-        bottom: 'auto',
-        transform: 'none',
-      });
-      style.classList.toggle('below', !above);
-      style.style.setProperty(
-        '--style-pointer',
-        Math.max(16, Math.min(style.offsetWidth - 16, origin.x + origin.width / 2 - left)) + 'px',
-      );
-    }
+    this.positionStyle();
+    this.positionShapeMenu();
     this.positionReferenceMenu();
-    if (this.dock && previous && !reducedMotion()) {
-      const current = dock.getBoundingClientRect();
-      if (Math.hypot(previous.x - current.x, previous.y - current.y) > 1)
-        for (const panel of [dock, holder.querySelector<HTMLElement>('.reference-menu')].filter(
-          (element): element is HTMLElement => !!element,
-        ))
+    if (animate && !reducedMotion()) {
+      for (const [selector, previous] of previousPanels) {
+        const panel = holder.querySelector<HTMLElement>(selector);
+        if (!panel || !previous) continue;
+        const current = panel.getBoundingClientRect();
+        if (Math.hypot(previous.x - current.x, previous.y - current.y) > 1)
           panel.animate(
             [
               { translate: `${previous.x - current.x}px ${previous.y - current.y}px` },
@@ -1772,8 +1902,11 @@ export class CanvasView implements View {
             ],
             { duration: motion.panelOpenMs, easing: motion.panelEase },
           );
+      }
     }
+    restoreFocus();
   }
+
   render(): void {
     const restoreFocus = preserveFocus(this.root);
     const w = this.ctx.world(),
@@ -1903,6 +2036,7 @@ export class CanvasView implements View {
     restoreFocus();
   }
   dispose(): void {
+    this.locateMotion?.cancel();
     this.proposalMotions.forEach((animation) => animation.cancel());
     this.abort.abort();
     this.chat.dispose();

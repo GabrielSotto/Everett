@@ -423,16 +423,6 @@
     max-width: 310px;
   }
 
-  .shell:has(.global-search.open) > .location,
-  .shell:has(.global-search.open) > .icon-button,
-  .shell:has(.global-search.open) > .profile-button {
-    visibility: hidden;
-  }
-
-  .location:has(+ .shell-spacer + .global-search.open) {
-    opacity: 0;
-  }
-
   .aux-slot {
     position: absolute;
     right: 0;

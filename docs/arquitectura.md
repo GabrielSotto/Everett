@@ -68,6 +68,8 @@ su región completa y el foco de una conexión resalta el cable.
 
 Las propuestas de Canvas conservan borradores tipados de materiales en el trabajo. Estos no pertenecen a nodes ni modifican Docs antes de aceptar. El preview utiliza la misma representación del tipo; la barra de decisión tiene su propia superficie. La aceptación incorpora las identidades mostradas y aplica exclusivamente el cuerpo propuesto de un documento compartido. La simulación conserva archivos y registra su organización, sin atribuirse inferencia visual.
 
+`workspace-search.ts` deriva destinos de búsqueda del estado vigente, sin mantener copias de títulos o contenido. Las referencias de Canvas consultan sus registros compartidos. El shell conserva el nodo del campo entre renders para mantener foco, texto y transición. La composición de la aplicación navega al Mundo y Canvas del resultado; Canvas enfoca el material libre o su zona, guardando por separado un contexto temporal de regreso. La operación modifica cámara y selección personales, sin cambiar contenido, pertenencia o trabajos agénticos.
+
 ## Persistencia y archivos de Canvas 0.8
 
 `src/platform/local-storage.ts` usa IndexedDB (`everett-canvas`, esquema 1). `worlds` guarda el contenido compartido de los Mundos; `personal` guarda perfil, ruta, cámaras, selección válida, presentación del chat, conversación activa, borradores y atajos por usuario local; `assets` guarda los bytes de imágenes, videos y PDF como Blob. Contenido y contexto personal se confirman juntos en una transacción. La escritura comienza durante el evento que cambió el dato, sin debounce que pueda perder la última edición al recargar.

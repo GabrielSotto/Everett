@@ -8,7 +8,7 @@ async function focusWorld(page: Page): Promise<string> {
     .fill('Resource Scout');
   const world = page.getByRole('main').getByRole('button', { name: 'Resource Scout', exact: true });
   await expect(world).toBeInViewport();
-  await page.getByRole('button', { name: 'Cerrar búsqueda', exact: true }).click();
+  await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
   await world.click();
   const id = await world.getAttribute('data-focus');
   expect(id).not.toBeNull();

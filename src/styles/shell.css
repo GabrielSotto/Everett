@@ -85,7 +85,9 @@
   display: flex;
   align-items: center;
   position: relative;
-  transition: width 0.24s var(--ease);
+  height: 35px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   width: 33px;
 }
 
@@ -95,10 +97,14 @@
   opacity: 0;
   padding: 0;
   transition:
-    width 0.24s var(--ease),
-    opacity 0.2s;
+    width var(--resize-dur) var(--resize-ease),
+    opacity 150ms var(--resize-ease);
+  outline: none;
 }
 
+.global-search:has(input:focus-visible) {
+  border-bottom-color: #bba6dd;
+}
 .global-search.open input {
   flex: 1;
   width: 100%;
@@ -244,7 +250,7 @@
   position: absolute;
   top: 52px;
   right: 150px;
-  width: 360px;
+  width: min(340px, calc(100vw - 24px));
   max-height: 300px;
   overflow: auto;
   border: 1px solid var(--line);
@@ -265,6 +271,31 @@
   font-size: 12px;
 }
 
+.search-results button > span {
+  min-width: 0;
+}
+.search-results strong,
+.search-results small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-results strong {
+  font-weight: 500;
+}
+.search-results small {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 3px;
+}
+.search-count,
+.search-empty {
+  display: block;
+  padding: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
 .search-results button:hover {
   background: var(--surface);
 }
@@ -293,5 +324,25 @@
   }
   .shell:has(.canvas-history-controls) .location > :is(svg, span) {
     display: none;
+  }
+}
+
+/* Redimensionado continuo del buscador; el nodo persiste entre renders del shell. */
+:root {
+  --resize-dur: 300ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.t-resize {
+  transition:
+    width var(--resize-dur) var(--resize-ease),
+    height var(--resize-dur) var(--resize-ease);
+  will-change: width, height;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-resize {
+    transition: none !important;
+  }
+  .global-search input {
+    transition: none;
   }
 }

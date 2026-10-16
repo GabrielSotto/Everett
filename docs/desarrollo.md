@@ -46,7 +46,7 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 | `npm run format`         | Aplica el formato del proyecto.                                                                                |
 | `npm run test:unit`      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                             |
 | `npm run verify:unit`    | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión. |
-| `npm run build`          | Genera `dist/Everett-0.8.7.html` y `dist/build-manifest.json`.                                                 |
+| `npm run build`          | Genera `dist/Everett-0.8.8.html` y `dist/build-manifest.json`.                                                 |
 | `npm run verify:build`   | Comprueba existencia, bytes, hash, versión e identidad de las fuentes del build.                               |
 | `npm run test:browser`   | Ejecuta los recorridos preparados en Playwright sobre la URL indicada en `EVERETT_TEST_URL`.                   |
 | `npm run verify:browser` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.            |
@@ -92,6 +92,8 @@ Para evaluar el build en la propia computadora, ejecutar `node scripts/preview.m
 En una segunda terminal de PowerShell, definir `$env:EVERETT_TEST_URL = 'http://127.0.0.1:4173/'` con el puerto utilizado y ejecutar `npm run test:browser`.
 
 La salida se guarda en `output/pruebas/navegador/<fecha UTC>/`: resultados JSON, informe HTML, trazas, capturas y videos de fallos. Cada caso carga y comprueba los bytes del HTML antes de operar. Los casos leen el diagnóstico para contrastar resultados; las acciones utilizan controles, teclado y arrastres. Un error de consola o de página hace fallar el recorrido.
+
+Las acciones de interfaz tienen un límite de 10 segundos y las navegaciones de 30 segundos, además del límite del recorrido. Un control tapado o inaccesible debe producir un diagnóstico acotado; aumentar el tiempo no corrige su falta de acceso. Los casos que observan transiciones distinguen muestras durante el gesto de geometría final ya estabilizada.
 
 `verify:browser` vuelve a descubrir los casos del proyecto y exige su correspondencia exacta con el informe. Rechaza ejecuciones parciales, omisiones, reintentos, fallos esperados, otro HTML, cambios en las fuentes del arnés y adjuntos ausentes o vacíos. Puede ejecutarse después de detener el servidor: descubre casos sin abrir el navegador.
 

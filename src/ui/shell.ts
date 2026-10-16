@@ -11,6 +11,7 @@ import { PanelMotion } from './panel-motion';
 import { trace } from '../app/diagnostics/trace';
 import { CanvasShortcuts } from './canvas-shortcuts';
 import { shortcutNames } from '../domain/shortcuts';
+import { searchWorkspace } from '../domain/workspace-search';
 
 export class Shell {
   private abort = new AbortController();
@@ -61,6 +62,10 @@ export class Shell {
         const t = target(e);
         if (!t) return;
         const ui = ctx.ui;
+        if (['status', 'profile', 'surface-menu', 'filters'].includes(t.dataset.action ?? '')) {
+          ui.shell.searchOpen = false;
+          ui.shell.search = '';
+        }
         switch (t.dataset.action) {
           case 'canvas-undo':
           case 'canvas-redo': {
@@ -85,17 +90,7 @@ export class Shell {
             ctx.act({ type: 'universe' }, 'volver al universo', 'NAV-01');
             break;
           case 'search':
-            ui.shell.searchOpen = !ui.shell.searchOpen;
-            ui.shell.filters = false;
-            this.render();
-            if (ui.shell.searchOpen)
-              root.querySelector<HTMLInputElement>('#global-search')?.focus();
-            break;
-          case 'search-clear':
-            ui.shell.search = '';
-            ui.shell.searchOpen = false;
-            this.render();
-            ctx.render();
+            this.toggleSearch();
             break;
           case 'filters':
             ui.shell.filters = !ui.shell.filters;
@@ -172,12 +167,50 @@ export class Shell {
             if (!world) return;
             ui.shell.searchOpen = false;
             ui.shell.search = '';
-            if (s === 'docs' || s === 'code' || s === 'board' || s === 'agents')
+            if (t.dataset.canvasNode && id) ctx.locateMaterial(world, id);
+            else if (s === 'docs' || s === 'code' || s === 'board' || s === 'agents')
               ctx.go({ kind: 'surface', world, surface: s, entity: id ?? null });
             else ctx.go({ kind: 'world', world });
+            this.render();
             break;
           }
         }
+      },
+      { signal: this.abort.signal },
+    );
+    root.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.isComposing) return;
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter'].includes(event.key)) return;
+        const element = event.target instanceof HTMLElement ? event.target : null;
+        const input = element?.id === 'global-search';
+        if (!input && !element?.closest('#global-results')) return;
+        const items = [...root.querySelectorAll<HTMLButtonElement>('#global-results button')];
+        if (!items.length || (input && ['Home', 'End'].includes(event.key))) return;
+        if (event.key === 'Enter' && !input) {
+          event.stopPropagation();
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.key === 'Enter') {
+          items[0]?.click();
+          return;
+        }
+        const index = items.indexOf(element as HTMLButtonElement);
+        const next =
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? items.length - 1
+              : index < 0
+                ? event.key === 'ArrowUp'
+                  ? items.length - 1
+                  : 0
+                : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        items[next]?.focus({ preventScroll: true });
+        items[next]?.scrollIntoView({ block: 'nearest' });
       },
       { signal: this.abort.signal },
     );
@@ -212,8 +245,8 @@ export class Shell {
         }
         if (e.target instanceof HTMLInputElement && e.target.id === 'global-search') {
           ctx.ui.shell.search = e.target.value;
+          this.results();
           if (ctx.store.get().route.kind === 'universe') ctx.render();
-          else this.results();
         }
       },
       { signal: this.abort.signal },
@@ -264,28 +297,34 @@ export class Shell {
       { signal: this.abort.signal },
     );
   }
+  toggleSearch(): void {
+    const ui = this.ctx.ui.shell;
+    ui.searchOpen = !ui.searchOpen;
+    ui.filters = ui.status = ui.profile = ui.surfaceMenu = false;
+    if (!ui.searchOpen) ui.search = '';
+    this.render();
+    if (!ui.searchOpen && this.ctx.store.get().route.kind === 'universe') this.ctx.render();
+    this.root
+      .querySelector<HTMLElement>(ui.searchOpen ? '#global-search' : '[data-action=search]')
+      ?.focus({ preventScroll: true });
+  }
+  refreshSearch(): void {
+    if (this.ctx.ui.shell.searchOpen) this.results();
+  }
   private results(): void {
     const holder = this.root.querySelector<HTMLElement>('#global-results');
     if (!holder) return;
-    const q = this.ctx.ui.shell.search.toLocaleLowerCase();
-    if (!q) {
+    const query = this.ctx.ui.shell.search;
+    if (!query.trim() || !this.ctx.ui.shell.searchOpen) {
       holder.innerHTML = '';
       return;
     }
-    const results: string[] = [];
-    for (const w of this.ctx.store.get().worlds) {
-      if (w.name.toLocaleLowerCase().includes(q))
-        results.push(
-          `<button data-action="search-result" data-world="${w.id}">${html(w.name)}</button>`,
-        );
-      for (const d of w.docs)
-        if ((d.title + ' ' + d.body).toLocaleLowerCase().includes(q))
-          results.push(
-            `<button data-action="search-result" data-world="${w.id}" data-surface="docs" data-id="${d.id}">${icon('docs', 14)}${html(d.title)}</button>`,
-          );
-    }
-    holder.innerHTML = results.slice(0, 7).join('');
+    const results = searchWorkspace(this.ctx.store.get(), query);
+    holder.innerHTML = results.length
+      ? `<span class="search-count" role="status">${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}</span>${results.map((result) => `<button type="button" data-action="search-result" data-world="${html(result.world)}" data-id="${html(result.id)}" ${result.kind === 'material' ? 'data-canvas-node="true"' : result.kind === 'document' ? 'data-surface="docs"' : ''} title="${html(result.title)}">${icon(result.symbol, 15)}<span><strong>${html(result.title)}</strong><small>${html(result.detail)}</small></span></button>`).join('')}`
+      : '<p class="search-empty" role="status">Sin resultados. Probá otro nombre o contenido.</p>';
   }
+
   private status(): string {
     const s = this.ctx.store.get(),
       w = activeWorld(s);
@@ -325,8 +364,23 @@ export class Shell {
         : null;
     this.root.className =
       'shell ' + (s.route.kind === 'universe' || s.route.kind === 'world' ? 'dark-shell' : '');
-    this.root.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}${history ? `<div class="canvas-history-controls" role="toolbar" aria-label="Historial de cambios de Canvas">${btn('canvas-undo', 'undo', 'Deshacer · Ctrl+Z', history.undo ? '' : 'disabled')}${btn('canvas-redo', 'redo', 'Rehacer · Ctrl+Shift+Z', history.redo ? '' : 'disabled')}</div>` : ''}<div class="shell-spacer"></div><div class="global-search ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${ui.shell.searchOpen ? btn('search-clear', 'close', 'Cerrar búsqueda') : ''}${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu)}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results"></div>`;
-    if (ui.shell.searchOpen && s.route.kind !== 'universe') this.results();
+    const search = this.root.querySelector<HTMLElement>('.global-search');
+    const template = document.createElement('template');
+    template.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}${history ? `<div class="canvas-history-controls" role="toolbar" aria-label="Historial de cambios de Canvas">${btn('canvas-undo', 'undo', 'Deshacer · Ctrl+Z', history.undo ? '' : 'disabled')}${btn('canvas-redo', 'redo', 'Rehacer · Ctrl+Shift+Z', history.redo ? '' : 'disabled')}</div>` : ''}<div class="shell-spacer"></div><div class="global-search t-resize ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" type="text" enterkeyhint="search" autocomplete="off" aria-controls="global-results" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu)}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results" role="region" aria-label="Resultados de búsqueda"></div>`;
+    if (search) {
+      for (const child of [...this.root.children]) if (child !== search) child.remove();
+      const placeholder = template.content.querySelector('.global-search')!;
+      const children = [...template.content.childNodes];
+      const index = children.indexOf(placeholder);
+      this.root.prepend(...children.slice(0, index));
+      this.root.append(...children.slice(index + 1));
+      search.classList.toggle('open', ui.shell.searchOpen);
+      const input = search.querySelector<HTMLInputElement>('input')!;
+      if (input.value !== ui.shell.search) input.value = ui.shell.search;
+      input.inert = !ui.shell.searchOpen;
+      search.querySelector('button')!.setAttribute('aria-expanded', String(ui.shell.searchOpen));
+    } else this.root.replaceChildren(template.content);
+    this.results();
     finishPanels();
     restore();
   }

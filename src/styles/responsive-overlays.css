@@ -1,19 +1,32 @@
 /* Los límites adaptables conservan el acceso al botón y al área de trabajo. */
 @media (max-width: 760px) {
+  .global-search,
   .global-search.open {
-    position: absolute;
-    left: auto;
-    right: 48px;
-    top: 10px;
-    width: min(230px, calc(100vw - 150px));
-    z-index: 52;
+    width: 33px;
+    border-color: transparent;
+    background: transparent;
+  }
+  .global-search input {
+    position: fixed;
+    right: 12px;
+    top: 70px;
+    height: 36px;
+    border-radius: 10px;
     background: var(--panel);
+    border: 1px solid transparent;
   }
-  .shell:has(.global-search.open) > .profile-button {
-    visibility: visible;
+  .global-search input:focus-visible {
+    border-bottom-color: #bba6dd;
   }
-  .shell:has(.global-search.open) > .icon-button {
-    visibility: hidden;
+  .global-search.open input {
+    width: calc(100vw - 24px);
+    border-color: var(--line);
+  }
+  .shell:has(.global-search.open) .search-results {
+    top: 112px;
+    right: 12px;
+    width: calc(100vw - 24px);
+    max-height: min(320px, calc(100vh - 126px));
   }
   .shell .location input {
     max-width: 135px;
