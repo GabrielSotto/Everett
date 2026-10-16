@@ -55,6 +55,8 @@ export class LocalStorage {
     const state: State = { ...personal.state, ...shared, version: 1 };
     validate(state);
     const ui = personal.ui;
+    ui.shell.showSurfaceMenu = ui.shell.showSurfaceMenu === true;
+    if (!ui.shell.showSurfaceMenu) ui.shell.surfaceMenu = false;
     ui.canvas.tool = 'select';
     ui.canvas.linkStart = null;
     ui.canvas.commentTarget = null;

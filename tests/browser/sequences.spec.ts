@@ -14,6 +14,10 @@ for (const [seed, reducedMotion] of [
     test.setTimeout(90_000);
     await page.emulateMedia({ reducedMotion });
     await enterWorld(page);
+    await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
+    await page.getByRole('button', { name: 'Configuración', exact: true }).click();
+    await page.getByRole('switch', { name: 'Mostrar botón de Superficies', exact: true }).click();
+    await page.keyboard.press('Escape');
     await openSurface(page, 'Docs');
     const text = `Documento protegido en secuencia ${seed}\n\nSegunda línea.`;
     await page.getByRole('textbox', { name: 'Contenido del documento', exact: true }).fill(text);

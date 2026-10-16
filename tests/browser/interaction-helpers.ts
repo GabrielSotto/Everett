@@ -35,8 +35,20 @@ export async function enterWorld(page: Page): Promise<void> {
 }
 
 export async function openSurface(page: Page, name: string): Promise<void> {
-  await page.getByRole('button', { name: 'Superficies', exact: true }).click();
-  await page.locator('.surface-menu').getByRole('button', { name, exact: true }).click();
+  const route = page.locator('#viewport');
+  for (
+    let attempt = 0;
+    attempt < 12 && (await route.getAttribute('data-route')) !== 'world/scout';
+    attempt++
+  ) {
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.transition-ghost')).toHaveCount(0);
+  }
+  await expect(route).toHaveAttribute('data-route', 'world/scout');
+  await reachSurface(page, name);
+  const surface = page.getByRole('main').getByRole('button', { name, exact: true });
+  await surface.click();
+  await page.keyboard.press('Enter');
   await expect(page.locator('.transition-ghost')).toHaveCount(0);
 }
 

@@ -1,32 +1,10 @@
 /* Los límites adaptables conservan el acceso al botón y al área de trabajo. */
 @media (max-width: 760px) {
-  .global-search,
-  .global-search.open {
-    width: 33px;
-    border-color: transparent;
-    background: transparent;
-  }
-  .global-search input {
-    position: fixed;
-    right: 12px;
-    top: 70px;
-    height: 36px;
-    border-radius: 10px;
-    background: var(--panel);
-    border: 1px solid transparent;
-  }
-  .global-search input:focus-visible {
-    border-bottom-color: #bba6dd;
-  }
-  .global-search.open input {
-    width: calc(100vw - 24px);
-    border-color: var(--line);
+  .shell:has(.global-search.open) > :is(.wordmark, .location) {
+    display: none;
   }
   .shell:has(.global-search.open) .search-results {
-    top: 112px;
-    right: 12px;
-    width: calc(100vw - 24px);
-    max-height: min(320px, calc(100vh - 126px));
+    max-height: min(320px, calc(100vh - 70px));
   }
   .shell .location input {
     max-width: 135px;

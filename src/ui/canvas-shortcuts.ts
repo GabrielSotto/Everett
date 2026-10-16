@@ -95,7 +95,7 @@ export class CanvasShortcuts {
   }
   markup(): string {
     if (this.page === 'config')
-      return '<button type="button" data-action="settings-shortcuts">Atajos</button>';
+      return `<div class="settings-preference"><span id="surface-menu-setting-label">Mostrar botón de Superficies<small>Acceso alternativo en la barra superior.</small></span><button id="surface-menu-setting" type="button" class="settings-switch" role="switch" aria-label="Mostrar botón de Superficies" aria-checked="${this.ctx.ui.shell.showSurfaceMenu === true}" data-action="surface-toggle"><span></span></button></div><button type="button" data-action="settings-shortcuts">Atajos</button>`;
     return `<section class="canvas-shortcuts" aria-label="Atajos de Canvas">${btn('settings-back', 'chevron-left', 'Volver a Configuración')}<h3>Atajos · Canvas</h3><p>Seleccioná un campo y pulsá la combinación. Se guarda automáticamente.</p>${Object.keys(
       canvasDefaults,
     )

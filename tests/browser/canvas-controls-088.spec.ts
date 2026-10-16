@@ -303,7 +303,7 @@ test('C08-B52: búsqueda con teclado, listas extensas, nombres largos, movimient
     await search(page).fill('Criterio');
     await expect(page.locator('#global-results button')).toHaveCount(30);
     await expect(page.locator('[data-action=search-clear]')).toHaveCount(0);
-    for (const name of ['Superficies', 'Estado']) {
+    for (const name of ['Estado']) {
       const button = page.getByRole('button', { name, exact: true });
       await expect(button).toBeInViewport();
       expect(

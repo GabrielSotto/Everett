@@ -7,6 +7,7 @@ export interface ShellUi {
   profile: boolean;
   status: boolean;
   surfaceMenu: boolean;
+  showSurfaceMenu: boolean;
   profileTab: 'identity' | 'preferences' | 'tools' | 'settings';
 }
 
@@ -20,6 +21,7 @@ export function createShellUi(): ShellUi {
     profile: false,
     status: false,
     surfaceMenu: false,
+    showSurfaceMenu: false,
     profileTab: 'identity',
   };
 }

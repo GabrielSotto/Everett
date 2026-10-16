@@ -25,7 +25,7 @@
   flex: 0 0 auto;
 }
 .global-search.open {
-  width: min(246px, 30vw);
+  width: var(--search-open-width, 246px);
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--panel);
