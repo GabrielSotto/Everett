@@ -2,17 +2,17 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                      |
-| ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.    |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`. |
-| 0.8                           | Candidata para revisión       | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md).                                     |
-| 0.9                           | Pendiente                     | Code y Docs.                                                                                                 |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                           |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                       |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).     |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                    |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                    |
+| Iteración                     | Estado                        | Trabajo                                                                                                             |
+| ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.           |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.        |
+| 0.8                           | Candidata para revisión       | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md).                                            |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral). |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                  |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                              |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).            |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                           |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                           |
 
 ## Después de 1.0
 
@@ -21,6 +21,8 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 ## Correcciones pendientes
 
 Canvas 0.8.7 es candidata para revisión del usuario en feat/canvas-0.8. Gate completo y arnés ampliado vigentes; cierre e integración pendientes de aprobación explícita. No quedan fallos conocidos abiertos del feedback corregido en este lote.
+
+Canvas continúa en revisión e iteración: falta evaluar su utilidad en recorridos reales y completar las correcciones que surjan antes de proponer el cierre. El gate aprobado de una candidata no equivale a la aprobación de la iteración.
 
 Galería y bocetos rápidos están en [Mejoras de Canvas por evaluar](docs/alcance-prototipo.md#mejoras-de-canvas-por-evaluar), con prioridad baja y sin versión comprometida.
 

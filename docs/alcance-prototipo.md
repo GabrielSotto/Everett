@@ -186,6 +186,21 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
 - Mantener transiciones consistentes en cada cambio de documento.
 - Preservar contenido, saltos de línea y posición de trabajo al cambiar de documento o colapsar paneles.
 
+#### Ampliación por planificar: editor integral
+
+Dirección confirmada para la planificación de 0.9: ampliar Docs hacia una experiencia integrada
+de edición de documentos, hojas de cálculo y PDF. Definir las capacidades útiles de cada formato,
+la compatibilidad de importación y exportación y las etapas de implementación. En PDF, distinguir
+anotaciones, formularios y operaciones sobre páginas de la modificación del contenido original.
+
+Evaluar herramientas open source antes de elegir una solución: capacidades realmente abiertas,
+licencias, mantenimiento, peso e integración con la arquitectura de Everett. La evaluación debe
+contemplar persistencia local, conservación del contenido e identidad compartida con Canvas.
+Las herramientas y el alcance funcional concreto quedan pendientes de esa planificación.
+
+Este registro no inicia 0.9 ni amplía la implementación de 0.8. Canvas sigue siendo la iteración
+activa hasta su revisión, corrección y cierre aprobados por el usuario.
+
 ### Compartido
 
 - FAB lateral y composer centrado en el área útil.
