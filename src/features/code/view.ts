@@ -1,6 +1,7 @@
 import { compareLines } from '../../domain/code-diff';
 import { ComposerDisclosure } from '../../ui/disclosure';
 import type { Context } from '../../app/context';
+import { focusReference } from '../../ui/reference-focus';
 import type { CodeFile } from '../../domain/model';
 import { html, target, value, type View } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
@@ -284,6 +285,9 @@ export class CodeView implements View {
     this.displayedFile = f?.id ?? null;
     const saved = f ? this.positions.get(f.id) : undefined,
       editorElement = this.root.querySelector<HTMLTextAreaElement>('#code-editor');
+    if (editorElement && f) editorElement.value = f.text;
+    const highlighted = this.root.querySelector('#code-highlight');
+    if (highlighted && f) highlighted.innerHTML = highlight(f.text) + '\n';
     if (saved && editorElement) {
       editorElement.scrollTop = saved.top;
       editorElement.scrollLeft = saved.left;
@@ -292,6 +296,7 @@ export class CodeView implements View {
     }
     restoreDraft();
     this.disclosure.sync(this.ctx.ui.code.codeComposer);
+    focusReference(this.root, this.ctx);
   }
   closeTransient(): boolean {
     if (!this.ctx.ui.code.codeComposer) return false;

@@ -185,6 +185,15 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         doc.title += ' — copia';
         world.docs.push(doc);
         copy.data.ref.id = doc.id;
+        if (copy.data.ref.fragment) {
+          const fragment = copy.data.ref.fragment;
+          const anchor = world.referenceAnchors?.find((a) => a.id === fragment);
+          if (anchor) {
+            const duplicate = { ...anchor, id: uid(), source: doc.id };
+            world.referenceAnchors!.push(duplicate);
+            copy.data.ref.fragment = duplicate.id;
+          }
+        }
       } else copy.data.title = nodeTitle(world, original) + ' — copia';
       world.nodes.push(copy);
       break;
@@ -284,6 +293,10 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       if (material.data.kind === 'reference')
         (world.referenceTargets ??= {})[material.id] = { ...material.data.ref };
       world.nodes = world.nodes.filter((x) => x.id !== command.id);
+      world.canvasGroups =
+        world.canvasGroups
+          ?.map((g) => ({ ...g, nodes: g.nodes.filter((id) => id !== command.id) }))
+          .filter((g) => g.nodes.length) ?? [];
       world.links = world.links.filter((l) => l.from !== command.id && l.to !== command.id);
       world.comments = world.comments.filter((x) => x.node !== command.id);
       break;
@@ -376,6 +389,16 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
           'Agente inexistente',
         );
       ensure(!m.owner && a.active, 'ASSIGN', 'Material o agente no disponible');
+      if (m.data.kind === 'reference' && m.data.ref.fragment) {
+        const fragment = m.data.ref.fragment;
+        ensure(
+          world.referenceAnchors?.some(
+            (anchor) => anchor.id === fragment && anchor.status === 'attached',
+          ) === true,
+          'FRAGMENT',
+          'Revisá el fragmento no disponible o elegí Referencia completa antes de asignarlo.',
+        );
+      }
       const links = world.links.filter((l) => l.from === m.id || l.to === m.id);
       world.links = world.links.filter((l) => !links.includes(l));
       m.owner = a.id;
@@ -440,17 +463,39 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       m.x = a.returnTo.x;
       m.y = a.returnTo.y;
       if (command.decision === 'accept') {
+        if (m.data.kind === 'reference' && m.data.ref.fragment) {
+          const fragment = m.data.ref.fragment;
+          ensure(
+            world.referenceAnchors?.some(
+              (anchor) => anchor.id === fragment && anchor.status === 'attached',
+            ) === true,
+            'FRAGMENT',
+            'El fragmento dejó de estar disponible. Cancelá el trabajo y revisá su origen antes de asignarlo otra vez.',
+          );
+        }
         const results = a.output ?? proposalMaterials(world, a, true);
         ensure(results.length > 0, 'PROPOSAL_EMPTY', 'La propuesta no contiene materiales');
         results.forEach((draft, index) => {
-          if (draft.document)
-            Object.assign(
-              need(
-                world.docs.find((d) => d.id === draft.document!.id),
-                'Documento inexistente',
-              ),
-              draft.document,
+          if (draft.document) {
+            const document = need(
+              world.docs.find((d) => d.id === draft.document!.id),
+              'Documento inexistente',
             );
+            ensure(
+              draft.document.before === undefined || document.body === draft.document.before,
+              'STALE_FRAGMENT',
+              'El documento cambió desde la propuesta. Pedí una revisión antes de aceptar.',
+            );
+            if (m.data.kind === 'reference' && m.data.ref.fragment) {
+              const fragment = m.data.ref.fragment;
+              const anchor = world.referenceAnchors?.find((a) => a.id === fragment);
+              if (anchor?.status === 'attached') {
+                anchor.end += draft.document.body.length - document.body.length;
+                anchor.quote = draft.document.body.slice(anchor.start, anchor.end);
+              }
+            }
+            document.body = draft.document.body;
+          }
           const result = structuredClone(draft.material);
           ensure(
             !world.nodes.some((node) => node.id === result.id),

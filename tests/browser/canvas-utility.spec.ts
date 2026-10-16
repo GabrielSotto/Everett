@@ -368,6 +368,10 @@ test('C08-B49: panorama de veinte materiales, selección conjunta y organizació
       };
     }),
   );
+  expect(
+    reading.every((item) => item.intersectedMaterials.length === 0),
+    'Las etiquetas deben poder leerse sin caer sobre materiales',
+  ).toBe(true);
   await info.attach('lectura-de-relaciones', {
     body: JSON.stringify(reading, null, 2),
     contentType: 'application/json',
@@ -423,8 +427,27 @@ test('C08-B49: panorama de veinte materiales, selección conjunta y organizació
     contentType: 'application/json',
   });
   await page.mouse.move(100, 400);
+  const labelsBeforeZoom = await page.locator('[data-link] text').evaluateAll((elements) =>
+    elements.map((el) => ({
+      id: el.parentElement!.getAttribute('data-link'),
+      x: Number(el.getAttribute('x')),
+      y: Number(el.getAttribute('y')),
+    })),
+  );
   await page.mouse.wheel(0, -Math.log(0.4 / (await snapshot(page)).camera.z) / 0.00165);
   await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(0.4, 2);
+  const labelsAfterZoom = await page.locator('[data-link] text').evaluateAll((elements) =>
+    elements.map((el) => ({
+      id: el.parentElement!.getAttribute('data-link'),
+      x: Number(el.getAttribute('x')),
+      y: Number(el.getAttribute('y')),
+    })),
+  );
+  for (const [index, label] of labelsAfterZoom.entries()) {
+    expect(label.id).toBe(labelsBeforeZoom[index]!.id);
+    expect(label.x).toBeCloseTo(labelsBeforeZoom[index]!.x, 0);
+    expect(label.y).toBeCloseTo(labelsBeforeZoom[index]!.y, 0);
+  }
   await capture(page, info, '12-panorama-general-a-zoom-alejado');
   const camera = (await snapshot(page)).camera;
   await page.locator('[data-node=utility-node-0-0]').focus();

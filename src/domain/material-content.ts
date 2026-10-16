@@ -1,9 +1,15 @@
 import { nodeTitle, type Material, type WorldSnapshot } from './model';
+import { referenceExcerpt } from './reference-anchors';
 export function materialText(world: WorldSnapshot, material: Material): string {
   const data = material.data;
   if (data.kind === 'note') return data.text;
   if (data.kind === 'reference') {
     const ref = data.ref;
+    if (ref.fragment)
+      return (
+        referenceExcerpt(world, ref) ??
+        'Fragmento no disponible. Revisá la referencia en su origen.'
+      );
     return ref.kind === 'document'
       ? (world.docs.find((d) => d.id === ref.id)?.body ?? '')
       : ref.kind === 'task'

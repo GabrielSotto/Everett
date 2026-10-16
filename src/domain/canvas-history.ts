@@ -1,9 +1,21 @@
 import { getWorld, type State, type World } from './model';
 import type { Command } from './command-types';
+import { rebaseAnchor, referenceSource } from './reference-anchors';
 
-type CanvasSnapshot = Pick<
-  World,
-  'nodes' | 'links' | 'zones' | 'comments' | 'docs' | 'tasks' | 'files' | 'agents'
+type CanvasSnapshot = Required<
+  Pick<
+    World,
+    | 'nodes'
+    | 'links'
+    | 'zones'
+    | 'comments'
+    | 'docs'
+    | 'tasks'
+    | 'files'
+    | 'agents'
+    | 'canvasGroups'
+    | 'referenceAnchors'
+  >
 >;
 interface Entry {
   before: CanvasSnapshot;
@@ -16,6 +28,10 @@ interface Timeline {
   future: Entry[];
 }
 const reversible = new Set<Command['type']>([
+  'group.create',
+  'group.rename',
+  'group.ungroup',
+  'reference.fragment',
   'node.create',
   'node.rename',
   'node.duplicate',
@@ -51,6 +67,8 @@ function capture(w: World): CanvasSnapshot {
     tasks: w.tasks,
     files: w.files,
     agents: w.agents,
+    canvasGroups: w.canvasGroups ?? [],
+    referenceAnchors: w.referenceAnchors ?? [],
   });
 }
 
@@ -129,8 +147,9 @@ export class CanvasHistory {
     const source = direction === 'undo' ? e.after : e.before;
     const target = direction === 'undo' ? e.before : e.after;
     // Aplicar solo el delta de registros compartidos; no rebobinar ediciones ajenas.
-    for (const group of ['docs', 'tasks', 'files', 'agents'] as const) {
-      const sourceItems = source[group] as unknown as unknown as {
+    destination.referenceAnchors ??= [];
+    for (const group of ['docs', 'tasks', 'files', 'agents', 'referenceAnchors'] as const) {
+      const sourceItems = source[group] as unknown as {
         id: string;
         [key: string]: unknown;
       }[];
@@ -153,8 +172,25 @@ export class CanvasHistory {
           }
       }
     }
-    const { docs: _docs, tasks: _tasks, files: _files, agents: _agents, ...canvas } = target;
+    const {
+      docs: _docs,
+      tasks: _tasks,
+      files: _files,
+      agents: _agents,
+      referenceAnchors: _anchors,
+      ...canvas
+    } = target;
     Object.assign(destination, structuredClone(canvas));
+    for (const anchor of destination.referenceAnchors ?? []) {
+      if (getWorld(state, world).referenceAnchors?.some((a) => a.id === anchor.id)) continue;
+      const ref = { kind: anchor.kind, id: anchor.source };
+      const before = referenceSource(
+        { ...destination, docs: target.docs, files: target.files },
+        ref,
+      );
+      const after = referenceSource(destination, ref);
+      if (before !== null && after !== null) rebaseAnchor(anchor, before, after);
+    }
     return next;
   }
   commit(world: string, direction: 'undo' | 'redo', state: State): void {
@@ -168,12 +204,12 @@ export class CanvasHistory {
       to = direction === 'undo' ? entry.before : entry.after;
     // Al retirar un registro creado por Canvas, conservar sus últimas ediciones
     // compartidas para la próxima restauración. Solo confirmar tras validar el estado.
-    for (const group of ['docs', 'tasks', 'files', 'agents'] as const) {
+    for (const group of ['docs', 'tasks', 'files', 'agents', 'referenceAnchors'] as const) {
       const items = from[group] as unknown as { id: string }[];
       for (let index = 0; index < items.length; index++) {
         const item = items[index]!;
         if (to[group].some((other) => other.id === item.id)) continue;
-        const live = current[group].find((other) => other.id === item.id);
+        const live = current[group]?.find((other) => other.id === item.id);
         if (live) items[index] = structuredClone(live);
       }
     }

@@ -11,6 +11,8 @@ import { btn, icon } from '../../ui/icons';
 import { sampleFiles } from './sample-media';
 import { pdfPreview } from '../../platform/pdf-preview';
 import { videoPreview } from '../../platform/video-preview';
+import { referenceSource } from '../../domain/reference-anchors';
+import { alpha, rgb, rgba } from './color';
 
 /** Interacciones contextuales; los gestos y la cámara permanecen en CanvasView. */
 export class CanvasInteractions {
@@ -22,6 +24,7 @@ export class CanvasInteractions {
   private menuMaterial: string | null = null;
   private loadingSamples = false;
   private previews = new Map<string, Promise<string>>();
+  private colorField: 'color' | 'stroke' | null = null;
   private previewAbort = new AbortController();
   constructor(
     private root: HTMLElement,
@@ -46,6 +49,15 @@ export class CanvasInteractions {
           ctx.render();
           return;
         }
+        const group =
+          event.target instanceof Element
+            ? event.target.closest<HTMLElement>('[data-group]')
+            : null;
+        if (group?.dataset.group) {
+          event.preventDefault();
+          this.groupMenu(group.dataset.group, { x: event.clientX, y: event.clientY });
+          return;
+        }
         const material =
           event.target instanceof Element ? event.target.closest<HTMLElement>('[data-node]') : null;
         if (!material?.dataset.node) return;
@@ -57,6 +69,20 @@ export class CanvasInteractions {
     root.addEventListener(
       'keydown',
       (event) => {
+        const group =
+          event.target instanceof HTMLElement
+            ? event.target.closest<HTMLElement>('[data-group]')
+            : null;
+        if (
+          group?.dataset.group &&
+          (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          const rect = group.getBoundingClientRect();
+          this.groupMenu(group.dataset.group, { x: rect.x, y: rect.bottom + 4 });
+          return;
+        }
         if (
           event.target instanceof SVGElement &&
           event.target.matches('.link-endpoint') &&
@@ -131,9 +157,52 @@ export class CanvasInteractions {
     root.addEventListener(
       'click',
       (event) => {
+        if (
+          event.target instanceof HTMLInputElement &&
+          ['draw-color', 'shape-border'].includes(event.target.id)
+        ) {
+          event.preventDefault();
+          this.colorPicker(event.target.id === 'draw-color' ? 'color' : 'stroke');
+          return;
+        }
         const button = target(event),
           id = button?.dataset.id ?? '';
         switch (button?.dataset.action) {
+          case 'context-group':
+            this.overlay.replaceChildren();
+            ctx.act(
+              {
+                type: 'group.create',
+                world: ctx.world().id,
+                nodes: [...ctx.ui.canvas.selections],
+                name: 'Conjunto sin nombre',
+              },
+              'crear conjunto',
+              'C08-ORG-01',
+            );
+            break;
+          case 'group-ungroup':
+            this.overlay.replaceChildren();
+            ctx.act(
+              { type: 'group.ungroup', world: ctx.world().id, id },
+              'separar conjunto',
+              'C08-ORG-01',
+            );
+            break;
+          case 'group-rename':
+            this.groupRename(id);
+            break;
+          case 'reference-fragment':
+            this.fragment(id);
+            break;
+          case 'reference-whole':
+            this.overlay.replaceChildren();
+            ctx.act(
+              { type: 'reference.fragment', world: ctx.world().id, id, range: null },
+              'usar referencia completa',
+              'C08-REF-01',
+            );
+            break;
           case 'draw-thickness':
             ctx.ui.canvas.thickness = Number(button.dataset.value);
             this.applyStyle();
@@ -299,12 +368,34 @@ export class CanvasInteractions {
         }
         if (event.target.closest('.canvas-style')) {
           const ui = ctx.ui.canvas;
-          ui.color = root.querySelector<HTMLInputElement>('#draw-color')?.value ?? ui.color;
-          ui.stroke = root.querySelector<HTMLInputElement>('#shape-border')?.value ?? ui.stroke;
+          if (event.target.id === 'draw-color')
+            ui.color = rgba(event.target.value, alpha(ui.color));
+          if (event.target.id === 'shape-border')
+            ui.stroke = rgba(event.target.value, alpha(ui.stroke));
           ui.fill = root.querySelector<HTMLInputElement>('#shape-fill')?.checked ?? ui.fill;
           this.applyStyle();
           ctx.persist();
         }
+        if (event.target.id === 'picker-rgb' || event.target.id === 'picker-alpha')
+          this.changeColor();
+      },
+      { signal },
+    );
+    this.overlay.addEventListener(
+      'beforeinput',
+      (event) => {
+        // Chromium no ofrece caret por flechas en textarea readonly. Conservar
+        // selección nativa y bloquear la edición en la frontera de entrada.
+        if (event.target instanceof HTMLTextAreaElement && event.target.id === 'fragment-source')
+          event.preventDefault();
+      },
+      { signal },
+    );
+    this.overlay.addEventListener(
+      'input',
+      (event) => {
+        if (event.target instanceof HTMLInputElement && event.target.id === 'picker-alpha')
+          this.changeColor();
       },
       { signal },
     );
@@ -315,7 +406,37 @@ export class CanvasInteractions {
         event.preventDefault();
         const form = event.target;
         event.stopPropagation();
-        if (form.dataset.rename) {
+        if (form.dataset.fragment) {
+          const input = form.querySelector<HTMLTextAreaElement>('textarea')!;
+          if (input.selectionEnd <= input.selectionStart) {
+            ctx.notice('Seleccioná el texto al que querés hacer referencia.');
+            return;
+          }
+          if (
+            ctx.act(
+              {
+                type: 'reference.fragment',
+                world: ctx.world().id,
+                id: form.dataset.fragment,
+                range: { start: input.selectionStart, end: input.selectionEnd },
+              },
+              'precisar referencia',
+              'C08-REF-01',
+            )
+          )
+            this.close();
+        } else if (form.dataset.groupRename) {
+          const name = form.querySelector<HTMLInputElement>('input')!.value;
+          if (
+            name.trim() &&
+            ctx.act(
+              { type: 'group.rename', world: ctx.world().id, id: form.dataset.groupRename, name },
+              'renombrar conjunto',
+              'C08-ORG-01',
+            )
+          )
+            this.close();
+        } else if (form.dataset.rename) {
           const name = form.querySelector<HTMLInputElement>('input')?.value ?? '';
           if (name.trim()) {
             this.overlay.replaceChildren();
@@ -351,6 +472,7 @@ export class CanvasInteractions {
             'editar etiqueta',
             'C08-LINK-02',
           );
+          this.focusLink(form.dataset.label);
         } else if (form.id === 'canvas-new-link') {
           try {
             const url = new URL(form.querySelector<HTMLInputElement>('input')?.value ?? '');
@@ -463,6 +585,86 @@ export class CanvasInteractions {
     panel.style.left = `${Math.max(12, Math.min(innerWidth - panel.offsetWidth - 12, parseFloat(panel.style.left)))}px`;
     panel.style.top = `${Math.max(70, Math.min(innerHeight - panel.offsetHeight - 12, parseFloat(panel.style.top)))}px`;
   }
+  positionColorPicker(): void {
+    const panel = this.overlay.querySelector<HTMLElement>('.canvas-color-picker');
+    if (!panel || !this.colorField) return;
+    const anchor = this.root
+      .querySelector(this.colorField === 'color' ? '#draw-color' : '#shape-border')
+      ?.getBoundingClientRect();
+    if (!anchor) {
+      this.close();
+      return;
+    }
+    panel.style.left =
+      Math.max(12, Math.min(innerWidth - panel.offsetWidth - 12, anchor.left)) + 'px';
+    panel.style.top =
+      (anchor.top - panel.offsetHeight - 8 >= 70
+        ? anchor.top - panel.offsetHeight - 8
+        : anchor.bottom + 8) + 'px';
+    this.fitOverlay();
+  }
+  private colorPicker(field: 'color' | 'stroke'): void {
+    this.colorField = field;
+    const value = this.ctx.ui.canvas[field];
+    this.overlay.innerHTML = `<div class="canvas-context-form canvas-color-picker" role="dialog" aria-label="${field === 'color' ? 'Color de relleno' : 'Color de borde'}"><label>Color<input id="picker-rgb" type="color" value="${rgb(value)}"></label><label for="picker-alpha">Opacidad <output>${alpha(value)} %</output></label><input id="picker-alpha" type="range" min="0" max="100" value="${alpha(value)}" aria-label="Opacidad"><small>0 % transparente · 100 % sólido</small>${btn('context-close', 'close', 'Cerrar color')}</div>`;
+    this.positionColorPicker();
+    this.overlay.querySelector<HTMLInputElement>('#picker-alpha')?.focus({ preventScroll: true });
+  }
+  private changeColor(): void {
+    if (!this.colorField) return;
+    const color = this.overlay.querySelector<HTMLInputElement>('#picker-rgb')!;
+    const opacity = this.overlay.querySelector<HTMLInputElement>('#picker-alpha')!;
+    this.ctx.ui.canvas[this.colorField] = rgba(color.value, Number(opacity.value));
+    const swatch = this.root.querySelector<HTMLInputElement>(
+      this.colorField === 'color' ? '#draw-color' : '#shape-border',
+    );
+    if (swatch) swatch.value = color.value;
+    this.overlay.querySelector('output')!.textContent = opacity.value + ' %';
+    this.applyStyle();
+    this.ctx.persist();
+  }
+  private groupRename(id: string): void {
+    const group = this.ctx.world().canvasGroups?.find((g) => g.id === id);
+    if (!group) return;
+    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit" data-group-rename="${id}" style="${this.position(this.center())}"><label for="group-name">Nombre del conjunto</label><input id="group-name" value="${html(group.name)}">${btn('context-close', 'close', 'Cancelar')}<button type="submit" aria-label="Guardar">${icon('check', 16)}</button></form>`;
+    const rect = this.root
+      .querySelector(`[data-group="${CSS.escape(id)}"]`)
+      ?.getBoundingClientRect();
+    if (rect) {
+      const panel = this.overlay.firstElementChild as HTMLElement;
+      panel.style.left = rect.left + 'px';
+      panel.style.top = rect.top + 'px';
+    }
+    this.fitOverlay();
+    this.overlay.querySelector<HTMLInputElement>('input')?.select();
+  }
+  private groupMenu(id: string, point: Point): void {
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del conjunto" style="${this.position(point)}"><button role="menuitem" data-action="group-rename" data-id="${id}">Renombrar conjunto</button><button role="menuitem" data-action="group-ungroup" data-id="${id}">Separar conjunto</button></div>`;
+    this.fitOverlay();
+    this.overlay.querySelector<HTMLElement>('button')?.focus();
+  }
+  private fragment(id: string): void {
+    const node = this.ctx.world().nodes.find((n) => n.id === id);
+    if (node?.data.kind !== 'reference') return;
+    const source = referenceSource(this.ctx.world(), node.data.ref);
+    if (source === null) return;
+    const anchor = this.ctx
+      .world()
+      .referenceAnchors?.find(
+        (a) => a.id === (node.data.kind === 'reference' ? node.data.ref.fragment : ''),
+      );
+    this.overlay.innerHTML = `<form class="canvas-context-form fragment-picker" data-fragment="${id}" style="${this.position({ x: innerWidth / 2 - 240, y: 120 })}"><label for="fragment-source">Seleccioná una sección o función de ${html(nodeTitle(this.ctx.world(), node))}</label><textarea id="fragment-source" aria-readonly="true" aria-label="Contenido de origen">${html(source)}</textarea><small>El fragmento mantiene el vínculo con su origen. Editá el contenido en Docs o Code.</small><div><button type="button" data-action="context-close">Cancelar</button><button type="submit">Usar selección</button></div></form>`;
+    this.fitOverlay();
+    const input = this.overlay.querySelector('textarea')!;
+    input.value = source;
+    input.focus();
+    if (anchor?.status === 'attached') input.setSelectionRange(anchor.start, anchor.end);
+  }
+  private focusLink(id: string): void {
+    this.root
+      .querySelector<SVGElement>(`.link-hit[data-id="${CSS.escape(id)}"]`)
+      ?.focus({ preventScroll: true });
+  }
   private materialPoint(id: string): Point {
     const rect = this.root
       .querySelector<HTMLElement>(`[data-node="${CSS.escape(id)}"]`)
@@ -475,7 +677,7 @@ export class CanvasInteractions {
     const node = this.ctx.world().nodes.find((n) => n.id === id && !n.owner);
     if (!node) return;
     this.ctx.ui.canvas.selection = id;
-    this.ctx.ui.canvas.selections = [id];
+    if (!this.ctx.ui.canvas.selections.includes(id)) this.ctx.ui.canvas.selections = [id];
     this.ctx.ui.canvas.zoneSelection = null;
     this.ctx.ui.canvas.linkSelection = null;
     this.ctx.render();
@@ -496,11 +698,11 @@ export class CanvasInteractions {
     if (!node) return;
     this.menuMaterial = id;
     this.ctx.ui.canvas.selection = id;
-    this.ctx.ui.canvas.selections = [id];
+    if (!this.ctx.ui.canvas.selections.includes(id)) this.ctx.ui.canvas.selections = [id];
     this.ctx.ui.canvas.zoneSelection = null;
     this.ctx.ui.canvas.linkSelection = null;
     this.ctx.render();
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button>${node.data.kind !== 'reference' || node.data.ref.kind === 'document' ? `<button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button>` : ''}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button>${node.data.kind !== 'reference' || node.data.ref.kind === 'document' ? `<button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Precisar referencia…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
@@ -598,7 +800,7 @@ export class CanvasInteractions {
   }
   private editForm(kind: 'rename' | 'label', id: string, text: string, point: Point): void {
     const field = kind === 'rename' ? 'material-name' : 'cable-text';
-    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" value="${html(text)}">${kind === 'label' ? btn('link-delete', 'trash', 'Eliminar conexión', `data-id="${id}"`) : ''}${btn('context-close', 'close', 'Cancelar')}<button type="submit" class="icon-button" aria-label="Guardar" data-tip="Guardar">${icon('check', 16)}</button></form>`;
+    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" value="${html(text)}">${kind === 'label' ? btn('link-delete', 'trash', 'Eliminar conexión', `data-id="${id}"`) : ''}${btn('context-close', 'close', 'Cancelar')}${kind === 'rename' ? `<button type="submit" class="icon-button" aria-label="Guardar" data-tip="Guardar">${icon('check', 16)}</button>` : ''}</form>`;
   }
   private linkForm(): void {
     this.overlay.innerHTML = `<form id="canvas-new-link" class="canvas-context-form" style="${this.position({ x: innerWidth / 2 - 140, y: innerHeight / 2 - 80 })}"><label for="canvas-link-url">Dirección del enlace</label><input id="canvas-link-url" type="url" required placeholder="https://"><button type="submit">Agregar enlace</button><button type="button" data-action="context-close">Cancelar</button></form>`;
@@ -871,6 +1073,9 @@ export class CanvasInteractions {
       });
   }
   close(): boolean {
+    const link = (this.overlay.querySelector('[data-label]') as HTMLElement | null)?.dataset.label;
+    const color = this.colorField;
+    this.colorField = null;
     const active = this.overlay.childElementCount > 0 || this.ctx.ui.canvas.tool === 'comment';
     this.ctx.ui.canvas.commentTarget = null;
     if (this.ctx.ui.canvas.tool === 'comment') {
@@ -878,7 +1083,12 @@ export class CanvasInteractions {
       this.ctx.render();
     }
     this.overlay.replaceChildren();
-    if (active)
+    if (link) this.focusLink(link);
+    else if (color)
+      this.root
+        .querySelector<HTMLInputElement>(color === 'color' ? '#draw-color' : '#shape-border')
+        ?.focus({ preventScroll: true });
+    else if (active)
       this.root
         .querySelector<HTMLElement>(
           `[data-node="${CSS.escape(this.ctx.ui.canvas.selection ?? '')}"]`,

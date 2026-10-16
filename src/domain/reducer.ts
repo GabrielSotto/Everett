@@ -11,10 +11,18 @@ import { applyCodeCommand } from './commands/code';
 import { applyAgentsCommand } from './commands/agents';
 import { applyConversationsCommand } from './commands/conversations';
 import { arrangeProposals } from './proposal-layout';
+import { applyOrganizationCommand } from './commands/organization';
+import { rebaseReferences } from './reference-anchors';
 
 export function reduce(state: State, command: Command): State {
   const next = structuredClone(state);
   switch (command.type) {
+    case 'group.create':
+    case 'group.rename':
+    case 'group.ungroup':
+    case 'reference.fragment':
+      applyOrganizationCommand(next, command);
+      break;
     case 'world.shipping':
     case 'profile.edit':
     case 'navigate':
@@ -101,6 +109,11 @@ export function reduce(state: State, command: Command): State {
       const unhandled: never = command;
       throw new Error('Comando desconocido: ' + JSON.stringify(unhandled));
     }
+  }
+  if ('world' in command) {
+    const before = state.worlds.find((w) => w.id === command.world);
+    const after = next.worlds.find((w) => w.id === command.world);
+    if (before && after) rebaseReferences(before, after);
   }
   if ('world' in command && affectsView(command) !== 'none') {
     const world = next.worlds.find((candidate) => candidate.id === command.world);

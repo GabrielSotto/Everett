@@ -85,9 +85,6 @@ export async function connect(page: Page, from: string, to: string, label: strin
   await path.focus();
   await page.keyboard.press('Enter');
   await page.getByLabel('Etiqueta de conexión', { exact: true }).fill(label);
-  await page
-    .locator(`[data-label="${link.id}"]`)
-    .getByRole('button', { name: 'Guardar', exact: true })
-    .click();
+  await page.getByLabel('Etiqueta de conexión', { exact: true }).press('Enter');
   await expect(page.locator(`[data-link="${link.id}"] text`)).toHaveText(label);
 }

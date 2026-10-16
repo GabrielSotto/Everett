@@ -635,7 +635,7 @@ test('C08-B06: cable con etiqueta integrada, área estable, movimiento, edición
 }) => {
   await canvas(page);
   const cable = page.locator('.connection').first();
-  const path = await cable.locator('.link-line').getAttribute('d');
+  let path = await cable.locator('.link-line').getAttribute('d');
   const hit = cable.locator('.link-hit');
   for (const delta of [240, -480, 240]) {
     const zoom = (await snapshot(page)).camera.z;
@@ -666,8 +666,11 @@ test('C08-B06: cable con etiqueta integrada, área estable, movimiento, edición
   await hit.press('Enter');
   await expect(page.getByLabel('Etiqueta de conexión', { exact: true })).toBeVisible();
   await page.getByLabel('Etiqueta de conexión', { exact: true }).fill('Depende del contexto');
-  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await page.getByLabel('Etiqueta de conexión', { exact: true }).press('Enter');
   await expect(cable.locator('text')).toHaveText('Depende del contexto');
+  // La etiqueta puede adaptar la curva automática para conservar su lectura.
+  // El movimiento y su historial deben recuperar esa misma curva etiquetada.
+  path = await cable.locator('.link-line').getAttribute('d');
   await expect(cable.locator('.link-line')).toHaveAttribute('mask', /url/);
   const cut = cable.locator('.label-cut');
   expect(Number(await cut.getAttribute('width'))).toBeGreaterThan(30);

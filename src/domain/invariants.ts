@@ -52,6 +52,8 @@ export function validate(s: State): void {
       w.zones,
       w.runs,
       w.conversations,
+      w.canvasGroups ?? [],
+      w.referenceAnchors ?? [],
     ])
       ensure(
         new Set(group.map((x) => x.id)).size === group.length,
@@ -59,6 +61,52 @@ export function validate(s: State): void {
         'Identificador duplicado',
       );
     ensure(w.conversations.length > 0, 'CONVERSATION', 'El Mundo necesita una conversación');
+    const grouped = new Set<string>();
+    for (const group of w.canvasGroups ?? []) {
+      ensure(!!group.name.trim() && group.nodes.length > 0, 'GROUP', 'Conjunto vacío o sin nombre');
+      for (const id of group.nodes) {
+        ensure(
+          w.nodes.some((n) => n.id === id) && !grouped.has(id),
+          'GROUP',
+          'Material de conjunto inexistente o repetido',
+        );
+        grouped.add(id);
+      }
+    }
+    for (const anchor of w.referenceAnchors ?? []) {
+      const source =
+        anchor.kind === 'document'
+          ? w.docs.find((d) => d.id === anchor.source)?.body
+          : w.files.find((f) => f.id === anchor.source)?.text;
+      ensure(
+        ['document', 'file'].includes(anchor.kind) &&
+          ['attached', 'missing'].includes(anchor.status) &&
+          !!anchor.quote &&
+          Number.isInteger(anchor.start) &&
+          Number.isInteger(anchor.end) &&
+          anchor.start >= 0 &&
+          anchor.end > anchor.start,
+        'FRAGMENT',
+        'Fragmento inválido',
+      );
+      ensure(
+        anchor.status === 'missing' ||
+          (source !== undefined && source.slice(anchor.start, anchor.end) === anchor.quote),
+        'FRAGMENT',
+        'El fragmento no coincide con su origen',
+      );
+    }
+    for (const node of w.nodes) {
+      if (node.data.kind !== 'reference' || !node.data.ref.fragment) continue;
+      const ref = node.data.ref;
+      ensure(
+        !!w.referenceAnchors?.some(
+          (a) => a.id === ref.fragment && a.kind === ref.kind && a.source === ref.id,
+        ),
+        'FRAGMENT',
+        'El fragmento pertenece a otro origen o no existe',
+      );
+    }
     for (const [id, ref] of Object.entries(w.referenceTargets ?? {}))
       ensure(
         !!id &&
@@ -265,6 +313,18 @@ export function validate(s: State): void {
   for (const r of [s.route, ...s.history.map((f) => f.route)]) {
     if (r.kind === 'universe') continue;
     const w = getWorld(s, r.world);
+    if (r.kind === 'surface' && r.fragment)
+      ensure(
+        r.entity !== null &&
+          w.referenceAnchors?.some(
+            (a) =>
+              a.id === r.fragment &&
+              a.source === r.entity &&
+              (a.kind === 'document' ? r.surface === 'docs' : r.surface === 'code'),
+          ) === true,
+        'FRAGMENT_ROUTE',
+        'El fragmento no pertenece a este destino',
+      );
     if (r.kind === 'material')
       ensure(
         w.nodes.some(

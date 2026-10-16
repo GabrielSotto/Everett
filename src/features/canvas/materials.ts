@@ -12,6 +12,7 @@ import { anchorPoint, linkPath, shapeVertices } from '../../domain/geometry';
 import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { materialDensity, materialGroups } from '../../domain/material-density';
+import { referenceExcerpt } from '../../domain/reference-anchors';
 const anchors: Anchor[] = ['north', 'east', 'south', 'west'];
 export function shapeMarkup(material: Material): string {
   if (material.data.kind !== 'shape') return '';
@@ -65,8 +66,9 @@ export function materialMarkup(
     content = `${d.preview ? `<img src="${html(d.preview)}" alt="">` : ''}<div class="link-material-body">${icon('link', 18)}<span>${html(url.hostname + url.pathname)}${d.description ? `<small>${html(d.description)}</small>` : ''}</span></div>`;
   } else if (d.kind === 'reference') {
     const ref = d.ref;
-    const detail =
-      ref.kind === 'document'
+    const detail = ref.fragment
+      ? (referenceExcerpt(w, ref) ?? 'Fragmento no disponible. Revisá su origen.')
+      : ref.kind === 'document'
         ? w.docs.find((doc) => doc.id === ref.id)?.body
         : ref.kind === 'file'
           ? w.files.find((f) => f.id === ref.id)?.text
@@ -74,6 +76,10 @@ export function materialMarkup(
             ? w.tasks.find((t) => t.id === ref.id)?.description
             : w.agents.find((a) => a.id === ref.id)?.role;
     content = `<div class="reference-type">${icon(ref.kind === 'document' ? 'docs' : ref.kind === 'file' ? 'code' : ref.kind === 'task' ? 'board' : 'agents', 17)}</div><h3>${html(nodeTitle(w, material))}</h3><${ref.kind === 'file' ? 'pre' : 'p'}>${html(detail)}</${ref.kind === 'file' ? 'pre' : 'p'}>`;
+    if (ref.fragment)
+      content =
+        `<small class="fragment-state">${referenceExcerpt(w, ref) === null ? 'Fragmento no disponible' : 'Fragmento de ' + (ref.kind === 'file' ? 'Code' : 'Docs')}</small>` +
+        content;
     if (ref.kind === 'task') {
       const task = w.tasks.find((t) => t.id === ref.id);
       if (task)

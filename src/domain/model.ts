@@ -43,6 +43,7 @@ export type Route =
       world: string;
       surface: Surface;
       entity: string | null;
+      fragment?: string;
     }
   | {
       kind: 'note';
@@ -57,7 +58,22 @@ export interface Frame {
 export type Reference = {
   kind: 'document' | 'file' | 'task' | 'agent';
   id: string;
+  fragment?: string;
 };
+export interface CanvasGroup {
+  id: string;
+  name: string;
+  nodes: string[];
+}
+export interface ReferenceAnchor {
+  id: string;
+  kind: 'document' | 'file';
+  source: string;
+  start: number;
+  end: number;
+  quote: string;
+  status: 'attached' | 'missing';
+}
 export type Anchor = 'north' | 'east' | 'south' | 'west';
 export type Shape = 'rectangle' | 'ellipse' | 'triangle' | 'star';
 export type NodeData =
@@ -130,7 +146,7 @@ export interface Assignment {
 /** Materiales pendientes. Sus registros compartidos solo se aplican al aceptar. */
 export interface ProposalMaterial {
   material: Material;
-  document?: Pick<Document, 'id' | 'body'>;
+  document?: Pick<Document, 'id' | 'body'> & { before?: string };
 }
 export interface Document {
   id: string;
@@ -226,6 +242,8 @@ export interface World extends Point {
   tasks: Task[];
   agents: Agent[];
   nodes: Material[];
+  canvasGroups?: CanvasGroup[];
+  referenceAnchors?: ReferenceAnchor[];
   referenceTargets?: Record<string, Reference>;
   links: Link[];
   zones: Zone[];
@@ -284,7 +302,7 @@ export function routeKey(r: Route): string {
       ? `world/${r.world}`
       : r.kind === 'note' || r.kind === 'material'
         ? `${r.world}/${r.kind}/${r.entity}`
-        : `${r.world}/${r.surface}/${r.entity ?? ''}`;
+        : `${r.world}/${r.surface}/${r.entity ?? ''}${r.fragment ? '#' + r.fragment : ''}`;
 }
 export function nodeTitle(w: DeepReadonly<World>, n: Material): string {
   if (n.data.kind !== 'reference') return n.data.title?.trim() || 'Sin nombre';
@@ -320,6 +338,7 @@ export function referenceRoute(world: string, ref: Reference): Route {
             ? 'board'
             : 'agents',
     entity: ref.id,
+    ...(ref.fragment ? { fragment: ref.fragment } : {}),
   };
 }
 export function materialRoute(s: DeepReadonly<State>, world: string, id: string): Route | null {

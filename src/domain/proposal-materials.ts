@@ -42,7 +42,18 @@ export function proposalMaterials(
     const reference = material.data.ref;
     if (reference.kind === 'document') {
       const document = world.docs.find((item) => item.id === reference.id);
-      if (document) result.document = { id: document.id, body: text };
+      if (document) {
+        const anchor = world.referenceAnchors?.find((a) => a.id === reference.fragment);
+        if (reference.fragment) {
+          // Un fragmento propone un cambio acotado; el resto del documento se conserva.
+          if (anchor?.status === 'attached')
+            result.document = {
+              id: document.id,
+              before: document.body,
+              body: document.body.slice(0, anchor.start) + text + document.body.slice(anchor.end),
+            };
+        } else result.document = { id: document.id, body: text };
+      }
     }
   }
   return [result];

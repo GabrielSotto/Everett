@@ -3,6 +3,7 @@ import { conversation } from '../../domain/conversations';
 import type { Context } from '../../app/context';
 import { target, value, type View } from '../../ui/dom';
 import { docsPresentation } from './presentation';
+import { focusReference } from '../../ui/reference-focus';
 import { ComposerDisclosure } from '../../ui/disclosure';
 import { bindComposer, preserveComposerDrafts, composerDraft } from '../../ui/composer';
 export class DocsView implements View {
@@ -191,6 +192,8 @@ export class DocsView implements View {
       response: this.response,
       draft: composerDraft(this.ctx, 'doc-composer', d?.id ?? ''),
     });
+    const body = this.root.querySelector<HTMLTextAreaElement>('#doc-body');
+    if (body && d) body.value = d.body;
     this.resizeBody();
     this.displayedDocument = d?.id ?? null;
     const saved = d ? this.positions.get(d.id) : undefined,
@@ -201,6 +204,7 @@ export class DocsView implements View {
     }
     restoreDraft();
     this.disclosure.sync(this.aiOpen);
+    focusReference(this.root, this.ctx);
   }
   closeTransient(): boolean {
     if (!this.aiOpen) return false;

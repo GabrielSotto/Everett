@@ -18,6 +18,15 @@ import type {
 import type { AgentRun } from './operations';
 
 export type Command =
+  | { type: 'group.create'; world: string; nodes: string[]; name: string }
+  | { type: 'group.rename'; world: string; id: string; name: string }
+  | { type: 'group.ungroup'; world: string; id: string }
+  | {
+      type: 'reference.fragment';
+      world: string;
+      id: string;
+      range: { start: number; end: number } | null;
+    }
   | { type: 'assignment.interrupt' | 'assignment.retry'; world: string; id: string }
   | { type: 'node.rename'; world: string; id: string; name: string }
   | { type: 'node.duplicate'; world: string; id: string }

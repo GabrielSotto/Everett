@@ -43,7 +43,7 @@ export function semanticParent(route: Route): Route {
     return { kind: 'surface', world: route.world, surface: 'canvas', entity: null };
   if (route.kind === 'surface')
     return route.entity !== null
-      ? { ...route, entity: null }
+      ? { kind: 'surface', world: route.world, surface: route.surface, entity: null }
       : { kind: 'world', world: route.world };
   return { kind: 'universe' };
 }

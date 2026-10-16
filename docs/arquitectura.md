@@ -97,3 +97,11 @@ Las vistas coordinan eventos y estado local. Las plantillas con una responsabili
 Los comandos de grupo de Canvas validan y publican una sola transición del Store. Cada material transferido mantiene su trabajo y su identidad propios. Los previews de video son cachés derivadas del archivo inmutable: asset.preview actualiza la representación y su persistencia sin remontar la interfaz ni alterar reproducción, cámara o gestos activos. El historial conserva esa caché al recuperar posiciones y contenido.
 
 Los ejemplos multimedia son archivos locales generados para probar el mismo recorrido de importación. Las tres imágenes se alternan con un índice en el contexto personal de Canvas; avanzar la muestra no modifica las imágenes ya incorporadas. Los guardados anteriores sin índice empiezan por el paisaje.
+
+### Organización y referencias precisas de Canvas
+
+World.canvasGroups conserva identidades, nombres y miembros de conjuntos manuales. Su límite visual deriva de la geometría de los materiales y sus posiciones de retorno; no cambia la propiedad exclusiva de los agentes. Los comandos de conjunto y el movimiento múltiple pasan por Store e historial.
+
+World.referenceAnchors conserva origen, rango, cita y estado de fragmentos de Docs/Code. Reference.fragment y Route.fragment usan esa identidad. El reducer ajusta sus rangos tras cambios de los registros compartidos; una sustitución total invalida el fragmento hasta una recuperación textual única o una selección explícita nueva. La edición de contenido en las superficies mantiene sus editores existentes. Los formularios de precisión conservan selección nativa y bloquean la escritura en beforeinput; los editores reciben su valor mediante la propiedad DOM para conservar saltos de línea iniciales.
+
+CanvasHistory aplica deltas de anchors como registros compartidos y rebasa los recuperados contra el contenido actual. Las propuestas de un fragmento conservan el resto del documento y verifican que el origen no haya cambiado antes de aceptar; un conflicto requiere pedir revisión. La vista previa no escribe el registro. Los conjuntos y anchors se guardan con el Mundo en IndexedDB; la preferencia del botón de Superficies pertenece al contexto personal. No cambia el esquema de archivos ni las identidades existentes.

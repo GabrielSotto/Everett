@@ -5,6 +5,7 @@ import { proposalMaterials, proposalSummary } from '../../domain/proposal-materi
 import { materialMarkup } from './materials';
 import { html } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
+import { rebaseReferences } from '../../domain/reference-anchors';
 
 function previewMarkup(ctx: Context, draft: DeepReadonly<ProposalMaterial>): string {
   const world = structuredClone(ctx.world()) as World;
@@ -12,6 +13,18 @@ function previewMarkup(ctx: Context, draft: DeepReadonly<ProposalMaterial>): str
     world.docs = world.docs.map((doc) =>
       doc.id === draft.document!.id ? { ...doc, body: draft.document!.body } : doc,
     );
+  rebaseReferences(ctx.world(), world);
+  if (draft.document?.before !== undefined && draft.material.data.kind === 'reference') {
+    const fragment = draft.material.data.ref.fragment;
+    const anchor = world.referenceAnchors?.find((a) => a.id === fragment);
+    const original = ctx.world().referenceAnchors?.find((a) => a.id === fragment);
+    if (anchor && original) {
+      anchor.start = original.start;
+      anchor.end = original.end + draft.document.body.length - draft.document.before.length;
+      anchor.quote = draft.document.body.slice(anchor.start, anchor.end);
+      anchor.status = 'attached';
+    }
+  }
   return materialMarkup(
     world,
     { ...(structuredClone(draft.material) as ProposalMaterial['material']), x: 0, y: 0 },
