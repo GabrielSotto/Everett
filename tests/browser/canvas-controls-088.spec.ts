@@ -328,10 +328,14 @@ test('C08-B52: búsqueda con teclado, listas extensas, nombres largos, movimient
       'title',
       ('Criterio 29: ' + 'Nombre largo de una decisión del proyecto '.repeat(4)).trim(),
     );
+    const resultsBox = (await page.locator('#global-results').boundingBox())!;
+    expect(resultsBox.x).toBeGreaterThanOrEqual(11);
+    expect(resultsBox.x + resultsBox.width).toBeLessThanOrEqual(width - 11);
+    expect(await page.locator('#global-results').evaluate((el) => el.scrollLeft)).toBe(0);
     measurements.push({
       width,
       search: await search(page).boundingBox(),
-      results: await page.locator('#global-results').boundingBox(),
+      results: resultsBox,
     });
     await capture(page, info, `busqueda-${width}`);
     await page.keyboard.press('Escape');

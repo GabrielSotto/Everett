@@ -374,6 +374,8 @@ export class Shell {
     holder.innerHTML = results.length
       ? `<span class="search-count" role="status">${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}</span>${results.map((result) => `<button type="button" data-action="search-result" data-world="${html(result.world)}" data-id="${html(result.id)}" ${result.kind === 'material' ? 'data-canvas-node="true"' : result.kind === 'document' ? 'data-surface="docs"' : ''} title="${html(result.title)}">${icon(result.symbol, 15)}<span><strong>${html(result.title)}</strong><small>${html(result.detail)}</small></span></button>`).join('')}`
       : '<p class="search-empty" role="status">Sin resultados. Probá otro nombre o contenido.</p>';
+    // El listado vacío mide cero; ubicarlo después de pintar sus filas.
+    this.positionSearch();
   }
 
   private status(): string {

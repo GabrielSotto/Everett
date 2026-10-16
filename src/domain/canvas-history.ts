@@ -163,6 +163,21 @@ export class CanvasHistory {
           b = targetItems.find((item) => item.id === id);
         if (JSON.stringify(a) === JSON.stringify(b)) continue;
         const index = currentItems.findIndex((item) => item.id === id);
+        if (group === 'referenceAnchors' && a && !b && index >= 0) {
+          const anchor = source.referenceAnchors.find((item) => item.id === id)!;
+          const retained =
+            Object.values(destination.referenceTargets ?? {}).some((ref) => ref.fragment === id) ||
+            destination.conversations.some((thread) =>
+              thread.messages.some((message) => message.refs.some((ref) => ref.fragment === id)),
+            );
+          // Quitar una representación o deshacer su precisión no rompe referencias
+          // ya compartidas por el chat al documento que todavía existe.
+          if (
+            retained &&
+            referenceSource(destination, { kind: anchor.kind, id: anchor.source }) !== null
+          )
+            continue;
+        }
         if (!b && index >= 0) currentItems.splice(index, 1);
         else if (!a && b && index < 0) currentItems.push(structuredClone(b));
         else if (a && b && index >= 0)

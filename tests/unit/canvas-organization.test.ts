@@ -6,6 +6,7 @@ import type { ReferenceAnchor } from '../../src/domain/model';
 import { alpha, rgba } from '../../src/features/canvas/color';
 import { labelPosition, overlaps } from '../../src/domain/cable-labels';
 import { semanticParent } from '../../src/domain/navigation';
+import { materialRoute } from '../../src/domain/model';
 
 test('C08-U14: conjuntos duraderos preservan miembros, exclusividad, movimiento, historial y devolución', () => {
   const { store } = setup();
@@ -230,4 +231,35 @@ test('C08-U16: transparencia conserva RGB, cero y estilos opacos; etiquetas evit
     size = { width: 90, height: 20 };
   const p = labelPosition({ x: 60, y: 40 }, size, [obstacle]);
   assert.equal(overlaps({ x: p.x - 45, y: p.y - 10, ...size }, obstacle), false);
+});
+
+test('C08-U17: quitar y deshacer una referencia conserva el destino preciso ya compartido', () => {
+  const { store } = setup();
+  const act = (c: Parameters<typeof store.dispatch>[0]) => store.dispatch(c, intent);
+  act({
+    type: 'node.create',
+    world: 'project',
+    node: {
+      ...note('shared-ref'),
+      data: { kind: 'reference', ref: { kind: 'document', id: 'document' } },
+    },
+  });
+  act({
+    type: 'reference.fragment',
+    world: 'project',
+    id: 'shared-ref',
+    range: { start: 7, end: 14 },
+  });
+  const route = materialRoute(store.get(), 'project', 'shared-ref')!;
+  act({ type: 'node.delete', world: 'project', id: 'shared-ref' });
+  act({ type: 'canvas.undo', world: 'project' });
+  act({ type: 'canvas.undo', world: 'project' });
+  act({ type: 'canvas.undo', world: 'project' });
+  assert.equal(
+    project(store).nodes.some((n) => n.id === 'shared-ref'),
+    false,
+  );
+  assert.deepEqual(materialRoute(store.get(), 'project', 'shared-ref'), route);
+  act({ type: 'navigate', route, camera: store.get().camera });
+  assert.equal(project(store).referenceAnchors![0]!.quote, 'Párrafo');
 });
