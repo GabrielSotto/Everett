@@ -23,6 +23,12 @@ El Universo permite recorrer los Mundos. Dentro de cada Mundo, sus seis superfic
 
 Las distintas interfaces responden a actividades diferentes dentro del mismo Mundo. Una Session puede iniciar trabajo que aparezca en Board, Docs, Canvas o Code manteniendo el contexto del proyecto.
 
+Canvas reúne visual y espacialmente materiales de las distintas superficies para organizar el
+trabajo, relacionar sus elementos, comprender el conjunto y diagramar cómo funciona. Debe poder
+vincular una tarea con el código al que corresponde, las decisiones que la explican y sus
+referencias, conservando la identidad y el acceso al contenido de origen. Esta utilidad debe
+existir también en el trabajo manual, sin agentes; la asistencia agéntica amplía ese trabajo.
+
 ## Navegación
 
 La navegación utiliza zoom, paneo y foco. El usuario enfoca una superficie y entra en ella mediante zoom; el recorrido inverso recupera la escala superior y permite desplazarse hacia otra superficie. La continuidad entre escalas forma parte del funcionamiento aprobado.

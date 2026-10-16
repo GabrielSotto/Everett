@@ -31,6 +31,25 @@ La etapa incorporó las representaciones circulares de las seis superficies, con
 
 ## 0.8 — Canvas
 
+### Organización visual y espacial
+
+La utilidad central de Canvas es reunir y organizar visual y espacialmente materiales de las
+distintas superficies: documentación, decisiones, tareas, código, diseño y referencias, con
+varias capas de detalle. Debe permitir relacionar una tarea con el código pertinente y sus
+referencias, comprender el conjunto y diagramar cómo funciona. Al entrar al contenido de origen
+y regresar, conserva el contexto de trabajo y la identidad compartida de los elementos.
+
+Evaluar un recorrido completo: reunir materiales del proyecto, representar sus componentes y
+relaciones de forma legible, vincular decisiones con documentación y tareas, y retomar el trabajo
+después de navegar o recargar. Usar ese recorrido para identificar fricciones y capacidades
+ausentes antes de decidir nuevas herramientas. La organización debe ser útil sin agentes;
+el procesamiento agéntico real amplía ese trabajo y sigue pendiente de definir. Everett puede
+servir como ejemplo de proyecto complejo para la evaluación; no limita la utilidad a ese caso.
+
+Este criterio guía la evaluación de utilidad de 0.8. Las soluciones y ampliaciones que surjan deben
+concretarse antes de implementarlas; no incorpora por sí mismo herramientas de wireframes,
+galería ni el editor integral previsto para planificar en 0.9.
+
 ### Materiales y edición
 
 - Representaciones reconocibles de notas, documentos, PDF, imágenes, videos, enlaces y referencias a otras superficies.
