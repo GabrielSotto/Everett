@@ -3,6 +3,10 @@ import { test, expect } from './fixtures';
 import { enterWorld, openSurface } from './interaction-helpers';
 import { installResourceProbe, seededOrder, type PendingResources } from './resource-probe';
 
+// La sesión sostenida conserva acciones, DOM y mediciones; grabar cada fotograma
+// durante diez minutos genera una traza que excede el tiempo de cierre del contexto.
+test.use({ trace: { mode: 'on', screenshots: false, snapshots: true, sources: true } });
+
 interface Sample extends PendingResources {
   cycle: number;
   elapsedMs: number;
