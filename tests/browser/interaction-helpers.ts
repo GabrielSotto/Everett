@@ -44,9 +44,13 @@ export async function openSurface(page: Page, name: string): Promise<void> {
     return;
   }
   const route = page.locator('#viewport');
+  const active = await page.evaluate(() => window.EverettDebug!.snapshot().state.route);
+  if (active.kind === 'universe')
+    throw new Error('Entrá a un Mundo antes de elegir una superficie');
+  const worldRoute = `world/${active.world}`;
   for (
     let attempt = 0;
-    attempt < 12 && (await route.getAttribute('data-route')) !== 'world/scout';
+    attempt < 12 && (await route.getAttribute('data-route')) !== worldRoute;
     attempt++
   ) {
     // Esc cierra paneles de trabajo. El zoom de salida conserva chat y borradores.
@@ -60,7 +64,7 @@ export async function openSurface(page: Page, name: string): Promise<void> {
     await expect(route).not.toHaveAttribute('data-route', before!);
     await expect(page.locator('.transition-ghost')).toHaveCount(0);
   }
-  await expect(route).toHaveAttribute('data-route', 'world/scout');
+  await expect(route).toHaveAttribute('data-route', worldRoute);
   await reachSurface(page, name);
   const surface = page.getByRole('main').getByRole('button', { name, exact: true });
   await surface.click();

@@ -34,6 +34,11 @@ test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick C
   );
   await expect(page.locator('.message.user')).toContainText('Mensaje de continuidad');
   await openSurface(page, 'Canvas');
+  await expect(chat).toHaveClass(/quick/);
+  await expect(composer).toHaveValue('Borrador todavía sin enviar');
+  // La navegación espacial conserva la presentación. Cerrar es una acción
+  // explícita y volver a abrir debe conservar el mismo borrador y conversación.
+  await chat.getByRole('button', { name: 'Cerrar chat', exact: true }).click();
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   await expect(composer).toHaveValue('Borrador todavía sin enviar');
   expect(
