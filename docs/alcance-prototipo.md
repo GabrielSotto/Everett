@@ -4,7 +4,7 @@ Alcance ratificado por el usuario el 28 de septiembre de 2026, a partir de [Desa
 
 Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referencias del diseño acordado. La lectura de la conversación recuperó el texto, pero no sus adjuntos ni los documentos completos de esas referencias. No darlos por inspeccionados.
 
-**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. 0.8 sigue en desarrollo; la candidata 0.8.8 implementa y verifica controles y recuperación de materiales después de la evaluación de organización espacial. Los demás resultados de esa evaluación requieren concretar sus soluciones antes de implementarlas. El estado de pruebas, evidencia y aprobaciones está en [Tareas](../TAREAS.md).
+**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado y arnés, y mejoró la presentación de las superficies y las órbitas. La navegación aprobada se conserva. 0.8 sigue en desarrollo; la candidata 0.8.9 incorpora y verifica las correcciones de revisión, conjuntos manuales, referencias a fragmentos y legibilidad del panorama autorizados después de la evaluación de organización espacial. Espera revisión del usuario. El estado de pruebas, evidencia y aprobaciones está en [Tareas](../TAREAS.md).
 
 | Versión    | Alcance principal                                                                                        |
 | ---------- | -------------------------------------------------------------------------------------------------------- |
@@ -46,9 +46,7 @@ ausentes antes de decidir nuevas herramientas. La organización debe ser útil s
 el procesamiento agéntico real amplía ese trabajo y sigue pendiente de definir. Everett puede
 servir como ejemplo de proyecto complejo para la evaluación; no limita la utilidad a ese caso.
 
-Este criterio guía la evaluación de utilidad de 0.8. Las soluciones y ampliaciones que surjan deben
-concretarse antes de implementarlas; no incorpora por sí mismo herramientas de wireframes,
-galería ni el editor integral previsto para planificar en 0.9.
+Este criterio guía la evaluación de utilidad de 0.8. El usuario autorizó implementar conjuntos manuales duraderos, referencias a fragmentos de Docs/Code y lectura del panorama; sus contratos están en C08-ORG-01 y C08-REF-01 de la definición detallada. No incorpora herramientas de wireframes, galería ni el editor integral previsto para planificar en 0.9. Las ampliaciones futuras requieren concretar su alcance antes de implementarlas.
 
 ### Materiales y edición
 
