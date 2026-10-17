@@ -115,17 +115,19 @@ function assignedPreview(w: WorldSnapshot, n: Material): string {
     kind = d.kind === 'reference' ? d.ref.kind : d.kind,
     meta = materialKinds[kind] ?? materialKinds.note!;
   const text =
-    d.kind === 'note'
-      ? d.text
-      : d.kind === 'reference'
-        ? d.ref.kind === 'document'
-          ? w.docs.find((doc) => doc.id === d.ref.id)?.body
-          : d.ref.kind === 'file'
-            ? w.files.find((file) => file.id === d.ref.id)?.text
-            : d.ref.kind === 'task'
-              ? w.tasks.find((task) => task.id === d.ref.id)?.description
-              : ''
-        : '';
+    d.kind === 'reference' && d.ref.fragment
+      ? (referenceExcerpt(w, d.ref) ?? 'Fragmento no disponible. Revisá su origen.')
+      : d.kind === 'note'
+        ? d.text
+        : d.kind === 'reference'
+          ? d.ref.kind === 'document'
+            ? w.docs.find((doc) => doc.id === d.ref.id)?.body
+            : d.ref.kind === 'file'
+              ? w.files.find((file) => file.id === d.ref.id)?.text
+              : d.ref.kind === 'task'
+                ? w.tasks.find((task) => task.id === d.ref.id)?.description
+                : ''
+          : '';
   return `<div class="assigned-preview" data-assigned-id="${n.id}"><strong>${icon(meta.icon, 13)}<span>${html(nodeTitle(w, n))}</span></strong>${d.kind === 'shape' ? shapeMarkup(n) : d.kind === 'drawing' ? drawingMarkup(n) : d.kind === 'image' || d.kind === 'video' ? `<${d.kind === 'image' ? 'img' : 'video'} data-asset="${d.asset}" ${d.kind === 'image' ? `alt="${html(d.title)}"` : `aria-label="${html(d.title)}"`}>${d.kind === 'video' ? '</video>' : ''}` : d.kind === 'pdf' && d.preview ? `<img src="${d.preview}" alt="${html(d.title)}">` : `<p>${html(d.kind === 'link' ? d.url : text)}</p>`}</div>`;
 }
 function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {

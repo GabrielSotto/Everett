@@ -67,7 +67,8 @@ export function searchWorkspace(state: DeepReadonly<State>, query: string): Sear
           (node) =>
             node.data.kind === 'reference' &&
             node.data.ref.kind === 'document' &&
-            node.data.ref.id === doc.id,
+            node.data.ref.id === doc.id &&
+            !node.data.ref.fragment,
         )
       )
         continue;

@@ -7,6 +7,8 @@ import { alpha, rgba } from '../../src/features/canvas/color';
 import { labelPosition, overlaps } from '../../src/domain/cable-labels';
 import { semanticParent } from '../../src/domain/navigation';
 import { materialRoute } from '../../src/domain/model';
+import { searchWorkspace } from '../../src/domain/workspace-search';
+import { zoneMarkup } from '../../src/features/canvas/materials';
 
 test('C08-U14: conjuntos duraderos preservan miembros, exclusividad, movimiento, historial y devolución', () => {
   const { store } = setup();
@@ -262,4 +264,37 @@ test('C08-U17: quitar y deshacer una referencia conserva el destino preciso ya c
   assert.deepEqual(materialRoute(store.get(), 'project', 'shared-ref'), route);
   act({ type: 'navigate', route, camera: store.get().camera });
   assert.equal(project(store).referenceAnchors![0]!.quote, 'Párrafo');
+});
+
+test('C08-U18: la zona usa el fragmento y la búsqueda conserva el documento completo', () => {
+  const { store } = setup();
+  const act = (c: Parameters<typeof store.dispatch>[0]) => store.dispatch(c, intent);
+  act({
+    type: 'node.create',
+    world: 'project',
+    node: {
+      ...note('context-ref'),
+      data: { kind: 'reference', ref: { kind: 'document', id: 'document' } },
+    },
+  });
+  act({
+    type: 'reference.fragment',
+    world: 'project',
+    id: 'context-ref',
+    range: { start: 7, end: 14 },
+  });
+  assert.ok(
+    searchWorkspace(store.get(), 'Texto').some((r) => r.kind === 'document' && r.id === 'document'),
+  );
+  assert.equal(
+    searchWorkspace(store.get(), 'Texto').some(
+      (r) => r.kind === 'material' && r.id === 'context-ref',
+    ),
+    false,
+  );
+  act({ type: 'assign', world: 'project', node: 'context-ref', agent: 'eve' });
+  const world = project(store),
+    preview = zoneMarkup(world, world.zones[0]!, true);
+  assert.ok(preview.includes('Párrafo'));
+  assert.equal(preview.includes('Texto'), false);
 });

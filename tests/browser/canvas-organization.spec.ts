@@ -299,6 +299,16 @@ test('C08-B58: referencias a secciones y funciones abren el origen preciso y det
     await expect(page.locator('.fragment-picker')).toHaveCount(0);
     expect((await world(page)).referenceAnchors?.at(-1)?.quote).toBe(quote);
     await expect(page.locator(`[data-node="${id}"]`)).toContainText(quote);
+    if (kind === 'document') {
+      await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
+      await page
+        .getByRole('textbox', { name: 'Buscar en Everett', exact: true })
+        .fill('Otros acuerdos');
+      await expect(
+        page.locator(`#global-results [data-surface=docs][data-id="${source.id}"]`),
+      ).toBeVisible();
+      await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
+    }
     const contrast = await page.locator(`[data-node="${id}"] .fragment-state`).evaluate((el) => {
       const luminance = (color: string) => {
         const rgb = color
