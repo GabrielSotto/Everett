@@ -245,6 +245,10 @@ test('C08-B34: nota legible en los cinco colores, texto pintado, guardado automÃ
       expect(contrast(colors.ink, colors.paper)).toBeGreaterThanOrEqual(4.5);
     }
   }
+  // El tooltip de la Ãºltima muestra puede cubrir el input y contaminar el
+  // recuento de tinta. Retirar el puntero sin alterar el comparador ni su umbral.
+  await page.mouse.move(30, 100);
+  await expect(page.locator('#tooltip')).toHaveCSS('opacity', '0');
   const painted = async () => {
     const image = png.sync.read(await title.screenshot());
     let ink = 0;
