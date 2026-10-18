@@ -5,6 +5,7 @@ export interface ChatUi {
   chatTab: 'chat' | 'comments';
   chatCompact: boolean;
   chatPosition: Point;
+  chatSize: { width: number; height: number } | null;
 }
 
 export function createChatUi(): ChatUi {
@@ -14,5 +15,6 @@ export function createChatUi(): ChatUi {
     chatTab: 'chat',
     chatCompact: false,
     chatPosition: { x: 22, y: 160 },
+    chatSize: null,
   };
 }

@@ -107,4 +107,7 @@ export class CanvasShortcuts {
         '',
       )}<button type="button" data-action="shortcuts-reset">Restaurar todos</button>${this.conflict ? `<div class="shortcut-conflict" role="alert"><p>${html(this.conflict.combination)} ya está asignado a ${this.conflict.other === 'global' ? 'una acción global' : shortcutNames[this.conflict.other]}.</p>${this.conflict.other !== 'global' ? '<button type="button" data-action="shortcut-reassign">Reasignar y quitar el anterior</button>' : ''}<button type="button" data-action="shortcut-conflict-cancel">Cancelar</button></div>` : ''}</section>`;
   }
+  get editing(): boolean {
+    return this.page === 'canvas';
+  }
 }

@@ -96,9 +96,7 @@
   min-width: 0;
   opacity: 0;
   padding: 0;
-  transition:
-    width var(--resize-dur) var(--resize-ease),
-    opacity 150ms var(--resize-ease);
+  transition: opacity 150ms var(--resize-ease);
   outline: none;
 }
 

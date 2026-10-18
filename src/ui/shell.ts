@@ -12,6 +12,8 @@ import { trace } from '../app/diagnostics/trace';
 import { CanvasShortcuts } from './canvas-shortcuts';
 import { shortcutNames } from '../domain/shortcuts';
 import { searchWorkspace } from '../domain/workspace-search';
+import { CanvasZoom } from './canvas-zoom';
+import { reducedMotion } from './motion';
 
 export class Shell {
   private abort = new AbortController();
@@ -19,12 +21,15 @@ export class Shell {
   private readonly shortcuts: CanvasShortcuts;
   private rendering = false;
   private renderPending = false;
+  private readonly zoom: CanvasZoom;
+  private settingsSection: 'home' | 'preferences' | 'tools' = 'home';
   constructor(
     private root: HTMLElement,
     private ctx: Context,
   ) {
     window.addEventListener('resize', () => this.positionSearch(), { signal: this.abort.signal });
     this.shortcuts = new CanvasShortcuts(ctx, () => this.render(), root, this.abort.signal);
+    this.zoom = new CanvasZoom(root, ctx, () => this.render(), this.abort.signal);
     this.panels = new PanelMotion(root, [
       '.profile-pop',
       '.status-pop',
@@ -57,7 +62,7 @@ export class Shell {
             .querySelector<HTMLElement>(`[data-action="${action}"]`)
             ?.focus({ preventScroll: true });
       },
-      '#shell',
+      '.profile-pop,.status-pop,.filter-pop,.surface-menu,[data-action=profile],[data-action=status],[data-action=filters],[data-action=surface-menu]',
     );
     root.addEventListener(
       'click',
@@ -75,6 +80,10 @@ export class Shell {
             ui.shell.surfaceMenu = false;
             this.render();
             ctx.persist();
+            if (ui.shell.showSurfaceMenu && !reducedMotion())
+              root
+                .querySelector('[data-action=surface-menu]')
+                ?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: 'ease-out' });
             root.querySelector<HTMLElement>('#surface-menu-setting')?.focus();
             break;
           case 'canvas-undo':
@@ -126,10 +135,21 @@ export class Shell {
               tab === 'settings'
             ) {
               ui.shell.profileTab = tab;
+              if (tab === 'settings') this.settingsSection = 'home';
               this.render();
             }
             break;
           }
+          case 'profile-settings':
+            if (t.dataset.section === 'preferences' || t.dataset.section === 'tools') {
+              this.settingsSection = t.dataset.section;
+              this.render();
+            }
+            break;
+          case 'profile-settings-back':
+            this.settingsSection = 'home';
+            this.render();
+            break;
           case 'surface-menu':
             ui.shell.surfaceMenu = !ui.shell.surfaceMenu;
             ui.shell.profile = ui.shell.filters = ui.shell.status = false;
@@ -326,7 +346,7 @@ export class Shell {
     const others = [...this.root.children].filter(
       (element): element is HTMLElement =>
         element instanceof HTMLElement &&
-        !element.matches('.global-search,.shell-spacer') &&
+        !element.matches('.global-search,.shell-spacer,.location') &&
         getComputedStyle(element).display !== 'none' &&
         !['absolute', 'fixed'].includes(getComputedStyle(element).position),
     );
@@ -343,7 +363,10 @@ export class Shell {
       parseFloat(css.paddingLeft) +
       parseFloat(css.paddingRight) +
       parseFloat(css.columnGap) * (others.length + 1) +
-      2;
+      2 +
+      (this.root.querySelector<HTMLElement>('.location')?.offsetWidth
+        ? 130 + parseFloat(css.columnGap)
+        : 0);
     search.style.setProperty(
       '--search-open-width',
       Math.max(64, Math.min(246, this.root.clientWidth - reserved)) + 'px',
@@ -361,6 +384,9 @@ export class Shell {
   }
   refreshSearch(): void {
     if (this.ctx.ui.shell.searchOpen) this.results();
+  }
+  refreshCamera(): void {
+    this.zoom.refresh();
   }
   private results(): void {
     const holder = this.root.querySelector<HTMLElement>('#global-results');
@@ -401,7 +427,18 @@ export class Shell {
     const p = this.ctx.store.get().profile,
       tab = this.ctx.ui.shell.profileTab,
       w = activeWorld(this.ctx.store.get());
-    return `<div class="popover profile-pop"><div class="profile-identity"><span class="profile-avatar">${html(p.name.slice(0, 1).toUpperCase())}</span><div><strong>${html(p.name)}</strong><small>${this.ctx.store.get().worlds.length} mundos en total · ${this.ctx.store.get().worlds.filter((world) => world.archived).length} archivados</small></div></div><nav class="profile-tabs">${(['identity', 'preferences', 'tools', 'settings'] as const).map((t) => `<button data-action="profile-tab" data-tab="${t}" class="${t === tab ? 'active' : ''}">${{ identity: 'Perfil', preferences: 'Preferencias', tools: 'Herramientas', settings: 'Configuración' }[t]}</button>`).join('')}</nav>${tab === 'settings' ? this.shortcuts.markup() : tab === 'identity' ? `<div class="profile-field"><label for="profile-name">Nombre</label><input id="profile-name" aria-label="Nombre de perfil" maxlength="${profileLimits.name}" value="${html(p.name)}"></div><div class="profile-field"><label for="profile-bio">Sobre vos</label><textarea id="profile-bio" rows="4" maxlength="${profileLimits.bio}" aria-label="Descripción del perfil" placeholder="Sobre vos…">${html(p.bio)}</textarea><span class="profile-counter" id="profile-bio-count">${p.bio.length} / ${profileLimits.bio}</span></div>` : tab === 'preferences' ? `<label class="preference-line" for="profile-language">Idioma de dictado<select id="profile-language"><option value="es-AR" ${p.language === 'es-AR' ? 'selected' : ''}>Español · Argentina</option><option value="es-ES" ${p.language === 'es-ES' ? 'selected' : ''}>Español · España</option></select></label>` : `${w ? `<button data-action="archive">${icon('archive', 15)}${w.archived ? 'Desarchivar mundo' : 'Archivar mundo'}</button>` : ''}<button data-action="shortcuts">${icon('keyboard', 15)}Ayuda de Canvas</button><button data-action="diagnostics">${icon('download', 15)}Exportar diagnóstico</button>`}</div>`;
+    const identity = tab === 'identity';
+    const content = identity
+      ? `<div class="profile-field"><label for="profile-name">Nombre</label><input id="profile-name" aria-label="Nombre de perfil" maxlength="${profileLimits.name}" value="${html(p.name)}"></div><div class="profile-field"><label for="profile-bio">Sobre vos</label><textarea id="profile-bio" rows="4" maxlength="${profileLimits.bio}" aria-label="Descripción del perfil" placeholder="Sobre vos…">${html(p.bio)}</textarea><span class="profile-counter" id="profile-bio-count">${p.bio.length} / ${profileLimits.bio}</span></div>`
+      : this.settingsSection === 'preferences'
+        ? `${btn('profile-settings-back', 'chevron-left', 'Volver a Configuración')}<h3>Preferencias</h3><label class="preference-line" for="profile-language">Idioma de dictado<select id="profile-language"><option value="es-AR" ${p.language === 'es-AR' ? 'selected' : ''}>Español · Argentina</option><option value="es-ES" ${p.language === 'es-ES' ? 'selected' : ''}>Español · España</option></select></label>`
+        : this.settingsSection === 'tools'
+          ? `${btn('profile-settings-back', 'chevron-left', 'Volver a Configuración')}<h3>Herramientas</h3>${w ? `<button data-action="archive">${icon('archive', 15)}${w.archived ? 'Desarchivar mundo' : 'Archivar mundo'}</button>` : ''}<button data-action="shortcuts">${icon('keyboard', 15)}Ayuda de Canvas</button><button data-action="diagnostics">${icon('download', 15)}Exportar diagnóstico</button>`
+          : this.shortcuts.markup() +
+            (this.shortcuts.editing
+              ? ''
+              : '<button type="button" data-action="profile-settings" data-section="preferences">Preferencias</button><button type="button" data-action="profile-settings" data-section="tools">Herramientas</button>');
+    return `<div class="popover profile-pop"><div class="profile-identity"><span class="profile-avatar">${html(p.name.slice(0, 1).toUpperCase())}</span><div><strong>${html(p.name)}</strong><small>${this.ctx.store.get().worlds.length} mundos en total · ${this.ctx.store.get().worlds.filter((world) => world.archived).length} archivados</small></div></div><nav class="profile-tabs" aria-label="Perfil y configuración"><button data-action="profile-tab" data-tab="identity" class="${identity ? 'active' : ''}">Perfil</button><button data-action="profile-tab" data-tab="settings" class="${identity ? '' : 'active'}">Configuración</button></nav>${content}</div>`;
   }
   render(): void {
     if (this.rendering) {
@@ -435,7 +472,7 @@ export class Shell {
       'shell ' + (s.route.kind === 'universe' || s.route.kind === 'world' ? 'dark-shell' : '');
     const search = this.root.querySelector<HTMLElement>('.global-search');
     const template = document.createElement('template');
-    template.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}${history ? `<div class="canvas-history-controls" role="toolbar" aria-label="Historial de cambios de Canvas">${btn('canvas-undo', 'undo', 'Deshacer · Ctrl+Z', history.undo ? '' : 'disabled')}${btn('canvas-redo', 'redo', 'Rehacer · Ctrl+Shift+Z', history.redo ? '' : 'disabled')}</div>` : ''}<div class="shell-spacer"></div><div class="global-search t-resize ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" type="text" enterkeyhint="search" autocomplete="off" aria-controls="global-results" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : ui.shell.showSurfaceMenu ? btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu) : ''}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results" role="region" aria-label="Resultados de búsqueda"></div>`;
+    template.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}${history ? `<div class="canvas-history-controls" role="toolbar" aria-label="Historial de cambios de Canvas">${btn('canvas-undo', 'undo', 'Deshacer · Ctrl+Z', history.undo ? '' : 'disabled')}${btn('canvas-redo', 'redo', 'Rehacer · Ctrl+Shift+Z', history.redo ? '' : 'disabled')}</div>` : ''}<div class="shell-spacer"></div><div class="global-search t-resize ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" type="text" enterkeyhint="search" autocomplete="off" aria-controls="global-results" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : ui.shell.showSurfaceMenu ? btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu) : ''}${this.zoom.markup()}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results" role="region" aria-label="Resultados de búsqueda"></div>`;
     if (search) {
       for (const child of [...this.root.children]) if (child !== search) child.remove();
       const placeholder = template.content.querySelector('.global-search')!;

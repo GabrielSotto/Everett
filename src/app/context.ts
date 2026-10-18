@@ -30,6 +30,7 @@ export interface Context {
   locateMaterial(world: string, id: string): void;
   render(): void;
   renderShell(): void;
+  cameraChanged?(): void;
   world(): WorldSnapshot;
   currentCamera(): Camera;
   notice(message: string, error?: boolean): void;

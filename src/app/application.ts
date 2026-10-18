@@ -294,6 +294,9 @@ export class EverettApp implements Context {
   renderShell(): void {
     this.shell.render();
   }
+  cameraChanged(): void {
+    this.shell.refreshCamera();
+  }
   notice(message: string, error = false): void {
     const el = this.root.querySelector<HTMLElement>('#notification');
     if (!el) return;

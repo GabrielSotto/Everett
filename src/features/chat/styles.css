@@ -63,6 +63,13 @@
 
 .chat-grip {
   color: var(--muted);
+  padding: 0;
+  flex: 0 0 16px;
+  cursor: grab;
+}
+.canvas-chat.dragging {
+  animation: none;
+  transition: none;
 }
 
 .chat-presence {

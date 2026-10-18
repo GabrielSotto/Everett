@@ -51,6 +51,7 @@ export class SpatialCamera {
     c: Camera,
     private readonly changed: (c: Camera, focus: string | null, strength: number) => void,
     private readonly gravity = false,
+    private readonly zoomLimits: { minimumZoom: number; maximumZoom: number } = cameraTuning,
   ) {
     this.value = { ...c };
     this.target = { ...c };
@@ -152,8 +153,8 @@ export class SpatialCamera {
     this.manualTravel = true;
     const z = clamp(
         this.target.z * Math.exp(-delta * cameraTuning.zoomSensitivity),
-        cameraTuning.minimumZoom,
-        cameraTuning.maximumZoom,
+        this.zoomLimits.minimumZoom,
+        this.zoomLimits.maximumZoom,
       ),
       ratio = z / this.target.z;
     this.set({
@@ -173,8 +174,8 @@ export class SpatialCamera {
     this.manualTravel = true;
     const z = clamp(
       this.target.z * Math.exp(-delta * cameraTuning.zoomSensitivity),
-      cameraTuning.minimumZoom,
-      cameraTuning.maximumZoom,
+      this.zoomLimits.minimumZoom,
+      this.zoomLimits.maximumZoom,
     );
     const ratio = z / this.target.z,
       centerWeight = Math.min(1, Math.abs(delta) / 370);

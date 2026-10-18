@@ -24,6 +24,9 @@ export class CanvasChat {
     origin: Point;
     raw: Point;
     mode: ChatUi['chatMode'];
+    size: { width: number; height: number };
+    beforeSize: ChatUi['chatSize'];
+    active: boolean;
     intent: Intent;
   } | null = null;
   constructor(
@@ -47,6 +50,16 @@ export class CanvasChat {
     root.addEventListener(
       'keydown',
       (event) => {
+        if (
+          event.target instanceof Element &&
+          event.target.closest('.chat-grip') &&
+          ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.moveWithKeyboard(event.key);
+          return;
+        }
         if (!(event.target instanceof Element) || !event.target.closest('.chat-composer-menu'))
           return;
         const buttons = [
@@ -126,14 +139,10 @@ export class CanvasChat {
           case 'chat-close':
             this.close(true);
             break;
-          case 'chat-dock':
-            u.chat.chatMode = 'docked';
-            u.chat.chatCompact = false;
-            this.render();
-            break;
           case 'chat-compact':
             u.chat.chatCompact = !u.chat.chatCompact;
             this.render();
+            ctx.persist();
             break;
           case 'chat-people':
             this.people = !this.people;
@@ -208,7 +217,7 @@ export class CanvasChat {
         if (
           !(e.target instanceof Element) ||
           !e.target.closest('.chat-handle') ||
-          e.target.closest('button,input')
+          (e.target.closest('button,input') && !e.target.closest('.chat-grip'))
         )
           return;
         e.preventDefault();
@@ -216,24 +225,17 @@ export class CanvasChat {
         if (!panel) return;
         const r = panel.getBoundingClientRect();
         const mode = ctx.ui.chat.chatMode;
-        ctx.ui.chat.chatMode = 'quick';
-        ctx.ui.chat.chatPosition = { x: r.x, y: r.y };
         const intent = trace.intent('arrastrar chat', 'DRAG-01');
         this.drag = {
           start: { x: e.clientX, y: e.clientY },
           origin: { x: r.x, y: r.y },
           raw: { x: r.x, y: r.y },
           mode,
+          size: { width: r.width, height: r.height },
+          beforeSize: ctx.ui.chat.chatSize ?? null,
+          active: false,
           intent,
         };
-        panel.classList.remove('docked');
-        panel.classList.add('quick');
-        panel.style.width = '310px';
-        panel.style.height = ctx.ui.chat.chatCompact ? '48px' : '340px';
-        panel.style.right = 'auto';
-        panel.style.bottom = 'auto';
-        panel.style.left = r.x + 'px';
-        panel.style.top = r.y + 'px';
         root.setPointerCapture(e.pointerId);
         trace.add('drag.started', { component: 'chat', from: { x: r.x, y: r.y } }, intent);
       },
@@ -244,20 +246,40 @@ export class CanvasChat {
       (e) => {
         if (!this.drag) return;
         e.preventDefault();
+        if (!this.drag.active) {
+          if (Math.hypot(e.clientX - this.drag.start.x, e.clientY - this.drag.start.y) < 4) return;
+          this.drag.active = true;
+          ctx.ui.chat.chatMode = 'quick';
+          ctx.ui.chat.chatPosition = this.drag.origin;
+          if (!ctx.ui.chat.chatCompact) ctx.ui.chat.chatSize = { ...this.drag.size };
+          const panel = root.querySelector<HTMLElement>('.canvas-chat')!;
+          panel.classList.remove('docked');
+          panel.classList.add('quick', 'dragging');
+          Object.assign(panel.style, {
+            width: this.drag.size.width + 'px',
+            height: this.drag.size.height + 'px',
+            right: 'auto',
+            bottom: 'auto',
+            left: this.drag.origin.x + 'px',
+            top: this.drag.origin.y + 'px',
+          });
+        }
         this.drag.raw = {
           x: this.drag.origin.x + e.clientX - this.drag.start.x,
           y: this.drag.origin.y + e.clientY - this.drag.start.y,
         };
-        const size = {
-            width: Math.min(310, innerWidth - 24),
-            height: ctx.ui.chat.chatCompact ? 48 : Math.min(340, innerHeight - 90),
-          },
-          p = bound(this.drag.raw, size, {
-            x: 0,
-            y: 59,
-            width: innerWidth,
-            height: innerHeight - 59,
-          });
+        const size = this.drag.size,
+          p = bound(
+            this.drag.raw,
+            size,
+            {
+              x: 0,
+              y: 59,
+              width: innerWidth,
+              height: innerHeight - 59,
+            },
+            0,
+          );
         ctx.ui.chat.chatPosition = p;
         const panel = root.querySelector<HTMLElement>('.canvas-chat');
         if (panel) {
@@ -268,11 +290,13 @@ export class CanvasChat {
       },
       { signal: this.abort.signal },
     );
-    const release = () => {
+    const release = (event: PointerEvent) => {
       if (!this.drag) return;
       const d = this.drag;
       this.drag = null;
+      if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
       root.classList.remove('dock-preview');
+      if (!d.active) return;
       if (d.raw.x < 55) {
         ctx.ui.chat.chatMode = 'docked';
         ctx.ui.chat.chatCompact = false;
@@ -288,18 +312,51 @@ export class CanvasChat {
         d.intent,
       );
       this.render();
+      ctx.persist();
     };
     root.addEventListener('pointerup', release, { signal: this.abort.signal });
     bindPointerCancellation(root, this.abort.signal, () => {
       if (!this.drag) return;
       ctx.ui.chat.chatPosition = this.drag.origin;
       ctx.ui.chat.chatMode = this.drag.mode;
+      ctx.ui.chat.chatSize = this.drag.beforeSize;
       this.drag = null;
       root.classList.remove('dock-preview');
       this.render();
     });
     window.addEventListener('resize', () => this.render(), { signal: this.abort.signal });
     this.render();
+  }
+  private floatingSize(): { width: number; height: number } {
+    const size = this.ctx.ui.chat.chatSize;
+    return {
+      width: Math.min(size?.width ?? 310, innerWidth - 24),
+      height: Math.min(size?.height ?? 340, innerHeight - 59),
+    };
+  }
+  private moveWithKeyboard(key: string): void {
+    const ui = this.ctx.ui.chat;
+    const panel = this.root.querySelector<HTMLElement>('.canvas-chat')!;
+    if (ui.chatMode === 'docked') {
+      if (key !== 'ArrowRight') return;
+      const rect = panel.getBoundingClientRect();
+      ui.chatSize = { width: rect.width, height: ui.chatCompact ? 340 : rect.height };
+      ui.chatMode = 'quick';
+      ui.chatPosition = { x: 65, y: rect.y };
+    } else {
+      const p = ui.chatPosition;
+      ui.chatPosition = {
+        x: p.x + (key === 'ArrowLeft' ? -24 : key === 'ArrowRight' ? 24 : 0),
+        y: p.y + (key === 'ArrowUp' ? -24 : key === 'ArrowDown' ? 24 : 0),
+      };
+      if (ui.chatPosition.x < 55) {
+        ui.chatMode = 'docked';
+        ui.chatCompact = false;
+      }
+    }
+    this.render();
+    this.ctx.persist();
+    this.root.querySelector<HTMLElement>('.chat-grip')?.focus({ preventScroll: true });
   }
   private draft(): { text: string; materials: string[] } {
     return conversationDraft(this.ctx.world(), this.ctx.ui);
@@ -350,14 +407,15 @@ export class CanvasChat {
     const p = bound(
       u.chat.chatPosition,
       {
-        width: Math.min(310, innerWidth - 24),
-        height: u.chat.chatCompact ? 48 : Math.min(340, innerHeight - 90),
+        width: this.floatingSize().width,
+        height: u.chat.chatCompact ? 48 : this.floatingSize().height,
       },
       { x: 0, y: 59, width: innerWidth, height: innerHeight - 59 },
+      0,
     );
     u.chat.chatPosition = p;
     const comments = u.chat.chatMode === 'docked' && u.chat.chatTab === 'comments';
-    this.root.innerHTML = `<section class="canvas-chat ${u.chat.chatMode} ${u.chat.chatCompact ? 'compact' : ''}" style="${u.chat.chatMode === 'quick' ? `left:${p.x}px;top:${p.y}px` : ''}" aria-label="Chat del Canvas"><header class="chat-handle"><span class="chat-grip">${icon('grip', 14)}</span>${this.header.markup()}<div>${u.chat.chatMode === 'docked' ? '' : btn('chat-dock', 'dock', 'Anclar chat')}${btn('chat-compact', u.chat.chatCompact ? 'chevron-up' : 'down', u.chat.chatCompact ? 'Desplegar chat' : 'Contraer chat', `aria-expanded="${!u.chat.chatCompact}"`)}${btn('chat-close', 'close', 'Cerrar chat')}</div></header>${participantsMarkup(w.participants)}${u.chat.chatMode === 'docked' ? `<nav class="chat-tabs">${btn('chat-tab', 'conversation', 'Conversación', 'data-tab="chat"', !comments)}${btn('chat-tab', 'bubble', 'Comentarios', 'data-tab="comments"', comments)}</nav>` : ''}${this.people ? `<form id="add-person"><input id="person-name" aria-label="Nombre del participante" placeholder="Nombre"><button class="icon-button" type="submit" aria-label="Agregar persona">${icon('plus')}</button></form>` : ''}<div class="chat-scroll">${
+    this.root.innerHTML = `<section class="canvas-chat ${u.chat.chatMode} ${u.chat.chatCompact ? 'compact' : ''}" style="${u.chat.chatMode === 'quick' ? `left:${p.x}px;top:${p.y}px;width:${this.floatingSize().width}px;height:${this.floatingSize().height}px` : ''}" aria-label="Chat del Canvas"><header class="chat-handle"><button type="button" class="chat-grip" data-action="chat-move" aria-label="Mover chat" title="Arrastrar para mover. Flechas para mover y anclar con teclado.">${icon('grip', 14)}</button>${this.header.markup()}<div>${btn('chat-compact', u.chat.chatCompact ? 'expand' : 'minimize', u.chat.chatCompact ? 'Desplegar chat' : 'Contraer chat', `aria-expanded="${!u.chat.chatCompact}"`)}${btn('chat-close', 'close', 'Cerrar chat')}</div></header>${participantsMarkup(w.participants)}${u.chat.chatMode === 'docked' ? `<nav class="chat-tabs">${btn('chat-tab', 'conversation', 'Conversación', 'data-tab="chat"', !comments)}${btn('chat-tab', 'bubble', 'Comentarios', 'data-tab="comments"', comments)}</nav>` : ''}${this.people ? `<form id="add-person"><input id="person-name" aria-label="Nombre del participante" placeholder="Nombre"><button class="icon-button" type="submit" aria-label="Agregar persona">${icon('plus')}</button></form>` : ''}<div class="chat-scroll">${
       comments
         ? w.comments
             .map(

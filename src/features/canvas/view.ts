@@ -23,7 +23,7 @@ import {
 import { CanvasChat } from '../chat/controller';
 import { SpatialCamera } from '../../spatial/camera';
 import { toWorld, bound } from '../../spatial/math';
-import { cameraTuning } from '../../spatial/tuning';
+import { canvasCameraTuning } from '../../spatial/tuning';
 import { bindDismiss } from '../../ui/popover';
 import { trace, type Intent } from '../../app/diagnostics/trace';
 import { colors } from './note-colors';
@@ -107,19 +107,24 @@ export class CanvasView implements View {
   ) {
     root.innerHTML =
       '<section class="canvas-stage" id="canvas-stage"><div class="canvas-plane" id="canvas-plane"></div><div id="selection-actions"></div></section><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><div id="canvas-dock-host"></div><div class="chat-host" id="canvas-chat-host"></div>';
-    this.cam = new SpatialCamera(ctx.store.get().camera, (camera) => {
-      const plane = root.querySelector<HTMLElement>('#canvas-plane');
-      if (plane) {
-        plane.style.transform = `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
-        plane.style.setProperty('--canvas-zoom', String(camera.z));
-        if (this.cableZoom !== camera.z) {
-          this.cableZoom = camera.z;
-          this.paintCableLabels();
-          this.paintGroups();
+    this.cam = new SpatialCamera(
+      ctx.store.get().camera,
+      (camera) => {
+        const plane = root.querySelector<HTMLElement>('#canvas-plane');
+        if (plane) {
+          plane.style.transform = `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
+          plane.style.setProperty('--canvas-zoom', String(camera.z));
+          if (this.cableZoom !== camera.z) {
+            this.cableZoom = camera.z;
+            this.paintCableLabels();
+            this.paintGroups();
+          }
         }
-        this.positionLinkActions();
-      }
-    });
+        this.ctx.cameraChanged?.();
+      },
+      false,
+      canvasCameraTuning,
+    );
     ctx.camera = this.cam;
     bindDismiss(
       this.abort.signal,
@@ -300,7 +305,7 @@ export class CanvasView implements View {
     const left = chat && chat.height > 100 ? chat.right - rect.left : 0;
     const width = Math.max(100, rect.width - left);
     const z = Math.max(
-      cameraTuning.minimumZoom,
+      canvasCameraTuning.minimumZoom,
       Math.min(1, (width - 48) / bounds.width, (rect.height - 140) / bounds.height),
     );
     this.moveToLocated({
@@ -570,6 +575,7 @@ export class CanvasView implements View {
     if (!(e.target instanceof Element) || e.button !== 0) return;
     const target = e.target,
       ui = this.ctx.ui;
+    if (target.closest('[data-action=group-rename],[data-action=group-ungroup]')) return;
     const header = target.closest<HTMLElement>('[data-group]');
     if (header?.dataset.group && ui.canvas.tool === 'select') {
       const group = this.ctx.world().canvasGroups?.find((g) => g.id === header.dataset.group);
@@ -1118,9 +1124,26 @@ export class CanvasView implements View {
                 y: item.point.y + d.point.y - d.origin.y,
               },
             }));
+            const detached = positions
+              .filter((item) => {
+                const group = w.canvasGroups?.find((g) => g.nodes.includes(item.id));
+                if (!group || group.nodes.every((id) => positions.some((p) => p.id === id)))
+                  return false;
+                const bounds = groupBounds(w, group),
+                  node = w.nodes.find((n) => n.id === item.id)!;
+                const x = item.point.x + node.width / 2,
+                  y = item.point.y + node.height / 2;
+                return (
+                  x < bounds.x ||
+                  x > bounds.x + bounds.width ||
+                  y < bounds.y ||
+                  y > bounds.y + bounds.height
+                );
+              })
+              .map((item) => item.id);
             this.ctx.act(
-              positions.length > 1
-                ? { type: 'nodes.move', world: w.id, nodes: positions }
+              positions.length > 1 || detached.length > 0
+                ? { type: 'nodes.move', world: w.id, nodes: positions, detach: detached }
                 : { type: 'node.move', world: w.id, id: d.id, point: d.point },
               'mover materiales',
               'DRAG-02',
@@ -1392,12 +1415,6 @@ export class CanvasView implements View {
         this.select('link', id);
         this.render();
         break;
-      case 'link-delete':
-        this.interactions.close();
-        ctx.act({ type: 'link.delete', world: w.id, id }, 'eliminar conexión', 'LINK-01');
-        this.select(null, null);
-        this.render();
-        break;
       case 'assignment-retry':
         if (
           ctx.act(
@@ -1533,7 +1550,6 @@ export class CanvasView implements View {
       .join('');
     this.paintCableLabels();
     this.paintGroups(preview);
-    this.positionLinkActions();
   }
   private paintGroups(preview: readonly { id: string; point: Point }[] = []): void {
     const layer = this.root.querySelector('.canvas-groups');
@@ -1545,35 +1561,18 @@ export class CanvasView implements View {
     }));
     layer.innerHTML = (world.canvasGroups ?? [])
       .map((group) => {
-        const bounds = groupBounds(world, group, nodes);
+        const allMoving = group.nodes.every((id) => preview.some((p) => p.id === id));
+        const bounds = groupBounds(world, group, allMoving ? nodes : []);
         const zoom = this.cam.current.z;
         // Encabezado e insets legibles sin agrandar ni separar sus materiales.
         bounds.x += 16 - 16 / zoom;
         bounds.width += 32 / zoom - 32;
-        bounds.y += 68 - 68 / zoom;
-        bounds.height += 84 / zoom - 84;
+        bounds.y += 16 - 16 / zoom;
+        bounds.height += 32 / zoom - 32;
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div class="canvas-manual-group ${selected ? 'selected' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><button type="button" data-group="${group.id}" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="${html(group.name)}">${html(group.name)} <small>${group.nodes.length}</small></button></div>`;
+        return `<div class="canvas-manual-group ${selected ? 'selected' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small>${group.nodes.length}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div></div>`;
       })
       .join('');
-  }
-  private positionLinkActions(): void {
-    const button = this.root.querySelector<HTMLElement>('.link-actions');
-    const path = this.root.querySelector<SVGPathElement>(
-      `[data-link="${CSS.escape(this.ctx.ui.canvas.linkSelection ?? '')}"] .link-line`,
-    );
-    if (!button || !path) return;
-    const middle = path.getPointAtLength(path.getTotalLength() / 2),
-      matrix = path.getScreenCTM();
-    if (!matrix) return;
-    const point = new DOMPoint(middle.x, middle.y).matrixTransform(matrix);
-    const chat = this.root.querySelector<HTMLElement>('.canvas-chat.docked');
-    const left =
-      chat && !this.chatHidden() && point.y < chat.getBoundingClientRect().bottom
-        ? chat.getBoundingClientRect().right + 8
-        : 12;
-    button.style.left = Math.max(left, Math.min(innerWidth - 48, point.x - 16)) + 'px';
-    button.style.top = Math.max(70, Math.min(innerHeight - 48, point.y + 18)) + 'px';
   }
   private paintCableLabels(): void {
     const svg = this.root.querySelector('.canvas-links');
@@ -1734,9 +1733,6 @@ export class CanvasView implements View {
               )}<h4>Materiales · ${materials.length}</h4>${materials.map((n) => `<div class="zone-resource"><span title="${html(nodeTitle(w, n))}">${html(nodeTitle(w, n))}</span><button type="button" data-action="zone-return" data-id="${n.id}" aria-label="Devolver ${html(nodeTitle(w, n))} al Canvas">Devolver</button></div>`).join('')}<div class="zone-actions"><button type="button" data-action="zone-talk" data-id="${zone.id}">${icon('agents', 14)}Ver agente</button><button type="button" data-action="zone-unbind" data-id="${zone.id}" aria-label="Quitar agente y devolver materiales">${icon('unplug', 14)}Retirar agente</button><small>Retirar al agente devuelve sus materiales al Canvas.</small></div>`
           : ''
       }</aside>`;
-    } else if (ui.canvas.linkSelection) {
-      holder.innerHTML = `<div class="link-actions">${btn('link-delete', 'trash', 'Eliminar conexión', `data-id="${ui.canvas.linkSelection}"`)}</div>`;
-      this.positionLinkActions();
     } else holder.innerHTML = '';
   }
   private clampDock(avoidChat = false): void {
@@ -1803,7 +1799,7 @@ export class CanvasView implements View {
     const world = this.ctx.world();
     const item = (action: string, symbol: string, name: string, attributes = ''): string =>
       `<button type="button" data-action="${action}" title="${html(name)}" ${attributes}>${icon(symbol, 14)}<span>${html(name)}</span></button>`;
-    return `<div class="reference-menu" id="canvas-material-picker" role="dialog" aria-label="Incorporar materiales">${item('canvas-import', 'image', 'Importar archivos locales')}${item('canvas-examples', 'image', 'Cargar ejemplos multimedia')}${item('canvas-link', 'link', 'Agregar enlace')}${world.docs.map((doc) => item('reference-add', 'docs', doc.title, `data-kind="document" data-id="${doc.id}"`)).join('')}${world.files.map((file) => item('reference-add', 'code', file.name, `data-kind="file" data-id="${file.id}"`)).join('')}${world.tasks.map((task) => item('reference-add', 'board', task.title, `data-kind="task" data-id="${task.id}"`)).join('')}</div>`;
+    return `<div class="reference-menu" id="canvas-material-picker" role="dialog" aria-label="Incorporar materiales"><h4>Archivos y enlaces</h4>${item('canvas-import', 'image', 'Importar archivos locales')}${item('canvas-examples', 'image', 'Cargar ejemplos multimedia')}${item('canvas-link', 'link', 'Agregar enlace')}<h4>Documentos de Docs</h4>${world.docs.map((doc) => item('reference-add', 'docs', doc.title, `data-kind="document" data-id="${doc.id}"`)).join('') || '<p>No hay documentos en este Mundo.</p>'}<h4>Archivos de Code</h4>${world.files.map((file) => item('reference-add', 'code', file.name, `data-kind="file" data-id="${file.id}"`)).join('') || '<p>No hay archivos de código.</p>'}<h4>Tareas de Board</h4>${world.tasks.map((task) => item('reference-add', 'board', task.title, `data-kind="task" data-id="${task.id}"`)).join('') || '<p>No hay tareas.</p>'}</div>`;
   }
   private positionReferenceMenu(): void {
     const menu = this.root.querySelector<HTMLElement>('.reference-menu');
@@ -1954,7 +1950,7 @@ export class CanvasView implements View {
         selected?.data.kind === 'shape' || shapeTools.includes(ctx.ui.canvas.tool as Shape);
       holder.insertAdjacentHTML(
         'beforeend',
-        `<div class="canvas-style" aria-label="Estilo de dibujo y formas"><label>Color<input type="color" id="draw-color" value="${rgb(ctx.ui.canvas.color)}"></label>${strokePicker(ctx.ui.canvas.thickness)}${shape ? `<label>Borde<input type="color" id="shape-border" value="${rgb(ctx.ui.canvas.stroke)}"></label><label><input type="checkbox" id="shape-fill" ${ctx.ui.canvas.fill ? 'checked' : ''}>Relleno</label>` : ''}</div>`,
+        `<div class="canvas-style" aria-label="Estilo de dibujo y formas"><label>Color<input type="color" id="draw-color" data-action="color-open" value="${rgb(ctx.ui.canvas.color)}"></label>${strokePicker(ctx.ui.canvas.thickness)}${shape ? `<label>Borde<input type="color" id="shape-border" data-action="color-open" value="${rgb(ctx.ui.canvas.stroke)}"></label><label><input type="checkbox" id="shape-fill" ${ctx.ui.canvas.fill ? 'checked' : ''}>Relleno</label>` : ''}</div>`,
       );
     }
     const dock = holder.querySelector<HTMLElement>('.canvas-tools')!;
