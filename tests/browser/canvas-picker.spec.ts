@@ -1,3 +1,4 @@
+import { dockChat } from './interaction-helpers';
 import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { enterWorld, openSurface } from './interaction-helpers';
@@ -99,7 +100,7 @@ test('C08-B46: incorporación compacta junto al dock, zoom independiente, bordes
   await page.keyboard.press('Escape');
   await expect(page.locator('.reference-menu')).toHaveCount(0);
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   for (const position of [
     { x: 600, y: 100, lateral: true },
     { x: 1770, y: 410, lateral: false },

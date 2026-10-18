@@ -69,7 +69,7 @@ test('UI-A11Y-01: Quick Chat conserva borrador y controles alcanzables al contra
       return !!bounds && bounds.x >= 0 && bounds.x + bounds.width <= 360;
     })
     .toBe(true);
-  for (const name of ['Cerrar chat', 'Enviar', 'Anclar chat'])
+  for (const name of ['Cerrar chat', 'Enviar', 'Mover chat'])
     await expect(chat.getByRole('button', { name, exact: true })).toBeInViewport();
   await chat.getByRole('button', { name: 'Cerrar chat', exact: true }).press('Enter');
   await expect(chat).toHaveCount(0);

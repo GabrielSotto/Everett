@@ -1,3 +1,4 @@
+import { dockChat } from './interaction-helpers';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import type { Page } from '@playwright/test';
@@ -55,12 +56,8 @@ test('C08-B22: etiquetar conserva los píxeles del cable y un editor compacto si
   const actions = await editor
     .locator('button')
     .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().toJSON()));
-  expect(actions).toHaveLength(2);
-  await expect(
-    editor.getByRole('button', { name: 'Eliminar conexión', exact: true }),
-  ).toBeVisible();
-  expect(actions.every((action) => Math.abs(action.y - actions[0]!.y) < 1)).toBe(true);
-  for (const button of actions) expect(button.width).toBeLessThanOrEqual(36);
+  expect(actions).toHaveLength(0);
+  await expect(page.locator('.link-actions')).toHaveCount(0);
   await page.getByLabel('Etiqueta de conexión', { exact: true }).fill('Juan');
   await editor.getByRole('textbox', { name: 'Etiqueta de conexión', exact: true }).press('Enter');
   await expect(cable.locator('text')).toHaveText('Juan');
@@ -384,7 +381,7 @@ test('C08-B25: chat no desplaza el dock sin colisión y conserva la posición de
   const dock = page.getByRole('toolbar', { name: 'Herramientas de Canvas', exact: true });
   const before = (await dock.boundingBox())!;
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: 'Contraer chat', exact: true }).click();
     await page.getByRole('button', { name: 'Desplegar chat', exact: true }).click();
@@ -418,7 +415,7 @@ test('C08-B26: menú del composer agrupa acciones reales, conserva el campo y di
   await canvas(page);
   await page.locator('[data-node=note-a]').click();
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
   await expect(
     chat.locator('.chat-handle').getByRole('button', { name: 'Agregar personas', exact: true }),

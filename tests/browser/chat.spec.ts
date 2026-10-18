@@ -1,3 +1,4 @@
+import { dockChat } from './interaction-helpers';
 import { test, expect } from './fixtures';
 import { enterWorld, openSurface, undockChat, openPeople } from './interaction-helpers';
 
@@ -14,7 +15,7 @@ test('UI-CHAT-01: conserva conversación, borrador y participantes entre Quick C
   await expect(chat.locator('.chat-message.user').last()).toContainText('Mensaje de continuidad');
   await composer.fill('Borrador todavía sin enviar');
   await expect(composer).toHaveValue('Borrador todavía sin enviar');
-  await chat.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   await openPeople(page);
   await chat.getByRole('textbox', { name: 'Nombre del participante', exact: true }).fill('Ada');
   await chat.getByRole('button', { name: 'Agregar persona', exact: true }).click();
@@ -60,7 +61,7 @@ test('UI-CHAT-02: arrastrar al chat referencia el material conservando propiedad
   const before = (await note.boundingBox())!;
   const content = await note.locator('p').innerText();
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
   await expect
     .poll(() =>
@@ -82,7 +83,7 @@ test('UI-CHAT-02: arrastrar al chat referencia el material conservando propiedad
   await expect(chat.locator('.chat-reference-list')).toContainText(
     'Recuperar evidencia útil para una tarea',
   );
-  await chat.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   await expect(chat.locator('.chat-reference-list')).toContainText(
     'Recuperar evidencia útil para una tarea',
   );
@@ -95,7 +96,7 @@ test('UI-CHAT-03: responder, resolver y reabrir conserva el comentario asociado 
   await enterWorld(page);
   await openSurface(page, 'Canvas');
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   await page.getByRole('button', { name: 'Comentarios', exact: true }).click();
   const thread = page.locator('.comment-thread').first();
   const text = await thread.locator('p').first().innerText();

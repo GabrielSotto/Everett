@@ -47,6 +47,8 @@ Las conversaciones locales ordenan iniciador, agente y personas invitadas. `huma
 
 El dominio conserva ruta y contextos de regreso con sus cámaras. La cámara espacial interpreta los gestos usando los parámetros de `src/spatial/tuning.ts`. Las transiciones animan el cambio ya confirmado y conservan el contexto visual de salida.
 
+Canvas usa límites de cámara propios (1–600 %) sin alterar Universo. `CanvasZoom`, en la cabecera, confirma escalas explícitas y encuadres inmediatamente para persistir el destino exacto; la rueda conserva su interpolación. La lectura del porcentaje se actualiza sin reconstruir el shell por fotograma. El selector de color DOM reúne saturación/brillo, tono, alfa y HEX; sus eventos de teclado no alcanzan los comandos del Canvas. El tamaño flotante del chat pertenece al contexto personal, no al contenido del Mundo.
+
 `src/spatial/planet-orbit.ts` define la trayectoria y la luna de los Mundos con órbita. `PlanetRenderer` compone el tramo posterior, el Mundo y el tramo delantero en el mismo canvas. El recorte posterior conserva la oclusión al atenuar Mundos con filtros. La órbita utiliza el reloj ambiental compartido, que se pausa con movimiento reducido y al ocultar la página.
 
 Los gestos, umbrales, gravedad y reglas de regreso pertenecen al comportamiento aprobado. Cualquier trabajo de presentación debe verificarse contra ese comportamiento. La revisión de la vista del Mundo modifica su nombre y representación según la elección del usuario.

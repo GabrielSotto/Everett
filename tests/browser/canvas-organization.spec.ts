@@ -114,6 +114,7 @@ test('C08-B56: formas reversibles, opacidad dentro del color y etiquetas con Ent
   const picker = page.getByRole('dialog', { name: 'Color de relleno', exact: true });
   await expect(picker).toBeVisible();
   await picker.locator('#picker-rgb').fill('#ff0000');
+  await picker.locator('#picker-rgb').press('Tab');
   await picker.getByRole('slider', { name: 'Opacidad', exact: true }).fill('50');
   await picker.getByRole('slider', { name: 'Opacidad', exact: true }).press('Escape');
   await page.mouse.move(430, 220);
@@ -135,7 +136,7 @@ test('C08-B56: formas reversibles, opacidad dentro del color y etiquetas con Ent
   const hit = page.locator(`[data-link="${link.id}"] .link-hit`);
   await hit.focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('[data-label] button')).toHaveCount(2);
+  await expect(page.locator('[data-label] button')).toHaveCount(0);
   await expect(page.locator('[data-label] [type=submit]')).toHaveCount(0);
   await page.getByLabel('Etiqueta de conexión', { exact: true }).fill('Cancelado');
   await page.keyboard.press('Escape');
@@ -186,16 +187,17 @@ test('C08-B57: conjunto manual se renombra, arrastra, recupera y separa sin borr
   await page.getByRole('menuitem', { name: 'Crear conjunto', exact: true }).click();
   const group = (await world(page)).canvasGroups![0]!;
   const header = page.locator(`[data-group="${group.id}"]`);
+  const grip = header.locator('.group-grip');
   await header.focus();
   await page.keyboard.press('Shift+F10');
   await page.getByRole('menuitem', { name: 'Renombrar conjunto', exact: true }).click();
   await page.getByLabel('Nombre del conjunto', { exact: true }).fill('Arquitectura');
   await page.getByLabel('Nombre del conjunto', { exact: true }).press('Enter');
   const before = (await world(page)).nodes.map((n) => ({ id: n.id, x: n.x, y: n.y }));
-  const box = (await header.boundingBox())!;
-  await page.mouse.move(box.x + 30, box.y + 10);
+  const box = (await grip.boundingBox())!;
+  await page.mouse.move(box.x + 10, box.y + 10);
   await page.mouse.down();
-  await page.mouse.move(box.x + 95, box.y + 65, { steps: 10 });
+  await page.mouse.move(box.x + 75, box.y + 65, { steps: 10 });
   await page.mouse.up();
   const after = (await world(page)).nodes;
   expect(
@@ -238,9 +240,9 @@ test('C08-B57: conjunto manual se renombra, arrastra, recupera y separa sin borr
   }
   await assignMaterial(page, 'g-0');
   expect((await world(page)).canvasGroups![0]!.nodes).toEqual(group.nodes);
-  const blockedBox = (await header.boundingBox())!;
+  const blockedBox = (await grip.boundingBox())!;
   const blockedBefore = (await world(page)).nodes;
-  await page.mouse.move(blockedBox.x + 25, blockedBox.y + 10);
+  await page.mouse.move(blockedBox.x + 10, blockedBox.y + 10);
   await page.mouse.down();
   await page.mouse.move(blockedBox.x + 70, blockedBox.y + 60, { steps: 8 });
   await page.mouse.up();
@@ -275,7 +277,7 @@ test('C08-B58: referencias a secciones y funciones abren el origen preciso y det
     const source = kind === 'document' ? project.docs[0]! : project.files[0]!;
     const id = await reference(page, kind, source.id, kind === 'document' ? 470 : 900, 330);
     await page.locator(`[data-node="${id}"]`).click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Precisar referencia…', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Mostrar un fragmento…', exact: true }).click();
     const content = page.getByRole('textbox', { name: 'Contenido de origen', exact: true });
     const text = await content.inputValue(),
       quote =

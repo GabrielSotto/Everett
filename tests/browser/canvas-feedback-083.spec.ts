@@ -85,7 +85,7 @@ test('C08-B40: el dibujo conserva un trazo continuo al zoom mínimo y la toolbar
   await canvas(page);
   await simple(page, []);
   const input = await snapshot(page);
-  input.state.camera = { x: 0, y: 0, z: 0.4 };
+  input.state.camera = { x: 0, y: 0, z: 0.04 };
   await storedFixture(page, input.state, input.ui);
   await page.reload();
   await ready(page);
@@ -109,7 +109,7 @@ test('C08-B40: el dibujo conserva un trazo continuo al zoom mínimo y la toolbar
   await page.mouse.click(90, 400);
   await page.mouse.move(440, 270);
   for (let i = 0; i < 12; i++) await page.mouse.wheel(0, 300);
-  await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(0.1, 5);
+  await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(0.01, 5);
   const art = page.locator('.drawing-art');
   // La cámara continúa interpolando su posición después de llegar al límite de zoom.
   await expect
@@ -391,7 +391,10 @@ test('C08-B36: cables inversos no se duplican, papelera accesible al editar, his
   await page.getByLabel('Etiqueta de conexión', { exact: true }).fill('NCL etiqueta');
   await page.getByLabel('Etiqueta de conexión', { exact: true }).press('Backspace');
   expect(await linkCount()).toBe(2);
-  const trash = page.getByRole('button', { name: 'Eliminar conexión', exact: true });
+  await page.keyboard.press('Escape');
+  await page.locator('.link-hit').first().focus();
+  await page.keyboard.press('Shift+F10');
+  const trash = page.getByRole('menuitem', { name: 'Eliminar conexión', exact: true });
   await expect(trash).toBeVisible();
   expect(
     await trash.evaluate((el) => {

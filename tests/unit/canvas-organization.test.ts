@@ -3,12 +3,77 @@ import test from 'node:test';
 import { setup, project, intent, note } from './fixtures';
 import { rebaseAnchor, referenceExcerpt } from '../../src/domain/reference-anchors';
 import type { ReferenceAnchor } from '../../src/domain/model';
-import { alpha, rgba } from '../../src/features/canvas/color';
+import { alpha, rgba, fromHsv, toHsv } from '../../src/features/canvas/color';
+import { canvasCameraTuning, cameraTuning } from '../../src/spatial/tuning';
 import { labelPosition, overlaps } from '../../src/domain/cable-labels';
 import { semanticParent } from '../../src/domain/navigation';
 import { materialRoute } from '../../src/domain/model';
 import { searchWorkspace } from '../../src/domain/workspace-search';
 import { zoneMarkup } from '../../src/features/canvas/materials';
+
+test('C08-U19: sacar miembros y mover fuera del conjunto son operaciones atómicas reversibles', () => {
+  const { store } = setup();
+  const act = (c: Parameters<typeof store.dispatch>[0]) => store.dispatch(c, intent);
+  act({ type: 'group.create', world: 'project', nodes: ['note-a', 'note-b'], name: 'Ideas' });
+  const id = project(store).canvasGroups![0]!.id;
+  const original = structuredClone(project(store).nodes);
+  const links = structuredClone(project(store).links);
+  for (const nodes of [[], ['unknown'], ['note-a', 'note-a']])
+    assert.throws(() => act({ type: 'group.remove', world: 'project', id, nodes }));
+  assert.deepEqual(project(store).nodes, original);
+  assert.deepEqual(project(store).canvasGroups![0]!.nodes, ['note-a', 'note-b']);
+  act({ type: 'group.remove', world: 'project', id, nodes: ['note-a'] });
+  assert.deepEqual(project(store).canvasGroups![0]!.nodes, ['note-b']);
+  assert.deepEqual(project(store).nodes, original);
+  act({ type: 'canvas.undo', world: 'project' });
+  act({
+    type: 'nodes.move',
+    world: 'project',
+    nodes: [{ id: 'note-a', point: { x: 900, y: 700 } }],
+    detach: ['note-a'],
+  });
+  assert.deepEqual(project(store).canvasGroups![0]!.nodes, ['note-b']);
+  assert.equal(project(store).nodes[0]!.x, 900);
+  assert.deepEqual(project(store).nodes[0]!.data, original[0]!.data);
+  assert.deepEqual(project(store).links, links);
+  act({ type: 'canvas.undo', world: 'project' });
+  assert.deepEqual(project(store).nodes, original);
+  assert.deepEqual(project(store).canvasGroups![0]!.nodes, ['note-a', 'note-b']);
+  act({ type: 'canvas.redo', world: 'project' });
+  assert.equal(project(store).nodes[0]!.x, 900);
+  assert.throws(() =>
+    act({
+      type: 'nodes.move',
+      world: 'project',
+      nodes: [{ id: 'note-a', point: { x: 0, y: 0 } }],
+      detach: ['note-b'],
+    }),
+  );
+  act({ type: 'assign', world: 'project', node: 'note-b', agent: 'eve' });
+  assert.throws(() => act({ type: 'group.remove', world: 'project', id, nodes: ['note-b'] }));
+  assert.deepEqual(project(store).canvasGroups![0]!.nodes, ['note-b']);
+});
+
+test('C08-U20: el color conserva extremos y alfa, Canvas amplía su escala sin alterar Universo', () => {
+  for (const value of [
+    '#000000',
+    '#ffffff',
+    '#ff0000',
+    '#00ff00',
+    '#0000ff',
+    '#237ac9',
+    '#e4efdf',
+  ]) {
+    assert.equal(fromHsv(toHsv(value)), value);
+    assert.equal(rgba(value, 100), value);
+    assert.equal(alpha(rgba(value, 0)), 0);
+    assert.equal(alpha(rgba(value, 50)), 50);
+  }
+  assert.equal(fromHsv({ h: 360, s: 100, v: 100 }), '#ff0000');
+  assert.equal(canvasCameraTuning.minimumZoom, 0.01);
+  assert.equal(cameraTuning.minimumZoom, 0.1);
+  assert.equal(canvasCameraTuning.maximumZoom, 6);
+});
 
 test('C08-U14: conjuntos duraderos preservan miembros, exclusividad, movimiento, historial y devolución', () => {
   const { store } = setup();

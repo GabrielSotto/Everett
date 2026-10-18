@@ -221,16 +221,10 @@ test('C08-B31: extremos reconectables por arrastre y teclado, cancelar, Undo/Red
   });
   await selectCable();
   await page.keyboard.press('Escape');
-  const deletion = page.getByRole('button', { name: 'Eliminar conexión', exact: true });
-  const button = (await deletion.boundingBox())!;
-  const middle = await cable.locator('.link-line').evaluate((el) => {
-    const path = el as SVGPathElement;
-    const point = path.getPointAtLength(path.getTotalLength() / 2);
-    return new DOMPoint(point.x, point.y).matrixTransform(path.getScreenCTM()!).toJSON();
-  });
-  expect(
-    Math.hypot(button.x + button.width / 2 - middle.x, button.y + button.height / 2 - middle.y),
-  ).toBeLessThan(65);
+  await cable.locator('.link-hit').focus();
+  await page.keyboard.press('Shift+F10');
+  const deletion = page.getByRole('menuitem', { name: 'Eliminar conexión', exact: true });
+  await expect(deletion).toBeInViewport();
   await testInfo.attach('conexion-extremos-acciones', {
     body: await page.screenshot(),
     contentType: 'image/png',

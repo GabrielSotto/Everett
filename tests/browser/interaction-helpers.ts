@@ -21,6 +21,26 @@ export async function undockChat(page: Page): Promise<void> {
   await expect(chat).toHaveClass(/quick/);
 }
 
+/** El tirador mantiene el acceso por arrastre después de retirar el botón redundante. */
+export async function dockChat(page: Page): Promise<void> {
+  const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
+  if ((await chat.getAttribute('class'))?.includes('docked')) return;
+  await expect
+    .poll(() =>
+      chat.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length),
+    )
+    .toBe(0);
+  const grip = (await chat.locator('.chat-grip').boundingBox())!;
+  const panel = (await chat.boundingBox())!;
+  const x = grip.x + grip.width / 2,
+    y = grip.y + grip.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - panel.x - 24, y, { steps: 12 });
+  await page.mouse.up();
+  await expect(chat).toHaveClass(/docked/);
+}
+
 export async function enterWorld(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
   await page

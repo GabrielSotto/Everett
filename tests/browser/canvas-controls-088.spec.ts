@@ -1,3 +1,4 @@
+import { dockChat } from './interaction-helpers';
 import type { Page } from '@playwright/test';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
@@ -88,7 +89,7 @@ test('C08-B50: estilo durante gestos sucesivos, bordes, chat, zoom, resize y con
     await page.setViewportSize({ width, height: 740 });
     if (index === 1) {
       await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-      await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+      await dockChat(page);
     }
     for (const mode of ['Dibujar', 'Formas']) {
       await page.getByRole('button', { name: 'Seleccionar · V', exact: true }).click();
@@ -152,9 +153,9 @@ test('C08-B50: estilo durante gestos sucesivos, bordes, chat, zoom, resize y con
         )
         .toBe(0);
       const before = await styleGeometry(page);
-      for (const z of [0.1, 6]) {
+      for (const z of [0.01, 6]) {
         await page.mouse.move(width - 25, 400);
-        for (let turn = 0; turn < 4; turn++) await page.mouse.wheel(0, z === 0.1 ? 900 : -900);
+        for (let turn = 0; turn < 5; turn++) await page.mouse.wheel(0, z === 0.01 ? 900 : -900);
         await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(z, 5);
         expectStyle(await styleGeometry(page));
         const afterZoom = (await styleGeometry(page)).box;
@@ -198,7 +199,7 @@ test('C08-B51: buscar sin alterar trabajo, enfocar fuera de pantalla, regresar, 
   test.setTimeout(120000);
   await prepare(page);
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   const draft = page.getByLabel('Escribí un mensaje…', { exact: true });
   await draft.fill('Este borrador sigue en su conversación');
   const original = await snapshot(page),

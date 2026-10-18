@@ -1,3 +1,4 @@
+import { dockChat } from './interaction-helpers';
 import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import {
@@ -107,7 +108,7 @@ test('C08-B01: nombre alcanzable, identidad Docs, copia independiente y retirada
   expect(current.docs.find((d) => d.id === copyId)!.title).toBe('Copia independiente');
   expect(current.docs.find((d) => d.id === copyId)!.body).toBe('Solo esta copia');
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
   await expect
     .poll(() =>
@@ -388,7 +389,7 @@ test('C08-B02: historial compacto, participantes propios y continuidad Canvas �
 }) => {
   await canvas(page);
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   await toggleHistory(page);
   await openPeople(page);
   await page.getByLabel('Nombre del participante', { exact: true }).fill('Persona invitada');
@@ -739,7 +740,7 @@ test('C08-B07: enlace sin preview, tarjeta Board compartida y dock alcanzable en
     .poll(async () => (await toolbar.boundingBox())?.height ?? Infinity)
     .toBeLessThanOrEqual(60);
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   await expect
     .poll(async () => {
       const dock = await toolbar.boundingBox();
@@ -1038,7 +1039,7 @@ test('C08-B18: inspector, propuesta y chat comparten ventanas estrechas sin tapa
   await expect(page.getByRole('region', { name: 'Chat del Canvas', exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Cerrar panel de zona', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Chat del Canvas', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
   await chat
     .getByRole('textbox', { name: 'Escribí un mensaje…', exact: true })
@@ -1187,7 +1188,7 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Más herramientas', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true }),
     composer = chat.getByRole('textbox', { name: 'Escribí un mensaje…', exact: true });
   await composer.fill('El mismo borrador en cada ancho');
@@ -1264,7 +1265,7 @@ test('C08-B20: desplegar identifica su estado, aparta el dock manual y permite d
 }, testInfo) => {
   await canvas(page);
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
-  await page.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
   const composer = chat.getByRole('textbox', { name: 'Escribí un mensaje…', exact: true });
   await composer.fill('Borrador conservado al apartar herramientas');
@@ -1364,7 +1365,7 @@ test('C08-B20: desplegar identifica su estado, aparta el dock manual y permite d
   await undockChat(page);
   await toggleHistory(page);
   await expect(composer).toHaveValue('Borrador conservado al apartar herramientas');
-  await chat.getByRole('button', { name: 'Anclar chat', exact: true }).click();
+  await dockChat(page);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await chat.getByRole('button', { name: 'Contraer chat', exact: true }).click();
   await chat.getByRole('button', { name: 'Desplegar chat', exact: true }).click();
