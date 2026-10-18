@@ -29,6 +29,7 @@ interface Timeline {
 }
 const reversible = new Set<Command['type']>([
   'group.create',
+  'group.remove',
   'group.rename',
   'group.ungroup',
   'reference.fragment',

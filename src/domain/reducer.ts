@@ -20,6 +20,7 @@ export function reduce(state: State, command: Command): State {
     case 'group.create':
     case 'group.rename':
     case 'group.ungroup':
+    case 'group.remove':
     case 'reference.fragment':
       applyOrganizationCommand(next, command);
       break;

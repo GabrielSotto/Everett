@@ -21,6 +21,7 @@ export type Command =
   | { type: 'group.create'; world: string; nodes: string[]; name: string }
   | { type: 'group.rename'; world: string; id: string; name: string }
   | { type: 'group.ungroup'; world: string; id: string }
+  | { type: 'group.remove'; world: string; id: string; nodes: string[] }
   | {
       type: 'reference.fragment';
       world: string;
@@ -129,7 +130,7 @@ export type Command =
       id: string;
       point: Point;
     }
-  | { type: 'nodes.move'; world: string; nodes: { id: string; point: Point }[] }
+  | { type: 'nodes.move'; world: string; nodes: { id: string; point: Point }[]; detach?: string[] }
   | { type: 'nodes.delete'; world: string; nodes: string[] }
   | {
       type: 'nodes.assign';

@@ -5,7 +5,9 @@ import { referenceSource } from '../reference-anchors';
 
 type OrganizationCommand = Extract<
   Command,
-  { type: 'group.create' | 'group.rename' | 'group.ungroup' | 'reference.fragment' }
+  {
+    type: 'group.create' | 'group.rename' | 'group.ungroup' | 'group.remove' | 'reference.fragment';
+  }
 >;
 export function applyOrganizationCommand(state: State, c: OrganizationCommand): void {
   const world = getWorld(state, c.world);
@@ -28,7 +30,7 @@ export function applyOrganizationCommand(state: State, c: OrganizationCommand): 
       name: c.name.trim(),
       nodes: [...c.nodes],
     });
-  } else if (c.type === 'group.rename' || c.type === 'group.ungroup') {
+  } else if (c.type === 'group.rename' || c.type === 'group.ungroup' || c.type === 'group.remove') {
     const group = need(
       world.canvasGroups?.find((g) => g.id === c.id),
       'Conjunto inexistente',
@@ -36,6 +38,18 @@ export function applyOrganizationCommand(state: State, c: OrganizationCommand): 
     if (c.type === 'group.rename') {
       ensure(!!c.name.trim(), 'GROUP', 'Ingresá un nombre para el conjunto');
       group.name = c.name.trim();
+    } else if (c.type === 'group.remove') {
+      ensure(
+        c.nodes.length > 0 &&
+          new Set(c.nodes).size === c.nodes.length &&
+          c.nodes.every(
+            (id) => group.nodes.includes(id) && world.nodes.some((n) => n.id === id && !n.owner),
+          ),
+        'GROUP',
+        'Elegí miembros disponibles del conjunto',
+      );
+      group.nodes = group.nodes.filter((id) => !c.nodes.includes(id));
+      world.canvasGroups = world.canvasGroups!.filter((g) => g.nodes.length > 0);
     } else world.canvasGroups = world.canvasGroups!.filter((g) => g.id !== c.id);
   } else {
     const node = need(

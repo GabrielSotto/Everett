@@ -13,7 +13,7 @@ export function groupBounds(
     return [{ ...node, ...(returned ?? {}) }];
   });
   const x = Math.min(...nodes.map((n) => n.x)) - 16;
-  const y = Math.min(...nodes.map((n) => n.y)) - 68;
+  const y = Math.min(...nodes.map((n) => n.y)) - 16;
   return {
     x,
     y,

@@ -69,7 +69,16 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       for (const id of ids)
         ensure(!node(id).owner, 'LOCKED', 'Un material está siendo usado por un agente');
       // Store publica el candidato completo después de validar todo el grupo.
-      if (command.type === 'nodes.move')
+      if (command.type === 'nodes.move') {
+        const detached = command.detach ?? [];
+        ensure(
+          new Set(detached).size === detached.length &&
+            detached.every(
+              (id) => ids.includes(id) && world.canvasGroups?.some((g) => g.nodes.includes(id)),
+            ),
+          'GROUP',
+          'La retirada debe pertenecer a los materiales movidos',
+        );
         for (const item of command.nodes)
           applyCanvasCommand(state, {
             type: 'node.move',
@@ -77,7 +86,11 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
             id: item.id,
             point: item.point,
           });
-      else if (command.type === 'nodes.delete')
+        for (const group of world.canvasGroups ?? [])
+          group.nodes = group.nodes.filter((id) => !detached.includes(id));
+        if (world.canvasGroups)
+          world.canvasGroups = world.canvasGroups.filter((g) => g.nodes.length > 0);
+      } else if (command.type === 'nodes.delete')
         for (const id of command.nodes)
           applyCanvasCommand(state, { type: 'node.delete', world: world.id, id });
       else
