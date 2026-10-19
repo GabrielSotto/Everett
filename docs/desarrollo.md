@@ -69,6 +69,8 @@ La matriz obligatoria de contratos está en `scripts/canvas-contracts.mjs`. Los 
 
 El arnés obtiene los bytes del documento cargado mediante una sesión CDP con buffers suficientes para el HTML autónomo, y contrasta su SHA-256 con el manifiesto antes de cada recorrido. Conserva el control del artefacto aunque el documento exceda la caché predeterminada de Playwright.
 
+Esa sesión CDP se desconecta al terminar la comprobación, incluso si falla la carga o el hash. Su buffer no se mantiene durante el recorrido. Una ejecución que falla al cargar el documento no certifica el caso; reducir workers permite repetir el gate completo con menos consumo simultáneo, sin reintentos ni omisiones.
+
 ## Evidencias unitarias
 
 Cada ejecución crea `output/pruebas/unitarias/<fecha UTC>/` con:
