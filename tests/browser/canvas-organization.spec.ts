@@ -217,26 +217,30 @@ test('C08-B57: conjunto manual se renombra, arrastra, recupera y separa sin borr
     await page.mouse.move(720, 480);
     await page.mouse.wheel(0, -Math.log(zoom / current) / 0.00165);
     await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(zoom, 3);
-    const readable = await header.evaluate((el) => {
-      const rect = el.getBoundingClientRect();
-      return {
-        font:
-          parseFloat(getComputedStyle(el).fontSize) *
-          Number(
-            getComputedStyle(document.querySelector('#canvas-plane')!).getPropertyValue(
-              '--canvas-zoom',
-            ),
-          ),
-        reached: el.contains(
-          document.elementFromPoint(
-            rect.x + Math.min(rect.width / 2, 35),
-            rect.y + rect.height / 2,
-          ),
-        ),
-      };
-    });
-    expect(readable.font).toBeGreaterThanOrEqual(12);
-    expect(readable.reached).toBe(true);
+    // El zoom repinta el encabezado; resolver y medir el nodo vigente en el mismo frame.
+    await expect
+      .poll(() =>
+        page.evaluate((id) => {
+          const el = document.querySelector(`[data-group="${CSS.escape(id)}"]`),
+            plane = document.querySelector('#canvas-plane');
+          if (!el || !plane) return false;
+          const rect = el.getBoundingClientRect(),
+            font =
+              parseFloat(getComputedStyle(el).fontSize) *
+              Number(getComputedStyle(plane).getPropertyValue('--canvas-zoom'));
+          return (
+            Number.isFinite(font) &&
+            font >= 12 &&
+            el.contains(
+              document.elementFromPoint(
+                rect.x + Math.min(rect.width / 2, 35),
+                rect.y + rect.height / 2,
+              ),
+            )
+          );
+        }, group.id),
+      )
+      .toBe(true);
   }
   await assignMaterial(page, 'g-0');
   expect((await world(page)).canvasGroups![0]!.nodes).toEqual(group.nodes);
