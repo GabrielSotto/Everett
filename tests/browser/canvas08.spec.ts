@@ -1142,33 +1142,40 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
   const toolbar = page.getByRole('toolbar', { name: 'Herramientas de Canvas', exact: true });
   const checkDock = async (width: number, chatRight = 0): Promise<void> => {
     await expect
-      .poll(async () => {
-        const box = await toolbar.boundingBox();
-        const count = await toolbar.locator('button:visible').count();
-        return (
-          !!box &&
-          box.x >= 0 &&
-          box.y >= 59 &&
-          box.x + box.width <= width &&
-          box.y + box.height <= 760 &&
-          (width - chatRight < 420 || count === 9)
-        );
-      })
-      .toBe(true);
-    const boxes = await toolbar
-      .locator('button:visible')
-      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().toJSON()));
-    expect(boxes.length).toBeGreaterThanOrEqual(5);
-    for (const box of boxes) {
-      expect(box.width).toBeGreaterThanOrEqual(35);
-      expect(box.height).toBeGreaterThanOrEqual(35);
-    }
-    const horizontal = boxes.every((box) => Math.abs(box.y - boxes[0]!.y) < 1),
-      vertical = boxes.every((box) => Math.abs(box.x - boxes[0]!.x) < 1);
-    expect(horizontal || vertical).toBe(true);
-    const bounds = (await toolbar.boundingBox())!;
-    if (chatRight) expect(bounds.x).toBeGreaterThanOrEqual(chatRight + 8);
-    if (horizontal) expect(bounds.x + bounds.width - boxes.at(-1)!.right).toBeLessThanOrEqual(12);
+      .poll(() =>
+        page.evaluate(
+          ({ width, chatRight }) => {
+            // Resize reconstruye el dock: resolver y medir todos sus controles juntos.
+            const dock = document.querySelector('.canvas-tools');
+            if (!dock) return ['Dock ausente'];
+            const bounds = dock.getBoundingClientRect(),
+              boxes = Array.from(dock.querySelectorAll('button'))
+                .filter((button) => {
+                  const r = button.getBoundingClientRect();
+                  return (
+                    r.width > 0 && r.height > 0 && getComputedStyle(button).visibility === 'visible'
+                  );
+                })
+                .map((button) => button.getBoundingClientRect()),
+              errors: string[] = [];
+            if (bounds.x < 0 || bounds.y < 59 || bounds.right > width || bounds.bottom > 760)
+              errors.push('Dock fuera de la ventana');
+            if (boxes.length < 5 || (width - chatRight >= 420 && boxes.length !== 9))
+              errors.push('Cantidad de herramientas incorrecta');
+            if (boxes.some((box) => box.width < 35 || box.height < 35))
+              errors.push('Control menor que 35 px');
+            const horizontal = boxes.every((box) => Math.abs(box.y - boxes[0]!.y) < 1),
+              vertical = boxes.every((box) => Math.abs(box.x - boxes[0]!.x) < 1);
+            if (!horizontal && !vertical) errors.push('Herramientas en filas accidentales');
+            if (chatRight && bounds.x < chatRight + 8) errors.push('Dock sobre el chat');
+            if (horizontal && boxes.length && bounds.right - boxes.at(-1)!.right > 12)
+              errors.push('Espacio sobrante después del último control');
+            return errors;
+          },
+          { width, chatRight },
+        ),
+      )
+      .toEqual([]);
   };
   for (const width of [1250, 801, 800, 799, 650, 390, 360, 300]) {
     await page.setViewportSize({ width, height: 760 });
@@ -1201,7 +1208,7 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
           elements[0]?.getBoundingClientRect().toJSON(),
         );
         chatWidth = r?.width ?? 0;
-        return r ? r.y + r.height : 0;
+        return r && Math.abs(r.width - Math.min(310, width - 76)) < 1 ? r.y + r.height : 0;
       })
       .toBe(760);
     await checkDock(width, chatWidth);

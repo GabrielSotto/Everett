@@ -182,3 +182,5 @@ C08-B59–B66 cubren el área real de color y sus entradas, extracción de conju
 Las sondas de apertura capturan el clic desde el documento y se retiran al reconocer su disparador. No dependen de conservar un botón que resize puede reemplazar. B66 cambia el tamaño después de instalar la sonda y exige sus veinte fotogramas, además del hit-testing y su contraejemplo; cero muestras nunca aprueba la transición.
 
 La lectura final de conjuntos tras zoom resuelve encabezado y escala dentro del mismo callback del navegador, y espera un resultado legible y alcanzable. Un elemento ausente, una fuente no finita o un control tapado no aprueban esa espera. Esto evita medir un encabezado retirado por el siguiente fotograma de la cámara.
+
+B19 resuelve el dock y todos sus botones visibles en una sola lectura, con los mismos mínimos de tamaño, cantidad, fila, márgenes y ausencia de solapamiento. Después de resize también exige la anchura prevista del chat antes de usarla como límite del dock. No combinar rectángulos obtenidos de distintas reconstrucciones del DOM.
