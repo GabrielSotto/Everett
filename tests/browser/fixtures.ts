@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { test as base, expect } from '@playwright/test';
 import { installControlProbe, type ControlUse } from './control-probe';
+import { verifyCanvasControls } from '../../scripts/canvas-contracts.mjs';
 
 export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[] }>({
   controls: async ({ page }, use) => {
@@ -16,6 +17,7 @@ export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[
   runtimeErrors: [
     async ({ page, controls }, use, testInfo) => {
       const errors: string[] = [];
+      let completed = false;
       page.on('pageerror', (error) => errors.push(error.stack ?? error.message));
       page.on('console', (message) => {
         if (message.type() === 'error') errors.push(message.text());
@@ -66,6 +68,7 @@ export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[
         );
         await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
         await use(errors);
+        completed = true;
       } finally {
         if (!page.isClosed()) {
           const logs = await page.evaluate(() => window.EverettDebug?.logs() ?? []);
@@ -79,6 +82,27 @@ export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[
               .map((entry) => JSON.stringify(entry)),
           );
         }
+        let controlFailure: unknown;
+        if (completed && testInfo.status === 'passed') {
+          try {
+            await expect
+              .poll(
+                () => {
+                  try {
+                    verifyCanvasControls(testInfo.title, controls);
+                    return '';
+                  } catch (error) {
+                    return error instanceof Error ? error.message : String(error);
+                  }
+                },
+                { message: 'Cada caso debe acreditar sus entradas visibles obligatorias' },
+              )
+              .toBe('');
+          } catch (error) {
+            controlFailure = error;
+          }
+        }
+        // Adjuntar después de recibir los registros; conservarlos también cuando se rechazan.
         await testInfo.attach('controls-used', {
           body: JSON.stringify(controls),
           contentType: 'application/json',
@@ -91,6 +115,7 @@ export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[
           errors,
           'La aplicación debe completar el recorrido sin errores de ejecución',
         ).toEqual([]);
+        if (controlFailure) throw controlFailure;
       }
     },
     { auto: true },

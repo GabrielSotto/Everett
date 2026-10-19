@@ -452,6 +452,9 @@ test('C08-B65: etiqueta en línea sin botones, menú contextual y borrado conser
   const menu = async () => {
     await hit.focus();
     await hit.press('Shift+F10');
+    await expect(
+      page.getByRole('menu', { name: 'Acciones de la conexión', exact: true }),
+    ).toHaveCSS('opacity', '1');
   };
   await menu();
   await page.getByRole('menuitem', { name: 'Editar etiqueta', exact: true }).click();

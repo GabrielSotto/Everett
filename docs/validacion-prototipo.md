@@ -184,3 +184,5 @@ Las sondas de apertura capturan el clic desde el documento y se retiran al recon
 La lectura final de conjuntos tras zoom resuelve encabezado y escala dentro del mismo callback del navegador, y espera un resultado legible y alcanzable. Un elemento ausente, una fuente no finita o un control tapado no aprueban esa espera. Esto evita medir un encabezado retirado por el siguiente fotograma de la cámara.
 
 B19 resuelve el dock y todos sus botones visibles en una sola lectura, con los mismos mínimos de tamaño, cantidad, fila, márgenes y ausencia de solapamiento. Después de resize también exige la anchura prevista del chat antes de usarla como límite del dock. No combinar rectángulos obtenidos de distintas reconstrucciones del DOM.
+
+Las entradas obligatorias se validan también al terminar cada caso, antes de adjuntar el registro definitivo. Se conserva ese registro si la comprobación falla y no se reemplaza el error original de un recorrido fallido. El verificador independiente vuelve a exigirlo. Un menú con opacidad cero no acredita una entrada visible; B65 espera su aparición antes de activar las acciones.
