@@ -13,6 +13,7 @@ export async function undockChat(page: Page): Promise<void> {
       chat.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length),
     )
     .toBe(0);
+  await chat.locator('.chat-grip').hover();
   const grip = (await chat.locator('.chat-grip').boundingBox())!;
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
   await page.mouse.down();
@@ -30,13 +31,13 @@ export async function dockChat(page: Page): Promise<void> {
       chat.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length),
     )
     .toBe(0);
+  await chat.locator('.chat-grip').hover();
   const grip = (await chat.locator('.chat-grip').boundingBox())!;
-  const panel = (await chat.boundingBox())!;
   const x = grip.x + grip.width / 2,
     y = grip.y + grip.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(x - panel.x - 24, y, { steps: 12 });
+  await page.mouse.move(12, y, { steps: 12 });
   await page.mouse.up();
   await expect(chat).toHaveClass(/docked/);
 }

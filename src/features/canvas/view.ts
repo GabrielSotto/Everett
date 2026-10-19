@@ -2040,11 +2040,17 @@ export class CanvasView implements View {
         const current = panel.getBoundingClientRect();
         if (Math.hypot(previous.x - current.x, previous.y - current.y) > 1)
           panel.animate(
-            [
-              { translate: `${previous.x - current.x}px ${previous.y - current.y}px` },
-              { translate: '0px 0px' },
-            ],
-            { duration: motion.panelOpenMs, easing: motion.panelEase },
+            // Cruzar el chat flotante con controles animados puede interceptar su primer gesto.
+            !hiddenChat && this.floatingChatBounds()
+              ? [{ opacity: 0.2 }, { opacity: 1 }]
+              : [
+                  { translate: `${previous.x - current.x}px ${previous.y - current.y}px` },
+                  { translate: '0px 0px' },
+                ],
+            {
+              duration: !hiddenChat && this.floatingChatBounds() ? 150 : motion.panelOpenMs,
+              easing: motion.panelEase,
+            },
           );
       }
     }

@@ -9,6 +9,67 @@ const ready = async (page: Page) =>
 const opensLeft = (samples: { left: number }[]) =>
   samples.every((s, i) => i === 0 || s.left <= samples[i - 1]!.left + 0.8);
 
+test('C08-B66: abrir Quick Chat aparta el dock sin interceptar el tirador ni el composer', async ({
+  page,
+}, info) => {
+  await start(page);
+  await page.setViewportSize({ width: 390, height: 760 });
+  await page.evaluate(() => {
+    const samples: { grip: boolean; composer: boolean }[] = [];
+    (window as unknown as { chatSamples: typeof samples }).chatSamples = samples;
+    const measure = () => {
+      const reached = (selector: string) => {
+        const el = document.querySelector(selector);
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+      };
+      samples.push({
+        grip: reached('.chat-grip'),
+        composer: reached('#canvas-chat-composer [type=submit]'),
+      });
+      if (samples.length < 20) requestAnimationFrame(measure);
+    };
+    document
+      .querySelector('[data-action=chat-open]')!
+      .addEventListener('click', () => requestAnimationFrame(measure), {
+        once: true,
+        capture: true,
+      });
+  });
+  await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as unknown as { chatSamples: unknown[] }).chatSamples.length),
+    )
+    .toBe(20);
+  const samples = await page.evaluate(
+    () =>
+      (window as unknown as { chatSamples: { grip: boolean; composer: boolean }[] }).chatSamples,
+  );
+  await info.attach('acceso-durante-apertura-chat', {
+    body: JSON.stringify(samples),
+    contentType: 'application/json',
+  });
+  expect(samples.every((s) => s.grip && s.composer)).toBe(true);
+  const blocked = await page.locator('.canvas-tools').evaluate((el) => {
+    const toolbar = el as HTMLElement,
+      saved = toolbar.getAttribute('style'),
+      grip = document.querySelector('.chat-grip')!,
+      r = grip.getBoundingClientRect();
+    Object.assign(toolbar.style, { left: r.left + 'px', top: r.top + 'px', transform: 'none' });
+    const blocked = !grip.contains(
+      document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2),
+    );
+    if (saved === null) toolbar.removeAttribute('style');
+    else toolbar.setAttribute('style', saved);
+    return blocked;
+  });
+  expect(blocked, 'La sonda debe detectar un tirador tapado deliberadamente').toBe(true);
+  await dockChat(page);
+  await expect(page.locator('.canvas-chat.docked')).toBeVisible();
+});
+
 test('C08-B59: color visual, tono, alfa y HEX operan sin subdiálogos ni desbordes', async ({
   page,
 }, info) => {
