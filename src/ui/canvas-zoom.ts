@@ -44,6 +44,8 @@ export class CanvasZoom {
         const input = event.target.querySelector<HTMLInputElement>('input')!;
         if (!this.set(input.value.trim() ? Number(input.value) : NaN)) {
           input.setAttribute('aria-invalid', 'true');
+          event.target.querySelector('.zoom-error')!.textContent =
+            'Ingresá un valor entre 1 % y 600 %.';
           input.focus();
         }
       },
@@ -57,7 +59,6 @@ export class CanvasZoom {
   }
   private set(percent: number): boolean {
     if (!Number.isFinite(percent) || percent < 1 || percent > 600) {
-      this.ctx.notice('Ingresá un zoom entre 1 % y 600 %.');
       return false;
     }
     const camera = this.ctx.currentCamera(),
@@ -116,6 +117,6 @@ export class CanvasZoom {
       return '';
     }
     const percent = Math.round(this.ctx.currentCamera().z * 100);
-    return `<div class="canvas-zoom"><button type="button" data-action="canvas-zoom" aria-label="Zoom de Canvas: ${percent} %" aria-haspopup="dialog" aria-expanded="${this.open}"><span data-zoom-value>${percent} %</span>${icon('down', 10)}</button>${this.open ? `<div class="popover zoom-pop" role="dialog" aria-label="Zoom de Canvas"><form id="canvas-zoom-form" novalidate><label for="canvas-zoom-percent">Zoom</label><div><input id="canvas-zoom-percent" inputmode="decimal" type="number" min="1" max="600" value="${percent}" aria-label="Porcentaje de zoom"><span>%</span><button type="submit" class="icon-button" aria-label="Aplicar zoom">${icon('check', 16)}</button></div><small>1 % – 600 %</small></form><div class="zoom-presets">${[10, 25, 50, 100, 200].map((value) => `<button type="button" data-action="zoom-preset" data-value="${value}">${value} %</button>`).join('')}</div><button type="button" data-action="zoom-fit">Ajustar al contenido</button><button type="button" data-action="zoom-fit" data-selection="true" ${this.ctx.ui.canvas.selections.length ? '' : 'disabled'}>Ajustar a la selección</button></div>` : ''}</div>`;
+    return `<div class="canvas-zoom"><button type="button" data-action="canvas-zoom" aria-label="Zoom de Canvas: ${percent} %" aria-haspopup="dialog" aria-expanded="${this.open}"><span data-zoom-value>${percent} %</span>${icon('down', 10)}</button>${this.open ? `<div class="popover zoom-pop" role="dialog" aria-label="Zoom de Canvas"><form id="canvas-zoom-form" novalidate><label for="canvas-zoom-percent">Zoom</label><div><input id="canvas-zoom-percent" inputmode="decimal" type="number" min="1" max="600" value="${percent}" aria-label="Porcentaje de zoom"><span>%</span><button type="submit" class="icon-button" aria-label="Aplicar zoom">${icon('check', 16)}</button></div><small>1 % – 600 %</small><small class="zoom-error" role="status"></small></form><div class="zoom-presets">${[10, 25, 50, 100, 200].map((value) => `<button type="button" data-action="zoom-preset" data-value="${value}">${value} %</button>`).join('')}</div><button type="button" data-action="zoom-fit">Ajustar al contenido</button><button type="button" data-action="zoom-fit" data-selection="true" ${this.ctx.ui.canvas.selections.length ? '' : 'disabled'}>Ajustar a la selección</button></div>` : ''}</div>`;
   }
 }

@@ -192,6 +192,32 @@ test('C08-B62: el tirador del chat no contrae y conserva tamaño, borrador y est
   expect(after.height).toBeGreaterThanOrEqual(before.height - 2);
   expect(after.width).toBeCloseTo(before.width, 0);
   await expect(composer).toHaveValue('No perder este borrador');
+  const clearTools = async () => {
+    await expect
+      .poll(async () => {
+        const a = await chat.boundingBox(),
+          b = await page.locator('.canvas-tools').boundingBox();
+        // Resize puede reemplazar el DOM entre ambas mediciones; la ausencia nunca aprueba el acceso.
+        if (!a || !b) return true;
+        return (
+          a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
+        );
+      })
+      .toBe(false);
+    for (const selector of [
+      '[data-action=canvas-tool][data-tool=select]',
+      '#canvas-chat-composer [type=submit]',
+    ]) {
+      const button = page.locator(selector);
+      expect(
+        await button.evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+        }),
+      ).toBe(true);
+    }
+  };
+  await clearTools();
   await capture(page, info, 'chat-desacoplado-sin-encoger');
   await chat.getByRole('button', { name: 'Contraer chat', exact: true }).click();
   await expect(chat.getByRole('button', { name: 'Desplegar chat', exact: true })).toHaveAttribute(
@@ -206,6 +232,13 @@ test('C08-B62: el tirador del chat no contrae y conserva tamaño, borrador y est
   await chat.locator('.chat-grip').press('ArrowRight');
   await expect(chat).toHaveClass(/quick/);
   await expect(composer).toHaveValue('No perder este borrador');
+  await clearTools();
+  for (const width of [801, 640, 390, 300]) {
+    await page.setViewportSize({ width, height: 700 });
+    await clearTools();
+    await expect(composer).toHaveValue('No perder este borrador');
+  }
+  await capture(page, info, 'chat-y-dock-alcanzables-a-300');
   await page.reload();
   await ready(page);
   await expect(composer).toHaveValue('No perder este borrador');

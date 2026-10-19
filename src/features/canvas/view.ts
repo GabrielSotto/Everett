@@ -1735,6 +1735,13 @@ export class CanvasView implements View {
       }</aside>`;
     } else holder.innerHTML = '';
   }
+  private floatingChatBounds(): DOMRect | null {
+    const panel = this.root.querySelector<HTMLElement>('.canvas-chat.quick');
+    // Medir el destino de layout, no la posición intermedia de su animación.
+    return panel
+      ? new DOMRect(panel.offsetLeft, panel.offsetTop, panel.offsetWidth, panel.offsetHeight)
+      : null;
+  }
   private clampDock(avoidChat = false): void {
     if (!this.dock) return;
     const rect = this.root.querySelector('.canvas-tools')?.getBoundingClientRect() ?? {
@@ -1756,6 +1763,34 @@ export class CanvasView implements View {
         Math.min(12, (innerWidth - left - rect.width) / 2, (innerHeight - 59 - rect.height) / 2),
       ),
     );
+    const quick = this.floatingChatBounds();
+    if (avoidChat && quick && !this.chatHidden()) {
+      const clear = (point: Point): boolean =>
+        point.x >= 12 &&
+        point.y >= 71 &&
+        point.x + rect.width <= innerWidth - 12 &&
+        point.y + rect.height <= innerHeight - 12 &&
+        (point.x >= quick.right + 12 ||
+          point.x + rect.width <= quick.left - 12 ||
+          point.y >= quick.bottom + 12 ||
+          point.y + rect.height <= quick.top - 12);
+      if (!clear(this.dock)) {
+        const origin = this.dock;
+        const candidates = [
+          { x: quick.right + 12, y: origin.y },
+          { x: quick.left - rect.width - 12, y: origin.y },
+          { x: origin.x, y: quick.top - rect.height - 12 },
+          { x: origin.x, y: quick.bottom + 12 },
+        ]
+          .filter(clear)
+          .sort(
+            (a, b) =>
+              Math.hypot(a.x - origin.x, a.y - origin.y) -
+              Math.hypot(b.x - origin.x, b.y - origin.y),
+          );
+        if (candidates[0]) this.dock = candidates[0];
+      }
+    }
     const id = this.revision ?? (this.reviewCamera ? this.framedProposal : null);
     const proposal = id
       ? this.root.querySelector<HTMLElement>(`[data-proposal="${CSS.escape(id)}"]`)
@@ -1957,7 +1992,9 @@ export class CanvasView implements View {
     const hiddenChat = this.chatHidden();
     const docked = ctx.ui.chat.chatMode === 'docked' && !ctx.ui.chat.chatCompact && !hiddenChat;
     const chatWidth = docked ? Math.min(310, innerWidth - 76) : 0;
-    const available = innerWidth - chatWidth;
+    const quick = hiddenChat || ctx.ui.chat.chatCompact ? null : this.floatingChatBounds();
+    const sideSpace = quick ? Math.max(quick.left - 24, innerWidth - quick.right - 24) : 0;
+    const available = quick && sideSpace >= 236 ? sideSpace : innerWidth - chatWidth;
     const compact = available < dock.scrollWidth + 24;
     dock.classList.toggle('compact-tools', compact);
     const vertical = available < dock.scrollWidth + 24;

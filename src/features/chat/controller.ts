@@ -252,6 +252,7 @@ export class CanvasChat {
           ctx.ui.chat.chatMode = 'quick';
           ctx.ui.chat.chatPosition = this.drag.origin;
           if (!ctx.ui.chat.chatCompact) ctx.ui.chat.chatSize = { ...this.drag.size };
+          if (!ctx.ui.chat.chatCompact) this.drag.size = this.floatingSize();
           const panel = root.querySelector<HTMLElement>('.canvas-chat')!;
           panel.classList.remove('docked');
           panel.classList.add('quick', 'dragging');
@@ -331,7 +332,8 @@ export class CanvasChat {
     const size = this.ctx.ui.chat.chatSize;
     return {
       width: Math.min(size?.width ?? 310, innerWidth - 24),
-      height: Math.min(size?.height ?? 340, innerHeight - 59),
+      // En una ventana estrecha el dock necesita una franja propia bajo el panel.
+      height: Math.min(size?.height ?? 340, innerHeight - 59 - (innerWidth <= 640 ? 80 : 0)),
     };
   }
   private moveWithKeyboard(key: string): void {
