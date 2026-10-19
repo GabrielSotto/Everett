@@ -30,13 +30,17 @@ test('C08-B66: abrir Quick Chat aparta el dock sin interceptar el tirador ni el 
       });
       if (samples.length < 20) requestAnimationFrame(measure);
     };
-    document
-      .querySelector('[data-action=chat-open]')!
-      .addEventListener('click', () => requestAnimationFrame(measure), {
-        once: true,
-        capture: true,
-      });
+    // Resize puede reemplazar el disparador entre preparar la sonda y pulsarlo.
+    const begin = (event: MouseEvent) => {
+      if (!(event.target instanceof Element) || !event.target.closest('[data-action=chat-open]'))
+        return;
+      document.removeEventListener('click', begin, true);
+      requestAnimationFrame(measure);
+    };
+    document.addEventListener('click', begin, true);
   });
+  await page.setViewportSize({ width: 391, height: 760 });
+  await page.setViewportSize({ width: 390, height: 760 });
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   await expect
     .poll(() =>
@@ -335,9 +339,13 @@ test('C08-B63: configuración agrupada, cierre desde cabecera y búsqueda sin re
           data.push({ left: r.left, right: r.right, trigger: t.left });
           if (data.length < 35) requestAnimationFrame(measure);
         };
-        document
-          .querySelector('[data-action=search]')!
-          .addEventListener('click', measure, { once: true, capture: true });
+        const begin = (event: MouseEvent) => {
+          if (!(event.target instanceof Element) || !event.target.closest('[data-action=search]'))
+            return;
+          document.removeEventListener('click', begin, true);
+          measure();
+        };
+        document.addEventListener('click', begin, true);
       });
       await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
       await expect
