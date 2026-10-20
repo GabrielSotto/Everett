@@ -198,6 +198,25 @@ test('C08-B60: nombre directo y extracción del conjunto sin perseguir el arrast
   const beforeJoin = (await world(page)).nodes;
   const sourceBox = (await node.boundingBox())!,
     targetBox = (await page.locator('[data-node=piece-1]').boundingBox())!;
+  for (const cancellation of ['Escape', 'pointercancel']) {
+    await page.mouse.move(sourceBox.x + 80, sourceBox.y + 80);
+    await page.mouse.down();
+    await page.mouse.move(targetBox.x + targetBox.width - 20, targetBox.y + targetBox.height / 2, {
+      steps: 12,
+    });
+    await expect(page.locator('.group-drop-ready')).toBeVisible();
+    if (cancellation === 'Escape') await page.keyboard.press('Escape');
+    else
+      await page.evaluate(() =>
+        document
+          .querySelector('#scene')!
+          .dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 1 })),
+      );
+    await page.mouse.up();
+    expect((await world(page)).canvasGroups![0]!.nodes).toEqual(['piece-1']);
+    expect((await world(page)).nodes).toEqual(beforeJoin);
+    await expect(page.locator('.group-drop-ready')).toHaveCount(0);
+  }
   await page.mouse.move(sourceBox.x + 80, sourceBox.y + 80);
   await page.mouse.down();
   await page.mouse.move(targetBox.x + targetBox.width - 20, targetBox.y + targetBox.height / 2, {
