@@ -79,6 +79,24 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
           'GROUP',
           'La retirada debe pertenecer a los materiales movidos',
         );
+        const destination =
+          command.join !== undefined
+            ? need(
+                world.canvasGroups?.find((g) => g.id === command.join),
+                'Conjunto de destino inexistente',
+              )
+            : null;
+        if (destination)
+          ensure(
+            ids.every(
+              (id) =>
+                !world.canvasGroups?.some(
+                  (g) => g.id !== destination.id && g.nodes.includes(id) && !detached.includes(id),
+                ),
+            ),
+            'GROUP',
+            'Retirá primero los materiales de su conjunto anterior',
+          );
         for (const item of command.nodes)
           applyCanvasCommand(state, {
             type: 'node.move',
@@ -88,6 +106,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
           });
         for (const group of world.canvasGroups ?? [])
           group.nodes = group.nodes.filter((id) => !detached.includes(id));
+        if (destination) destination.nodes = [...new Set([...destination.nodes, ...ids])];
         if (world.canvasGroups)
           world.canvasGroups = world.canvasGroups.filter((g) => g.nodes.length > 0);
       } else if (command.type === 'nodes.delete')

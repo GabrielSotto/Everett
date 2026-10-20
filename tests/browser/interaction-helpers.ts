@@ -37,6 +37,9 @@ export async function dockChat(page: Page): Promise<void> {
     y = grip.y + grip.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
+  // En una ventana estrecha el tirador puede estar ya junto al borde izquierdo.
+  // Superar el umbral de arrastre antes de soltar evita confundir un clic con anclar.
+  await page.mouse.move(Math.max(65, x + 8), y + 8, { steps: 3 });
   await page.mouse.move(12, y, { steps: 12 });
   await page.mouse.up();
   await expect(chat).toHaveClass(/docked/);

@@ -26,6 +26,11 @@
 .shape-material.selected .shape-art > * {
   stroke: inherit;
 }
+/* non-scaling-stroke no incluye la escala CSS del plano. Mantener al menos un
+   píxel visible evita bordes subpíxel distintos según su alineación, como en dibujo. */
+.material > .shape-art > * {
+  stroke-width: max(var(--shape-thickness), calc(1px / var(--canvas-zoom, 1)));
+}
 .material-identification {
   position: absolute;
   left: 0;
@@ -1084,13 +1089,14 @@
   position: relative;
   min-width: 0;
 }
-.profile-pop:has(.canvas-shortcuts, [data-action='settings-shortcuts']) {
+.profile-pop {
   max-height: calc(100vh - 72px);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
-.profile-pop:has(.canvas-shortcuts, [data-action='settings-shortcuts']) .profile-tabs {
+.profile-pop .profile-tabs {
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -1295,6 +1301,10 @@
 .canvas-manual-group.selected {
   border-color: var(--accent);
 }
+.canvas-manual-group.group-drop-ready {
+  border-color: var(--accent);
+  background: #b9a5df18;
+}
 .group-heading {
   position: absolute;
   left: 0;
@@ -1364,6 +1374,10 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+.fragment-preview-label {
+  font-size: 12px;
+  font-weight: 500;
 }
 .fragment-state {
   display: block;

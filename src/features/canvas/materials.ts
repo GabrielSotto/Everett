@@ -25,7 +25,7 @@ export function shapeMarkup(material: Material): string {
         : `<polygon points="${shapeVertices(shape)
             .map((p) => `${p.x * 100},${p.y * 100}`)
             .join(' ')}"/>`;
-  return `<svg class="shape-art ${shape}" viewBox="0 0 100 100" preserveAspectRatio="none" fill="${fill ? color : 'none'}" stroke="${stroke}" stroke-width="${thickness}" aria-hidden="true">${content}</svg>`;
+  return `<svg class="shape-art ${shape}" style="--shape-thickness:${thickness}px" viewBox="0 0 100 100" preserveAspectRatio="none" fill="${fill ? color : 'none'}" stroke="${stroke}" stroke-width="${thickness}" aria-hidden="true">${content}</svg>`;
 }
 function drawingMarkup(material: Material): string {
   if (material.data.kind !== 'drawing') return '';

@@ -351,6 +351,7 @@ export class EverettApp implements Context {
             chatTab: 'chat',
             chatCompact: false,
             chatPosition: { x: 22, y: 160 },
+            chatSize: null,
           },
         );
       }

@@ -1,4 +1,5 @@
 import type { Point } from '../../domain/model';
+export const quickChatSize = { width: 310, height: 340 } as const;
 export interface ChatUi {
   chatDrafts: Record<string, { text: string; materials: string[] }>;
   chatMode: 'closed' | 'quick' | 'docked';

@@ -35,7 +35,7 @@ import { materialsInRect } from '../../domain/material-selection';
 import { motion, reducedMotion } from '../../ui/motion';
 import { strokePicker } from './stroke-picker';
 import { rgb } from './color';
-import { groupBounds } from '../../domain/manual-groups';
+import { groupBounds, groupDropTarget } from '../../domain/manual-groups';
 import { labelPosition, labeledPath } from '../../domain/cable-labels';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
@@ -1124,11 +1124,13 @@ export class CanvasView implements View {
                 y: item.point.y + d.point.y - d.origin.y,
               },
             }));
+            const join = groupDropTarget(w, positions);
             const detached = positions
               .filter((item) => {
                 const group = w.canvasGroups?.find((g) => g.nodes.includes(item.id));
                 if (!group || group.nodes.every((id) => positions.some((p) => p.id === id)))
                   return false;
+                if (join) return true;
                 const bounds = groupBounds(w, group),
                   node = w.nodes.find((n) => n.id === item.id)!;
                 const x = item.point.x + node.width / 2,
@@ -1142,8 +1144,14 @@ export class CanvasView implements View {
               })
               .map((item) => item.id);
             this.ctx.act(
-              positions.length > 1 || detached.length > 0
-                ? { type: 'nodes.move', world: w.id, nodes: positions, detach: detached }
+              positions.length > 1 || detached.length > 0 || join
+                ? {
+                    type: 'nodes.move',
+                    world: w.id,
+                    nodes: positions,
+                    detach: detached,
+                    ...(join ? { join } : {}),
+                  }
                 : { type: 'node.move', world: w.id, id: d.id, point: d.point },
               'mover materiales',
               'DRAG-02',
@@ -1555,6 +1563,8 @@ export class CanvasView implements View {
     const layer = this.root.querySelector('.canvas-groups');
     if (!layer) return;
     const world = this.ctx.world();
+    const destination =
+      this.drag?.kind === 'node' && this.drag.distance > 3 ? groupDropTarget(world, preview) : null;
     const nodes = world.nodes.map((n) => ({
       ...n,
       ...(preview.find((p) => p.id === n.id)?.point ?? {}),
@@ -1570,7 +1580,7 @@ export class CanvasView implements View {
         bounds.y += 16 - 16 / zoom;
         bounds.height += 32 / zoom - 32;
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div class="canvas-manual-group ${selected ? 'selected' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small>${group.nodes.length}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div></div>`;
+        return `<div class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small>${destination === group.id ? 'Soltar para agregar' : group.nodes.length}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div></div>`;
       })
       .join('');
   }

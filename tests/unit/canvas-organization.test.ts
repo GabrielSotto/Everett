@@ -10,6 +10,86 @@ import { semanticParent } from '../../src/domain/navigation';
 import { materialRoute } from '../../src/domain/model';
 import { searchWorkspace } from '../../src/domain/workspace-search';
 import { zoneMarkup } from '../../src/features/canvas/materials';
+import { groupDropTarget } from '../../src/domain/manual-groups';
+
+test('C08-U22: reincorporar por movimiento conserva identidad, pertenencia única e historial y rechaza destinos ambiguos', () => {
+  const { store } = setup();
+  const act = (c: Parameters<typeof store.dispatch>[0]) => store.dispatch(c, intent);
+  act({ type: 'node.create', world: 'project', node: { ...note('free'), x: 900, y: 500 } });
+  act({ type: 'group.create', world: 'project', nodes: ['note-a', 'note-b'], name: 'Ideas' });
+  const group = project(store).canvasGroups![0]!.id,
+    original = structuredClone(project(store));
+  const positions = [{ id: 'free', point: { x: 20, y: 30 } }];
+  assert.equal(groupDropTarget(original, positions), group);
+  assert.equal(groupDropTarget(original, [{ id: 'free', point: { x: 2000, y: 2000 } }]), null);
+  assert.equal(
+    groupDropTarget(
+      original,
+      original.canvasGroups![0]!.nodes.map((id) => ({ id, point: { x: 20, y: 30 } })),
+    ),
+    null,
+  );
+  const overlapping = {
+    ...original,
+    nodes: [...original.nodes, { ...note('overlap'), x: 10, y: 20 }],
+    canvasGroups: [
+      ...original.canvasGroups!,
+      { id: 'overlapping-group', name: 'Otra', nodes: ['overlap'] },
+    ],
+  };
+  assert.equal(groupDropTarget(overlapping, positions), null);
+  for (const join of ['missing', ''])
+    assert.throws(() => act({ type: 'nodes.move', world: 'project', nodes: positions, join }));
+  assert.deepEqual(project(store), original);
+  const undo = store.canvasHistory.status('project').undo;
+  act({ type: 'nodes.move', world: 'project', nodes: positions, join: group });
+  assert.equal(store.canvasHistory.status('project').undo, undo + 1);
+  assert.deepEqual(project(store).canvasGroups![0]!.nodes, ['note-a', 'note-b', 'free']);
+  assert.deepEqual(project(store).nodes.at(-1)!.data, original.nodes.at(-1)!.data);
+  assert.deepEqual(project(store).links, original.links);
+  act({ type: 'canvas.undo', world: 'project' });
+  assert.deepEqual(project(store).nodes, original.nodes);
+  assert.deepEqual(project(store).canvasGroups, original.canvasGroups);
+  assert.deepEqual(project(store).links, original.links);
+  act({ type: 'canvas.redo', world: 'project' });
+  act({ type: 'node.create', world: 'project', node: { ...note('other'), x: 800, y: 500 } });
+  assert.throws(() =>
+    act({ type: 'group.create', world: 'project', nodes: ['other', 'note-b'], name: 'Inválido' }),
+  );
+  act({ type: 'node.create', world: 'project', node: { ...note('other-2'), x: 850, y: 600 } });
+  act({ type: 'group.create', world: 'project', nodes: ['other', 'other-2'], name: 'Otra' });
+  const destination = project(store).canvasGroups![1]!.id,
+    beforeTransfer = structuredClone(project(store));
+  assert.throws(() =>
+    act({ type: 'nodes.move', world: 'project', nodes: positions, join: destination }),
+  );
+  assert.deepEqual(project(store), beforeTransfer);
+  act({
+    type: 'nodes.move',
+    world: 'project',
+    nodes: positions,
+    detach: ['free'],
+    join: destination,
+  });
+  assert.deepEqual(project(store).canvasGroups![0]!.nodes, ['note-a', 'note-b']);
+  assert.deepEqual(project(store).canvasGroups![1]!.nodes, ['other', 'other-2', 'free']);
+  act({ type: 'canvas.undo', world: 'project' });
+  assert.deepEqual(project(store).nodes, beforeTransfer.nodes);
+  assert.deepEqual(project(store).canvasGroups, beforeTransfer.canvasGroups);
+  assert.deepEqual(project(store).links, beforeTransfer.links);
+  act({ type: 'assign', world: 'project', node: 'free', agent: 'eve' });
+  const owned = store.snapshot();
+  assert.throws(() =>
+    act({
+      type: 'nodes.move',
+      world: 'project',
+      nodes: positions,
+      detach: ['free'],
+      join: destination,
+    }),
+  );
+  assert.deepEqual(store.snapshot(), owned);
+});
 
 test('C08-U19: sacar miembros y mover fuera del conjunto son operaciones atómicas reversibles', () => {
   const { store } = setup();

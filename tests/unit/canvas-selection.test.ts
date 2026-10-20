@@ -1,16 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { setup, project, intent } from './fixtures';
+import { setup, project, intent, note } from './fixtures';
 import { materialsInRect } from '../../src/domain/material-selection';
 
-test('C08-U11: selección completa, movimiento y eliminación de grupo atómicos, transferencia exclusiva y devolución con vínculos', () => {
+test('C08-U11: selección, movimiento y eliminación de grupo atómicos, transferencia exclusiva y devolución con vínculos', () => {
   const { store } = setup();
   const initial = structuredClone(project(store));
   assert.deepEqual(materialsInRect(initial.nodes, { x: 10, y: 20, width: 200, height: 160 }), [
     'note-a',
     'note-b',
   ]);
-  assert.deepEqual(materialsInRect(initial.nodes, { x: 11, y: 20, width: 200, height: 160 }), []);
+  assert.deepEqual(materialsInRect(initial.nodes, { x: 11, y: 20, width: 200, height: 160 }), [
+    'note-a',
+    'note-b',
+  ]);
   const positions = initial.nodes.map((n) => ({ id: n.id, point: { x: n.x + 120, y: n.y - 30 } }));
   store.dispatch({ type: 'nodes.move', world: 'project', nodes: positions }, intent);
   assert.equal(store.canvasHistory.status('project').undo, 1);
@@ -68,6 +71,50 @@ test('C08-U11: selección completa, movimiento y eliminación de grupo atómicos
     );
   assert.deepEqual(project(store).nodes, expected.nodes);
   assert.deepEqual(project(store).links, expected.links);
+});
+
+test('C08-U21: marco intersecta cualquier parte con área positiva sin seleccionar fuera, líneas vacías ni materiales asignados', () => {
+  const material = note();
+  for (const ratio of [0.01, 0.05, 0.5, 0.95, 1]) {
+    for (const rect of [
+      {
+        x: material.x,
+        y: material.y - 10,
+        width: material.width,
+        height: 10 + material.height * ratio,
+      },
+      {
+        x: material.x,
+        y: material.y + material.height * (1 - ratio),
+        width: material.width,
+        height: material.height * ratio + 10,
+      },
+      {
+        x: material.x - 10,
+        y: material.y,
+        width: 10 + material.width * ratio,
+        height: material.height,
+      },
+      {
+        x: material.x + material.width * (1 - ratio),
+        y: material.y,
+        width: material.width * ratio + 10,
+        height: material.height,
+      },
+    ])
+      assert.deepEqual(materialsInRect([material], rect), [material.id]);
+  }
+  for (const rect of [
+    { x: -20, y: 20, width: 30, height: 160 },
+    { x: 210, y: 20, width: 100, height: 160 },
+    { x: 10, y: 10, width: 200, height: 10 },
+    { x: 10, y: 180, width: 200, height: 40 },
+    { x: 10, y: 20, width: 0, height: 160 },
+    { x: 10, y: 20, width: 200, height: 0 },
+  ])
+    assert.deepEqual(materialsInRect([material], rect), []);
+  material.owner = 'eve';
+  assert.deepEqual(materialsInRect([material], { x: 0, y: 0, width: 400, height: 400 }), []);
 });
 
 test('C08-U12: la caché de fotograma se comparte por archivo sin modificar bytes, nombres ni historial de edición', () => {

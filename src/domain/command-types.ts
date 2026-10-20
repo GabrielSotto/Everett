@@ -130,7 +130,13 @@ export type Command =
       id: string;
       point: Point;
     }
-  | { type: 'nodes.move'; world: string; nodes: { id: string; point: Point }[]; detach?: string[] }
+  | {
+      type: 'nodes.move';
+      world: string;
+      nodes: { id: string; point: Point }[];
+      detach?: string[];
+      join?: string;
+    }
   | { type: 'nodes.delete'; world: string; nodes: string[] }
   | {
       type: 'nodes.assign';

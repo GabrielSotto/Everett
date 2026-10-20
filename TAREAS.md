@@ -2,25 +2,25 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                                                  |
-| ----------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                             |
-| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). Candidata 0.8.10 verificada; pendiente de revisión del usuario. |
-| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                      |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                       |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                   |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                 |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                |
+| Iteración                     | Estado                        | Trabajo                                                                                                                                                |
+| ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                              |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                           |
+| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). Correcciones de la revisión 0.8.10 en curso; candidata 0.8.11 en preparación. |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                    |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                     |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                 |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                               |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                              |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                              |
 
 ## Después de 1.0
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
-## Estado de Canvas 0.8.10
+## Estado de Canvas 0.8.11
 
-Implementación en `feat/canvas-0.8`. La candidata 0.8.10 corrige el feedback de 0.8.9: extracción y nombre de conjuntos, comprensión de fragmentos, selector visual de color, arrastre de chat, edición de cables, búsqueda y zoom en cabecera. Gate y revisión técnica completados; pendiente de revisión del usuario. 0.8 sigue abierta y no se integra en `dev`.
+Implementación en `feat/canvas-0.8`. El usuario terminó la revisión de 0.8.10 y autorizó las correcciones de 0.8.11. Se reproducen selección parcial, bordes al alejar, regreso del chat desacoplado a Quick Chat y desplazamiento de Configuración. Se comprueba también la representación y comprensión de fragmentos. Gate y nueva revisión visual pendientes. 0.8 sigue abierta y no se integra en `dev`.
 
 Criterio de utilidad confirmado por el usuario: [organización visual y espacial](docs/alcance-prototipo.md#organización-visual-y-espacial) de materiales de distintas superficies, relaciones entre tareas, código, decisiones y referencias, comprensión del conjunto y diagramación. Debe servir para trabajo manual sin agentes; Everett es un ejemplo de proyecto complejo, no el límite del caso de uso.
 
@@ -45,12 +45,6 @@ Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada sup
 
 ## Verificación y entrega actual
 
-Gate de 0.8.10 completado el 19/10/2026: `build`, `typecheck`, `format:check`, `test:unit`, `verify:unit`, `verify:build`, `test:browser` y `verify:browser`. Las 82 unitarias y los 138 casos de navegador están aprobados, sin omisiones ni reintentos. El navegador se ejecutó con `--workers=1 --max-failures=1`; el verificador independiente contrastó casos, controles visibles, adjuntos, fuentes y HTML.
+0.8.11 en preparación. Las cuatro regresiones nuevas fallaron sobre el HTML comprobado de 0.8.10: selección parcial vacía, borde subpíxel sin tinta suficiente, Quick Chat de 841 px en lugar de 340 px y pestaña Configuración desplazada 9 px. El diagnóstico se conserva en [revisión de la candidata](output/revision/0.8.11/diagnostico-0.8.10/resultado.json). Esas fallas no se cuentan como pruebas aprobadas.
 
-- [HTML autónomo](dist/Everett-0.8.10.html), 13.741.690 bytes; build `9819087f4b199cd5` y SHA-256 `471d5e63d888f3afd9cfa361d9562b8cb43cc69a0842a4875cbd03d4703f00e5`. Preview único en 4173.
-- Evidencia vigente: [unitarias](output/pruebas/unitarias/2026-10-19_01-26-43-738Z/result.json) y [navegador](output/pruebas/navegador/2026-10-19_02-30-44-444Z/results.json). El arnés comprueba entradas obligatorias al terminar cada caso y el verificador las vuelve a exigir.
-- [Revisión y recorrido para el usuario](output/revision/0.8.10/revision.md), diez capturas con hashes y 138 trazas abiertas. La búsqueda conserva su lupa fija en ocho aperturas de 35 fotogramas; el dock deja alcanzables tirador y composer en los veinte fotogramas observados de apertura del chat.
-- Sesión sostenida: 30 ciclos y 547.910 ms, con cero temporizadores, intervalos y fotogramas pendientes en las muestras; listeners 71 → 71, nodos 451 → 456 y heap 19.668.376 → 21.018.008 bytes. Son mediciones de ese recorrido, con los límites de Desarrollo.
-- [Informe derivado de los resultados](output/informe/informe.md), [paquete de la candidata](output/paquete/Everett-0.8.10.zip) y [verificación de integridad](output/paquete/verificacion.json).
-
-Pendiente de revisión del usuario. La candidata no aprueba ni cierra 0.8; conserva los límites concretos indicados arriba y en su revisión. No se integró en `dev` ni se inició otra iteración.
+Pendientes de verificación: C08-U21/U22, C08-B67–B70 y reincorporación por arrastre en B60, actualización de B62 y comprobación posterior del fragmento en B61/B58. Después se ejecutarán el gate completo, los controles del propio arnés, revisión visual y empaquetado. La evidencia anterior no certifica 0.8.11.

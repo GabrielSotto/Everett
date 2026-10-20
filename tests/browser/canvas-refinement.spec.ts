@@ -195,9 +195,27 @@ test('C08-B60: nombre directo y extracción del conjunto sin perseguir el arrast
   expect((await world(page)).canvasGroups![0]!.nodes).toEqual(['piece-1']);
   expect((await world(page)).nodes).toEqual(w.nodes);
   await capture(page, info, 'pieza-fuera-del-conjunto');
+  const beforeJoin = (await world(page)).nodes;
+  const sourceBox = (await node.boundingBox())!,
+    targetBox = (await page.locator('[data-node=piece-1]').boundingBox())!;
+  await page.mouse.move(sourceBox.x + 80, sourceBox.y + 80);
+  await page.mouse.down();
+  await page.mouse.move(targetBox.x + targetBox.width - 20, targetBox.y + targetBox.height / 2, {
+    steps: 12,
+  });
+  await expect(page.locator('.group-drop-ready')).toContainText('Soltar para agregar');
+  expect((await world(page)).canvasGroups![0]!.nodes).toEqual(['piece-1']);
+  await page.mouse.up();
+  expect((await world(page)).canvasGroups![0]!.nodes.sort()).toEqual(['piece-0', 'piece-1']);
+  expect((await world(page)).nodes[0]!.data).toEqual(w.nodes[0]!.data);
+  await page.keyboard.press('Control+z');
+  expect((await world(page)).canvasGroups![0]!.nodes).toEqual(['piece-1']);
+  expect((await world(page)).nodes).toEqual(beforeJoin);
+  await page.keyboard.press('Control+Shift+z');
+  await capture(page, info, 'material-reincorporado-al-conjunto');
   await page.reload();
   await ready(page);
-  expect((await world(page)).canvasGroups![0]!.nodes).toEqual(['piece-1']);
+  expect((await world(page)).canvasGroups![0]!.nodes.sort()).toEqual(['piece-0', 'piece-1']);
 });
 
 test('C08-B61: incorporar Docs y Code y elegir fragmentos con instrucción y preview', async ({
@@ -229,13 +247,17 @@ test('C08-B61: incorporar Docs y Code y elegir fragmentos con instrucción y pre
   await submit.click();
   expect((await world(page)).docs[0]!.body).toBe(source.body);
   expect((await world(page)).referenceAnchors!.at(-1)!.quote).toBe(source.body.slice(0, 12));
+  await expect(material.locator(':scope > p')).toHaveText(source.body.slice(0, 12));
+  await expect(material.locator('.fragment-state')).toHaveText('Fragmento de Docs');
+  await capture(page, info, 'tarjeta-con-fragmento');
 });
 
-test('C08-B62: el tirador del chat no contrae y conserva tamaño, borrador y estados', async ({
+test('C08-B62: presionar el tirador no contrae y desacoplar recupera Quick Chat con borrador y estados', async ({
   page,
 }, info) => {
   await start(page);
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
+  const quickBefore = (await page.locator('.canvas-chat').boundingBox())!;
   await dockChat(page);
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
   const composer = chat.getByRole('textbox', { name: 'Escribí un mensaje…', exact: true });
@@ -254,8 +276,8 @@ test('C08-B62: el tirador del chat no contrae y conserva tamaño, borrador y est
   await page.mouse.up();
   await undockChat(page);
   const after = (await chat.boundingBox())!;
-  expect(after.height).toBeGreaterThanOrEqual(before.height - 2);
-  expect(after.width).toBeCloseTo(before.width, 0);
+  expect(after.height).toBeCloseTo(quickBefore.height, 0);
+  expect(after.width).toBeCloseTo(quickBefore.width, 0);
   await expect(composer).toHaveValue('No perder este borrador');
   const clearTools = async () => {
     await expect

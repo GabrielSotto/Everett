@@ -8,6 +8,7 @@ import { bindDismiss } from '../../ui/popover';
 import { trace, type Intent } from '../../app/diagnostics/trace';
 import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 import type { ChatUi } from './state';
+import { quickChatSize } from './state';
 import { conversation, conversationDraft } from '../../domain/conversations';
 import { ConversationHeader, participantsMarkup } from './history';
 import { motion, reducedMotion } from '../../ui/motion';
@@ -251,8 +252,11 @@ export class CanvasChat {
           this.drag.active = true;
           ctx.ui.chat.chatMode = 'quick';
           ctx.ui.chat.chatPosition = this.drag.origin;
-          if (!ctx.ui.chat.chatCompact) ctx.ui.chat.chatSize = { ...this.drag.size };
-          if (!ctx.ui.chat.chatCompact) this.drag.size = this.floatingSize();
+          // El panel anclado ocupa la altura disponible; no es el tamaño de Quick Chat.
+          this.drag.size = {
+            ...this.floatingSize(),
+            ...(ctx.ui.chat.chatCompact ? { height: 48 } : {}),
+          };
           const panel = root.querySelector<HTMLElement>('.canvas-chat')!;
           panel.classList.remove('docked');
           panel.classList.add('quick', 'dragging');
@@ -331,9 +335,14 @@ export class CanvasChat {
   private floatingSize(): { width: number; height: number } {
     const size = this.ctx.ui.chat.chatSize;
     return {
-      width: Math.min(size?.width ?? 310, innerWidth - 24),
+      width: Math.min(size?.width ?? quickChatSize.width, quickChatSize.width, innerWidth - 24),
       // En una ventana estrecha el dock necesita una franja propia bajo el panel.
-      height: Math.min(size?.height ?? 340, innerHeight - 59 - (innerWidth <= 640 ? 80 : 0)),
+      // También recupera los guardados de 0.8.10 que copiaron la altura anclada.
+      height: Math.min(
+        size?.height ?? quickChatSize.height,
+        quickChatSize.height,
+        innerHeight - 59 - (innerWidth <= 640 ? 80 : 0),
+      ),
     };
   }
   private moveWithKeyboard(key: string): void {
@@ -342,7 +351,6 @@ export class CanvasChat {
     if (ui.chatMode === 'docked') {
       if (key !== 'ArrowRight') return;
       const rect = panel.getBoundingClientRect();
-      ui.chatSize = { width: rect.width, height: ui.chatCompact ? 340 : rect.height };
       ui.chatMode = 'quick';
       ui.chatPosition = { x: 65, y: rect.y };
     } else {

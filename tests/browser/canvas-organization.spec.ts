@@ -305,6 +305,9 @@ test('C08-B58: referencias a secciones y funciones abren el origen preciso y det
     await expect(page.locator('.fragment-picker')).toHaveCount(0);
     expect((await world(page)).referenceAnchors?.at(-1)?.quote).toBe(quote);
     await expect(page.locator(`[data-node="${id}"]`)).toContainText(quote);
+    await expect(
+      page.locator(`[data-node="${id}"] > ${kind === 'document' ? 'p' : 'pre'}`),
+    ).toHaveText(quote);
     if (kind === 'document') {
       await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
       await page
@@ -332,6 +335,7 @@ test('C08-B58: referencias a secciones y funciones abren el origen preciso y det
     expect(contrast).toBeGreaterThanOrEqual(4.5);
     await page.locator(`[data-node="${id}"]`).focus();
     await page.keyboard.press('Enter');
+    await expect(page.locator('.transition-ghost')).toHaveCount(0);
     const editor = page.locator(kind === 'document' ? '#doc-body' : '#code-editor');
     await expect(editor).toBeFocused();
     expect(
@@ -343,10 +347,13 @@ test('C08-B58: referencias a secciones y funciones abren el origen preciso y det
     await editor.press('Home');
     await editor.press('Enter');
     await page.keyboard.press('Escape');
+    await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'scout/canvas/');
+    await expect(page.locator('.transition-ghost')).toHaveCount(0);
     const node = (await world(page)).nodes.find((n) => n.id === id)!;
     expect(node.data.kind === 'reference' && node.data.ref.fragment).toBeTruthy();
     await page.locator(`[data-node="${id}"]`).focus();
     await page.keyboard.press('Enter');
+    await expect(page.locator('.transition-ghost')).toHaveCount(0);
     expect(
       await editor.evaluate((el: HTMLTextAreaElement) =>
         el.value.slice(el.selectionStart, el.selectionEnd),
@@ -354,10 +361,13 @@ test('C08-B58: referencias a secciones y funciones abren el origen preciso y det
     ).toBe(quote);
     await editor.press('Backspace');
     await page.keyboard.press('Escape');
+    await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'scout/canvas/');
+    await expect(page.locator('.transition-ghost')).toHaveCount(0);
     await expect(page.locator(`[data-node="${id}"] .fragment-state`)).toHaveText(
       'Fragmento no disponible',
     );
   }
+  await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'scout/canvas/');
   await page.reload();
   await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
   await expect(page.locator('.fragment-state')).toHaveText([
