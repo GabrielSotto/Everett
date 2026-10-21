@@ -445,6 +445,37 @@ test('C08-B75: contador explícito, aviso de reingreso dentro del conjunto y zon
   const m = (await message.boundingBox())!;
   expect(Math.abs(m.x + m.width / 2 - group.x - group.width / 2)).toBeLessThan(2);
   expect(Math.abs(m.y + m.height / 2 - group.y - group.height / 2)).toBeLessThan(2);
+  const headingOverlap = () =>
+    page.locator('.group-heading').evaluate((el) => {
+      const h = el.getBoundingClientRect(),
+        ids = Array.from(document.querySelectorAll('.material-identification')).filter(
+          (id) => getComputedStyle(id).visibility === 'visible',
+        );
+      return {
+        visible: ids.length,
+        overlap: ids.reduce((area, id) => {
+          const r = id.getBoundingClientRect();
+          return (
+            area +
+            Math.max(0, Math.min(h.right, r.right) - Math.max(h.left, r.left)) *
+              Math.max(0, Math.min(h.bottom, r.bottom) - Math.max(h.top, r.top))
+          );
+        }, 0),
+      };
+    });
+  expect((await headingOverlap()).visible).toBeGreaterThan(0);
+  expect((await headingOverlap()).overlap).toBe(0);
+  await page
+    .locator('.group-heading')
+    .evaluate((el) => ((el as HTMLElement).style.marginBottom = '0px'));
+  expect(
+    (await headingOverlap()).overlap,
+    'El control debe detectar un encabezado sobre la identificación',
+  ).toBeGreaterThan(0);
+  await page
+    .locator('.group-heading')
+    .evaluate((el) => (el as HTMLElement).style.removeProperty('margin-bottom'));
+  expect((await headingOverlap()).overlap).toBe(0);
   await capture(page, info, 'aviso-dentro-del-conjunto');
   await page.keyboard.press('Escape');
   await page.mouse.up();

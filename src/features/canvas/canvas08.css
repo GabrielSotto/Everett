@@ -1384,7 +1384,8 @@
   position: absolute;
   left: 0;
   bottom: 100%;
-  margin-bottom: calc(5px / var(--canvas-zoom));
+  /* Reservar la identificación exterior de los miembros sin tapar nombre o contador. */
+  margin-bottom: calc(20px / var(--canvas-zoom));
   display: flex;
   align-items: center;
   gap: calc(4px / var(--canvas-zoom));

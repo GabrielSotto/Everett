@@ -87,12 +87,24 @@ test('C08-B50: estilo durante gestos sucesivos, bordes, chat, zoom, resize y con
   let drawingWidth = 0;
   for (const [index, width] of [1440, 704, 390, 300].entries()) {
     await page.setViewportSize({ width, height: 740 });
+    // Esperar el render de resize antes de elegir entre botón y desborde.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
     if (index === 1) {
       await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
       await dockChat(page);
     }
     for (const mode of ['Dibujar', 'Formas']) {
-      await page.getByRole('button', { name: 'Seleccionar · V', exact: true }).click();
+      const select = page.getByRole('button', { name: 'Seleccionar · V', exact: true });
+      if (await select.isVisible()) await select.click();
+      else {
+        await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Seleccionar', exact: true }).click();
+      }
       if (
         mode === 'Formas' &&
         !(await page.getByRole('button', { name: mode, exact: true }).isVisible())
@@ -100,7 +112,12 @@ test('C08-B50: estilo durante gestos sucesivos, bordes, chat, zoom, resize y con
         await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
         await page.getByRole('menuitem', { name: 'Rectángulo', exact: true }).click();
       } else {
-        await page.getByRole('button', { name: mode, exact: true }).click();
+        const tool = page.getByRole('button', { name: mode, exact: true });
+        if (await tool.isVisible()) await tool.click();
+        else {
+          await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
+          await page.getByRole('menuitem', { name: mode, exact: true }).click();
+        }
         if (mode === 'Formas') {
           expectStyle(await styleGeometry(page, '.shape-menu'));
           for (const name of ['Rectángulo', 'Elipse', 'Triángulo', 'Estrella']) {
