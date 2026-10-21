@@ -490,7 +490,14 @@ test('C08-B65: etiqueta directa sin botones ni menú, edición y borrado conserv
   await connect(page, nodes[0]!.id, nodes[1]!.id, 'Decisión');
   const id = (await world(page)).links[0]!.id,
     hit = page.locator(`[data-link="${id}"] .link-hit`);
-  await hit.dblclick();
+  const midpoint = await hit.evaluate((el) => {
+    const path = el as SVGPathElement,
+      point = path
+        .getPointAtLength(path.getTotalLength() / 2)
+        .matrixTransform(path.getScreenCTM()!);
+    return { x: point.x, y: point.y };
+  });
+  await page.mouse.dblclick(midpoint.x, midpoint.y);
   const input = page.getByRole('textbox', { name: 'Etiqueta de conexión', exact: true });
   await expect(page.locator('[data-label] button,.link-actions')).toHaveCount(0);
   await input.fill('Cancelada');

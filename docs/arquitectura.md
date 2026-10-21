@@ -66,7 +66,9 @@ La recuperación comprueba efectos ya registrados antes de reintentar. Una inter
 El posicionamiento de propuestas busca espacio libre sin mover materiales del usuario.
 Store corrige la geometría de propuestas recuperadas antes de congelar el estado; los
 comandos conservan esa separación al modificar contenido. Las máscaras SVG declaran
-su región completa y el foco de una conexión resalta el cable.
+su región completa y el foco de una conexión resalta el cable. La selección por clic actualiza
+anclajes y estado sin reemplazar el path, conservando el destino del doble clic. La selección por
+teclado devuelve el foco al cable después del render.
 
 Las propuestas de Canvas conservan borradores tipados de materiales en el trabajo. Estos no pertenecen a nodes ni modifican Docs antes de aceptar. El preview utiliza la misma representación del tipo; la barra de decisión tiene su propia superficie. La aceptación incorpora las identidades mostradas y aplica exclusivamente el cuerpo propuesto de un documento compartido. La simulación conserva archivos y registra su organización, sin atribuirse inferencia visual.
 

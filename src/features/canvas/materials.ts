@@ -41,6 +41,14 @@ export function resizeHandles(kind: 'node' | 'zone', id: string): string {
     )
     .join('');
 }
+export function connectionPorts(material: Material): string {
+  return anchors
+    .map((anchor) => {
+      const point = anchorPoint(material, anchor);
+      return `<button type="button" class="connection-port ${anchor}" data-anchor="${anchor}" data-anchor-node="${material.id}" aria-label="Anclaje ${anchor}" style="left:${point.x - material.x}px;top:${point.y - material.y}px"></button>`;
+    })
+    .join('');
+}
 export function materialMarkup(
   w: WorldSnapshot,
   material: Material,
@@ -87,14 +95,7 @@ export function materialMarkup(
     }
   } else content = '';
   const comment = w.comments.find((c) => c.node === material.id && !c.resolved);
-  const ports = connect
-    ? anchors
-        .map((anchor) => {
-          const point = anchorPoint(material, anchor);
-          return `<button type="button" class="connection-port ${anchor}" data-anchor="${anchor}" data-anchor-node="${material.id}" aria-label="Anclaje ${anchor}" style="left:${point.x - material.x}px;top:${point.y - material.y}px"></button>`;
-        })
-        .join('')
-    : '';
+  const ports = connect ? connectionPorts(material) : '';
   return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong>${html(comment.text)}</span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {

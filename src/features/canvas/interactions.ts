@@ -139,9 +139,14 @@ export class CanvasInteractions {
         ) {
           event.preventDefault();
           event.stopPropagation();
-          this.ctx.ui.canvas.linkSelection = (event.target as SVGElement).dataset.id ?? null;
+          const id = event.target.dataset.id ?? '';
+          this.ctx.ui.canvas.selection = this.ctx.ui.canvas.zoneSelection = null;
+          this.ctx.ui.canvas.selections = [];
+          this.ctx.ui.canvas.linkSelection = id;
           this.ctx.render();
-          if (event.key === 'Enter') this.label((event.target as SVGElement).dataset.id ?? '');
+          this.ctx.persist();
+          if (event.key === 'Enter') this.label(id);
+          else this.focusLink(id);
           return;
         }
         if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-node]')) return;

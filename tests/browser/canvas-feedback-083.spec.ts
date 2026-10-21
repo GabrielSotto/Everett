@@ -366,7 +366,7 @@ test('C08-B35: Play mantiene su centro durante una pulsación sostenida y reprod
   });
 });
 
-test('C08-B36: cables inversos no se duplican, papelera accesible al editar, historial visible y Backspace distingue campos de materiales', async ({
+test('C08-B36: cables inversos no se duplican, borrado sin menú, historial visible y Backspace distingue campos de materiales', async ({
   page,
 }, testInfo) => {
   await canvas(page);
@@ -394,21 +394,16 @@ test('C08-B36: cables inversos no se duplican, papelera accesible al editar, his
   await page.keyboard.press('Escape');
   await page.locator('.link-hit').first().focus();
   await page.keyboard.press('Shift+F10');
-  const trash = page.getByRole('menuitem', { name: 'Eliminar conexión', exact: true });
-  await expect(trash).toBeVisible();
-  expect(
-    await trash.evaluate((el) => {
-      const r = el.getBoundingClientRect();
-      return (
-        document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest('button') === el
-      );
-    }),
-  ).toBe(true);
-  await testInfo.attach('papelera-durante-etiqueta', {
+  await expect(
+    page.getByRole('menu', { name: 'Acciones de la conexión', exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator('.link-hit').first()).toBeFocused();
+  await expect(page.locator('.link-actions,[data-label] button')).toHaveCount(0);
+  await testInfo.attach('conexion-con-borrado-por-teclado', {
     body: await page.screenshot(),
     contentType: 'image/png',
   });
-  await trash.click();
+  await page.keyboard.press('Delete');
   expect(await linkCount()).toBe(1);
   const history = page.getByRole('toolbar', { name: 'Historial de cambios de Canvas' });
   await expect(

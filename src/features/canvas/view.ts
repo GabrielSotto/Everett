@@ -19,6 +19,7 @@ import {
   connectionMarkup,
   shapeMarkup,
   resizeHandles,
+  connectionPorts,
 } from './materials';
 import { CanvasChat } from '../chat/controller';
 import { SpatialCamera } from '../../spatial/camera';
@@ -1674,7 +1675,8 @@ export class CanvasView implements View {
   }
   private paintSelection(keepLinks = false): void {
     const w = this.ctx.world(),
-      ui = this.ctx.ui;
+      ui = this.ctx.ui,
+      connect = ui.canvas.tool === 'connect' || !!ui.canvas.linkSelection;
     this.root.dataset.canvasPanel = ui.canvas.zoneSelection
       ? 'inspector'
       : this.revision || this.reviewCamera
@@ -1692,10 +1694,13 @@ export class CanvasView implements View {
       const selected = ui.canvas.selections.includes(node.id);
       element.classList.toggle('selected', selected);
       const handles = element.querySelectorAll('.resize-handle');
-      if (selected && ui.canvas.tool === 'select') {
+      if (selected && ui.canvas.tool === 'select' && !connect) {
         if (!handles.length)
           element.insertAdjacentHTML('beforeend', resizeHandles('node', node.id));
       } else handles.forEach((handle) => handle.remove());
+      const ports = element.querySelectorAll('.connection-port');
+      if (connect && !ports.length) element.insertAdjacentHTML('beforeend', connectionPorts(node));
+      else if (!connect) ports.forEach((port) => port.remove());
     });
     this.root.querySelectorAll<HTMLElement>('[data-zone]').forEach((element) => {
       const zone = w.zones.find((z) => z.id === element.dataset.zone);
@@ -1797,7 +1802,14 @@ export class CanvasView implements View {
           point.x + rect.width <= quick.left - 12 ||
           point.y >= quick.bottom + 12 ||
           point.y + rect.height <= quick.top - 12);
-      if (!clear(this.dock)) {
+      // La holgura se aplica al separar una colisión, no como un halo que
+      // expulse el dock cuando el usuario lo deja cerca sin superponerlo.
+      if (
+        this.dock.x < quick.right &&
+        this.dock.x + rect.width > quick.left &&
+        this.dock.y < quick.bottom &&
+        this.dock.y + rect.height > quick.top
+      ) {
         const origin = this.dock;
         const candidates = [
           { x: quick.right + 12, y: origin.y },

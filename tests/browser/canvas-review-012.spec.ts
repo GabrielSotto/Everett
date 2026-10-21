@@ -34,12 +34,26 @@ test('C08-B71: clic selecciona cable, doble clic edita sin menú ni botones y el
     const q = p.getPointAtLength(p.getTotalLength() / 2).matrixTransform(p.getScreenCTM()!);
     return { x: q.x, y: q.y };
   });
+  await page.locator('[data-node=end-0]').click();
   await page.mouse.click(point.x, point.y);
   await expect(
     page.getByRole('textbox', { name: 'Etiqueta de conexión', exact: true }),
   ).toHaveCount(0);
   expect((await snapshot(page)).ui.canvas.linkSelection).toBe('cable');
+  expect((await snapshot(page)).ui.canvas.selections).toEqual([]);
+  await expect(page.locator('.connection-port')).toHaveCount(8);
   await expect(hit).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('[data-node=end-0]').click();
+  await expect(page.locator('.connection-port')).toHaveCount(0);
+  await hit.focus();
+  await hit.press(' ');
+  await expect(hit).toBeFocused();
+  await expect(hit).toHaveAttribute('aria-pressed', 'true');
+  expect((await snapshot(page)).ui.canvas.selections).toEqual([]);
+  await expect(page.locator('.connection-port')).toHaveCount(8);
+  await expect(
+    page.getByRole('textbox', { name: 'Etiqueta de conexión', exact: true }),
+  ).toHaveCount(0);
   await page.mouse.click(point.x, point.y, { button: 'right' });
   await expect(page.getByRole('menu', { name: 'Acciones de la conexión' })).toHaveCount(0);
   await page.mouse.dblclick(point.x, point.y);
@@ -255,13 +269,49 @@ test('C08-B73: Quick Chat no compacta ni gira el dock sin colisión y Más herra
   await page.setViewportSize({ width: 600, height: 900 });
   await start(page);
   const dock = page.getByRole('toolbar', { name: 'Herramientas de Canvas' }),
-    before = (await dock.boundingBox())!;
+    initial = (await dock.boundingBox())!,
+    dockGrip = (await dock.locator('.dock-grip').boundingBox())!;
+  await page.mouse.move(dockGrip.x + dockGrip.width / 2, dockGrip.y + dockGrip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    dockGrip.x + dockGrip.width / 2 + 40 - initial.x,
+    dockGrip.y + dockGrip.height / 2 + 90 - initial.y,
+    { steps: 12 },
+  );
+  await page.mouse.up();
+  const before = (await dock.boundingBox())!;
   await page.getByRole('button', { name: 'Quick Chat', exact: true }).click();
   const chat = page.getByRole('region', { name: 'Chat del Canvas', exact: true });
   const composer = page.getByRole('textbox', { name: 'Escribí un mensaje…', exact: true });
   await composer.fill('Borrador mientras uso herramientas');
   await expect(dock).not.toHaveClass(/vertical-tools/);
   expect((await dock.boundingBox())!.width).toBeCloseTo(before.width, 0);
+  expect((await dock.boundingBox())!.x).toBeCloseTo(before.x, 0);
+  expect((await dock.boundingBox())!.y).toBeCloseTo(before.y, 0);
+  const chatBefore = (await chat.boundingBox())!,
+    chatGrip = (await chat.locator('.chat-grip').boundingBox())!;
+  await page.mouse.move(chatGrip.x + chatGrip.width / 2, chatGrip.y + chatGrip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    chatGrip.x + chatGrip.width / 2 + 100 - chatBefore.x,
+    chatGrip.y + chatGrip.height / 2 + before.y + before.height + 4 - chatBefore.y,
+    { steps: 12 },
+  );
+  await page.mouse.up();
+  const nearby = (await dock.boundingBox())!,
+    nearChat = (await chat.boundingBox())!;
+  expect(nearChat.y - nearby.y - nearby.height).toBeCloseTo(4, 0);
+  expect(nearby.x).toBeCloseTo(before.x, 0);
+  expect(nearby.y).toBeCloseTo(before.y, 0);
+  await info.attach('dock-sin-colision', {
+    body: JSON.stringify({
+      before,
+      nearby,
+      chat: nearChat,
+      gap: nearChat.y - nearby.y - nearby.height,
+    }),
+    contentType: 'application/json',
+  });
   const collisions = [];
   for (let i = 0; i < 4; i++) {
     const grip = (await chat.locator('.chat-grip').boundingBox())!,
