@@ -95,7 +95,7 @@ export function materialMarkup(
         })
         .join('')
     : '';
-  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : ''} style="left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong>${html(comment.text)}</span></button>` : ''}</article>`;
+  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong>${html(comment.text)}</span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {
   note: { label: 'Notas', icon: 'note' },
@@ -167,7 +167,7 @@ function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {
 export function zoneMarkup(w: WorldSnapshot, zone: Zone, selected: boolean): string {
   const agent = w.agents.find((a) => a.id === zone.agent);
   const spacious = zone.width > 185 && zone.height > 120;
-  return `<div class="agent-zone ${selected ? 'selected' : ''}" data-zone="${zone.id}" tabindex="0" role="group" aria-label="Zona ${html(zone.name)}" style="left:${zone.x}px;top:${zone.y}px;width:${zone.width}px;height:${zone.height}px"><div class="zone-heading">${icon(agent ? 'agents' : 'zone', 14)}<span>${html(zone.name)}</span></div>${
+  return `<div class="agent-zone ${selected ? 'selected' : ''}" data-zone="${zone.id}" tabindex="0" role="group" aria-label="Zona ${html(zone.name)}" style="--zone-label-size:${Math.min(32, Math.max(14, Math.min(zone.width, zone.height) / 12))}px;left:${zone.x}px;top:${zone.y}px;width:${zone.width}px;height:${zone.height}px"><div class="zone-heading">${icon(agent ? 'agents' : 'zone', 14)}<span>${html(zone.name)}</span></div>${
     spacious && agent
       ? `<div class="zone-materials">${assignedMaterials(
           w,
@@ -193,16 +193,14 @@ export function connectionMarkup(
     link.fromAnchor,
     link.toAnchor,
   );
-  const ends = selected
-    ? (['from', 'to'] as const)
-        .map((end) => {
-          const point = anchorPoint(
-            end === 'from' ? from : to,
-            end === 'from' ? link.fromAnchor : link.toAnchor,
-          );
-          return `<g class="link-endpoint" transform="translate(${point.x},${point.y})" tabindex="0" role="button" aria-label="Reconectar ${end === 'from' ? 'origen' : 'destino'}" data-action="link-endpoint" data-id="${link.id}" data-end="${end}"><circle class="endpoint-hit"/><circle class="endpoint-dot"/></g>`;
-        })
-        .join('')
-    : '';
-  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}">${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse" mask-type="luminance"><rect class="mask-base" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label || 'Editar etiqueta de conexión')}" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" d="${path}" ${link.label ? `mask="url(#mask-${link.id})"` : ''}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}${ends}</g>`;
+  const ends = (['from', 'to'] as const)
+    .map((end) => {
+      const point = anchorPoint(
+        end === 'from' ? from : to,
+        end === 'from' ? link.fromAnchor : link.toAnchor,
+      );
+      return `<g class="link-endpoint" transform="translate(${point.x},${point.y})" tabindex="0" role="button" aria-label="Reconectar ${end === 'from' ? 'origen' : 'destino'}" data-action="link-endpoint" data-id="${link.id}" data-end="${end}"><circle class="endpoint-hit"/><circle class="endpoint-dot"/></g>`;
+    })
+    .join('');
+  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}">${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse" mask-type="luminance"><rect class="mask-base" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label ? 'Conexión: ' + link.label : 'Conexión sin etiqueta')}" aria-description="Doble clic o Enter para editar la etiqueta. Suprimir o Backspace para eliminar." aria-pressed="${selected}" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" d="${path}" ${link.label ? `mask="url(#mask-${link.id})"` : ''}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}${ends}</g>`;
 }

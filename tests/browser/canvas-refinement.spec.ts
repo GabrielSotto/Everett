@@ -478,7 +478,7 @@ test('C08-B64: zoom en cabecera, límites, encuadre, entradas inválidas y recup
   await expect(zoom).toHaveAccessibleName('Zoom de Canvas: 100 %');
 });
 
-test('C08-B65: etiqueta en línea sin botones, menú contextual y borrado conservan el cable', async ({
+test('C08-B65: etiqueta directa sin botones ni menú, edición y borrado conservan el cable', async ({
   page,
 }, info) => {
   await start(page);
@@ -490,22 +490,15 @@ test('C08-B65: etiqueta en línea sin botones, menú contextual y borrado conser
   await connect(page, nodes[0]!.id, nodes[1]!.id, 'Decisión');
   const id = (await world(page)).links[0]!.id,
     hit = page.locator(`[data-link="${id}"] .link-hit`);
-  const menu = async () => {
-    await hit.focus();
-    await hit.press('Shift+F10');
-    await expect(
-      page.getByRole('menu', { name: 'Acciones de la conexión', exact: true }),
-    ).toHaveCSS('opacity', '1');
-  };
-  await menu();
-  await page.getByRole('menuitem', { name: 'Editar etiqueta', exact: true }).click();
+  await hit.dblclick();
   const input = page.getByRole('textbox', { name: 'Etiqueta de conexión', exact: true });
   await expect(page.locator('[data-label] button,.link-actions')).toHaveCount(0);
   await input.fill('Cancelada');
   await input.press('Escape');
   expect((await world(page)).links[0]!.label).toBe('Decisión');
-  await menu();
-  await page.getByRole('menuitem', { name: 'Quitar etiqueta', exact: true }).click();
+  await hit.press('Enter');
+  await input.fill('');
+  await input.press('Enter');
   expect((await world(page)).links[0]!.label ?? '').toBe('');
   expect((await world(page)).links[0]!.id).toBe(id);
   await page.keyboard.press('Control+z');
@@ -527,9 +520,8 @@ test('C08-B65: etiqueta en línea sin botones, menú contextual y borrado conser
   expect((await world(page)).links).toHaveLength(0);
   await page.keyboard.press('Control+z');
   expect((await world(page)).links[0]).toMatchObject({ id, label: 'Nombre nuevo' });
-  await menu();
-  await page.getByRole('menuitem', { name: 'Eliminar conexión', exact: true }).click();
-  await page.keyboard.press('Delete');
+  await hit.focus();
+  await hit.press('Backspace');
   expect((await world(page)).links).toHaveLength(0);
   expect((await snapshot(page)).ui.canvas.linkSelection).toBeNull();
   await page.keyboard.press('Control+z');

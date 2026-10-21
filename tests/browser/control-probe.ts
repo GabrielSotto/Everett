@@ -15,7 +15,10 @@ export function installControlProbe(): void {
     (event) => {
       const control = event
         .composedPath()
-        .find((node): node is HTMLElement => node instanceof HTMLElement && !!node.dataset.action);
+        .find(
+          (node): node is HTMLElement | SVGElement =>
+            (node instanceof HTMLElement || node instanceof SVGElement) && !!node.dataset.action,
+        );
       if (!control) return;
       let opaque = true;
       for (let ancestor: Element | null = control; ancestor; ancestor = ancestor.parentElement) {
@@ -26,14 +29,22 @@ export function installControlProbe(): void {
       }
       const rect = control.getBoundingClientRect(),
         style = getComputedStyle(control);
+      // Un cable horizontal o vertical tiene un bbox sin área, pero su trazo sí
+      // recibe clics. No confundirlo con un SVG oculto o una geometría vacía.
+      const strokeHit =
+        control instanceof SVGGeometryElement &&
+        style.pointerEvents !== 'none' &&
+        parseFloat(style.strokeWidth) > 0 &&
+        control.getTotalLength() > 0;
       void window
         .__everettControlsCapture({
           action: control.dataset.action!,
           trusted: event.isTrusted,
           visible:
             opaque &&
-            rect.width > 0 &&
-            rect.height > 0 &&
+            control.getClientRects().length > 0 &&
+            ((rect.width > 0 && rect.height > 0) ||
+              (strokeHit && (rect.width > 0 || rect.height > 0))) &&
             style.display !== 'none' &&
             style.visibility !== 'hidden',
         })

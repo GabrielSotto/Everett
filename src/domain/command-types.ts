@@ -16,6 +16,7 @@ import type {
   ProposalMaterial,
 } from './model';
 import type { AgentRun } from './operations';
+import type { MaterialOrder } from './material-order';
 
 export type Command =
   | { type: 'group.create'; world: string; nodes: string[]; name: string }
@@ -138,6 +139,12 @@ export type Command =
       join?: string;
     }
   | { type: 'nodes.delete'; world: string; nodes: string[] }
+  | {
+      type: 'nodes.order';
+      world: string;
+      nodes: string[];
+      order: MaterialOrder;
+    }
   | {
       type: 'nodes.assign';
       world: string;

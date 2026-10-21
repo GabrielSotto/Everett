@@ -84,7 +84,7 @@ export class CanvasChat {
       this.abort.signal,
       () => ctx.ui.chat.chatMode === 'quick' && !this.drag,
       (source) => this.close(source === 'keyboard'),
-      '.canvas-chat,[data-action=chat-open],.dictation-consent,.zone-inspector,.proposal,[data-zone]',
+      '.canvas-chat,[data-action=chat-open],.dictation-consent,.zone-inspector,.proposal,[data-zone],.canvas-tools,.dock-more-menu,.canvas-style,.shape-menu,.reference-menu,.canvas-context-layer',
     );
     root.addEventListener(
       'input',
@@ -335,7 +335,12 @@ export class CanvasChat {
   private floatingSize(): { width: number; height: number } {
     const size = this.ctx.ui.chat.chatSize;
     return {
-      width: Math.min(size?.width ?? quickChatSize.width, quickChatSize.width, innerWidth - 24),
+      width: Math.min(
+        size?.width ?? quickChatSize.width,
+        quickChatSize.width,
+        innerWidth -
+          (this.ctx.ui.shell.canvasDockOrientation === 'vertical' && innerWidth <= 640 ? 104 : 24),
+      ),
       // En una ventana estrecha el dock necesita una franja propia bajo el panel.
       // También recupera los guardados de 0.8.10 que copiaron la altura anclada.
       height: Math.min(

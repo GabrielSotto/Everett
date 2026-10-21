@@ -1,4 +1,33 @@
 /* Canvas 0.8: contenido libre, identificación contextual y controles alcanzables. */
+.material {
+  isolation: isolate;
+  --selection-outset: 0px;
+}
+.material.shape-material {
+  --selection-outset: calc(
+    max(var(--shape-thickness, 1px), calc(1px / var(--canvas-zoom, 1))) / 2 + 1px /
+      var(--canvas-zoom, 1)
+  );
+}
+.material.selected {
+  outline: calc(1px / var(--canvas-zoom, 1)) solid var(--accent);
+  outline-offset: var(--selection-outset);
+}
+.material .resize-handle:is(.nw, .sw) {
+  left: calc(0px - var(--selection-outset));
+}
+.material .resize-handle:is(.ne, .se) {
+  left: calc(100% + var(--selection-outset));
+}
+.material .resize-handle:is(.nw, .ne) {
+  top: calc(0px - var(--selection-outset));
+}
+.material .resize-handle:is(.sw, .se) {
+  top: calc(100% + var(--selection-outset));
+}
+.connection:not(.selected) .link-endpoint {
+  display: none;
+}
 .canvas-stage {
   overflow: clip;
 }
@@ -16,9 +45,10 @@
   object-fit: contain;
 }
 .material.shape-material.selected {
-  outline: 1px solid #7988a4;
+  outline: none;
 }
 .shape-art > * {
+  stroke-linejoin: round;
   stroke: inherit;
   stroke-width: inherit;
   vector-effect: non-scaling-stroke;
@@ -34,7 +64,7 @@
 .material-identification {
   position: absolute;
   left: 0;
-  bottom: 100%;
+  bottom: calc(100% + var(--selection-outset, 0px));
   padding-bottom: 7px;
   display: flex;
   align-items: center;
@@ -231,13 +261,17 @@
   border-radius: 5px;
 }
 .drop-label {
-  font-size: 13px;
+  font-size: clamp(
+    calc(12px / var(--canvas-zoom, 1)),
+    var(--zone-label-size, 14px),
+    calc(24px / var(--canvas-zoom, 1))
+  );
   line-height: 1.5;
   text-align: center;
 }
 .drop-label > span {
   display: block;
-  font-size: 11px;
+  font-size: max(0.8em, calc(11px / var(--canvas-zoom, 1)));
   margin-top: 4px;
 }
 .material.reference:has(.task-material-meta) {
@@ -423,6 +457,18 @@
 }
 .canvas-tools.vertical-tools {
   flex-direction: column;
+}
+.canvas-tools.minimal-tools > :not(.dock-grip, [data-action='dock-more']) {
+  display: none;
+}
+.canvas-tools.minimal-tools {
+  padding: 4px;
+  gap: 0;
+  min-height: 48px;
+}
+.canvas-tools.minimal-tools .dock-grip {
+  width: 14px;
+  flex-shrink: 0;
 }
 .dock-more-menu {
   position: fixed;
@@ -1100,6 +1146,21 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.profile-pop :is([data-action='settings-back'], [data-action='profile-settings-back']) {
+  justify-self: start;
+  justify-content: flex-start;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+.profile-pop .settings-preference select {
+  min-width: 105px;
+  max-width: 100%;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+}
 .chat-host:has(.chat-composer-menu) {
   z-index: 48;
 }
@@ -1305,6 +1366,20 @@
   border-color: var(--accent);
   background: #b9a5df18;
 }
+.group-drop-message {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: calc(6px / var(--canvas-zoom)) calc(9px / var(--canvas-zoom));
+  border-radius: calc(6px / var(--canvas-zoom));
+  background: var(--raised);
+  color: var(--text);
+  font-size: calc(13px / var(--canvas-zoom));
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+}
 .group-heading {
   position: absolute;
   left: 0;
@@ -1349,6 +1424,7 @@
   cursor: text;
 }
 .group-heading small {
+  flex-shrink: 0;
   font-size: calc(11px / var(--canvas-zoom));
   color: var(--muted);
 }
@@ -1583,4 +1659,34 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* SVG conserva el trazo fraccionario sin el redondeo de los bordes CSS al ampliar. */
+.material-selection-frame {
+  display: none;
+}
+.shape-material.selected > .material-selection-frame {
+  display: block;
+  position: absolute;
+  left: calc(0px - var(--selection-outset));
+  top: calc(0px - var(--selection-outset));
+  width: calc(100% + 2 * var(--selection-outset));
+  height: calc(100% + 2 * var(--selection-outset));
+  overflow: visible;
+  pointer-events: none;
+  z-index: 6;
+}
+.material-selection-frame rect {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: calc(1px / var(--canvas-zoom));
+}
+.material .resize-handle,
+.material button.resize-handle:active {
+  width: 7px;
+  height: 7px;
+  border-width: 1px;
+  transition: none;
+  transform: scale(calc(1 / var(--canvas-zoom))) translate(-50%, -50%);
+  transform-origin: top left;
 }

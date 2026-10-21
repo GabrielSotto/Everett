@@ -57,6 +57,7 @@ export function reduce(state: State, command: Command): State {
     case 'assignment.schedule':
     case 'node.move':
     case 'nodes.move':
+    case 'nodes.order':
     case 'nodes.delete':
     case 'nodes.assign':
     case 'asset.preview':

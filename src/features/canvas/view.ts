@@ -1421,7 +1421,9 @@ export class CanvasView implements View {
         break;
       case 'select-link':
         this.select('link', id);
-        this.render();
+        this.paintSelection(true);
+        this.renderDock();
+        ctx.persist();
         break;
       case 'assignment-retry':
         if (
@@ -1580,7 +1582,7 @@ export class CanvasView implements View {
         bounds.y += 16 - 16 / zoom;
         bounds.height += 32 / zoom - 32;
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small>${destination === group.id ? 'Soltar para agregar' : group.nodes.length}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div></div>`;
+        return `<div class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
       })
       .join('');
   }
@@ -1670,7 +1672,7 @@ export class CanvasView implements View {
       }
     }
   }
-  private paintSelection(): void {
+  private paintSelection(keepLinks = false): void {
     const w = this.ctx.world(),
       ui = this.ctx.ui;
     this.root.dataset.canvasPanel = ui.canvas.zoneSelection
@@ -1699,7 +1701,14 @@ export class CanvasView implements View {
       const zone = w.zones.find((z) => z.id === element.dataset.zone);
       if (zone) element.classList.toggle('selected', zone.id === ui.canvas.zoneSelection);
     });
-    this.paintLinks();
+    if (keepLinks) {
+      this.root.querySelectorAll<SVGElement>('[data-link]').forEach((el) => {
+        const selected = el.dataset.link === ui.canvas.linkSelection;
+        el.classList.toggle('selected', selected);
+        el.querySelector('.link-hit')?.setAttribute('aria-pressed', String(selected));
+      });
+      this.paintGroups();
+    } else this.paintLinks();
     const holder = this.root.querySelector('#selection-actions'),
       node = w.nodes.find((n) => n.id === ui.canvas.selection && !n.owner),
       zone = w.zones.find((z) => z.id === ui.canvas.zoneSelection);
@@ -1773,7 +1782,11 @@ export class CanvasView implements View {
         Math.min(12, (innerWidth - left - rect.width) / 2, (innerHeight - 59 - rect.height) / 2),
       ),
     );
-    const quick = this.floatingChatBounds();
+    const quick =
+      this.floatingChatBounds() ??
+      (this.ctx.ui.chat.chatMode === 'closed'
+        ? this.root.querySelector('.chat-launch')?.getBoundingClientRect()
+        : null);
     if (avoidChat && quick && !this.chatHidden()) {
       const clear = (point: Point): boolean =>
         point.x >= 12 &&
@@ -2002,13 +2015,17 @@ export class CanvasView implements View {
     const hiddenChat = this.chatHidden();
     const docked = ctx.ui.chat.chatMode === 'docked' && !ctx.ui.chat.chatCompact && !hiddenChat;
     const chatWidth = docked ? Math.min(310, innerWidth - 76) : 0;
-    const quick = hiddenChat || ctx.ui.chat.chatCompact ? null : this.floatingChatBounds();
-    const sideSpace = quick ? Math.max(quick.left - 24, innerWidth - quick.right - 24) : 0;
-    const available = quick && sideSpace >= 236 ? sideSpace : innerWidth - chatWidth;
-    const compact = available < dock.scrollWidth + 24;
-    dock.classList.toggle('compact-tools', compact);
-    const vertical = available < dock.scrollWidth + 24;
+    const vertical = ctx.ui.shell.canvasDockOrientation === 'vertical';
     dock.classList.toggle('vertical-tools', vertical);
+    const available = innerWidth - chatWidth;
+    const compact = vertical
+      ? dock.scrollHeight + 24 > innerHeight - 59 - 80
+      : available < dock.scrollWidth + 24;
+    dock.classList.toggle('compact-tools', compact);
+    dock.classList.toggle(
+      'minimal-tools',
+      vertical ? dock.scrollHeight + 24 > innerHeight - 59 - 80 : available < dock.scrollWidth + 24,
+    );
     if (!this.dock) {
       dock.style.left = vertical ? 'auto' : `${innerWidth / 2}px`;
       dock.style.right = vertical ? '12px' : 'auto';
@@ -2033,7 +2050,7 @@ export class CanvasView implements View {
         `<button type="button" role="menuitem" data-action="${action}" ${attributes}>${icon(symbol, 16)}<span>${html(label)}</span></button>`;
       holder.insertAdjacentHTML(
         'beforeend',
-        `<div class="dock-more-menu" role="menu" aria-label="Más herramientas de Canvas">${shapeTools.map((shape) => item('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`)).join('')}${item('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"')}${item('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''))}${item('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"')}${item('references', 'plus', 'Incorporar materiales')}</div>`,
+        `<div class="dock-more-menu" role="menu" aria-label="Más herramientas de Canvas">${(['select', 'hand', 'note', 'drawing'] as const).map((tool) => item('canvas-tool', { select: 'select', hand: 'hand', note: 'note', drawing: 'draw' }[tool], { select: 'Seleccionar', hand: 'Panear', note: 'Crear nota', drawing: 'Dibujar' }[tool], `data-tool="${tool}"`)).join('')}${shapeTools.map((shape) => item('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`)).join('')}${item('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"')}${item('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''))}${item('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"')}${item('references', 'plus', 'Incorporar materiales')}</div>`,
       );
       const menu = holder.querySelector<HTMLElement>('.dock-more-menu')!,
         bounds = dock.getBoundingClientRect();

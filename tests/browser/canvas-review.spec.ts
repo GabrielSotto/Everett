@@ -48,7 +48,7 @@ test('C08-B22: etiquetar conserva los píxeles del cable y un editor compacto si
   await page.reload();
   await ready(page);
   const cable = page.locator('[data-link=review-link]');
-  await cable.locator('.link-hit').click();
+  await cable.locator('.link-hit').dblclick();
   const editor = page.locator('[data-label=review-link]');
   const bounds = (await editor.boundingBox())!;
   expect(bounds.width).toBeLessThanOrEqual(280);

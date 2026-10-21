@@ -659,8 +659,8 @@ test('C08-B06: cable con etiqueta integrada, área estable, movimiento, edición
         y: center.y + ((tangent.x - center.x) * 5) / length,
       };
     });
-    // Clic fuera del trazo visible, antes del hover, en distintos niveles de zoom.
-    await page.mouse.click(point.x, point.y);
+    // Doble clic en el área invisible, antes del hover, en distintos niveles de zoom.
+    await page.mouse.dblclick(point.x, point.y);
     await expect(page.getByLabel('Etiqueta de conexión', { exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
   }
@@ -1160,7 +1160,11 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
               errors: string[] = [];
             if (bounds.x < 0 || bounds.y < 59 || bounds.right > width || bounds.bottom > 760)
               errors.push('Dock fuera de la ventana');
-            if (boxes.length < 5 || (width - chatRight >= 420 && boxes.length !== 9))
+            const minimal = chatRight > 0 && width - chatRight < 237;
+            if (
+              boxes.length < (minimal ? 1 : 5) ||
+              (width - chatRight >= 420 && boxes.length !== 9)
+            )
               errors.push('Cantidad de herramientas incorrecta');
             if (boxes.some((box) => box.width < 35 || box.height < 35))
               errors.push('Control menor que 35 px');
@@ -1176,6 +1180,31 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
         ),
       )
       .toEqual([]);
+    if (chatRight > 0 && width - chatRight < 237) {
+      await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
+      const overflow = page.getByRole('menu', { name: 'Más herramientas de Canvas', exact: true });
+      for (const name of [
+        'Seleccionar',
+        'Panear',
+        'Crear nota',
+        'Dibujar',
+        'Rectángulo',
+        'Elipse',
+        'Triángulo',
+        'Estrella',
+        'Conectar · L',
+        'Comentar · C',
+        'Dibujar zona',
+        'Incorporar materiales',
+      ])
+        await expect(overflow.getByRole('menuitem', { name, exact: true })).toBeInViewport({
+          ratio: 1,
+        });
+      await page.keyboard.press('Escape');
+      await expect(
+        page.getByRole('region', { name: 'Chat del Canvas', exact: true }),
+      ).toBeVisible();
+    }
   };
   for (const width of [1250, 801, 800, 799, 650, 390, 360, 300]) {
     await page.setViewportSize({ width, height: 760 });

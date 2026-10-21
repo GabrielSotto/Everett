@@ -43,6 +43,7 @@ const reversible = new Set<Command['type']>([
   'zone.rename',
   'node.move',
   'nodes.move',
+  'nodes.order',
   'nodes.delete',
   'node.resize',
   'node.edit',

@@ -6,6 +6,7 @@ import { restoreMaterialLinks } from '../material-links';
 import { arrangeProposals } from '../proposal-layout';
 import { sameConnection } from '../link-identity';
 import { proposalMaterials } from '../proposal-materials';
+import { orderMaterials } from '../material-order';
 
 type CanvasCommand = Extract<
   Command,
@@ -24,6 +25,7 @@ type CanvasCommand = Extract<
       | 'assignment.schedule'
       | 'node.move'
       | 'nodes.move'
+      | 'nodes.order'
       | 'nodes.delete'
       | 'nodes.assign'
       | 'asset.preview'
@@ -57,6 +59,22 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       'Material inexistente',
     );
   switch (command.type) {
+    case 'nodes.order': {
+      ensure(
+        command.nodes.length > 0 && new Set(command.nodes).size === command.nodes.length,
+        'SELECTION',
+        'Elegí materiales distintos',
+      );
+      ensure(
+        ['front', 'forward', 'backward', 'back'].includes(command.order),
+        'ORDER',
+        'Orden de materiales inválido',
+      );
+      for (const id of command.nodes)
+        ensure(!node(id).owner, 'LOCKED', 'Un material está siendo usado por un agente');
+      world.nodes = orderMaterials(world.nodes, command.nodes, command.order);
+      break;
+    }
     case 'nodes.move':
     case 'nodes.assign':
     case 'nodes.delete': {

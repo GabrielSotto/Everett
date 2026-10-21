@@ -8,6 +8,7 @@ export interface ShellUi {
   status: boolean;
   surfaceMenu: boolean;
   showSurfaceMenu: boolean;
+  canvasDockOrientation: 'horizontal' | 'vertical';
   profileTab: 'identity' | 'preferences' | 'tools' | 'settings';
 }
 
@@ -22,6 +23,7 @@ export function createShellUi(): ShellUi {
     status: false,
     surfaceMenu: false,
     showSurfaceMenu: false,
+    canvasDockOrientation: 'horizontal',
     profileTab: 'identity',
   };
 }

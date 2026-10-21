@@ -71,3 +71,52 @@ test('UI-HARNESS-03: la observación distingue clics programáticos, controles o
   await expect.poll(() => uses().length).toBe(5);
   expect(uses()[4]).toEqual({ action: 'references', trusted: true, visible: true });
 });
+
+test('UI-HARNESS-04: observa cables SVG horizontales y verticales y rechaza geometría oculta, vacía y clics sintéticos', async ({
+  page,
+  controls,
+}) => {
+  await enterWorld(page);
+  await openSurface(page, 'Canvas');
+  await page.evaluate(() => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'svg-probe';
+    svg.setAttribute('width', '220');
+    svg.setAttribute('height', '180');
+    svg.style.cssText = 'position:fixed;left:100px;top:100px;z-index:100';
+    svg.innerHTML =
+      '<g><path data-action="probe-horizontal" d="M 10 40 L 180 40" stroke="white" stroke-width="14" fill="none"/><path data-action="probe-vertical" d="M 190 60 L 190 150" stroke="white" stroke-width="14" fill="none"/><path data-action="probe-empty" d="M 10 160" stroke="white" stroke-width="14" fill="none"/></g>';
+    document.body.append(svg);
+  });
+  const uses = () => controls.filter((c) => c.action.startsWith('probe-'));
+  await page.mouse.click(160, 140);
+  await page.mouse.click(290, 200);
+  await expect.poll(() => uses().length).toBe(2);
+  expect(uses()).toEqual([
+    { action: 'probe-horizontal', trusted: true, visible: true },
+    { action: 'probe-vertical', trusted: true, visible: true },
+  ]);
+  const horizontal = page.locator('#svg-probe [data-action=probe-horizontal]');
+  await horizontal.dispatchEvent('click');
+  await expect.poll(() => uses().length).toBe(3);
+  expect(uses()[2]).toEqual({ action: 'probe-horizontal', trusted: false, visible: true });
+  for (const property of ['opacity', 'display'] as const) {
+    await horizontal.evaluate((el, property) => {
+      (el.parentElement as unknown as SVGElement).style.setProperty(
+        property,
+        property === 'opacity' ? '0' : 'none',
+      );
+    }, property);
+    await horizontal.dispatchEvent('click');
+    await expect.poll(() => uses().length).toBe(property === 'opacity' ? 4 : 5);
+    expect(uses().at(-1)!.visible).toBe(false);
+    await horizontal.evaluate(
+      (el, property) => (el.parentElement as unknown as SVGElement).style.removeProperty(property),
+      property,
+    );
+  }
+  await page.locator('#svg-probe [data-action=probe-empty]').dispatchEvent('click');
+  await expect.poll(() => uses().length).toBe(6);
+  expect(uses().at(-1)!.visible).toBe(false);
+  await page.locator('#svg-probe').evaluate((el) => el.remove());
+});

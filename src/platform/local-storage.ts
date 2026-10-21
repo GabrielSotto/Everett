@@ -56,6 +56,8 @@ export class LocalStorage {
     validate(state);
     const ui = personal.ui;
     ui.shell.showSurfaceMenu = ui.shell.showSurfaceMenu === true;
+    ui.shell.canvasDockOrientation =
+      ui.shell.canvasDockOrientation === 'vertical' ? 'vertical' : 'horizontal';
     if (!ui.shell.showSurfaceMenu) ui.shell.surfaceMenu = false;
     ui.canvas.tool = 'select';
     ui.canvas.linkStart = null;
