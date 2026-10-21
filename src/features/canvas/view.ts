@@ -1882,10 +1882,10 @@ export class CanvasView implements View {
     menu.style.width = width + 'px';
     const leftSpace = bounds.left - 20,
       rightSpace = innerWidth - bounds.right - 20;
-    const minimumWidth = Math.min(220, width);
-    // La alternativa izquierda debe quedar cerca del disparador, sin cruzar todo el dock.
+    const minimumWidth = Math.min(dock.classList.contains('vertical-tools') ? 180 : 220, width);
+    // Los ocho píxeles al dock más el inset del disparador no deben superar veinte.
     const before =
-      rightSpace < minimumWidth && leftSpace >= minimumWidth && origin.left - bounds.left < 20;
+      rightSpace < minimumWidth && leftSpace >= minimumWidth && origin.left - bounds.left <= 12;
     const sideways = rightSpace >= minimumWidth || before;
     const aboveSpace = bounds.top - 78,
       belowSpace = innerHeight - bounds.bottom - 20;

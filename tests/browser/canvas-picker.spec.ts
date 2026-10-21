@@ -162,7 +162,15 @@ test('C08-B46: incorporación compacta junto al dock, zoom independiente, bordes
         : page.getByRole('button', { name: 'Más herramientas', exact: true }),
     ).toBeFocused();
   }
+  await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
+  await page.getByRole('button', { name: 'Configuración', exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Orientación del dock de Canvas', exact: true })
+    .selectOption('vertical');
+  await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
+  await expect(page.locator('.canvas-tools')).toHaveClass(/vertical-tools/);
   await openPicker(page);
+  await geometry(page);
   const menu = page.locator('.reference-menu');
   const before = (await page.evaluate(() => window.EverettDebug!.snapshot())).camera;
   const bounds = (await menu.boundingBox())!;
