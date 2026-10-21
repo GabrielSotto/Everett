@@ -253,7 +253,7 @@ test('C08-B09: dibujo libre y formas conservan gesto, estilo e independencia al 
   await page.mouse.move(510, 270, { steps: 10 });
   await page.mouse.up();
   const shape = page.locator('.material.shape-material');
-  await expect(shape.locator('svg')).toHaveAttribute('fill', 'none');
+  await expect(shape.locator('.shape-art')).toHaveAttribute('fill', 'none');
   const state = await snapshot(page),
     node = state.state.worlds.find((w) => w.id === 'scout')!.nodes.at(-1)!;
   expect(node.width).toBeCloseTo(110 / state.camera.z, 0);
