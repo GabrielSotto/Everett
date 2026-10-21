@@ -350,6 +350,7 @@ test('C08-B73: Quick Chat no compacta ni gira el dock sin colisión y Más herra
 test('C08-B74: ordenar PDF y código superpuestos cambia la capa visible, conserva contenido, Undo/Redo y recarga', async ({
   page,
 }, info) => {
+  test.setTimeout(60000);
   await start(page);
   const source = (await world(page)).files[0]!;
   const code = await reference(page, 'file', source.id, 600, 350);
@@ -442,6 +443,51 @@ test('C08-B74: ordenar PDF y código superpuestos cambia la capa visible, conser
   await page.keyboard.press('Control+Shift+z');
   expect((await world(page)).nodes.map((n) => n.id)).toEqual([...chosen, ...rest]);
   expect(sorted((await world(page)).nodes)).toEqual(sorted(original));
+  // El orden también debe alcanzar código, imágenes y video compuesto.
+  // Conservar los archivos reales y preparar una superposición completa permite
+  // probar cada representación por teclado, incluso cuando queda detrás.
+  const mixed = await snapshot(page),
+    mixedWorld = mixed.state.worlds.find((w) => w.id === 'scout')!;
+  mixedWorld.nodes.forEach((n) => {
+    const height = n.data.kind === 'image' || n.data.kind === 'video' ? 240 / n.data.ratio : 160;
+    Object.assign(n, { x: -120, y: -height / 2, width: 240, height });
+  });
+  mixed.state.camera = { x: 0, y: 0, z: 1 };
+  mixed.ui.canvas.selection = null;
+  mixed.ui.canvas.selections = [];
+  await storedFixture(page, mixed.state, mixed.ui);
+  await page.reload();
+  await ready(page);
+  const center = (await page.locator('[data-node="' + id + '"]').boundingBox())!,
+    mixedTop = () =>
+      page.evaluate(
+        (p) =>
+          document.elementFromPoint(p.x, p.y)?.closest<HTMLElement>('[data-node]')?.dataset.node,
+        { x: center.x + center.width / 2, y: center.y + center.height / 2 },
+      );
+  const layerChecks = [];
+  for (const n of mixedWorld.nodes) {
+    const material = page.locator('[data-node="' + n.id + '"]');
+    await material.press('Shift+F10');
+    await page.getByRole('menuitem', { name: 'Traer al frente', exact: true }).click();
+    await expect.poll(mixedTop).toBe(n.id);
+    if (n.data.kind === 'video') {
+      await material.getByRole('button', { name: 'Reproducir video', exact: true }).click();
+      await expect
+        .poll(() => material.locator('video').evaluate((v) => (v as HTMLVideoElement).paused))
+        .toBe(false);
+    }
+    const nextTop = (await world(page)).nodes.filter((other) => other.id !== n.id).at(-1)!.id;
+    await material.press('Shift+F10');
+    await page.getByRole('menuitem', { name: 'Enviar al fondo', exact: true }).click();
+    await expect.poll(mixedTop).toBe(nextTop);
+    layerChecks.push({ kind: n.data.kind, id: n.id, front: n.id, back: nextTop });
+  }
+  expect(sorted((await world(page)).nodes)).toEqual(sorted(mixedWorld.nodes));
+  await info.attach('capas-por-tipo', {
+    body: JSON.stringify(layerChecks),
+    contentType: 'application/json',
+  });
 });
 
 test('C08-B75: contador explícito, aviso de reingreso dentro del conjunto y zona grande legible', async ({

@@ -104,7 +104,7 @@ Los ejemplos multimedia son archivos locales generados para probar el mismo reco
 
 ### Organización y referencias precisas de Canvas
 
-El orden de World.nodes define el apilamiento de fondo a frente de los materiales. nodes.order cambia ese orden mediante Store e historial, conservando el orden relativo de la selección y de los demás. Cada material aísla sus descendientes con isolation para impedir que sus controles alteren el orden entre materiales. La representación, los vínculos y la propiedad agéntica conservan su identidad.
+El orden de World.nodes define el apilamiento de fondo a frente de los materiales. nodes.order cambia ese orden mediante Store e historial, conservando el orden relativo de la selección y de los demás. Los contenidos se aíslan con isolation en el nivel de apilamiento cero para conservar el orden entre materiales. La identificación y los tiradores mantienen su capa de interacción por encima del contenido, sin adelantar el cuerpo del material seleccionado. La representación, los vínculos y la propiedad agéntica conservan su identidad.
 
 La orientación del dock pertenece al contexto personal (ui.shell.canvasDockOrientation), con Horizontal por defecto al recuperar guardados anteriores. La densidad responde al espacio disponible de la ventana y al chat anclado; Quick Chat solo interviene en la separación geométrica. En ventanas estrechas, el dock reserva su columna vertical y ofrece herramientas desbordadas desde Más herramientas. Sus controles forman parte del contexto de interacción del chat para conservarlo abierto y mantener su borrador.
 

@@ -115,7 +115,8 @@ Los previews tendrán tamaño máximo. Uno o dos materiales no deben estirarse p
   conservando los anclajes elegidos. La modificación manual del recorrido y las vueltas alrededor
   de materiales fueron descartadas por el usuario.
 - Al hacer hover sobre una conexión, engrosar su trazo y ofrecer una zona de interacción más amplia
-  que la línea visible. Un clic permite escribir o editar texto asociado a la conexión. El texto
+  que la línea visible. Un clic selecciona la conexión y doble clic edita su etiqueta. Enter confirma,
+  Esc cancela y Delete/Backspace fuera del texto elimina la conexión seleccionada. El texto
   aparece integrado en el cable, interrumpiendo el trazo bajo las palabras; conserva esa ubicación
   al mover los materiales o cambiar el zoom, según C08-LINK-02 de [Canvas 0.8](iteraciones/0.8.md).
 - Selección y eliminación explícita de conexiones.

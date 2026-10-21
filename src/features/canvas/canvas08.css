@@ -1,7 +1,19 @@
 /* Canvas 0.8: contenido libre, identificación contextual y controles alcanzables. */
 .material {
-  isolation: isolate;
   --selection-outset: 0px;
+}
+/* El contenido sigue el orden del Mundo; la identificación y los tiradores
+   conservan su capa de interacción por encima de materiales superpuestos. */
+.material
+  > :not(
+    .material-identification,
+    .resize-handle,
+    .connection-port,
+    .comment-marker,
+    .material-selection-frame
+  ) {
+  isolation: isolate;
+  z-index: 0;
 }
 .material.shape-material {
   --selection-outset: calc(
@@ -208,7 +220,7 @@
   stroke-width: calc(2px / var(--canvas-zoom));
   fill: var(--panel);
 }
-.canvas-links:has(.link-endpoint) {
+.canvas-links:has(.connection.selected .link-endpoint) {
   z-index: 11;
 }
 .connection.reconnecting :is(.link-hit, .link-endpoint, .cable-label) {

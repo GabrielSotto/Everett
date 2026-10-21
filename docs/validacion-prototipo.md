@@ -191,7 +191,7 @@ La revisión de 0.8.10 exige C08-U21/U22 y C08-B67–B70. Se comprueba selecció
 
 ### Revisión 0.8.12
 
-C08-U23 comprueba orden estable de materiales, pasos y extremos, rechazos atómicos y Undo/Redo sin modificar contenido ni vínculos. C08-B74 usa las cuatro acciones del menú contextual sobre un PDF real superpuesto al código; exige que el hit-testing, el orden de datos, el historial y la recarga concuerden.
+C08-U23 comprueba orden estable de materiales, pasos y extremos, rechazos atómicos y Undo/Redo sin modificar contenido ni vínculos. C08-B74 usa las cuatro acciones del menú contextual sobre un PDF real superpuesto al código; exige que el hit-testing, el orden de datos, el historial y la recarga concuerden. Añade selección múltiple y una superposición completa de Code, imagen, PDF y video en reproducción, ordenados desde el menú por teclado. B32 conserva el nombre editable por encima de una obstrucción deliberada sin adelantar el cuerpo del material.
 
 C08-B71 exige un clic para seleccionar y doble clic para editar, tanto sobre un cable sin etiqueta como sobre su texto existente, sin menú contextual ni botones. Comprueba foco, selección con Space sin abrir el editor, anclajes visibles, Enter/Esc, etiqueta vacía y Backspace dentro del campo antes de eliminar con Backspace/Delete fuera de él. B06/B22/B31/B36/B56/B65 conservan los resultados de cables y actualizan su acceso a la interacción aprobada; B31 exige reconexión por arrastre y teclado, cancelación, historial y recuperación.
 
