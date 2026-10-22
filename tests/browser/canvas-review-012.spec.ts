@@ -468,8 +468,13 @@ test('C08-B74: ordenar PDF y código superpuestos cambia la capa visible, conser
   const layerChecks = [];
   for (const n of mixedWorld.nodes) {
     const material = page.locator('[data-node="' + n.id + '"]');
+    const alreadyFront = (await mixedTop()) === n.id;
     await material.press('Shift+F10');
-    await page.getByRole('menuitem', { name: 'Traer al frente', exact: true }).click();
+    const front = page.getByRole('menuitem', { name: 'Traer al frente', exact: true });
+    if (alreadyFront) {
+      await expect(front).toBeDisabled();
+      await page.keyboard.press('Escape');
+    } else await front.click();
     await expect.poll(mixedTop).toBe(n.id);
     if (n.data.kind === 'video') {
       await material.getByRole('button', { name: 'Reproducir video', exact: true }).click();
@@ -599,9 +604,11 @@ test('C08-B75: contador explícito, aviso de reingreso dentro del conjunto y zon
   await expect(text).toBeVisible();
   const metrics = await text.evaluate((el) => {
     const r = el.getBoundingClientRect(),
-      z = el.closest('[data-zone]')!.getBoundingClientRect();
+      z = document
+        .querySelector('[data-zone=' + (el as HTMLElement).dataset.zoneLabel + ']')!
+        .getBoundingClientRect();
     return {
-      font: parseFloat(getComputedStyle(el).fontSize) * 0.32,
+      font: parseFloat(getComputedStyle(el).fontSize),
       dx: Math.abs(r.x + r.width / 2 - z.x - z.width / 2),
       dy: Math.abs(r.y + r.height / 2 - z.y - z.height / 2),
     };
@@ -628,16 +635,13 @@ test('C08-B76: orientación elegida persiste, conserva herramientas con chat y e
     await page.getByRole('button', { name: 'Configuración', exact: true }).click();
   };
   await settings();
-  const orientation = page.getByRole('combobox', {
-    name: 'Orientación del dock de Canvas',
-    exact: true,
-  });
-  await expect(orientation).toHaveValue('horizontal');
-  await orientation.selectOption('vertical');
+  const orientation = page.getByRole('switch', { name: 'Dock vertical', exact: true });
+  await expect(orientation).toHaveAttribute('aria-checked', 'false');
+  await orientation.click();
   await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
   const back = page.getByRole('button', { name: 'Volver a Configuración', exact: true }),
     panel = page.locator('.profile-pop'),
-    b = (await back.boundingBox())!,
+    b = (await back.locator('svg').boundingBox())!,
     p = (await panel.boundingBox())!,
     padding = await panel.evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
   expect(Math.abs(b.x - p.x - padding)).toBeLessThan(2);
@@ -663,7 +667,7 @@ test('C08-B76: orientación elegida persiste, conserva herramientas con chat y e
   await capture(page, info, 'dock-vertical-y-chat-300');
   await page.getByRole('button', { name: 'Cerrar chat', exact: true }).click();
   await settings();
-  await orientation.selectOption('horizontal');
+  await orientation.click();
   await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
   await expect(dock).not.toHaveClass(/vertical-tools/);
   await page.reload();

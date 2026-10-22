@@ -132,8 +132,7 @@ function assignedPreview(w: WorldSnapshot, n: Material): string {
   return `<div class="assigned-preview" data-assigned-id="${n.id}"><strong>${icon(meta.icon, 13)}<span>${html(nodeTitle(w, n))}</span></strong>${d.kind === 'shape' ? shapeMarkup(n) : d.kind === 'drawing' ? drawingMarkup(n) : d.kind === 'image' || d.kind === 'video' ? `<${d.kind === 'image' ? 'img' : 'video'} data-asset="${d.asset}" ${d.kind === 'image' ? `alt="${html(d.title)}"` : `aria-label="${html(d.title)}"`}>${d.kind === 'video' ? '</video>' : ''}` : d.kind === 'pdf' && d.preview ? `<img src="${d.preview}" alt="${html(d.title)}">` : `<p>${html(d.kind === 'link' ? d.url : text)}</p>`}</div>`;
 }
 function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {
-  if (!nodes.length)
-    return '<span class="drop-label">Arrastrá un material acá<span>El agente lo usará como contexto</span></span>';
+  if (!nodes.length) return '';
   const mode = materialDensity(nodes.length),
     groups = materialGroups(nodes);
   const grouped = groups
@@ -168,7 +167,8 @@ function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {
 export function zoneMarkup(w: WorldSnapshot, zone: Zone, selected: boolean): string {
   const agent = w.agents.find((a) => a.id === zone.agent);
   const spacious = zone.width > 185 && zone.height > 120;
-  return `<div class="agent-zone ${selected ? 'selected' : ''}" data-zone="${zone.id}" tabindex="0" role="group" aria-label="Zona ${html(zone.name)}" style="--zone-label-size:${Math.min(32, Math.max(14, Math.min(zone.width, zone.height) / 12))}px;left:${zone.x}px;top:${zone.y}px;width:${zone.width}px;height:${zone.height}px"><div class="zone-heading">${icon(agent ? 'agents' : 'zone', 14)}<span>${html(zone.name)}</span></div>${
+  const empty = !zone.agent || !w.nodes.some((n) => n.owner === zone.agent);
+  return `<div class="agent-zone ${selected ? 'selected' : ''}" data-zone="${zone.id}" tabindex="0" role="group" aria-label="Zona ${html(zone.name)}" ${empty ? `aria-description="${agent ? 'Arrastrá un material acá. El agente lo usará como contexto.' : 'Seleccioná esta zona para asignar un agente.'}"` : ''} style="left:${zone.x}px;top:${zone.y}px;width:${zone.width}px;height:${zone.height}px"><div class="zone-heading">${icon(agent ? 'agents' : 'zone', 14)}<span>${html(zone.name)}</span></div>${
     spacious && agent
       ? `<div class="zone-materials">${assignedMaterials(
           w,

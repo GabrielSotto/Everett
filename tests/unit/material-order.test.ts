@@ -4,7 +4,14 @@ import { orderMaterials } from '../../src/domain/material-order';
 import { setup, project, intent, note } from './fixtures';
 
 test('C08-U23: capas estables, límites, validación, contenido e historial atómicos', () => {
-  const items = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, content: id })),
+  const items = ['a', 'b', 'c', 'd', 'e'].map((id) => ({
+      id,
+      content: id,
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+    })),
     ids = (items: readonly { id: string }[]) => items.map((item) => item.id).join('');
   assert.equal(ids(orderMaterials(items, ['b', 'd'], 'front')), 'acebd');
   assert.equal(ids(orderMaterials(items, ['b', 'd'], 'back')), 'bdace');

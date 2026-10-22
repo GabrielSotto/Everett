@@ -107,7 +107,7 @@ export class CanvasView implements View {
     private ctx: Context,
   ) {
     root.innerHTML =
-      '<section class="canvas-stage" id="canvas-stage"><div class="canvas-plane" id="canvas-plane"></div><div id="selection-actions"></div></section><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><div id="canvas-dock-host"></div><div class="chat-host" id="canvas-chat-host"></div>';
+      '<section class="canvas-stage" id="canvas-stage"><div class="canvas-plane" id="canvas-plane"></div><div id="canvas-zone-labels" aria-hidden="true"></div><div id="selection-actions"></div></section><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><div id="canvas-dock-host"></div><div class="chat-host" id="canvas-chat-host"></div>';
     this.cam = new SpatialCamera(
       ctx.store.get().camera,
       (camera) => {
@@ -115,6 +115,7 @@ export class CanvasView implements View {
         if (plane) {
           plane.style.transform = `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
           plane.style.setProperty('--canvas-zoom', String(camera.z));
+          this.paintZoneLabels(camera);
           if (this.cableZoom !== camera.z) {
             this.cableZoom = camera.z;
             this.paintCableLabels();
@@ -1766,6 +1767,50 @@ export class CanvasView implements View {
       ? new DOMRect(panel.offsetLeft, panel.offsetTop, panel.offsetWidth, panel.offsetHeight)
       : null;
   }
+  private paintZoneLabels(camera = this.cam.current): void {
+    const holder = this.root.querySelector<HTMLElement>('#canvas-zone-labels');
+    if (!holder) return;
+    const { width, height } = this.rect(),
+      world = this.ctx.world();
+    const empty = world.zones.filter(
+      (zone) => !zone.agent || !world.nodes.some((node) => node.owner === zone.agent),
+    );
+    // Texto en coordenadas de pantalla: nunca se rasteriza dentro del plano escalado.
+    // En zonas diminutas se conserva el indicador, sin apilar palabras recortadas.
+    for (const old of holder.querySelectorAll<HTMLElement>('[data-zone-label]'))
+      if (!empty.some((zone) => zone.id === old.dataset.zoneLabel)) old.remove();
+    for (const zone of empty) {
+      let label = holder.querySelector<HTMLElement>(`[data-zone-label="${CSS.escape(zone.id)}"]`);
+      if (!label) {
+        label = document.createElement('span');
+        label.className = 'drop-label';
+        label.dataset.zoneLabel = zone.id;
+        holder.append(label);
+      }
+      const w = zone.width * camera.z,
+        h = zone.height * camera.z;
+      const mode = w >= 230 && h >= 72 ? 'full' : w >= 140 && h >= 36 ? 'compact' : 'icon';
+      if (label.dataset.density !== mode || label.dataset.agent !== (zone.agent ?? '')) {
+        label.dataset.density = mode;
+        label.dataset.agent = zone.agent ?? '';
+        label.innerHTML = !zone.agent
+          ? mode === 'icon'
+            ? icon('agents', 14)
+            : 'Elegí un agente'
+          : mode === 'full'
+            ? 'Arrastrá un material acá<span>El agente lo usará como contexto</span>'
+            : mode === 'compact'
+              ? 'Arrastrá material acá'
+              : icon('plus', 14);
+      }
+      label.hidden = w < 24 || h < 24;
+      Object.assign(label.style, {
+        left: Math.round(width / 2 + camera.x + (zone.x + zone.width / 2) * camera.z) + 'px',
+        top: Math.round(height / 2 + camera.y + (zone.y + zone.height / 2) * camera.z) + 'px',
+        fontSize: (mode === 'full' ? 14 : 12) + 'px',
+      });
+    }
+  }
   private clampDock(avoidChat = false): void {
     if (!this.dock) return;
     const rect = this.root.querySelector('.canvas-tools')?.getBoundingClientRect() ?? {
@@ -1818,11 +1863,14 @@ export class CanvasView implements View {
           { x: origin.x, y: quick.bottom + 12 },
         ]
           .filter(clear)
-          .sort(
-            (a, b) =>
+          .sort((a, b) => {
+            const lateral = (p: Point): number => (p.y === origin.y ? 0 : 1);
+            return (
+              lateral(a) - lateral(b) ||
               Math.hypot(a.x - origin.x, a.y - origin.y) -
-              Math.hypot(b.x - origin.x, b.y - origin.y),
-          );
+                Math.hypot(b.x - origin.x, b.y - origin.y)
+            );
+          });
         if (candidates[0]) this.dock = candidates[0];
       }
     }
@@ -2185,6 +2233,9 @@ export class CanvasView implements View {
     (plane as HTMLElement).style.transform =
       `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
     (plane as HTMLElement).style.setProperty('--canvas-zoom', String(camera.z));
+    this.root.querySelector<HTMLElement>('.canvas-stage')!.dataset.background =
+      this.ctx.ui.shell.canvasBackground;
+    this.paintZoneLabels(camera);
     this.paintSelection();
     this.renderDock();
     this.chat.render();

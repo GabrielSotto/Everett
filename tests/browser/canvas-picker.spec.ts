@@ -164,9 +164,7 @@ test('C08-B46: incorporación compacta junto al dock, zoom independiente, bordes
   }
   await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
   await page.getByRole('button', { name: 'Configuración', exact: true }).click();
-  await page
-    .getByRole('combobox', { name: 'Orientación del dock de Canvas', exact: true })
-    .selectOption('vertical');
+  await page.getByRole('switch', { name: 'Dock vertical', exact: true }).click();
   await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
   await expect(page.locator('.canvas-tools')).toHaveClass(/vertical-tools/);
   await openPicker(page);

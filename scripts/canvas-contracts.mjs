@@ -1,5 +1,11 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-U24', layer: 'unit', contracts: ['C08-LAYER-01', 'C08-MAT-08'] },
+  { id: 'C08-B77', layer: 'browser', contracts: ['C08-LAYER-01', 'C08-MAT-08', 'C08-STATE-01'] },
+  { id: 'C08-B78', layer: 'browser', contracts: ['C08-MAT-07', 'C08-ZOOM-01'] },
+  { id: 'C08-B79', layer: 'browser', contracts: ['C08-CHAT-07'] },
+  { id: 'C08-B80', layer: 'browser', contracts: ['C08-KEY-01', 'C08-STATE-01'] },
+  { id: 'UI-HARNESS-05', layer: 'browser', contracts: ['C08-MAT-07', 'C08-ZOOM-01'] },
   { id: 'C08-U23', layer: 'unit', contracts: ['C08-LAYER-01', 'C08-MAT-08'] },
   { id: 'C08-B71', layer: 'browser', contracts: ['C08-LINK-01', 'C08-LINK-02', 'C08-MAT-08'] },
   { id: 'C08-B72', layer: 'browser', contracts: ['C08-MAT-05', 'C08-ZOOM-01'] },
@@ -164,6 +170,15 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B77': { 'context-order': 6 },
+  'C08-B78': { 'canvas-zoom': 2 },
+  'C08-B79': { 'chat-open': 4, 'chat-close': 3 },
+  'C08-B80': {
+    'canvas-dock-toggle': 2,
+    'canvas-grid-toggle': 2,
+    'canvas-motion-toggle': 2,
+    'profile-settings-back': 2,
+  },
   'C08-B71': { 'select-link': 1 },
   'C08-B73': { 'chat-open': 1, 'dock-more': 1 },
   'C08-B74': { 'context-order': 4, 'canvas-examples': 1, 'reference-add': 1 },

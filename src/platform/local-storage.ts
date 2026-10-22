@@ -58,6 +58,8 @@ export class LocalStorage {
     ui.shell.showSurfaceMenu = ui.shell.showSurfaceMenu === true;
     ui.shell.canvasDockOrientation =
       ui.shell.canvasDockOrientation === 'vertical' ? 'vertical' : 'horizontal';
+    ui.shell.canvasBackground = ui.shell.canvasBackground === 'grid' ? 'grid' : 'dots';
+    ui.shell.canvasReducedMotion = ui.shell.canvasReducedMotion === true;
     if (!ui.shell.showSurfaceMenu) ui.shell.surfaceMenu = false;
     ui.canvas.tool = 'select';
     ui.canvas.linkStart = null;

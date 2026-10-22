@@ -281,7 +281,7 @@ export class CanvasChat {
               x: 0,
               y: 59,
               width: innerWidth,
-              height: innerHeight - 59,
+              height: innerHeight - 59 - this.bottomReserve(),
             },
             0,
           );
@@ -332,6 +332,15 @@ export class CanvasChat {
     window.addEventListener('resize', () => this.render(), { signal: this.abort.signal });
     this.render();
   }
+  private bottomReserve(): number {
+    const dock = this.root.closest('.scene')?.querySelector<HTMLElement>('.canvas-tools');
+    // Cuando ambos paneles no caben lado a lado, reservar la franja inferior del
+    // dock. Abrir Quick Chat no lo convierte en un sombrero sobre el panel.
+    return this.ctx.ui.shell.canvasDockOrientation !== 'vertical' &&
+      innerWidth < (dock?.offsetWidth ?? 460) + Math.min(quickChatSize.width, innerWidth - 24) + 36
+      ? (dock?.offsetHeight ?? 48) + 24
+      : 0;
+  }
   private floatingSize(): { width: number; height: number } {
     const size = this.ctx.ui.chat.chatSize;
     return {
@@ -346,7 +355,7 @@ export class CanvasChat {
       height: Math.min(
         size?.height ?? quickChatSize.height,
         quickChatSize.height,
-        innerHeight - 59 - (innerWidth <= 640 ? 80 : 0),
+        innerHeight - 59 - Math.max(innerWidth <= 640 ? 80 : 0, this.bottomReserve()),
       ),
     };
   }
@@ -425,7 +434,7 @@ export class CanvasChat {
         width: this.floatingSize().width,
         height: u.chat.chatCompact ? 48 : this.floatingSize().height,
       },
-      { x: 0, y: 59, width: innerWidth, height: innerHeight - 59 },
+      { x: 0, y: 59, width: innerWidth, height: innerHeight - 59 - this.bottomReserve() },
       0,
     );
     u.chat.chatPosition = p;

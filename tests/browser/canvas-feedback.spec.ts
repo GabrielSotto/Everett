@@ -365,7 +365,7 @@ test('C08-B33: tarjeta con metadatos identificables, vacío centrado y propuesta
     expect(box.x + box.width).toBeLessThanOrEqual(cardBounds.x + cardBounds.width);
   }
   const zone = page.locator('[data-zone=zone-eve]');
-  const empty = zone.locator('.drop-label');
+  const empty = page.locator('[data-zone-label=' + (await zone.getAttribute('data-zone')) + ']');
   const z = (await zone.boundingBox())!,
     e = (await empty.boundingBox())!;
   expect(Math.abs(e.x + e.width / 2 - z.x - z.width / 2)).toBeLessThan(2);

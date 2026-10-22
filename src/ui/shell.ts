@@ -457,6 +457,14 @@ export class Shell {
     }
   }
   private renderContent(): void {
+    const route = this.ctx.store.get().route;
+    document.body.dataset.canvasMotion =
+      this.ctx.ui.shell.canvasReducedMotion &&
+      (route.kind === 'note' ||
+        route.kind === 'material' ||
+        (route.kind === 'surface' && route.surface === 'canvas'))
+        ? 'reduced'
+        : 'system';
     const restore = preserveFocus(this.root);
     const finishPanels = this.panels.prepare();
     const { ctx } = this,

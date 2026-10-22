@@ -22,6 +22,21 @@ export class CanvasShortcuts {
         const button = target(event),
           action = button?.dataset.id ?? '';
         switch (button?.dataset.action) {
+          case 'canvas-dock-toggle':
+          case 'canvas-grid-toggle':
+          case 'canvas-motion-toggle':
+            if (button.dataset.action === 'canvas-dock-toggle')
+              ctx.ui.shell.canvasDockOrientation =
+                ctx.ui.shell.canvasDockOrientation === 'vertical' ? 'horizontal' : 'vertical';
+            else if (button.dataset.action === 'canvas-grid-toggle')
+              ctx.ui.shell.canvasBackground =
+                ctx.ui.shell.canvasBackground === 'grid' ? 'dots' : 'grid';
+            else ctx.ui.shell.canvasReducedMotion = !ctx.ui.shell.canvasReducedMotion;
+            ctx.persist();
+            this.render();
+            ctx.render();
+            root.querySelector<HTMLElement>(`[data-action="${button.dataset.action}"]`)?.focus();
+            break;
           case 'settings-back':
             this.page = 'config';
             this.conflict = null;
@@ -65,18 +80,6 @@ export class CanvasShortcuts {
       { signal },
     );
     root.addEventListener(
-      'change',
-      (event) => {
-        const field = event.target;
-        if (!(field instanceof HTMLSelectElement) || field.id !== 'canvas-dock-orientation') return;
-        if (field.value !== 'horizontal' && field.value !== 'vertical') return;
-        ctx.ui.shell.canvasDockOrientation = field.value;
-        ctx.persist();
-        ctx.render();
-      },
-      { signal },
-    );
-    root.addEventListener(
       'keydown',
       (event) => {
         if (
@@ -106,8 +109,45 @@ export class CanvasShortcuts {
     this.render();
   }
   markup(): string {
-    if (this.page === 'config')
-      return `<div class="settings-preference"><span id="surface-menu-setting-label">Mostrar botón de Superficies<small>Acceso alternativo en la barra superior.</small></span><button id="surface-menu-setting" type="button" class="settings-switch" role="switch" aria-label="Mostrar botón de Superficies" aria-checked="${this.ctx.ui.shell.showSurfaceMenu === true}" data-action="surface-toggle"><span></span></button></div><label class="settings-preference" for="canvas-dock-orientation"><span>Orientación del dock de Canvas</span><select id="canvas-dock-orientation" aria-label="Orientación del dock de Canvas"><option value="horizontal" ${this.ctx.ui.shell.canvasDockOrientation !== 'vertical' ? 'selected' : ''}>Horizontal</option><option value="vertical" ${this.ctx.ui.shell.canvasDockOrientation === 'vertical' ? 'selected' : ''}>Vertical</option></select></label><button type="button" data-action="settings-shortcuts">Atajos</button>`;
+    if (this.page === 'config') {
+      const setting = (
+        name: string,
+        description: string,
+        checked: boolean,
+        action: string,
+        id = '',
+      ): string =>
+        `<div class="settings-preference"><span>${name}<small>${description}</small></span><button ${id ? `id="${id}"` : ''} type="button" class="settings-switch" role="switch" aria-label="${name}" aria-checked="${checked}" data-action="${action}"><span></span></button></div>`;
+      const shell = this.ctx.ui.shell;
+      return (
+        setting(
+          'Mostrar botón de Superficies',
+          'Acceso alternativo en la barra superior.',
+          shell.showSurfaceMenu,
+          'surface-toggle',
+          'surface-menu-setting',
+        ) +
+        setting(
+          'Dock vertical',
+          'Apagado: disposición horizontal.',
+          shell.canvasDockOrientation === 'vertical',
+          'canvas-dock-toggle',
+        ) +
+        setting(
+          'Fondo cuadriculado',
+          'Apagado: fondo de puntos en Canvas.',
+          shell.canvasBackground === 'grid',
+          'canvas-grid-toggle',
+        ) +
+        setting(
+          'Reducir movimiento en Canvas',
+          'También respeta la preferencia del sistema.',
+          shell.canvasReducedMotion,
+          'canvas-motion-toggle',
+        ) +
+        '<button type="button" data-action="settings-shortcuts">Atajos</button>'
+      );
+    }
     return `<section class="canvas-shortcuts" aria-label="Atajos de Canvas">${btn('settings-back', 'chevron-left', 'Volver a Configuración')}<h3>Atajos · Canvas</h3><p>Seleccioná un campo y pulsá la combinación. Se guarda automáticamente.</p>${Object.keys(
       canvasDefaults,
     )

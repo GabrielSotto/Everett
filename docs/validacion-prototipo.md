@@ -123,6 +123,10 @@ El feedback de 0.8.2 agrega C08-U09/U10 y C08-B34–B40. Se comprueba tinta real
 
 ## Entrega verificable
 
+La revisión de 0.8.12 amplía el arnés para 0.8.13 con C08-U24 y C08-B77–B80: tres materiales superpuestos intercalados con objetos lejanos, pasos repetidos hasta ambos límites, menú contextual y teclado que omite acciones deshabilitadas; zonas normales y grandes a 6/12/17/32/75/100/200/600 %, zoom continuo en ambas direcciones y estados de densidad sin recortes; apertura reiterada de Quick Chat y resize entre 300 y 1000 px, separación lateral y franja inferior; configuración compacta, switches por teclado, regreso centrado en las tres subsecciones y preferencias locales tras recarga. Comprobar que las teclas sobre Configuración no actúen sobre materiales del Canvas y que la preferencia de movimiento no modifique Universo.
+
+UI-HARNESS-05 contrasta los píxeles del texto de zona con una referencia de texto nativo fuera de ancestros escalados, introduce desenfoque deliberado y exige detectarlo antes de restaurar y volver a comparar. Este control comprueba nitidez de esa muestra; la revisión visual conserva los tamaños y estados intermedios identificados. C08-B74 mantiene los controles de tinta, orden visible, contenido y persistencia; al encontrar un material ya al frente exige la acción deshabilitada en lugar de intentar ejecutarla.
+
 La entrega incluye HTML, fuentes, arnés ejecutable e informe real de la versión, con instrucciones reproducibles y hashes de los artefactos finales. El informe relaciona requisitos, casos, resultados y evidencias; identifica los fallos, bloqueos y omisiones sin contarlos como aprobados.
 
 Comprobar la existencia física, lectura, contenido y accesibilidad de cada archivo o enlace antes de presentarlo. Si algo falta o una capa del gate no se ejecutó, indicar exactamente qué queda por verificar; no anunciar una entrega terminada.

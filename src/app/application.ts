@@ -576,6 +576,7 @@ export class EverettApp implements Context {
       this.persist();
       return;
     }
+    if (e.target instanceof Element && e.target.closest('.profile-pop')) return;
     const activeRoute = this.store.get().route;
     if (
       (e.ctrlKey || e.metaKey) &&

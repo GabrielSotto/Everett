@@ -9,6 +9,8 @@ export interface ShellUi {
   surfaceMenu: boolean;
   showSurfaceMenu: boolean;
   canvasDockOrientation: 'horizontal' | 'vertical';
+  canvasBackground: 'dots' | 'grid';
+  canvasReducedMotion: boolean;
   profileTab: 'identity' | 'preferences' | 'tools' | 'settings';
 }
 
@@ -24,6 +26,8 @@ export function createShellUi(): ShellUi {
     surfaceMenu: false,
     showSurfaceMenu: false,
     canvasDockOrientation: 'horizontal',
+    canvasBackground: 'dots',
+    canvasReducedMotion: false,
     profileTab: 'identity',
   };
 }

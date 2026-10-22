@@ -12,5 +12,8 @@ export const motion = {
   expand: 'cubic-bezier(.22,.86,.18,1)',
 } as const;
 export function reducedMotion(): boolean {
-  return matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return (
+    matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    document.body.dataset.canvasMotion === 'reduced'
+  );
 }

@@ -94,7 +94,7 @@ test('UI-ZONE-03: cruza 0, 1, 6, 7, 15 y 16 materiales y vuelve sin perder ident
   await openSurface(page, 'Canvas');
   const zone = page.locator('.agent-zone');
   const layout = zone.locator('[data-density]');
-  const empty = zone.locator('.drop-label');
+  const empty = page.locator('[data-zone-label=' + (await zone.getAttribute('data-zone')) + ']');
   await expect(empty).toBeVisible();
   await expect(empty).toContainText('Arrastrá un material acá');
   const created: string[] = [];

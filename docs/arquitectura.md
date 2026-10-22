@@ -76,6 +76,12 @@ Las propuestas de Canvas conservan borradores tipados de materiales en el trabaj
 
 ## Persistencia y archivos de Canvas 0.8
 
+Las capas de materiales se guardan por el orden de `World.nodes`. Los pasos avanzan hasta la próxima superposición de un material libre y mantienen estable la selección; los límites y la disponibilidad del menú comparten el cálculo de dominio. No crean cambios de historial vacíos. La identificación contextual permanece alcanzable sobre el contenido.
+
+El texto vacío de zonas se dibuja fuera del plano escalado, con posiciones de pantalla actualizadas por la cámara. Su densidad depende del espacio visible; no refluye dentro de un contenedor que se encoge. El grupo conserva una descripción accesible aunque el indicador visual se omita al alejar.
+
+El dock prioriza separación lateral ante Quick Chat. Cuando no caben ambos anchos, el chat reserva la franja inferior del dock. Fondo de puntos/cuadrícula, orientación y reducción de movimiento son preferencias personales normalizadas al recuperar guardados anteriores. La reducción adicional se aplica a Canvas y sus paneles; Universo conserva sus parámetros.
+
 `src/platform/local-storage.ts` usa IndexedDB (`everett-canvas`, esquema 1). `worlds` guarda el contenido compartido de los Mundos; `personal` guarda perfil, ruta, cámaras, selección válida, presentación del chat, conversación activa, borradores y atajos por usuario local; `assets` guarda los bytes de imágenes, videos y PDF como Blob. Contenido y contexto personal se confirman juntos en una transacción. La escritura comienza durante el evento que cambió el dato, sin debounce que pueda perder la última edición al recargar.
 
 Las URLs temporales se generan al montar una vista y se revocan al liberarla. Las copias conservan su identidad independiente y pueden compartir los bytes originales; eliminar una representación no elimina el archivo externo ni los bytes necesarios para Deshacer. Este prototipo conserva los assets incorporados en el origen del navegador, incluso después de retirar sus representaciones; aún no incorpora recolección de archivos sin uso.
