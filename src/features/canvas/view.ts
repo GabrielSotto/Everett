@@ -148,6 +148,9 @@ export class CanvasView implements View {
       },
       '.reference-menu,.shape-menu,.dock-more-menu,[data-action=references],[data-action=shapes],[data-action=dock-more],[data-action=dock-grip]',
     );
+    // La recuperación del chat mide el dock real desde su primer layout. Un
+    // tamaño provisional puede expulsarlo encima del chat antes de pintarlo.
+    this.renderDock(false);
     this.chat = new CanvasChat(root.querySelector<HTMLElement>('#canvas-chat-host')!, ctx, () =>
       this.renderDock(),
     );

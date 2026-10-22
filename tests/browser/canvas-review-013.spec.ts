@@ -294,6 +294,26 @@ test('C08-B79: abrir Quick Chat separa lateralmente y reserva abajo cuando la ve
       if (i === 2) await capture(page, info, 'chat-y-dock-' + width);
       if (i < 2) await page.getByRole('button', { name: 'Cerrar chat', exact: true }).click();
     }
+    const beforeReload = (await chat.boundingBox())!;
+    await page.reload();
+    await ready(page);
+    const recovered = (await chat.boundingBox())!,
+      recoveredDock = (await dock.boundingBox())!;
+    expect(
+      recoveredDock.y,
+      'Recargar con Quick Chat abierto no coloca el dock encima',
+    ).toBeGreaterThanOrEqual(recovered.y);
+    expect(
+      recoveredDock.x >= recovered.x + recovered.width ||
+        recoveredDock.x + recoveredDock.width <= recovered.x ||
+        recoveredDock.y >= recovered.y + recovered.height ||
+        recoveredDock.y + recoveredDock.height <= recovered.y,
+    ).toBe(true);
+    expect(recovered.y, 'La recuperación conserva la posición válida del chat').toBeCloseTo(
+      beforeReload.y,
+      0,
+    );
+    samples.push({ width, iteration: 3, dock: recoveredDock, chat: recovered });
   }
   await info.attach('posiciones-repetidas', {
     body: JSON.stringify(samples),
