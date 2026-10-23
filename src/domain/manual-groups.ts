@@ -22,6 +22,33 @@ export function groupBounds(
   };
 }
 
+/** Elegir el lado con geometría del Mundo evita invertirlo durante el zoom. */
+export function groupHeadingSide(
+  world: WorldSnapshot,
+  group: DeepReadonly<CanvasGroup>,
+): 'top' | 'bottom' | 'blocked' {
+  const bounds = groupBounds(world, group);
+  const obstacles: Rect[] = [
+    ...world.nodes.filter((node) => !node.owner && !group.nodes.includes(node.id)),
+    ...(world.canvasGroups ?? [])
+      .filter((other) => other.id !== group.id)
+      .map((other) => groupBounds(world, other)),
+  ];
+  // Referencia a 100 %: 28 px de encabezado y 20 de separación. Las
+  // colisiones proyectadas se comprueban aparte, sin invertir el lado elegido.
+  const clear = (y: number): boolean =>
+    !obstacles.some(
+      (rect) =>
+        bounds.x < rect.x + rect.width &&
+        bounds.x + Math.min(360, bounds.width) > rect.x &&
+        y < rect.y + rect.height &&
+        y + 48 > rect.y,
+    );
+  if (clear(bounds.y - 48)) return 'top';
+  if (clear(bounds.y + bounds.height)) return 'bottom';
+  return 'blocked';
+}
+
 /** Un destino único admite materiales; un conjunto completo se mueve sin anidarse. */
 export function groupDropTarget(
   world: WorldSnapshot,

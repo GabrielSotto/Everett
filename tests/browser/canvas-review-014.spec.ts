@@ -303,6 +303,14 @@ test('C08-B84: etiquetas centradas y marcos de conjuntos conservan anclajes en t
         r = node.getBoundingClientRect(),
         label = node.querySelector('.material-identification')!.getBoundingClientRect();
       const z = window.EverettDebug!.snapshot().camera!.z;
+      const obstacles = Array.from(
+        document.querySelectorAll<HTMLElement>('.material[data-node]'),
+        (node) => node.getBoundingClientRect(),
+      );
+      const intersects = (a: DOMRect, b: DOMRect) =>
+        Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
+          Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)) >
+        1;
       const groups = Array.from(document.querySelectorAll<HTMLElement>('.canvas-manual-group')).map(
         (el) => {
           const b = el.getBoundingClientRect(),
@@ -314,7 +322,11 @@ test('C08-B84: etiquetas centradas y marcos de conjuntos conservan anclajes en t
             y: parseFloat(el.style.top),
             worldWidth: parseFloat(el.style.width),
             density: el.dataset.density,
+            side: el.dataset.headingSide,
+            occluded: el.dataset.headingOccluded === 'true' || el.dataset.headingSide === 'blocked',
             visible: getComputedStyle(el.querySelector('.group-heading')!).opacity !== '0',
+            collisions: obstacles.filter((other) => intersects(h, other)).length,
+            gap: el.dataset.headingSide === 'bottom' ? h.top - b.bottom : b.top - h.bottom,
             labelWidth: h.width,
             frameWidth: b.width,
           };
@@ -340,13 +352,22 @@ test('C08-B84: etiquetas centradas y marcos de conjuntos conservan anclajes en t
     expect(m.gap).toBeGreaterThanOrEqual(0);
     expect(m.gap).toBeLessThan(16);
     expect(m.labelWidth).toBeLessThanOrEqual(241);
+    expect(m.groups.map((g) => g.side)).toEqual(['top', 'bottom']);
     for (const g of m.groups) {
       expect(g.x).toBe(384);
       expect(g.worldWidth).toBe(352);
       expect(g.width).toBeCloseTo(352 * m.z, 1);
-      if (g.visible) expect(g.labelWidth).toBeLessThanOrEqual(g.frameWidth + 1);
-      else expect(g.frameWidth).toBeLessThan(100);
+      if (g.visible) {
+        expect(g.labelWidth).toBeLessThanOrEqual(g.frameWidth + 1);
+        expect(g.collisions).toBe(0);
+        // El borde CSS tiene un mínimo físico antes de escalar el plano; al
+        // 600 % ocupa hasta 6 px. Exigir cercanía al marco exterior incluye ese borde.
+        expect(g.gap).toBeGreaterThanOrEqual(12);
+        expect(g.gap).toBeLessThanOrEqual(22);
+      } else expect(g.frameWidth < 100 || g.occluded).toBe(true);
     }
+    if (Math.abs(m.z - 0.6) < 0.00001 || Math.abs(m.z - 1) < 0.00001)
+      expect(m.groups.every((g) => g.visible)).toBe(true);
   };
   const samples = [];
   for (const value of [1, 3, 6, 17, 38, 60, 100, 200, 431, 600, 60, 3, 100]) {
@@ -363,7 +384,25 @@ test('C08-B84: etiquetas centradas y marcos de conjuntos conservan anclajes en t
       const node = document.querySelector('[data-node=star]')!,
         a = node.getBoundingClientRect(),
         b = node.querySelector('.material-identification')!.getBoundingClientRect();
+      const obstacles = Array.from(document.querySelectorAll('.material[data-node]'), (node) =>
+        node.getBoundingClientRect(),
+      );
+      const collisions = Array.from(document.querySelectorAll('.group-heading'))
+        .filter((h) => getComputedStyle(h).opacity !== '0')
+        .reduce((total, h) => {
+          const r = h.getBoundingClientRect();
+          return (
+            total +
+            obstacles.filter(
+              (o) =>
+                Math.max(0, Math.min(r.right, o.right) - Math.max(r.left, o.left)) *
+                  Math.max(0, Math.min(r.bottom, o.bottom) - Math.max(r.top, o.top)) >
+                1,
+            ).length
+          );
+        }, 0);
       frames.push({
+        collisions,
         z: window.EverettDebug!.snapshot().camera!.z,
         dx: Math.abs(a.x + a.width / 2 - b.x - b.width / 2),
         gap: a.y - b.bottom,
@@ -374,7 +413,9 @@ test('C08-B84: etiquetas centradas y marcos de conjuntos conservan anclajes en t
   await page.mouse.move(1000, 400);
   for (const d of [1100, 900, -700, -1100, 800, -1000]) await page.mouse.wheel(0, d);
   const frames = await continuous;
-  expect(frames.every((f) => f.dx < 1 && f.gap >= 0 && f.gap < 16)).toBe(true);
+  expect(frames.every((f) => f.dx < 1 && f.gap >= 0 && f.gap < 16 && f.collisions === 0)).toBe(
+    true,
+  );
   expect((await world(page)).nodes).toEqual(original);
   await info.attach('anclajes-por-escala', {
     body: JSON.stringify(samples),
@@ -394,6 +435,21 @@ test('C08-B84: etiquetas centradas y marcos de conjuntos conservan anclajes en t
     .locator('.material-identification')
     .first()
     .evaluate((el) => (el as HTMLElement).style.removeProperty('left'));
+  check(await measure());
+  const headingStyle = await page
+    .locator('.group-heading')
+    .last()
+    .evaluate((el) => {
+      const h = el as HTMLElement,
+        old = h.style.cssText;
+      h.style.cssText = 'left:16px;top:16px;bottom:auto;margin:0';
+      return old;
+    });
+  expect((await measure()).groups.at(-1)!.collisions).toBeGreaterThan(0);
+  await page
+    .locator('.group-heading')
+    .last()
+    .evaluate((el, style) => ((el as HTMLElement).style.cssText = style), headingStyle);
   check(await measure());
   expect((await world(page)).canvasGroups).toEqual(w.canvasGroups);
   await zoom(page, 3);

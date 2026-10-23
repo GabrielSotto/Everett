@@ -36,7 +36,7 @@ import { materialsInRect } from '../../domain/material-selection';
 import { motion, reducedMotion } from '../../ui/motion';
 import { strokePicker } from './stroke-picker';
 import { rgb } from './color';
-import { groupBounds, groupDropTarget } from '../../domain/manual-groups';
+import { groupBounds, groupDropTarget, groupHeadingSide } from '../../domain/manual-groups';
 import { labelPosition, labeledPath } from '../../domain/cable-labels';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
@@ -1587,8 +1587,9 @@ export class CanvasView implements View {
         // de densidad; el zoom nunca desplaza ni ensancha el conjunto.
         const density =
           bounds.width * zoom >= 240 ? 'full' : bounds.width * zoom >= 100 ? 'compact' : 'hidden';
+        const headingSide = groupHeadingSide({ ...world, nodes }, group);
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div data-density="${density}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
+        return `<div data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
       })
       .join('');
     if (markup !== this.groupMarkup || !layer.childElementCount) {
@@ -1611,6 +1612,30 @@ export class CanvasView implements View {
         layer
           .querySelector<HTMLElement>(`[data-group="${CSS.escape(focusedGroup)}"]`)
           ?.focus({ preventScroll: true });
+    }
+    const frames = Array.from(layer.querySelectorAll<HTMLElement>('.canvas-manual-group'));
+    const materials = Array.from(
+      this.root.querySelectorAll<HTMLElement>('.material[data-node]'),
+      (el) => el.getBoundingClientRect(),
+    );
+    const placed: DOMRect[] = [];
+    const overlaps = (a: DOMRect, b: DOMRect): boolean =>
+      Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 &&
+      Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
+    for (const frame of frames) {
+      const heading = frame.querySelector<HTMLElement>('.group-heading')!;
+      const rect = heading.getBoundingClientRect();
+      const occluded =
+        materials.some((other) => overlaps(rect, other)) ||
+        frames.some((other) => other !== frame && overlaps(rect, other.getBoundingClientRect())) ||
+        placed.some((other) => overlaps(rect, other));
+      frame.dataset.headingOccluded = String(occluded);
+      if (
+        !occluded &&
+        frame.dataset.density !== 'hidden' &&
+        frame.dataset.headingSide !== 'blocked'
+      )
+        placed.push(rect);
     }
   }
   private paintCableLabels(): void {

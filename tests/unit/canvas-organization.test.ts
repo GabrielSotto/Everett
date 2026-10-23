@@ -10,7 +10,27 @@ import { semanticParent } from '../../src/domain/navigation';
 import { materialRoute } from '../../src/domain/model';
 import { searchWorkspace } from '../../src/domain/workspace-search';
 import { zoneMarkup } from '../../src/features/canvas/materials';
-import { groupDropTarget } from '../../src/domain/manual-groups';
+import { groupDropTarget, groupHeadingSide } from '../../src/domain/manual-groups';
+
+test('C08-U25: encabezados eligen un borde libre y conservan los materiales cuando ambos están bloqueados', () => {
+  const { store } = setup();
+  const w = {
+    ...project(store),
+    nodes: [
+      { ...note('a'), x: 0, y: 0, width: 100, height: 100 },
+      { ...note('b'), x: 120, y: 0, width: 100, height: 100 },
+    ],
+    canvasGroups: [{ id: 'set', name: 'Referencias', nodes: ['a', 'b'] }],
+  };
+  const group = w.canvasGroups[0]!;
+  assert.equal(groupHeadingSide(w, group), 'top');
+  w.nodes.push({ ...note('above'), x: -10, y: -55, width: 260, height: 30 });
+  assert.equal(groupHeadingSide(w, group), 'bottom');
+  w.nodes.push({ ...note('below'), x: -10, y: 120, width: 260, height: 30 });
+  const before = structuredClone(w);
+  assert.equal(groupHeadingSide(w, group), 'blocked');
+  assert.deepEqual(w, before);
+});
 
 test('C08-U22: reincorporar por movimiento conserva identidad, pertenencia única e historial y rechaza destinos ambiguos', () => {
   const { store } = setup();
