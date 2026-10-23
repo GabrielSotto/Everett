@@ -227,22 +227,27 @@ test('C08-B83: rueda sobre zona vacía acerca y aleja; contenido desplazable y A
   expect(await camera(page)).toEqual(localCamera);
   const top = await local.evaluate((el) => el.scrollTop);
   await page.evaluate(() => {
-    const records: { prevented: boolean; alt: boolean }[] = [];
+    const records: { prevented: boolean; alt: boolean; trusted: boolean }[] = [];
     Reflect.set(window, 'altWheelRecords', records);
-    document
-      .getElementById('viewport')!
-      .addEventListener(
-        'wheel',
-        (event) => records.push({ prevented: event.defaultPrevented, alt: event.altKey }),
-        { once: true },
-      );
+    document.getElementById('viewport')!.addEventListener(
+      'wheel',
+      // El router escucha en captura y detiene la propagación. Observar después
+      // en esa misma fase mide preventDefault sin depender del bubbling.
+      (event) =>
+        records.push({
+          prevented: event.defaultPrevented,
+          alt: event.altKey,
+          trusted: event.isTrusted,
+        }),
+      { once: true, capture: true },
+    );
   });
   await page.keyboard.down('Alt');
   await page.mouse.wheel(0, 240);
   await page.keyboard.up('Alt');
   await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'world/scout');
   expect(await page.evaluate(() => Reflect.get(window, 'altWheelRecords'))).toEqual([
-    { prevented: true, alt: true },
+    { prevented: true, alt: true, trusted: true },
   ]);
   expect(top).toBeGreaterThan(0);
   await capture(page, info, 'salida-espacial-desde-zona');
