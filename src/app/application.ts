@@ -490,17 +490,21 @@ export class EverettApp implements Context {
     if (target?.closest('#minimap')) return;
     const route = this.store.get().route,
       spatial = route.kind === 'universe' || route.kind === 'world';
+    const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
     if (!spatial && !e.altKey) {
+      const zone = target?.closest<HTMLElement>('.zone-materials');
+      const localScroll = zone && zone.scrollHeight > zone.clientHeight + 1;
       if (
         route.kind === 'surface' &&
         route.surface === 'canvas' &&
+        !localScroll &&
         !target?.closest(
-          '.canvas-chat,.zone-inspector,.zone-materials,.canvas-context-layer,.proposal,.dock-more-menu,.reference-menu,textarea,input,select,[contenteditable=true]',
+          '.canvas-chat,.zone-inspector,.canvas-context-layer,.proposal,.dock-more-menu,.reference-menu,textarea,input,select,[contenteditable=true]',
         )
       ) {
         e.preventDefault();
         const rect = this.viewport.getBoundingClientRect();
-        this.camera?.zoom(e.deltaY, {
+        this.camera?.zoom(delta, {
           x: e.clientX - rect.x - rect.width / 2,
           y: e.clientY - rect.y - rect.height / 2,
         });
@@ -510,7 +514,6 @@ export class EverettApp implements Context {
     }
     e.preventDefault();
     e.stopPropagation();
-    const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
     if (Date.now() < this.navigationLock) return;
     if (this.view instanceof SpatialView) {
       this.view.wheel(delta);

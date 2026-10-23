@@ -110,44 +110,49 @@ export class CanvasShortcuts {
   }
   markup(): string {
     if (this.page === 'config') {
-      const setting = (
-        name: string,
-        description: string,
-        checked: boolean,
-        action: string,
-        id = '',
-      ): string =>
-        `<div class="settings-preference"><span>${name}<small>${description}</small></span><button ${id ? `id="${id}"` : ''} type="button" class="settings-switch" role="switch" aria-label="${name}" aria-checked="${checked}" data-action="${action}"><span></span></button></div>`;
-      const shell = this.ctx.ui.shell;
-      return (
-        setting(
-          'Mostrar botón de Superficies',
-          'Acceso alternativo en la barra superior.',
-          shell.showSurfaceMenu,
-          'surface-toggle',
-          'surface-menu-setting',
-        ) +
-        setting(
-          'Dock vertical',
-          'Apagado: disposición horizontal.',
-          shell.canvasDockOrientation === 'vertical',
-          'canvas-dock-toggle',
-        ) +
-        setting(
-          'Fondo cuadriculado',
-          'Apagado: fondo de puntos en Canvas.',
-          shell.canvasBackground === 'grid',
-          'canvas-grid-toggle',
-        ) +
-        setting(
-          'Reducir movimiento en Canvas',
-          'También respeta la preferencia del sistema.',
-          shell.canvasReducedMotion,
-          'canvas-motion-toggle',
-        ) +
-        '<button type="button" data-action="settings-shortcuts">Atajos</button>'
-      );
+      return '<button type="button" data-action="settings-shortcuts">Atajos</button>';
     }
+    return this.shortcutMarkup();
+  }
+  preferences(): string {
+    const setting = (
+      name: string,
+      description: string,
+      checked: boolean,
+      action: string,
+      id = '',
+    ): string =>
+      `<div class="settings-preference"><span>${name}<small>${description}</small></span><button ${id ? `id="${id}"` : ''} type="button" class="settings-switch" role="switch" aria-label="${name}" aria-checked="${checked}" data-action="${action}"><span></span></button></div>`;
+    const shell = this.ctx.ui.shell;
+    return (
+      setting(
+        'Mostrar botón de Superficies',
+        'Acceso alternativo en la barra superior.',
+        shell.showSurfaceMenu,
+        'surface-toggle',
+        'surface-menu-setting',
+      ) +
+      setting(
+        'Dock vertical',
+        'Apagado: disposición horizontal.',
+        shell.canvasDockOrientation === 'vertical',
+        'canvas-dock-toggle',
+      ) +
+      setting(
+        'Fondo cuadriculado',
+        'Apagado: fondo de puntos en Canvas.',
+        shell.canvasBackground === 'grid',
+        'canvas-grid-toggle',
+      ) +
+      setting(
+        'Reducir animaciones de Canvas',
+        'Reduce las animaciones de paneles y del dock. Respeta también el ajuste del sistema.',
+        shell.canvasReducedMotion,
+        'canvas-motion-toggle',
+      )
+    );
+  }
+  private shortcutMarkup(): string {
     return `<section class="canvas-shortcuts" aria-label="Atajos de Canvas">${btn('settings-back', 'chevron-left', 'Volver a Configuración')}<h3>Atajos · Canvas</h3><p>Seleccioná un campo y pulsá la combinación. Se guarda automáticamente.</p>${Object.keys(
       canvasDefaults,
     )

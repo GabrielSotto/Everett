@@ -11,6 +11,7 @@ test('C08-B55: búsqueda dentro de cabecera, botones compactos y switch opcional
   await expect(page.getByRole('button', { name: 'Superficies', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
   await page.getByRole('button', { name: 'Configuración', exact: true }).click();
+  await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
   const setting = page.getByRole('switch', { name: 'Mostrar botón de Superficies', exact: true });
   await expect(setting).toHaveAttribute('aria-checked', 'false');
   await setting.press('Space');
@@ -89,6 +90,7 @@ test('C08-B55: búsqueda dentro de cabecera, botones compactos y switch opcional
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
   await page.getByRole('button', { name: 'Configuración', exact: true }).click();
+  await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
   await setting.click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Superficies', exact: true })).toHaveCount(0);
@@ -217,6 +219,9 @@ test('C08-B57: conjunto manual se renombra, arrastra, recupera y separa sin borr
     await page.mouse.move(720, 480);
     await page.mouse.wheel(0, -Math.log(zoom / current) / 0.00165);
     await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(zoom, 3);
+    // En el panorama diminuto la identificación se consulta por foco, sin
+    // imponer un encabezado mayor que el conjunto de forma permanente.
+    await page.locator(`[data-group="${group.id}"]`).focus();
     // El zoom repinta el encabezado; resolver y medir el nodo vigente en el mismo frame.
     await expect
       .poll(() =>

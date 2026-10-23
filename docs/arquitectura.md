@@ -31,6 +31,8 @@ El reducer coordina los comandos de workspace, Canvas, documentos, código, Boar
 
 ## Estado de interfaz
 
+La cámara de Canvas conserva límites locales 0,01–6 y zoom multiplicativo alrededor del cursor. Sus etiquetas contextuales mantienen tamaño de pantalla y un anclaje explícito; los marcos de conjuntos conservan coordenadas del Mundo. La densidad del encabezado depende del ancho proyectado, con consulta por foco cuando el conjunto es diminuto. La rueda de una zona sin overflow pertenece a la cámara; una lista desplazable la consume localmente y Alt acopla la navegación de Everett. Las preferencias personales de Canvas y navegación alternativa se presentan dentro de Configuración → Preferencias; Atajos y las acciones de Herramientas conservan sus entradas propias.
+
 Cada funcionalidad define su estado transitorio: selección de Canvas, archivo abierto, panel de Docs, vista de agente o borradores de chat. `src/app/ui-state.ts` compone esos estados junto con el shell y los paneles auxiliares.
 
 El contenido del proyecto se modifica mediante comandos. La interfaz conserva por separado sus controles abiertos, selección y borradores. Un render no debe reponer texto ya enviado ni perder una edición en curso.

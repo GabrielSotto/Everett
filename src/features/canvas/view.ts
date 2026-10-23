@@ -84,6 +84,7 @@ export class CanvasView implements View {
   private dock: Point | null = null;
   private dockManual = false;
   private cableZoom = NaN;
+  private groupMarkup = '';
   private proposalMotions = new Map<string, Animation>();
   private revision: string | null = null;
   private reviewCamera: Camera | null = null;
@@ -115,6 +116,7 @@ export class CanvasView implements View {
         if (plane) {
           plane.style.transform = `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
           plane.style.setProperty('--canvas-zoom', String(camera.z));
+          plane.dataset.overview = String(camera.z < 0.25);
           this.paintZoneLabels(camera);
           if (this.cableZoom !== camera.z) {
             this.cableZoom = camera.z;
@@ -1576,20 +1578,40 @@ export class CanvasView implements View {
       ...n,
       ...(preview.find((p) => p.id === n.id)?.point ?? {}),
     }));
-    layer.innerHTML = (world.canvasGroups ?? [])
+    const markup = (world.canvasGroups ?? [])
       .map((group) => {
         const allMoving = group.nodes.every((id) => preview.some((p) => p.id === id));
         const bounds = groupBounds(world, group, allMoving ? nodes : []);
         const zoom = this.cam.current.z;
-        // Encabezado e insets legibles sin agrandar ni separar sus materiales.
-        bounds.x += 16 - 16 / zoom;
-        bounds.width += 32 / zoom - 32;
-        bounds.y += 16 - 16 / zoom;
-        bounds.height += 32 / zoom - 32;
+        // El marco conserva coordenadas del Mundo. Solo la identificación cambia
+        // de densidad; el zoom nunca desplaza ni ensancha el conjunto.
+        const density =
+          bounds.width * zoom >= 240 ? 'full' : bounds.width * zoom >= 100 ? 'compact' : 'hidden';
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
+        return `<div data-density="${density}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
       })
       .join('');
+    if (markup !== this.groupMarkup || !layer.childElementCount) {
+      const focused =
+        document.activeElement instanceof HTMLElement && layer.contains(document.activeElement)
+          ? document.activeElement
+          : null;
+      const action = focused?.dataset.action,
+        id = focused?.dataset.id,
+        focusedGroup = focused?.dataset.group;
+      layer.innerHTML = markup;
+      this.groupMarkup = markup;
+      if (action && id)
+        layer
+          .querySelector<HTMLElement>(
+            `[data-action="${CSS.escape(action)}"][data-id="${CSS.escape(id)}"]`,
+          )
+          ?.focus({ preventScroll: true });
+      else if (focusedGroup)
+        layer
+          .querySelector<HTMLElement>(`[data-group="${CSS.escape(focusedGroup)}"]`)
+          ?.focus({ preventScroll: true });
+    }
   }
   private paintCableLabels(): void {
     const svg = this.root.querySelector('.canvas-links');
@@ -1697,6 +1719,7 @@ export class CanvasView implements View {
       if (!node) return;
       const selected = ui.canvas.selections.includes(node.id);
       element.classList.toggle('selected', selected);
+      element.classList.toggle('primary-selection', node.id === ui.canvas.selection);
       const handles = element.querySelectorAll('.resize-handle');
       if (selected && ui.canvas.tool === 'select' && !connect) {
         if (!handles.length)
@@ -1810,7 +1833,7 @@ export class CanvasView implements View {
       Object.assign(label.style, {
         left: Math.round(width / 2 + camera.x + (zone.x + zone.width / 2) * camera.z) + 'px',
         top: Math.round(height / 2 + camera.y + (zone.y + zone.height / 2) * camera.z) + 'px',
-        fontSize: (mode === 'full' ? 14 : 12) + 'px',
+        fontSize: (mode === 'full' ? 16 : 12) + 'px',
       });
     }
   }
@@ -2081,13 +2104,24 @@ export class CanvasView implements View {
     const vertical = ctx.ui.shell.canvasDockOrientation === 'vertical';
     dock.classList.toggle('vertical-tools', vertical);
     const available = innerWidth - chatWidth;
-    const compact = vertical
-      ? dock.scrollHeight + 24 > innerHeight - 59 - 80
-      : available < dock.scrollWidth + 24;
+    const slots = Array.from(dock.children).filter(
+      (item): item is HTMLElement => item instanceof HTMLElement,
+    );
+    // Medir los controles reales y retirar solo el último que no entra. Se reserva
+    // el desborde desde el primer elemento retirado, sin cambiar orientación.
+    const budget = vertical ? innerHeight - 59 - 80 - 24 : Math.max(0, available - 24);
+    const extent = (): number => (vertical ? dock.scrollHeight + 2 : dock.scrollWidth + 2);
+    let compact = extent() > budget;
     dock.classList.toggle('compact-tools', compact);
+    if (compact) {
+      for (const slot of slots.slice(1, -1).reverse()) {
+        if (extent() <= budget) break;
+        slot.hidden = true;
+      }
+    }
     dock.classList.toggle(
       'minimal-tools',
-      vertical ? dock.scrollHeight + 24 > innerHeight - 59 - 80 : available < dock.scrollWidth + 24,
+      compact && slots.slice(1, -1).every((slot) => slot.hidden),
     );
     if (!this.dock) {
       dock.style.left = vertical ? 'auto' : `${innerWidth / 2}px`;
@@ -2117,6 +2151,21 @@ export class CanvasView implements View {
       );
       const menu = holder.querySelector<HTMLElement>('.dock-more-menu')!,
         bounds = dock.getBoundingClientRect();
+      const shown = new Set(
+        slots
+          .filter((slot) => !slot.hidden)
+          .flatMap((slot) =>
+            [slot, ...slot.querySelectorAll<HTMLElement>('[data-action]')].map(
+              (item) => item.dataset.action + ':' + (item.dataset.tool ?? ''),
+            ),
+          ),
+      );
+      for (const button of menu.querySelectorAll<HTMLElement>('[data-action]'))
+        if (
+          shown.has(button.dataset.action + ':' + (button.dataset.tool ?? '')) ||
+          (shapeTools.includes(button.dataset.tool as Shape) && shown.has('shapes:'))
+        )
+          button.remove();
       menu.style.left = `${Math.max(12, Math.min(innerWidth - menu.offsetWidth - 12, vertical ? bounds.left - menu.offsetWidth - 8 : bounds.left + bounds.width / 2 - menu.offsetWidth / 2))}px`;
       menu.style.top = `${Math.max(70, Math.min(innerHeight - menu.offsetHeight - 12, vertical ? bounds.top : bounds.top - menu.offsetHeight - 8))}px`;
     } else this.dockMore = false;
@@ -2236,6 +2285,7 @@ export class CanvasView implements View {
     (plane as HTMLElement).style.transform =
       `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
     (plane as HTMLElement).style.setProperty('--canvas-zoom', String(camera.z));
+    (plane as HTMLElement).dataset.overview = String(camera.z < 0.25);
     this.root.querySelector<HTMLElement>('.canvas-stage')!.dataset.background =
       this.ctx.ui.shell.canvasBackground;
     this.paintZoneLabels(camera);

@@ -633,12 +633,12 @@ test('C08-B76: orientación elegida persiste, conserva herramientas con chat y e
   const settings = async () => {
     await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
     await page.getByRole('button', { name: 'Configuración', exact: true }).click();
+    await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
   };
   await settings();
   const orientation = page.getByRole('switch', { name: 'Dock vertical', exact: true });
   await expect(orientation).toHaveAttribute('aria-checked', 'false');
   await orientation.click();
-  await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
   const back = page.getByRole('button', { name: 'Volver a Configuración', exact: true }),
     panel = page.locator('.profile-pop'),
     b = (await back.locator('svg').boundingBox())!,

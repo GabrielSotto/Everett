@@ -333,6 +333,7 @@ test('C08-B80: configuración compacta usa switches, centra el regreso y guarda 
     await page.getByRole('button', { name: 'Configuración', exact: true }).click();
   };
   await open();
+  await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
   const panel = page.locator('.profile-pop');
   expect((await panel.boundingBox())!.width).toBeLessThanOrEqual(320);
   const vertical = page.getByRole('switch', { name: 'Dock vertical', exact: true });
@@ -344,10 +345,11 @@ test('C08-B80: configuración compacta usa switches, centra el regreso y guarda 
   expect((await snapshot(page)).ui.canvas.selection).toBe(selected);
   expect((await snapshot(page)).ui.canvas.tool).toBe('select');
   await page.getByRole('switch', { name: 'Fondo cuadriculado', exact: true }).click();
-  await page.getByRole('switch', { name: 'Reducir movimiento en Canvas', exact: true }).click();
+  await page.getByRole('switch', { name: 'Reducir animaciones de Canvas', exact: true }).click();
   await expect(page.locator('.canvas-stage')).toHaveAttribute('data-background', 'grid');
   await expect(page.locator('body')).toHaveAttribute('data-canvas-motion', 'reduced');
   const shared = (await world(page)).nodes;
+  await page.getByRole('button', { name: 'Volver a Configuración', exact: true }).click();
   for (const width of [900, 390, 300]) {
     await page.setViewportSize({ width, height: 720 });
     for (const name of ['Preferencias', 'Herramientas', 'Atajos']) {
@@ -377,7 +379,8 @@ test('C08-B80: configuración compacta usa switches, centra el regreso y guarda 
   await page.reload();
   await ready(page);
   await open();
-  for (const name of ['Dock vertical', 'Fondo cuadriculado', 'Reducir movimiento en Canvas'])
+  await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
+  for (const name of ['Dock vertical', 'Fondo cuadriculado', 'Reducir animaciones de Canvas'])
     await expect(page.getByRole('switch', { name, exact: true })).toHaveAttribute(
       'aria-checked',
       'true',
@@ -390,9 +393,10 @@ test('C08-B80: configuración compacta usa switches, centra el regreso y guarda 
   await openSurface(page, 'Canvas');
   await expect(page.locator('body')).toHaveAttribute('data-canvas-motion', 'reduced');
   await open();
+  await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
   await page.getByRole('switch', { name: 'Dock vertical', exact: true }).click();
   await page.getByRole('switch', { name: 'Fondo cuadriculado', exact: true }).click();
-  await page.getByRole('switch', { name: 'Reducir movimiento en Canvas', exact: true }).click();
+  await page.getByRole('switch', { name: 'Reducir animaciones de Canvas', exact: true }).click();
   await expect(page.locator('.canvas-stage')).toHaveAttribute('data-background', 'dots');
   await expect(page.locator('body')).toHaveAttribute('data-canvas-motion', 'system');
 });

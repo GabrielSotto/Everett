@@ -75,19 +75,20 @@
 }
 .material-identification {
   position: absolute;
-  left: 0;
+  left: 50%;
   bottom: calc(100% + var(--selection-outset, 0px));
   padding-bottom: 7px;
   display: flex;
   align-items: center;
   gap: 8px;
-  max-width: max(100%, 180px);
+  width: max-content;
+  max-width: 240px;
   font-size: 11px;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transition: opacity 100ms ease-out;
-  transform: scale(calc(1 / var(--canvas-zoom)));
+  transform: scale(calc(1 / var(--canvas-zoom))) translateX(-50%);
   transform-origin: bottom left;
   z-index: 12;
 }
@@ -95,6 +96,13 @@
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+}
+#canvas-plane[data-overview='true']
+  .material.selected:not(.primary-selection, .identified, :focus-within)
+  .material-identification {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 .material-identification button {
   color: var(--text);
@@ -285,7 +293,7 @@
 }
 #canvas-zone-labels .drop-label > span {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   margin-top: 4px;
   color: var(--muted);
 }
@@ -483,7 +491,7 @@ body[data-canvas-motion='reduced']
 .canvas-tools [data-action='dock-more'] {
   display: none;
 }
-.canvas-tools.compact-tools :is(.dock-extra, [data-dock-secondary]) {
+.canvas-tools > [hidden] {
   display: none;
 }
 .canvas-tools.compact-tools [data-action='dock-more'] {
@@ -491,9 +499,6 @@ body[data-canvas-motion='reduced']
 }
 .canvas-tools.vertical-tools {
   flex-direction: column;
-}
-.canvas-tools.minimal-tools > :not(.dock-grip, [data-action='dock-more']) {
-  display: none;
 }
 .canvas-tools.minimal-tools {
   padding: 4px;
@@ -1445,7 +1450,8 @@ body[data-canvas-motion='reduced']
   align-items: center;
   gap: calc(4px / var(--canvas-zoom));
   height: calc(28px / var(--canvas-zoom));
-  max-width: max(100%, calc(270px / var(--canvas-zoom)));
+  width: max-content;
+  max-width: 100%;
   white-space: nowrap;
   pointer-events: auto;
   background: var(--bg);
@@ -1478,6 +1484,19 @@ body[data-canvas-motion='reduced']
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: text;
+  flex: 1 1 auto;
+}
+.canvas-manual-group[data-density='compact'] .group-heading :is(small, .group-separate) {
+  display: none;
+}
+.canvas-manual-group[data-density='hidden'] .group-heading {
+  opacity: 0;
+  pointer-events: none;
+}
+.canvas-manual-group[data-density='hidden']:focus-within .group-heading {
+  opacity: 1;
+  pointer-events: auto;
+  max-width: calc(270px / var(--canvas-zoom));
 }
 .group-heading small {
   flex-shrink: 0;
