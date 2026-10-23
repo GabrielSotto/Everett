@@ -55,6 +55,10 @@ test('C08-B77: capas contextuales recorren tres materiales superpuestos pese a v
     await expect(
       page.getByRole('menu', { name: 'Acciones del material', exact: true }),
     ).toBeVisible();
+    await expect(page.getByRole('menu', { name: 'Acciones del material', exact: true })).toHaveCSS(
+      'opacity',
+      '1',
+    );
   };
   await open('alone');
   for (const name of [
