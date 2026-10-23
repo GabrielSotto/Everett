@@ -1455,7 +1455,7 @@ body[data-canvas-motion='reduced']
   max-width: 100%;
   white-space: nowrap;
   pointer-events: auto;
-  background: var(--bg);
+  background: var(--surface);
   border-radius: calc(5px / var(--canvas-zoom));
   color: var(--text);
   font-size: calc(13px / var(--canvas-zoom));

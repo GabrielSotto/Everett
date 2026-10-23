@@ -1,4 +1,6 @@
 import type { Page } from '@playwright/test';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
 import { test, expect } from './fixtures';
 import { start, snapshot, world, capture } from './canvas-utility-helpers';
 import { storedFixture } from './canvas-fixtures';
@@ -572,6 +574,48 @@ test('C08-B86: un conjunto con ambos bordes ocupados conserva nombre alcanzable 
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 10 });
   await expect(heading).toHaveCSS('opacity', '1');
   await capture(page, info, 'conjunto-bloqueado-hover');
+  const png = createRequire(import.meta.url)(
+    resolve('node_modules/playwright-core/lib/utilsBundle.js'),
+  ).PNG as { sync: { read(buffer: Buffer): { data: Buffer; width: number; height: number } } };
+  const colors = await heading.evaluate((el) => ({
+    background: getComputedStyle(el)
+      .backgroundColor.match(/[\d.]+/g)!
+      .map(Number),
+    counter: getComputedStyle(el.querySelector('.group-count')!)
+      .color.match(/[\d.]+/g)!
+      .map(Number),
+  }));
+  expect(colors.background[3] ?? 1).toBe(1);
+  const luminance = (color: number[]) =>
+    color.slice(0, 3).reduce((sum, v, i) => {
+      const c = v / 255;
+      return (
+        sum +
+        (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4) * [0.2126, 0.7152, 0.0722][i]!
+      );
+    }, 0);
+  const ink = luminance(colors.counter),
+    paper = luminance(colors.background);
+  expect((Math.max(ink, paper) + 0.05) / (Math.min(ink, paper) + 0.05)).toBeGreaterThanOrEqual(4.5);
+  // Contrastar pintura real con el fondo opaco. La nota clara que queda debajo
+  // debe aparecer en el contraejemplo transparente y desaparecer al restaurar.
+  const paintedBackground = async () => {
+    const x = await heading.evaluate((el) => {
+      const count = el.querySelector('.group-count')!.getBoundingClientRect();
+      return Math.round(count.x + count.width / 2 - el.getBoundingClientRect().x);
+    });
+    const image = png.sync.read(await heading.screenshot());
+    const offset = (6 * image.width + x) * 4;
+    return colors.background
+      .slice(0, 3)
+      .reduce((sum, value, i) => sum + Math.abs(value - image.data[offset + i]!), 0);
+  };
+  expect(await paintedBackground()).toBeLessThan(3);
+  await heading.evaluate((el) => ((el as HTMLElement).style.background = 'transparent'));
+  expect(await paintedBackground()).toBeGreaterThan(60);
+  await heading.evaluate((el) => ((el as HTMLElement).style.background = ''));
+  expect(await paintedBackground()).toBeLessThan(3);
+  await capture(page, info, 'conjunto-bloqueado-contraste');
   await name.click();
   const field = page.getByLabel('Nombre del conjunto', { exact: true });
   await field.fill('Nombre accesible');
