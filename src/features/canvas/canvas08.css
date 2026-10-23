@@ -1415,6 +1415,7 @@ body[data-canvas-motion='reduced']
 }
 .canvas-manual-group {
   position: absolute;
+  pointer-events: auto;
   border: calc(1px / var(--canvas-zoom)) solid #829ca870;
   border-radius: 6px;
   background: #829ca808;
@@ -1505,11 +1506,26 @@ body[data-canvas-motion='reduced']
   opacity: 0;
   pointer-events: none;
 }
+.canvas-manual-group:not([data-density='hidden']):hover .group-heading,
 .canvas-manual-group:focus-within .group-heading {
   opacity: 1;
   pointer-events: auto;
-  max-width: calc(270px / var(--canvas-zoom));
+  max-width: max(100%, calc(270px / var(--canvas-zoom)));
   z-index: 15;
+}
+/* El puente transparente mantiene el acceso desde el borde hasta el nombre,
+   incluso cuando el encabezado se consulta encima de un material vecino. */
+.group-heading::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: calc(20px / var(--canvas-zoom));
+}
+.canvas-manual-group[data-heading-side='bottom'] .group-heading::after {
+  top: auto;
+  bottom: 100%;
 }
 .group-heading small {
   flex-shrink: 0;

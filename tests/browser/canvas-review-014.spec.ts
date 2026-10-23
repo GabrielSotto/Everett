@@ -532,3 +532,60 @@ test('C08-B85: cámara reversible alrededor del cursor, límites finitos y delta
     contentType: 'application/json',
   });
 });
+
+test('C08-B86: un conjunto con ambos bordes ocupados conserva nombre alcanzable por puntero y selección desde su fondo', async ({
+  page,
+}, info) => {
+  await start(page);
+  const input = await snapshot(page),
+    w = input.state.worlds.find((w) => w.id === 'scout')!;
+  w.nodes = [
+    { id: 'a', x: -150, y: 0, width: 140, height: 100 },
+    { id: 'b', x: 30, y: 0, width: 140, height: 100 },
+    { id: 'above', x: -166, y: -60, width: 352, height: 30 },
+    { id: 'below', x: -166, y: 130, width: 352, height: 30 },
+  ].map((n) => ({
+    ...n,
+    owner: null,
+    data: { kind: 'note' as const, title: n.id, text: n.id, color: '#eeeedd' },
+  }));
+  w.canvasGroups = [{ id: 'crowded', name: 'Conjunto entre materiales', nodes: ['a', 'b'] }];
+  input.state.camera = { x: 0, y: 0, z: 1 };
+  await storedFixture(page, input.state, input.ui);
+  await page.reload();
+  await ready(page);
+  await page.mouse.move(20, 100);
+  const frame = page.locator('.canvas-manual-group'),
+    heading = frame.locator('.group-heading');
+  await expect(frame).toHaveAttribute('data-heading-side', 'blocked');
+  await expect(heading).toHaveCSS('opacity', '0');
+  await capture(page, info, 'conjunto-bloqueado-en-reposo');
+  const r = (await frame.boundingBox())!;
+  await page.mouse.move(r.x + 3, r.y + r.height / 2);
+  await expect(heading).toHaveCSS('opacity', '1');
+  const name = frame.locator('.group-name'),
+    b = (await name.boundingBox())!;
+  // Atravesar realmente el espacio de separación; un click directo saltaría
+  // el tramo que antes volvía inalcanzable la identificación.
+  await page.mouse.move(b.x + b.width / 2, r.y - 10, { steps: 10 });
+  await expect(heading).toHaveCSS('opacity', '1');
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 10 });
+  await expect(heading).toHaveCSS('opacity', '1');
+  await capture(page, info, 'conjunto-bloqueado-hover');
+  await name.click();
+  const field = page.getByLabel('Nombre del conjunto', { exact: true });
+  await field.fill('Nombre accesible');
+  await field.press('Enter');
+  expect((await world(page)).canvasGroups![0]!.name).toBe('Nombre accesible');
+  const original = (await world(page)).nodes,
+    cameraBefore = await camera(page);
+  for (const y of [r.y + 2, r.y - 10]) {
+    await page.mouse.move(r.x + 2, y);
+    await page.mouse.down();
+    await page.mouse.move(r.x + r.width - 2, r.y + r.height - 2, { steps: 15 });
+    await page.mouse.up();
+    expect((await snapshot(page)).ui.canvas.selections.slice().sort()).toEqual(['a', 'b']);
+    expect((await world(page)).nodes).toEqual(original);
+    expect(await camera(page)).toEqual(cameraBefore);
+  }
+});

@@ -584,7 +584,16 @@ export class CanvasView implements View {
       ui = this.ctx.ui;
     if (target.closest('[data-action=group-rename],[data-action=group-ungroup]')) return;
     const header = target.closest<HTMLElement>('[data-group]');
-    if (header?.dataset.group && ui.canvas.tool === 'select') {
+    const headerRect = header?.getBoundingClientRect();
+    // El puente de hover es transparente: solo el encabezado visible arrastra
+    // el conjunto; iniciar en su separación conserva la selección rectangular.
+    const onHeader =
+      headerRect &&
+      e.clientX >= headerRect.left &&
+      e.clientX <= headerRect.right &&
+      e.clientY >= headerRect.top &&
+      e.clientY <= headerRect.bottom;
+    if (header?.dataset.group && onHeader && ui.canvas.tool === 'select') {
       const group = this.ctx.world().canvasGroups?.find((g) => g.id === header.dataset.group);
       if (!group) return;
       e.preventDefault();
