@@ -2,17 +2,17 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                                                            |
-| ----------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                          |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                       |
-| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). 0.8.16 implementada: lectura web y archivos por URL; gate final en curso. |
-| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                 |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                             |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                           |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                          |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                          |
+| Iteración                     | Estado                        | Trabajo                                                                                                                                                               |
+| ----------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                             |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                          |
+| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). Candidata 0.8.16 verificada: lectura web y archivos por URL; revisión del usuario pendiente. |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                   |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                    |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                              |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                             |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                             |
 
 ## Después de 1.0
 
@@ -20,7 +20,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Estado actual — consulta web en 0.8.16
 
-Implementados C08-WEB-01 y las correcciones de la revisión: lectura guardada y navegable dentro de Everett, imágenes y videos directos con bytes locales, reproductores oficiales de YouTube/Vimeo, pegado contextual/nativo, renombre compacto y confirmaciones. La rueda de Canvas responde sin cola y encuadrar la selección permite ampliar por encima del 100 %. Gate final y revisión pública en curso; no declarar lista antes de verificar sus resultados.
+Implementados C08-WEB-01 y las correcciones de la revisión: lectura guardada y navegable dentro de Everett, imágenes y videos directos con bytes locales, reproductores oficiales de YouTube/Vimeo, pegado contextual/nativo, renombre compacto y confirmaciones. La rueda de Canvas responde sin cola y encuadrar la selección permite ampliar por encima del 100 %. Gate completo y revisión visual terminados; pendiente la revisión del usuario. Fuentes en el commit `f049ddd`, sin integración en dev.
 
 ## Antecedente — enlaces reales en 0.8.15
 
@@ -28,43 +28,13 @@ Implementación de C08-URL-01 en `feat/canvas-0.8`: previews mediante servicio l
 
 Candidata 0.8.15 con gate completo: tipado, formato, 91 pruebas de lógica/herramientas y 167 de navegador aprobadas, sin omisiones ni reintentos. Incluye siete regresiones nuevas de navegador y sesión sostenida de 30 ciclos. El informe, fuentes e identidad del HTML fueron verificados. La prueba pública de MDN sin respuestas sustituidas compara los mismos bytes de portada mediante SHA-256 antes y después de recargar. La evidencia de 0.8.14 se conserva como antecedente en su paquete.
 
-## Revisión del usuario terminada — 0.8.15
+## Revisión pendiente del usuario
 
-El usuario completó los ocho puntos de revisión. Confirmó movimiento, capas, renombre funcional, conservación de tarjetas/nombres/posiciones/portadas al recargar, duplicado identificado como copia, borrado/Undo/Redo y legibilidad del visor. Esos comportamientos deben preservarse. La consulta del contenido sigue siendo insuficiente: entrar con zoom o doble clic repite la tarjeta ampliada y obliga a abrir el destino fuera de Everett.
+Las correcciones de la revisión de 0.8.15 están implementadas y cubiertas por C08-WEB-01: Godot supera el límite anterior de HTML, hay lectura guardada dentro de Everett, importación real por URL, pegado contextual/nativo, nombres compactos y confirmaciones. Los fallos corregidos conservan sus regresiones; sus condiciones funcionales permanecen en la definición de 0.8 y en Desarrollo.
 
-- Dirección aprobada tras comparar diez canvases: entrar con zoom permite leer el contenido web dentro de Everett; la tarjeta identifica la referencia en el panorama. Conservar lectura local, origen y actualización explícita; imágenes y videos tienen su representación correspondiente. Reutilizar bibliotecas existentes, preservando el regreso espacial.
-- Godot: se reprodujo el rechazo del límite actual de 1 MiB; el mismo parser obtiene metadatos con un límite diagnóstico mayor. Corregir límites y diagnóstico sin quitar las cotas de descarga. No atribuirlo a una portada ausente.
-- Pegado: el usuario logró crear enlaces mediante teclado, pero el fondo deja aparecer el menú del navegador interno, sin una acción Pegar de Canvas. Resolver el acceso contextual y comprobar el portapapeles nativo, foco y permisos, además del evento DOM ya cubierto por el arnés.
-- Simplificar el formulario de enlace: el usuario pide reemplazar Cancelar por una X compacta arriba a la derecha. Simplificar también el renombre de materiales de forma coherente con la edición directa de cables. Pide confirmación al descartar o eliminar; definir su aplicación junto con el flujo, preservando borradores y Undo/Redo.
-- Diferenciar entrada vacía, formato inválido, dominio sin protocolo, destino inexistente, error de descarga y límite excedido. El mensaje nativo de `input[type=url]` no explica esas situaciones. Conservar el dato para corregirlo y reintentar.
-- Las portadas genéricas de páginas iniciales de TyC Sports y YouTube no equivalen al contenido de una noticia o un video. La presentación debe identificar el recurso concreto y explicar qué se puede consultar. Agrandar la tarjeta no acredita lectura ni reproducción.
-
-Implementación autorizada de lectura web, imágenes/videos y correcciones en la misma rama de 0.8. La candidata anterior conserva su identidad; la siguiente entrega requiere su propio gate completo. No integrar en dev.
-
-## Feedback abierto de 0.8.15 — zoom de Canvas
-
-El usuario confirma que el zoom se siente extraño frente a Figma y otros canvases. Corregir su respuesta al gesto; la verificación anterior de geometría, anclajes y extremos no acredita por sí sola una sensación adecuada de navegación.
-
-- Contrastar sensibilidad, continuidad, inversión de dirección y detención, con rueda y trackpad. Revisar el rango 1–600 % a partir de tareas reales, sin elegir límites únicamente por los porcentajes de los atajos. Referencias oficiales: [zoom en Figma](https://help.figma.com/hc/en-us/articles/360041065034-Adjust-your-zoom-and-view-options) y [navegación en FigJam](https://help.figma.com/hc/en-us/articles/1500004414582-Pan-and-zoom-in-FigJam).
-- Corregir el tope fijo del 100 % en el encuadre de selección: debe poder ampliar una selección pequeña para consultarla, respetando márgenes y el máximo de cámara. Evaluar por separado el encuadre del contenido completo.
-- La lectura del código confirma que Canvas comparte sensibilidad y suavizado con la cámara espacial. Es un factor a medir, no una causa demostrada del problema percibido. Conservar Alt, scroll local, anclaje al cursor, persistencia y navegación aprobados.
-- Ampliar el arnés con latencia de pintura y detención, inversión antes de terminar el movimiento, ráfagas y cambios de posición del cursor, además de encuadre de selecciones pequeñas por encima del 100 %. La calibración necesita revisión perceptual junto a esas mediciones.
-
-Este feedback queda pendiente de corrección; no modifica el HTML ni el servidor de la candidata durante esta anotación de revisión.
-
-## Feedback abierto de 0.8.15 — imágenes y videos de Internet
-
-El usuario confirma que reunir imágenes de Pinterest y otros sitios para inspiración, referencias de diseño y moodboards forma parte del trabajo esperado en Canvas. Extiende ese recorrido a referencias de video de YouTube y otras plataformas, además de archivos directos. La candidata actual admite previews de páginas HTML, pero rechaza una URL directa de imagen o video como contenido sin metadatos. Los videos reproducibles actuales proceden de archivos locales o ejemplos generados localmente. La incorporación por URL queda pendiente dentro de 0.8.
-
-- Pegar una URL directa de imagen debe incorporar un material Imagen, con bytes guardados localmente y URL de origen conservada. Distinguir el archivo real de una página web por la respuesta y el contenido, no por su extensión.
-- Copiar una imagen del navegador y pegarla en Canvas debe reutilizar la incorporación de archivos de imagen; conservar el origen cuando el portapapeles lo proporcione. Pegar en un editor debe mantener la acción local correspondiente.
-- La URL de una página o de un pin sigue siendo un enlace con preview. Copiar la dirección de su imagen permite incorporar solo esa imagen al trabajo visual.
-- Una URL directa de archivo de video debe poder incorporarse como material Video con los controles existentes, validación del contenido real y límites apropiados para archivos. Resolver reproducción y conservación local manteniendo su origen.
-- Un enlace de YouTube u otro proveedor compatible debe representarse como referencia de video reproducible mediante el reproductor oficial o el mecanismo de incrustación admitido. La referencia, título y portada se conservan; la reproducción del proveedor necesita acceso en línea y no implica descargar una copia local del video. Investigar y reutilizar adaptadores existentes antes de desarrollar uno propio. Referencias primarias: [reproductor de YouTube](https://developers.google.com/youtube/player_parameters) y [oEmbed](https://oembed.com/).
-- Conservar una referencia utilizable y acceso al origen si el proveedor impide la reproducción incrustada. Cubrir persistencia, reproducción explícita, pausa, navegación, foco y convivencia del reproductor con los gestos del Canvas; no presentar una portada como reproducción funcional.
-- Reutilizar el servicio local de descarga y el importador/almacenamiento existentes. Cubrir contenido inválido, redirecciones, descarga rechazada, límites apropiados para materiales, proporción, bytes recuperados tras recarga, duplicación, borrado y pegado de imagen. Como referencia de interacción, [Miro documenta imágenes desde el portapapeles e incorporación por URL](https://help.miro.com/hc/en-us/articles/360017731233-Ways-to-add-content).
-
-La incorporación de imágenes o videos desde Internet todavía no está implementada. Los archivos disponibles en la computadora se pueden importar localmente; una preview de página con portada no equivale a importar la imagen ni a tener el video reproducible.
+- Revisar la utilidad del lector, el regreso desde páginas seguidas y la incorporación de referencias visuales con material propio.
+- La rueda de Canvas responde sin cola y Ajustar a la selección puede ampliar hasta el máximo de cámara. Se conserva 1–600 %; la calibración perceptual y el uso con trackpad físico requieren revisión del usuario. Las pruebas verifican cursor, inversión, detención, unidades de rueda y encuadre.
+- Vimeo: cargó el iframe oficial, pero no reprodujo el ejemplo público en el navegador de pruebas. El mismo rechazo aparece en un iframe aislado, con autoplay y sin sandbox. No se acredita reproducción ni se atribuye una causa definitiva. YouTube sí reprodujo contenido real. El origen y el regreso permanecen disponibles.
 
 ## Antecedente — Canvas 0.8.14
 
@@ -97,14 +67,14 @@ Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada sup
 
 ## Verificación y entrega actual
 
-Candidata **0.8.15** preparada para revisión del usuario. Gate completo: build, typecheck, format:check, test:unit, verify:unit, verify:build, test:browser -- --workers=1 y verify:browser. **91 pruebas de lógica/herramientas y 167 de navegador aprobadas**, sin omisiones ni reintentos. La pasada completa de navegador duró 40.69 minutos e incluye los 30 ciclos de sesión sostenida y controles negativos del arnés.
+Candidata **0.8.16** preparada para revisión. Gate completo: build, typecheck, format:check, test:unit, verify:unit, verify:build, test:browser -- --workers=2 y verify:browser. **95 pruebas de lógica/herramientas y 173 de navegador aprobadas**, sin omisiones ni reintentos. La pasada completa duró 25.98 minutos e incluye los 30 ciclos de sesión sostenida y controles negativos del arnés.
 
-- [HTML autónomo](dist/Everett-0.8.15.html): 13.880.658 bytes, build `9d40b733709228e1`, SHA-256 `765bab4e8e6f9d306de18e3717c432079429717b748596fa9138d36a12e1152a`.
-- [Informe verificado](output/informe/informe.md), [resultado unitario](output/pruebas/unitarias/2026-10-25_10-33-05-760Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-25_09-56-39-692Z/results.json).
-- [Revisión visual, alcance y qué probar](output/revision/0.8.15/revision.md). Las dependencias y el servicio se documentan en Desarrollo.
-- Preview único en http://127.0.0.1:4173/, mediante `node scripts/preview.mjs 4173`, con el servicio local de metadatos y portadas. La pestaña y los datos de revisión del usuario se conservaron.
-- Sin empaquetado ZIP por instrucción expresa del usuario para esta entrega. Las fuentes y pruebas quedan versionadas en `feat/canvas-0.8`.
+- [HTML autónomo](dist/Everett-0.8.16.html): 14,312,865 bytes, build `58aea329bd3cc3a7`, SHA-256 `3c979912d3e512bb01b8501e1e3d4131ec767ea2807b07f79be55282935958d4`.
+- [Informe verificado](output/informe/informe.md), [resultado unitario](output/pruebas/unitarias/2026-10-25_21-14-54-072Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-25_21-15-25-660Z/results.json).
+- [Revisión visual, alcance y qué probar](output/revision/0.8.16/revision.md), con comprobaciones públicas de Godot, imagen, video y YouTube, bytes conservados tras recarga y la limitación observada en Vimeo. Las dependencias y el servicio se documentan en Desarrollo.
+- Preview único en http://127.0.0.1:4173/, mediante `node scripts/preview.mjs 4173`. La pestaña y los datos de revisión del usuario se conservaron.
+- Sin ZIP por instrucción del usuario. La investigación comparativa fue temporal y se retiró; permanecen las decisiones adoptadas, fuentes y evidencias de validación.
 
-Las regresiones incorporan charset HTML, URLs relativas, redes y redirecciones rechazadas, límites de descarga, API local, cache, datos no confiables, portada decodificada, recarga, respuestas tardías, renombre, borrado, historial, búsqueda, propuestas y errores de almacenamiento. La revisión detectó una descarga repetida tras recargar y un caso de descripción larga en el visor; sus correcciones y contraejemplos quedaron cubiertos antes de la pasada completa final.
+El arnés amplía la extracción, saneamiento, formatos/proveedores, descarga acotada, respuesta tardía durante edición, bytes recuperados, reproducción nativa, portapapeles real, cancelación de navegación pendiente y actualización fallida del lector, dentro de una página seguida y de la referencia original. Los estados de carga conservan los controles de regreso y las respuestas obsoletas no sustituyen la lectura vigente.
 
 0.8 sigue abierta en `feat/canvas-0.8`. No se integra en `dev` ni se adelanta otra iteración. La revisión y aprobación del usuario continúan pendientes.
