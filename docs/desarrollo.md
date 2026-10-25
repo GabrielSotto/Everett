@@ -167,3 +167,11 @@ tests/browser/control-probe.ts observa clics antes de que los controles reconstr
 La evidencia de controles complementa las aserciones de intención, datos y representación. Los requisitos de entradas visibles, fixtures y auditoría de recorridos están en [Validación](validacion-prototipo.md#entrada-observable-y-auditoría-de-recorridos-de-canvas).
 
 El fixture comprueba las entradas obligatorias de cada caso al terminar sus acciones, usando la misma función y matriz que el verificador independiente. Un clic real sobre un menú todavía transparente no acredita una entrada visible. Esperar su estado visible antes de operarlo; no relajar el registro ni sustituirlo por una activación programática.
+
+## Servicio local de previews
+
+La excepción aprobada para 0.8.15 añade POST /api/link-preview al mismo servidor de preview, ligado únicamente a 127.0.0.1. Se ejecuta con `node scripts/preview.mjs 4173`; requiere `npm ci` y el build vigente. Valida Origin y Host locales, limita solicitudes, cachea seis horas y combina descargas concurrentes del mismo destino. link-preview-js extrae metadatos; Undici descarga con DNS público fijado y valida cada redirección; ipaddr.js clasifica direcciones e image-size limita portadas raster. Las cuatro bibliotecas MIT quedan fijadas en el lockfile. No recibe cookies ni credenciales del navegador, no ejecuta scripts del destino y no incorpora HTML externo. Las imágenes se descargan por el servicio y se conservan como Blobs locales.
+
+El HTML sigue siendo autónomo para leer tarjetas guardadas. Abrirlo directamente no puede generar previews generales sin el servicio: conserva el enlace y muestra esa condición. IndexedDB depende del origen; abrir por file o cambiar de puerto no traslada los datos del usuario.
+
+La entrega actual prioriza implementación y gate; el usuario excluyó expresamente el ZIP del trabajo. La conservación y validación de evidencias siguen vigentes.

@@ -10,6 +10,9 @@ import { runProcess } from './run-process.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const files = [];
+const serverInputs = [];
+for await (const path of glob('scripts/link-preview/**/*.mjs', { cwd: root }))
+  serverInputs.push(path);
 for (const pattern of ['tests/unit/**/*.test.ts', 'tests/tooling/**/*.test.mjs']) {
   for await (const path of glob(pattern, { cwd: root })) files.push(path);
 }
@@ -42,6 +45,10 @@ await withTestRun(root, 'unitarias', async ({ runId, directory: destination }) =
         'docs/asset-manifest.json',
         'Everett-0.7.5.html',
         'scripts/test-unit.mjs',
+        'tests/fixtures/link-cover.png',
+        'scripts/preview.mjs',
+        'scripts/local-server.mjs',
+        ...serverInputs,
         'scripts/canvas-contracts.mjs',
         'docs/iteraciones/0.8.md',
         'scripts/run-process.mjs',

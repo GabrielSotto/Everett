@@ -13,6 +13,7 @@ import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { materialDensity, materialGroups } from '../../domain/material-density';
 import { referenceExcerpt } from '../../domain/reference-anchors';
+import { linkCardMarkup } from './link-card';
 const anchors: Anchor[] = ['north', 'east', 'south', 'west'];
 export function shapeMarkup(material: Material): string {
   if (material.data.kind !== 'shape') return '';
@@ -70,8 +71,7 @@ export function materialMarkup(
       ? `<img src="${d.preview}" alt="Primera página de ${html(d.title)}">`
       : `<div class="pdf-placeholder">${icon('docs', 28)}<strong>${html(d.title)}</strong><span>PDF · sin portada disponible</span></div>`;
   else if (d.kind === 'link') {
-    const url = new URL(d.url);
-    content = `${d.preview ? `<img src="${html(d.preview)}" alt="">` : ''}<div class="link-material-body">${icon('link', 18)}<span>${html(url.hostname + url.pathname)}${d.description ? `<small>${html(d.description)}</small>` : ''}</span></div>`;
+    content = linkCardMarkup(d, material.id, resize);
   } else if (d.kind === 'reference') {
     const ref = d.ref;
     const detail = ref.fragment
@@ -112,6 +112,8 @@ const materialKinds: Record<string, { label: string; icon: Parameters<typeof ico
   link: { label: 'Enlaces', icon: 'link' },
 };
 function assignedPreview(w: WorldSnapshot, n: Material): string {
+  if (n.data.kind === 'link')
+    return `<div class="assigned-preview assigned-link" data-assigned-id="${n.id}">${linkCardMarkup(n.data, n.id)}</div>`;
   const d = n.data,
     kind = d.kind === 'reference' ? d.ref.kind : d.kind,
     meta = materialKinds[kind] ?? materialKinds.note!;
@@ -129,7 +131,7 @@ function assignedPreview(w: WorldSnapshot, n: Material): string {
                 ? w.tasks.find((task) => task.id === d.ref.id)?.description
                 : ''
           : '';
-  return `<div class="assigned-preview" data-assigned-id="${n.id}"><strong>${icon(meta.icon, 13)}<span>${html(nodeTitle(w, n))}</span></strong>${d.kind === 'shape' ? shapeMarkup(n) : d.kind === 'drawing' ? drawingMarkup(n) : d.kind === 'image' || d.kind === 'video' ? `<${d.kind === 'image' ? 'img' : 'video'} data-asset="${d.asset}" ${d.kind === 'image' ? `alt="${html(d.title)}"` : `aria-label="${html(d.title)}"`}>${d.kind === 'video' ? '</video>' : ''}` : d.kind === 'pdf' && d.preview ? `<img src="${d.preview}" alt="${html(d.title)}">` : `<p>${html(d.kind === 'link' ? d.url : text)}</p>`}</div>`;
+  return `<div class="assigned-preview" data-assigned-id="${n.id}"><strong>${icon(meta.icon, 13)}<span>${html(nodeTitle(w, n))}</span></strong>${d.kind === 'shape' ? shapeMarkup(n) : d.kind === 'drawing' ? drawingMarkup(n) : d.kind === 'image' || d.kind === 'video' ? `<${d.kind === 'image' ? 'img' : 'video'} data-asset="${d.asset}" ${d.kind === 'image' ? `alt="${html(d.title)}"` : `aria-label="${html(d.title)}"`}>${d.kind === 'video' ? '</video>' : ''}` : d.kind === 'pdf' && d.preview ? `<img src="${d.preview}" alt="${html(d.title)}">` : `<p>${html(text)}</p>`}</div>`;
 }
 function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {
   if (!nodes.length) return '';

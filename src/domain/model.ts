@@ -76,6 +76,16 @@ export interface ReferenceAnchor {
 }
 export type Anchor = 'north' | 'east' | 'south' | 'west';
 export type Shape = 'rectangle' | 'ellipse' | 'triangle' | 'star';
+export interface LinkPreview {
+  status: 'loading' | 'ready' | 'unavailable' | 'error';
+  checkedAt: number;
+  resolvedUrl: string;
+  title?: string;
+  description?: string;
+  siteName?: string;
+  imageAsset?: string;
+  problem?: string;
+}
 export type NodeData =
   | {
       kind: 'note';
@@ -102,7 +112,14 @@ export type NodeData =
       preview?: string;
       duration?: number;
     }
-  | { kind: 'link'; title: string; url: string; description?: string; preview?: string }
+  | {
+      kind: 'link';
+      title: string;
+      url: string;
+      description?: string;
+      preview?: string;
+      metadata?: LinkPreview;
+    }
   | {
       kind: 'reference';
       ref: Reference;

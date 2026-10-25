@@ -14,6 +14,7 @@ import type {
   ShippingRole,
   Zone,
   ProposalMaterial,
+  LinkPreview,
 } from './model';
 import type { AgentRun } from './operations';
 import type { MaterialOrder } from './material-order';
@@ -153,6 +154,7 @@ export type Command =
       instruction: string;
     }
   | { type: 'asset.preview'; world: string; asset: string; preview: string }
+  | { type: 'node.link-preview'; world: string; id: string; url: string; metadata: LinkPreview }
   | {
       type: 'node.edit';
       world: string;

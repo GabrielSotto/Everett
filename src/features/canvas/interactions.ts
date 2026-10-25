@@ -15,6 +15,8 @@ import { referenceSource } from '../../domain/reference-anchors';
 import { alpha, rgb, rgba } from './color';
 import { bindColorPicker } from './color-picker';
 import { canOrderMaterials } from '../../domain/material-order';
+import { linkUrl } from '../../domain/link-previews';
+import { linkCardMarkup } from './link-card';
 
 /** Interacciones contextuales; los gestos y la cámara permanecen en CanvasView. */
 export class CanvasInteractions {
@@ -37,6 +39,36 @@ export class CanvasInteractions {
     this.overlay = document.createElement('div');
     this.overlay.className = 'canvas-context-layer';
     root.append(this.overlay);
+    const unsubscribe = ctx.store.subscribe((change) => {
+      if (change.command.type === 'node.link-preview' && change.command.world === ctx.world().id) {
+        this.paintLinkCards(change.command.id);
+        this.hydrate();
+      }
+    });
+    signal.addEventListener('abort', unsubscribe, { once: true });
+    window.addEventListener(
+      'paste',
+      (event) => {
+        if (
+          this.disposed ||
+          editable(event.target) ||
+          (document.activeElement && editable(document.activeElement)) ||
+          event.clipboardData?.files.length
+        )
+          return;
+        if (
+          document.activeElement instanceof Element &&
+          document.activeElement.closest('#shell,.canvas-chat,.canvas-context-layer')
+        )
+          return;
+        const value = event.clipboardData?.getData('text/plain').trim() ?? '';
+        const url = linkUrl(value);
+        if (!url || /\s/.test(value)) return;
+        event.preventDefault();
+        this.addLink(url);
+      },
+      { signal },
+    );
     root.addEventListener(
       'dblclick',
       (event) => {
@@ -272,6 +304,9 @@ export class CanvasInteractions {
             break;
           case 'material-rename':
             this.rename(id);
+            break;
+          case 'link-preview-retry':
+            ctx.previews.refresh(ctx.world().id, id);
             break;
           case 'context-order': {
             const order = button.dataset.order;
@@ -547,14 +582,9 @@ export class CanvasInteractions {
           this.focusLink(form.dataset.label);
         } else if (form.id === 'canvas-new-link') {
           try {
-            const url = new URL(form.querySelector<HTMLInputElement>('input')?.value ?? '');
-            if (!['https:', 'http:'].includes(url.protocol))
-              throw new Error('Ingresá una dirección http o https.');
-            this.create(
-              { kind: 'link', title: url.hostname + url.pathname, url: url.href },
-              280,
-              100,
-            );
+            const url = linkUrl(form.querySelector<HTMLInputElement>('input')?.value ?? '');
+            if (!url) throw new Error('Ingresá una dirección http o https.');
+            this.addLink(url);
             this.overlay.replaceChildren();
           } catch {
             ctx.notice('Ingresá una dirección completa, por ejemplo https://example.com.', true);
@@ -905,6 +935,34 @@ export class CanvasInteractions {
     this.overlay.innerHTML = `<form id="canvas-new-link" class="canvas-context-form" style="${this.position({ x: innerWidth / 2 - 140, y: innerHeight / 2 - 80 })}"><label for="canvas-link-url">Dirección del enlace</label><input id="canvas-link-url" type="url" required placeholder="https://"><button type="submit">Agregar enlace</button><button type="button" data-action="context-close">Cancelar</button></form>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
+  }
+  private addLink(value: string): void {
+    const url = new URL(value);
+    this.create({ kind: 'link', title: url.hostname + url.pathname, url: url.href }, 320, 240);
+  }
+  private paintLinkCards(id: string): void {
+    const world = this.ctx.world();
+    const source = world.nodes.find((n) => n.id === id);
+    const outputs = world.assignments
+      .filter((job) => job.node === id)
+      .flatMap((job) => job.output?.map((o) => o.material) ?? []);
+    for (const element of this.root.querySelectorAll<HTMLElement>(
+      '.material.link[data-node], .material.link[data-proposed-node], .assigned-link[data-assigned-id]',
+    )) {
+      const key =
+        element.dataset.node ?? element.dataset.proposedNode ?? element.dataset.assignedId;
+      const node = source?.id === key ? source : outputs.find((n) => n.id === key);
+      if (node?.data.kind !== 'link') continue;
+      const previous = element.querySelector<HTMLElement>('.link-card');
+      if (!previous) continue;
+      const focused = previous.contains(document.activeElement);
+      previous.outerHTML = linkCardMarkup(
+        node.data,
+        node.id,
+        !element.hasAttribute('data-proposed-node'),
+      );
+      if (focused) element.focus({ preventScroll: true });
+    }
   }
   private create(data: Material['data'], width: number, height: number, position?: Point): string {
     const point = position ?? this.center(),

@@ -21,6 +21,7 @@ import { TransitionLayer } from '../ui/transitions';
 import { DomainError } from '../domain/invariants';
 import { Store, type Change } from './store';
 import { AgentService } from './agent-service';
+import { LinkPreviewService } from './link-preview-service';
 import { uiState, type Context } from './context';
 import { trace, type Intent } from './diagnostics/trace';
 import type { SpatialCamera, GravityDiagnostic } from '../spatial/camera';
@@ -44,6 +45,7 @@ export class EverettApp implements Context {
   private readonly unsubscribe: () => void;
   readonly store: Store;
   readonly service: AgentService;
+  readonly previews: LinkPreviewService;
   readonly ui = uiState();
   camera: SpatialCamera | null = null;
   private view: View | null = null;
@@ -68,6 +70,7 @@ export class EverettApp implements Context {
     if (restored) Object.assign(this.ui, restored.ui);
     this.store = new Store(restored?.state ?? seed(location.hash === '#empty', variation));
     this.service = new AgentService(this.store);
+    this.previews = new LinkPreviewService(this);
     root.innerHTML =
       '<header id="shell"></header><main id="viewport"><div id="viewport-hud" data-fixed-presentation aria-label="Navegación espacial"></div></main><div id="notification" role="status" aria-live="polite"></div><div id="tooltip" role="tooltip"></div>';
     this.viewport = root.querySelector<HTMLElement>('#viewport')!;
@@ -176,6 +179,7 @@ export class EverettApp implements Context {
     window.__everettReady = true;
     this.persist();
     this.service.resume();
+    this.previews.resume();
     trace.add('application.ready', {
       worldCount: this.store.get().worlds.length,
       route: routeKey(this.store.get().route),
@@ -186,6 +190,7 @@ export class EverettApp implements Context {
     this.lifetime.abort();
     this.unsubscribe();
     this.service.dispose();
+    this.previews.dispose();
     this.transitions.cancel();
     this.view?.dispose();
     this.shell.dispose();

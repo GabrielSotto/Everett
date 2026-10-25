@@ -14,6 +14,8 @@ const contentKeys = new Set([
   'source',
   'bio',
   'instruction',
+  'url',
+  'resolvedUrl',
 ]);
 export function traceInput(input: unknown, key = ''): unknown {
   if (contentKeys.has(key) && typeof input === 'string')

@@ -23,6 +23,19 @@ export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[
         if (message.type() === 'error') errors.push(message.text());
       });
       try {
+        // Los contratos ajenos a enlaces no dependen de sitios externos.
+        // La integración real HTTP + parser tiene un caso separado sin esta ruta.
+        await page.route('**/api/link-preview', async (route) => {
+          const data = route.request().postDataJSON() as { url: string };
+          await route.fulfill({
+            json: {
+              status: 'unavailable',
+              problem: 'no-metadata',
+              checkedAt: 123,
+              resolvedUrl: data.url,
+            },
+          });
+        });
         // El HTML autónomo incluye bytes de imágenes y el worker PDF. Conservar el
         // cuerpo realmente cargado evita la expulsión de la caché CDP de 10 MiB.
         const manifest = JSON.parse(await readFile('dist/build-manifest.json', 'utf8')) as {

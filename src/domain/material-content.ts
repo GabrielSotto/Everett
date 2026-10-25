@@ -23,6 +23,9 @@ export function materialText(world: WorldSnapshot, material: Material): string {
           ? (world.files.find((f) => f.id === ref.id)?.text ?? '')
           : (world.agents.find((a) => a.id === ref.id)?.role ?? '');
   }
-  if (data.kind === 'link') return [data.url, data.description].filter(Boolean).join('\n');
+  if (data.kind === 'link')
+    return [data.url, data.metadata?.title, data.metadata?.description ?? data.description]
+      .filter(Boolean)
+      .join('\n');
   return nodeTitle(world, material);
 }

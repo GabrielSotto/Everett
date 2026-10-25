@@ -17,6 +17,10 @@ const packageInfo = JSON.parse(readFileSync('package.json', 'utf8')) as { versio
 const manifest = JSON.parse(readFileSync('dist/build-manifest.json', 'utf8')) as { sha256: string };
 const sourceHashes = [
   ...globSync('tests/browser/**/*.ts'),
+  'tests/fixtures/link-cover.png',
+  ...globSync('scripts/link-preview/**/*.mjs'),
+  'scripts/preview.mjs',
+  'scripts/local-server.mjs',
   'playwright.config.ts',
   'scripts/test-browser.mjs',
   'scripts/artifact-evidence.mjs',

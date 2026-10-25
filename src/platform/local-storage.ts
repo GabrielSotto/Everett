@@ -113,7 +113,13 @@ export class LocalStorage {
     const assets: { id: string; mime: string; data: string }[] = [];
     const ids = new Set(
       state.worlds.flatMap((w) =>
-        w.nodes.flatMap((n) => ('asset' in n.data ? [n.data.asset] : [])),
+        w.nodes.flatMap((n) =>
+          'asset' in n.data
+            ? [n.data.asset]
+            : n.data.kind === 'link' && n.data.metadata?.imageAsset
+              ? [n.data.metadata.imageAsset]
+              : [],
+        ),
       ),
     );
     for (const id of ids) {

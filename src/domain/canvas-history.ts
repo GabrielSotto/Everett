@@ -93,6 +93,19 @@ export class CanvasHistory {
     if (!('world' in command)) return;
     const t = this.timeline(command.world);
     const oldWorld = getWorld(before, command.world);
+    if (command.type === 'node.link-preview') {
+      // Metadatos derivados: conservarlos al deshacer posiciones o nombres.
+      for (const entry of [...t.past, ...t.future])
+        for (const snapshot of [entry.before, entry.after])
+          for (const material of snapshot.nodes)
+            if (
+              material.id === command.id &&
+              material.data.kind === 'link' &&
+              material.data.url === command.url
+            )
+              material.data.metadata = structuredClone(command.metadata);
+      return;
+    }
     if (command.type === 'asset.preview') {
       // El fotograma es una caché del archivo inmutable, independiente de las ediciones.
       for (const entry of [...t.past, ...t.future])

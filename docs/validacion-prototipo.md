@@ -8,6 +8,8 @@ Las comprobaciones de este documento son obligatorias y se amplían cuando los r
 
 El [alcance del prototipo](alcance-prototipo.md) define las etapas, sus límites y las aprobaciones. Esta exigencia no incorpora backend, inferencia, colaboración, autenticación ni integraciones reales al prototipo.
 
+Excepción explícita para 0.8.15: el usuario autorizó un servicio local acotado a previews de enlaces y pidió concentrar esta entrega en funcionalidad y validación, sin ZIP. Se conservan la regresión completa, revisión visual, informe, fuentes y hashes del artefacto probado. C08-URL-01 documenta el límite del servicio y su cobertura.
+
 ## Requisitos originales del arnés y la entrega
 
 El siguiente bloque conserva íntegros los mínimos del roadmap:

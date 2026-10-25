@@ -582,7 +582,12 @@ export class CanvasView implements View {
     if (!(e.target instanceof Element) || e.button !== 0) return;
     const target = e.target,
       ui = this.ctx.ui;
-    if (target.closest('[data-action=group-rename],[data-action=group-ungroup]')) return;
+    if (
+      target.closest(
+        '[data-action=group-rename],[data-action=group-ungroup],[data-action=link-preview-retry]',
+      )
+    )
+      return;
     const header = target.closest<HTMLElement>('[data-group]');
     const headerRect = header?.getBoundingClientRect();
     // El puente de hover es transparente: solo el encabezado visible arrastra

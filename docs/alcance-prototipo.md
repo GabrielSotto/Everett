@@ -4,7 +4,7 @@ Alcance ratificado por el usuario el 28 de septiembre de 2026, a partir de [Desa
 
 Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referencias del diseño acordado. La lectura de la conversación recuperó el texto, pero no sus adjuntos ni los documentos completos de esas referencias. No darlos por inspeccionados.
 
-**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado, arnés y presentación espacial. La navegación aprobada se conserva. 0.8 sigue en desarrollo: la revisión de 0.8.13 confirmó capas y marcos de formas y autorizó corregir la densidad del dock, el comportamiento de rueda en zonas, los anclajes de etiquetas durante zoom y la ubicación de los ajustes dentro de Preferencias. La candidata 0.8.14 completó el gate y la revisión visual; la aprobación del usuario sigue pendiente. El estado de pruebas, evidencia y aprobaciones está en [Tareas](../TAREAS.md).
+**0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado, arnés y presentación espacial. La navegación aprobada se conserva. 0.8 sigue en desarrollo: la revisión de 0.8.13 confirmó capas y marcos de formas y autorizó corregir la densidad del dock, el comportamiento de rueda en zonas, los anclajes de etiquetas durante zoom y la ubicación de los ajustes dentro de Preferencias. La candidata 0.8.15 incorpora previews reales de enlaces mediante el servicio local autorizado y completó el gate y la revisión visual; la aprobación del usuario sigue pendiente. El estado de pruebas, evidencia y aprobaciones está en [Tareas](../TAREAS.md).
 
 | Versión    | Alcance principal                                                                                        |
 | ---------- | -------------------------------------------------------------------------------------------------------- |
@@ -49,6 +49,8 @@ servir como ejemplo de proyecto complejo para la evaluación; no limita la utili
 Este criterio guía la evaluación de utilidad de 0.8. El usuario autorizó implementar conjuntos manuales duraderos, referencias a fragmentos de Docs/Code y lectura del panorama; sus contratos están en C08-ORG-01 y C08-REF-01 de la definición detallada. No incorpora herramientas de wireframes, galería ni el editor integral previsto para planificar en 0.9. Las ampliaciones futuras requieren concretar su alcance antes de implementarlas.
 
 ### Materiales y edición
+
+El usuario autorizó para 0.8.15 un servicio local mínimo para obtener y conservar previews reales de enlaces, basado en bibliotecas MIT. Esta excepción queda limitada a metadatos y portadas; no incorpora inferencia ni procesamiento real de agentes. La investigación y las dependencias están en [Previews de enlaces](investigaciones/previews-de-enlaces.md); C08-URL-01 define el comportamiento verificable.
 
 - Representaciones reconocibles de notas, documentos, PDF, imágenes, videos, enlaces y referencias a otras superficies.
 - Previews, portadas y metadatos cuando estén disponibles.
@@ -454,6 +456,8 @@ Aplicar [Validación del prototipo](validacion-prototipo.md). Sus exigencias son
 La 1.0 se publica cuando los recorridos acordados funcionan, las superficies representan suficientemente la visión, no quedan correcciones críticas pendientes dentro del alcance y **vos aprobás la prueba libre de la candidata**.
 
 Backend, inferencia, colaboración, autenticación e integraciones reales quedan para el desarrollo del producto.
+
+Excepción aprobada por el usuario para 0.8.15: el servicio local acotado a previews de enlaces de C08-URL-01. El resto de este límite se conserva.
 
 ## Mejoras de Canvas por evaluar
 

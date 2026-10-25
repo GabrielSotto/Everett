@@ -1,5 +1,6 @@
 import { getWorld, need, type State } from './model';
 import { humanParticipants } from './conversations';
+import { validLinkPreview } from './link-previews';
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -225,6 +226,11 @@ export function validate(s: State): void {
           url = new URL(n.data.url);
         } catch {}
         ensure(!!url && ['http:', 'https:'].includes(url.protocol), 'URL', 'Enlace inválido');
+        ensure(
+          n.data.metadata === undefined || validLinkPreview(n.data.metadata),
+          'PREVIEW',
+          'Vista previa de enlace inválida',
+        );
       }
       if (n.data.kind === 'drawing')
         ensure(

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { glob, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
@@ -50,6 +50,9 @@ const html = template
     () => `<script>${script.replace(/<\/script/gi, '<\\/script')}</script>`,
   );
 const artifact = `Everett-${packageInfo.version}.html`;
+const serverInputs = [];
+for await (const path of glob('scripts/link-preview/**/*.mjs', { cwd: root }))
+  serverInputs.push(path);
 const inputs = [
   ...new Set([
     ...Object.keys(result.metafile.inputs),
@@ -58,6 +61,9 @@ const inputs = [
     'package-lock.json',
     'tsconfig.json',
     'scripts/build.mjs',
+    'scripts/preview.mjs',
+    'scripts/local-server.mjs',
+    ...serverInputs,
   ]),
 ].sort();
 const sourceHashes = await Promise.all(

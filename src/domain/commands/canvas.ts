@@ -7,6 +7,7 @@ import { arrangeProposals } from '../proposal-layout';
 import { sameConnection } from '../link-identity';
 import { proposalMaterials } from '../proposal-materials';
 import { orderMaterials } from '../material-order';
+import { validLinkPreview } from '../link-previews';
 
 type CanvasCommand = Extract<
   Command,
@@ -29,6 +30,7 @@ type CanvasCommand = Extract<
       | 'nodes.delete'
       | 'nodes.assign'
       | 'asset.preview'
+      | 'node.link-preview'
       | 'node.edit'
       | 'node.delete'
       | 'link.create'
@@ -59,6 +61,19 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       'Material inexistente',
     );
   switch (command.type) {
+    case 'node.link-preview': {
+      ensure(validLinkPreview(command.metadata), 'PREVIEW', 'Vista previa de enlace inválida');
+      const material = world.nodes.find((n) => n.id === command.id);
+      // Una respuesta tardía nunca recrea un material ni modifica otro destino.
+      if (material?.data.kind === 'link' && material.data.url === command.url) {
+        material.data.metadata = structuredClone(command.metadata);
+        for (const job of world.assignments.filter((a) => a.node === command.id))
+          for (const output of job.output ?? [])
+            if (output.material.data.kind === 'link' && output.material.data.url === command.url)
+              output.material.data.metadata = structuredClone(command.metadata);
+      }
+      break;
+    }
     case 'nodes.order': {
       ensure(
         command.nodes.length > 0 && new Set(command.nodes).size === command.nodes.length,
