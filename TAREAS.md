@@ -24,6 +24,17 @@ Implementación de C08-URL-01 en `feat/canvas-0.8`: previews mediante servicio l
 
 Candidata 0.8.15 con gate completo: tipado, formato, 91 pruebas de lógica/herramientas y 167 de navegador aprobadas, sin omisiones ni reintentos. Incluye siete regresiones nuevas de navegador y sesión sostenida de 30 ciclos. El informe, fuentes e identidad del HTML fueron verificados. La prueba pública de MDN sin respuestas sustituidas compara los mismos bytes de portada mediante SHA-256 antes y después de recargar. La evidencia de 0.8.14 se conserva como antecedente en su paquete.
 
+## Feedback abierto de 0.8.15 — zoom de Canvas
+
+El usuario confirma que el zoom se siente extraño frente a Figma y otros canvases. Corregir su respuesta al gesto; la verificación anterior de geometría, anclajes y extremos no acredita por sí sola una sensación adecuada de navegación.
+
+- Contrastar sensibilidad, continuidad, inversión de dirección y detención, con rueda y trackpad. Revisar el rango 1–600 % a partir de tareas reales, sin elegir límites únicamente por los porcentajes de los atajos. Referencias oficiales: [zoom en Figma](https://help.figma.com/hc/en-us/articles/360041065034-Adjust-your-zoom-and-view-options) y [navegación en FigJam](https://help.figma.com/hc/en-us/articles/1500004414582-Pan-and-zoom-in-FigJam).
+- Corregir el tope fijo del 100 % en el encuadre de selección: debe poder ampliar una selección pequeña para consultarla, respetando márgenes y el máximo de cámara. Evaluar por separado el encuadre del contenido completo.
+- La lectura del código confirma que Canvas comparte sensibilidad y suavizado con la cámara espacial. Es un factor a medir, no una causa demostrada del problema percibido. Conservar Alt, scroll local, anclaje al cursor, persistencia y navegación aprobados.
+- Ampliar el arnés con latencia de pintura y detención, inversión antes de terminar el movimiento, ráfagas y cambios de posición del cursor, además de encuadre de selecciones pequeñas por encima del 100 %. La calibración necesita revisión perceptual junto a esas mediciones.
+
+Este feedback queda pendiente de corrección; no modifica el HTML ni el servidor de la candidata durante esta anotación de revisión.
+
 ## Antecedente — Canvas 0.8.14
 
 **Candidata 0.8.14 con gate completo; pendiente de revisión del usuario.** Se corrigieron capacidad del dock, anclajes y densidad de identificaciones durante zoom, colisiones entre encabezados y tarjetas, rueda en zonas y ubicación de las preferencias. Se preservan capas, formas, conexiones, conjuntos y referencias confirmadas.
