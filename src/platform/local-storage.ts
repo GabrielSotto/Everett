@@ -116,8 +116,10 @@ export class LocalStorage {
         w.nodes.flatMap((n) =>
           'asset' in n.data
             ? [n.data.asset]
-            : n.data.kind === 'link' && n.data.metadata?.imageAsset
-              ? [n.data.metadata.imageAsset]
+            : n.data.kind === 'link'
+              ? [n.data.metadata?.imageAsset, n.data.metadata?.readerAsset].filter(
+                  (id): id is string => !!id,
+                )
               : [],
         ),
       ),

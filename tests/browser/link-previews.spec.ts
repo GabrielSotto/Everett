@@ -75,7 +75,7 @@ test('C08-B87: formulario, pegado, portada local, recarga y editor conservan con
   await input.focus();
   await paste(page, 'https://example.org/inside-editor');
   expect((await world(page)).nodes.length).toBe(2);
-  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await page.getByRole('button', { name: 'Cerrar formulario de enlace', exact: true }).click();
   await capture(page, info, 'link-cover-persisted');
 });
 
@@ -218,7 +218,11 @@ test('C08-B91: servicio HTTP y parser reales integran portada, zoom, viewer y ap
       : Buffer.from(
           '<title>Publicado por el parser</title><meta name="description" content="' +
             'Contenido HTML del destino '.repeat(120) +
-            '"><meta property="og:image" content="/cover.png">',
+            '"><meta property="og:image" content="/cover.png"><main><article><h1>Publicado por el parser</h1><p>' +
+            'Contenido legible del destino. '.repeat(120) +
+            '</p><pre><code>' +
+            'linea de codigo larga '.repeat(80) +
+            '</code></pre></article></main>',
         ),
   });
   const server = createLocalServer(await readFile(resolve('dist', manifest.artifact)), manifest, {
@@ -248,32 +252,20 @@ test('C08-B91: servicio HTTP y parser reales integran portada, zoom, viewer y ap
     await page.mouse.wheel(0, 200);
     expect((await world(page)).nodes[0]).toEqual(moved);
     await material.dblclick();
-    await expect(page.locator('.media-view .link-card strong')).toHaveText(
-      'Publicado por el parser',
-    );
+    await expect(page.locator('.reader-content > h2')).toHaveText('Publicado por el parser');
+    await expect(page.locator('.reader-content')).toContainText('Contenido legible del destino');
     await page.setViewportSize({ width: 390, height: 760 });
     const contained = () =>
-      page.locator('.media-view .link-card').evaluate((card) => {
-        const description = card.querySelector('p')!.getBoundingClientRect(),
-          address = card.querySelector('.link-card-address')!.getBoundingClientRect(),
-          bounds = card.getBoundingClientRect();
-        return (
-          description.bottom <= address.top + 1 &&
-          address.bottom <= bounds.bottom &&
-          description.height <= 78
-        );
-      });
+      page
+        .locator('.reader-scroll')
+        .evaluate((scroll) => scroll.scrollWidth <= scroll.clientWidth + 1);
     await expect.poll(contained).toBe(true);
-    const description = page.locator('.media-view .link-card p');
-    await description.evaluate((p) => {
-      p.style.maxHeight = 'none';
-      p.style.webkitLineClamp = 'unset';
-      p.style.flexShrink = '0';
-    });
+    const content = page.locator('.reader-content');
+    await content.evaluate((element) => (element.style.minWidth = '4000px'));
     expect(await contained()).toBe(false);
-    await description.evaluate((p) => p.removeAttribute('style'));
+    await content.evaluate((element) => element.removeAttribute('style'));
     await expect.poll(contained).toBe(true);
-    const destination = page.getByRole('link', { name: /Abrir enlace/ });
+    const destination = page.getByRole('link', { name: /Abrir original/ });
     await expect(destination).toHaveAttribute('href', url);
     await expect(destination).toHaveAttribute('rel', 'noopener noreferrer');
     await page

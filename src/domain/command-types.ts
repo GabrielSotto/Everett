@@ -15,6 +15,7 @@ import type {
   Zone,
   ProposalMaterial,
   LinkPreview,
+  NodeData,
 } from './model';
 import type { AgentRun } from './operations';
 import type { MaterialOrder } from './material-order';
@@ -155,6 +156,13 @@ export type Command =
     }
   | { type: 'asset.preview'; world: string; asset: string; preview: string }
   | { type: 'node.link-preview'; world: string; id: string; url: string; metadata: LinkPreview }
+  | {
+      type: 'node.resolve-link';
+      world: string;
+      id: string;
+      url: string;
+      data: Extract<NodeData, { kind: 'image' | 'video' | 'pdf' }>;
+    }
   | {
       type: 'node.edit';
       world: string;

@@ -16,6 +16,8 @@ const contentKeys = new Set([
   'instruction',
   'url',
   'resolvedUrl',
+  'readerTitle',
+  'readerText',
 ]);
 export function traceInput(input: unknown, key = ''): unknown {
   if (contentKeys.has(key) && typeof input === 'string')

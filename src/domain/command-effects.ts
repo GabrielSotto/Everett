@@ -6,6 +6,7 @@ export function affectsView(c: Command): 'navigation' | 'content' | 'none' {
           'camera',
           'asset.preview',
           'node.link-preview',
+          'node.resolve-link',
           'node.edit',
           'document.edit',
           'sheet.edit',

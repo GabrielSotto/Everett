@@ -584,7 +584,7 @@ export class CanvasView implements View {
       ui = this.ctx.ui;
     if (
       target.closest(
-        '[data-action=group-rename],[data-action=group-ungroup],[data-action=link-preview-retry]',
+        '[data-action=group-rename],[data-action=group-ungroup],[data-action=link-preview-retry],[data-action=link-open]',
       )
     )
       return;

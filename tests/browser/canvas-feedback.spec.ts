@@ -334,7 +334,7 @@ test('C08-B32: identificación pinta el nombre con contraste, fallback editable 
   await expect(unnamed.locator('.material-identification button')).toHaveText('Sin nombre');
   await unnamed.getByRole('button', { name: 'Sin nombre', exact: true }).click();
   await page.getByLabel('Nombre del material', { exact: true }).fill('Boceto existente');
-  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await page.getByLabel('Nombre del material', { exact: true }).press('Enter');
   await expect(unnamed.locator('.material-identification button')).toHaveText('Boceto existente');
   await testInfo.attach('identificacion-y-dibujo', {
     body: await page.screenshot(),

@@ -75,7 +75,7 @@ test('C08-B01: nombre alcanzable, identidad Docs, copia independiente y retirada
   await page
     .getByLabel('Nombre del material', { exact: true })
     .fill('Nombre común largo de documento');
-  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await page.getByLabel('Nombre del material', { exact: true }).press('Enter');
   let current = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
   expect(current.docs.find((d) => d.id === original.id)!.body).toBe(original.body);
   await material.dblclick();

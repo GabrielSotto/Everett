@@ -7,7 +7,7 @@ import { html } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
 import { rebaseReferences } from '../../domain/reference-anchors';
 
-function previewMarkup(ctx: Context, draft: DeepReadonly<ProposalMaterial>): string {
+export function previewMarkup(ctx: Context, draft: DeepReadonly<ProposalMaterial>): string {
   const world = structuredClone(ctx.world()) as World;
   if (draft.document)
     world.docs = world.docs.map((doc) =>

@@ -73,7 +73,7 @@ export async function fetchPublicResource(input, maximum, signal, transport = fe
       },
     },
   });
-  const timeout = AbortSignal.timeout(8000);
+  const timeout = AbortSignal.timeout(typeof maximum === 'function' ? 30000 : 8000);
   const abort = signal ? AbortSignal.any([signal, timeout]) : timeout;
   try {
     let url = publicUrl(input);
@@ -101,8 +101,12 @@ export async function fetchPublicResource(input, maximum, signal, transport = fe
         await response.body?.cancel();
         throw new Error('El sitio no está disponible');
       }
-      const bytes = await limitedBody(response, maximum);
-      return { url: url.href, contentType: response.headers.get('content-type') ?? '', bytes };
+      const contentType = response.headers.get('content-type') ?? '';
+      const bytes = await limitedBody(
+        response,
+        typeof maximum === 'function' ? maximum(contentType) : maximum,
+      );
+      return { url: url.href, contentType, bytes };
     }
     throw new Error('Demasiadas redirecciones');
   } finally {

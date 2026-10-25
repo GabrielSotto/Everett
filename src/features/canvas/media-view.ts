@@ -2,7 +2,7 @@ import type { Context } from '../../app/context';
 import { html, type View } from '../../ui/dom';
 import { nodeTitle } from '../../domain/model';
 import { pdfReader } from '../../platform/pdf-preview';
-import { linkCardMarkup } from './link-card';
+import { WebReader } from './web-reader';
 
 /** Visor local: Alt entrega la rueda a la navegación espacial de Everett. */
 export class MediaView implements View {
@@ -11,12 +11,17 @@ export class MediaView implements View {
   private disposed = false;
   private releasePdf: (() => void) | null = null;
   private materialKey: string | null = null;
+  private reader: WebReader | null = null;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
   ) {
     const unsubscribe = ctx.store.subscribe((change) => {
-      if (change.command.type === 'node.link-preview') this.render();
+      if (
+        change.command.type === 'node.link-preview' ||
+        change.command.type === 'node.resolve-link'
+      )
+        this.render();
     });
     this.abort.signal.addEventListener('abort', unsubscribe, { once: true });
     root.addEventListener(
@@ -46,24 +51,27 @@ export class MediaView implements View {
       if (title) title.textContent = nodeTitle(this.ctx.world(), node);
       return;
     }
+    if (d.kind === 'link' && this.reader) {
+      this.materialKey = key;
+      this.reader.update(d.metadata);
+      const title = this.root.querySelector('h1');
+      if (title) title.textContent = nodeTitle(this.ctx.world(), node);
+      return;
+    }
     this.materialKey = key;
+    this.reader?.dispose();
+    this.reader = null;
     this.releasePdf?.();
     this.releasePdf = null;
-    this.root.innerHTML = `<section class="media-view"><h1>${html(nodeTitle(this.ctx.world(), node))}</h1>${d.kind === 'link' ? `${linkCardMarkup(d, node.id)}<a href="${html(d.url)}" target="_blank" rel="noopener noreferrer">${html(d.url)} · Abrir enlace</a>` : '<div class="media-loading" role="status">Recuperando archivo…</div>'}</section>`;
-    if (d.kind === 'link' && d.metadata?.imageAsset) {
-      void this.ctx.storage
-        ?.asset(d.metadata.imageAsset)
-        .then((blob) => {
-          if (this.disposed || this.materialKey !== key) return;
-          if (this.url) URL.revokeObjectURL(this.url);
-          this.url = URL.createObjectURL(blob);
-          const image = this.root.querySelector<HTMLImageElement>('.link-card img');
-          if (image) image.src = this.url;
-        })
-        .catch(() => {
-          this.root.querySelector('.link-card img')?.remove();
-        });
-    }
+    this.root.innerHTML = `<section class="media-view ${d.kind === 'link' ? 'web-content-view' : ''}"><h1>${html(nodeTitle(this.ctx.world(), node))}</h1>${d.kind === 'link' ? '<div class="web-reader"></div>' : '<div class="media-loading" role="status">Recuperando archivo…</div>'}${'source' in d && d.source ? `<a class="media-source" href="${html(d.source)}" target="_blank" rel="noopener noreferrer">${html(new URL(d.source).hostname)} · Origen</a>` : ''}</section>`;
+    if (d.kind === 'link')
+      this.reader = new WebReader(
+        this.root.querySelector('.web-reader')!,
+        this.ctx,
+        node.id,
+        d.url,
+        d.metadata,
+      );
     if (d.kind === 'image' || d.kind === 'video' || d.kind === 'pdf') {
       void this.ctx.storage
         ?.asset(d.asset)
@@ -108,6 +116,7 @@ export class MediaView implements View {
   dispose(): void {
     this.disposed = true;
     this.abort.abort();
+    this.reader?.dispose();
     this.releasePdf?.();
     this.root.querySelectorAll('video').forEach((video) => {
       video.pause();

@@ -7,7 +7,7 @@ import {
   type Anchor,
 } from '../../domain/model';
 import { html, target, editable } from '../../ui/dom';
-import { btn, icon } from '../../ui/icons';
+import { icon } from '../../ui/icons';
 import { sampleFiles } from './sample-media';
 import { pdfPreview } from '../../platform/pdf-preview';
 import { videoPreview } from '../../platform/video-preview';
@@ -15,8 +15,23 @@ import { referenceSource } from '../../domain/reference-anchors';
 import { alpha, rgb, rgba } from './color';
 import { bindColorPicker } from './color-picker';
 import { canOrderMaterials } from '../../domain/material-order';
-import { linkUrl } from '../../domain/link-previews';
+import { enteredLink } from '../../domain/link-previews';
 import { linkCardMarkup } from './link-card';
+import { assignedPreview, materialMarkup } from './materials';
+import { inspectMedia } from '../../platform/media-file';
+import { previewMarkup } from './proposals';
+
+function clipboardOrigin(plain: string, uriList = '', markup = ''): string | undefined {
+  const address = uriList.split(/\r?\n/).find((line) => line.trim() && !line.startsWith('#'));
+  const direct = enteredLink(address || plain);
+  if (direct) return direct;
+  // El fragmento queda inerte: solo se lee el origen que acompaña a la imagen copiada.
+  const template = document.createElement('template');
+  template.innerHTML = markup;
+  return (
+    enteredLink(template.content.querySelector('img[src]')?.getAttribute('src') ?? '') ?? undefined
+  );
+}
 
 /** Interacciones contextuales; los gestos y la cámara permanecen en CanvasView. */
 export class CanvasInteractions {
@@ -44,6 +59,40 @@ export class CanvasInteractions {
         this.paintLinkCards(change.command.id);
         this.hydrate();
       }
+      if (change.command.type === 'node.resolve-link' && change.command.world === ctx.world().id) {
+        const world = ctx.world();
+        const resolvedId = change.command.id;
+        const ids = new Set([
+          resolvedId,
+          ...world.assignments
+            .filter((job) => job.node === resolvedId)
+            .flatMap((job) => job.output?.map((o) => o.material.id) ?? []),
+        ]);
+        const nodes = [
+          ...world.nodes,
+          ...world.assignments.flatMap((job) => job.output?.map((o) => o.material) ?? []),
+        ];
+        for (const node of nodes) {
+          if (!ids.has(node.id) || node.data.kind === 'link') continue;
+          const free = root.querySelector<HTMLElement>(`.material[data-node="${node.id}"]`);
+          if (free)
+            free.outerHTML = materialMarkup(
+              world,
+              structuredClone(node),
+              ctx.ui.canvas.selections.includes(node.id),
+              ctx.ui.canvas.tool === 'connect',
+            );
+          const assigned = root.querySelector<HTMLElement>(`[data-assigned-id="${node.id}"]`);
+          if (assigned) assigned.outerHTML = assignedPreview(world, structuredClone(node));
+          const proposal = root.querySelector<HTMLElement>(`[data-proposed-node="${node.id}"]`);
+          const draft = world.assignments
+            .flatMap((job) => job.output ?? [])
+            .find((draft) => draft.material.id === node.id);
+          if (proposal && draft) proposal.outerHTML = previewMarkup(ctx, draft);
+        }
+        this.hydrate();
+        ctx.camera?.set(ctx.currentCamera(), true);
+      }
     });
     signal.addEventListener('abort', unsubscribe, { once: true });
     window.addEventListener(
@@ -52,8 +101,7 @@ export class CanvasInteractions {
         if (
           this.disposed ||
           editable(event.target) ||
-          (document.activeElement && editable(document.activeElement)) ||
-          event.clipboardData?.files.length
+          (document.activeElement && editable(document.activeElement))
         )
           return;
         if (
@@ -62,7 +110,22 @@ export class CanvasInteractions {
         )
           return;
         const value = event.clipboardData?.getData('text/plain').trim() ?? '';
-        const url = linkUrl(value);
+        const files = [...(event.clipboardData?.files ?? [])];
+        if (files.length) {
+          event.preventDefault();
+          void this.importFiles(
+            files,
+            false,
+            undefined,
+            clipboardOrigin(
+              value,
+              event.clipboardData?.getData('text/uri-list'),
+              event.clipboardData?.getData('text/html'),
+            ),
+          );
+          return;
+        }
+        const url = enteredLink(value);
         if (!url || /\s/.test(value)) return;
         event.preventDefault();
         this.addLink(url);
@@ -114,7 +177,18 @@ export class CanvasInteractions {
         }
         const material =
           event.target instanceof Element ? event.target.closest<HTMLElement>('[data-node]') : null;
-        if (!material?.dataset.node) return;
+        if (!material?.dataset.node) {
+          if (
+            event.target instanceof Element &&
+            event.target.closest('.canvas-stage') &&
+            !event.target.closest('.dock,.canvas-chat,.canvas-context-layer,.proposal')
+          ) {
+            event.preventDefault();
+            this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del Canvas" style="${this.position({ x: event.clientX, y: event.clientY })}"><button type="button" role="menuitem" data-action="canvas-paste">Pegar <kbd>Ctrl+V</kbd></button><button type="button" role="menuitem" data-action="canvas-link">Agregar enlace</button></div>`;
+            this.fitOverlay();
+          }
+          return;
+        }
         event.preventDefault();
         this.menu(material.dataset.node, { x: event.clientX, y: event.clientY });
       },
@@ -308,6 +382,14 @@ export class CanvasInteractions {
           case 'link-preview-retry':
             ctx.previews.refresh(ctx.world().id, id);
             break;
+          case 'link-open': {
+            const destination = materialRoute(ctx.store.get(), ctx.world().id, id);
+            if (destination) ctx.go(destination, button.getBoundingClientRect());
+            break;
+          }
+          case 'canvas-paste':
+            void this.pasteClipboard();
+            break;
           case 'context-order': {
             const order = button.dataset.order;
             if (
@@ -339,6 +421,7 @@ export class CanvasInteractions {
             );
             break;
           case 'context-remove':
+            if (!confirm('¿Eliminar este material del Canvas? Podés deshacerlo.')) break;
             this.overlay.replaceChildren();
             ctx.act(
               { type: 'node.delete', world: ctx.world().id, id },
@@ -582,12 +665,15 @@ export class CanvasInteractions {
           this.focusLink(form.dataset.label);
         } else if (form.id === 'canvas-new-link') {
           try {
-            const url = linkUrl(form.querySelector<HTMLInputElement>('input')?.value ?? '');
+            const url = enteredLink(form.querySelector<HTMLInputElement>('input')?.value ?? '');
             if (!url) throw new Error('Ingresá una dirección http o https.');
             this.addLink(url);
             this.overlay.replaceChildren();
           } catch {
-            ctx.notice('Ingresá una dirección completa, por ejemplo https://example.com.', true);
+            const error = form.querySelector<HTMLElement>('[role=status]');
+            if (error)
+              error.textContent = 'Ingresá una URL válida, por ejemplo https://example.com.';
+            form.querySelector('input')?.setAttribute('aria-invalid', 'true');
           }
         } else if (form.id === 'new-comment-form') {
           const node = ctx.ui.canvas.commentTarget,
@@ -929,16 +1015,48 @@ export class CanvasInteractions {
   }
   private editForm(kind: 'rename' | 'label', id: string, text: string, point: Point): void {
     const field = kind === 'rename' ? 'material-name' : 'cable-text';
-    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit ${kind === 'label' ? 'cable-inline-edit' : ''}" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" value="${html(text)}" ${kind === 'label' ? 'placeholder="Etiqueta" aria-description="Enter confirma. Esc cancela. Vaciar quita solo la etiqueta."' : ''}>${kind === 'rename' ? btn('context-close', 'close', 'Cancelar') : ''}${kind === 'rename' ? `<button type="submit" class="icon-button" aria-label="Guardar" data-tip="Guardar">${icon('check', 16)}</button>` : ''}</form>`;
+    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit ${kind === 'label' ? 'cable-inline-edit' : ''}" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" value="${html(text)}" placeholder="${kind === 'rename' ? 'Nombre' : 'Etiqueta'}" aria-description="Enter confirma. Esc cancela."></form>`;
   }
   private linkForm(): void {
-    this.overlay.innerHTML = `<form id="canvas-new-link" class="canvas-context-form" style="${this.position({ x: innerWidth / 2 - 140, y: innerHeight / 2 - 80 })}"><label for="canvas-link-url">Dirección del enlace</label><input id="canvas-link-url" type="url" required placeholder="https://"><button type="submit">Agregar enlace</button><button type="button" data-action="context-close">Cancelar</button></form>`;
+    this.overlay.innerHTML = `<form id="canvas-new-link" class="canvas-context-form link-entry-form" novalidate style="${this.position({ x: innerWidth / 2 - 140, y: innerHeight / 2 - 80 })}"><label for="canvas-link-url">Dirección del enlace</label><button type="button" class="icon-button link-entry-close" data-action="context-close" aria-label="Cerrar formulario de enlace">${icon('close', 14)}</button><input id="canvas-link-url" inputmode="url" placeholder="https://"><small role="status"></small><button type="submit">Agregar enlace</button></form>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
   }
   private addLink(value: string): void {
     const url = new URL(value);
     this.create({ kind: 'link', title: url.hostname + url.pathname, url: url.href }, 320, 240);
+  }
+  private async pasteClipboard(): Promise<void> {
+    try {
+      const entries = await navigator.clipboard.read();
+      const files: File[] = [];
+      let value = '';
+      let markup = '';
+      for (const entry of entries) {
+        const image = entry.types.find((type) => type.startsWith('image/'));
+        if (image)
+          files.push(new File([await entry.getType(image)], 'Imagen pegada', { type: image }));
+        if (entry.types.includes('text/plain'))
+          value = await (await entry.getType('text/plain')).text();
+        if (entry.types.includes('text/html'))
+          markup = await (await entry.getType('text/html')).text();
+      }
+      if (this.disposed) return;
+      this.overlay.replaceChildren();
+      if (files.length)
+        await this.importFiles(files, false, undefined, clipboardOrigin(value, '', markup));
+      else {
+        const url = enteredLink(value);
+        if (url) this.addLink(url);
+        else this.ctx.notice('El portapapeles no contiene una imagen o URL válida.', true);
+      }
+    } catch {
+      if (!this.disposed)
+        this.ctx.notice(
+          'No se pudo leer el portapapeles. Hacé clic en el Canvas y usá Ctrl+V.',
+          true,
+        );
+    }
   }
   private paintLinkCards(id: string): void {
     const world = this.ctx.world();
@@ -1014,6 +1132,7 @@ export class CanvasInteractions {
     files: File[],
     frame = false,
     sampleDuration?: number,
+    source?: string,
   ): Promise<string[]> {
     const origin = this.center(),
       added: string[] = [];
@@ -1043,38 +1162,10 @@ export class CanvasInteractions {
             this.ctx.notice('El PDF se conserva; no se pudo generar su primera página.', true);
           }
         } else {
-          const url = URL.createObjectURL(file);
-          try {
-            if (kind === 'image') {
-              const image = new Image();
-              image.src = url;
-              await image.decode();
-              ratio = image.naturalWidth / image.naturalHeight;
-            } else {
-              const video = document.createElement('video');
-              await new Promise<void>((resolve, reject) => {
-                video.onloadedmetadata = () => resolve();
-                video.onerror = () => reject(new Error('Formato de video no disponible'));
-                video.src = url;
-              });
-              ratio = video.videoWidth / video.videoHeight;
-              if (Number.isFinite(video.duration)) duration = video.duration;
-              else if (sampleDuration) duration = sampleDuration;
-              try {
-                preview = await videoPreview(file, this.previewAbort.signal);
-              } catch {
-                if (!this.disposed)
-                  this.ctx.notice(
-                    'El video se conserva; no se pudo preparar su vista previa.',
-                    true,
-                  );
-              }
-              video.removeAttribute('src');
-              video.load();
-            }
-          } finally {
-            URL.revokeObjectURL(url);
-          }
+          const inspected = await inspectMedia(file, this.previewAbort.signal);
+          ratio = inspected.ratio;
+          preview = inspected.preview;
+          duration = inspected.duration ?? sampleDuration;
         }
         const asset = 'asset-' + crypto.randomUUID();
         await this.ctx.storage.putAsset(asset, file);
@@ -1091,6 +1182,7 @@ export class CanvasInteractions {
             ratio,
             ...(preview ? { preview } : {}),
             ...(duration !== undefined ? { duration } : {}),
+            ...(source ? { source } : {}),
           },
           width * scale,
           height * scale,
@@ -1230,6 +1322,14 @@ export class CanvasInteractions {
       });
   }
   close(): boolean {
+    const form = this.overlay.querySelector<HTMLFormElement>('#canvas-new-link,[data-rename]');
+    const field = form?.querySelector<HTMLInputElement>('input');
+    if (
+      field &&
+      field.value !== field.defaultValue &&
+      !confirm('¿Descartar los cambios sin confirmar?')
+    )
+      return true;
     const link = (this.overlay.querySelector('[data-label]') as HTMLElement | null)?.dataset.label;
     const color = this.colorField;
     this.colorField = null;

@@ -10,6 +10,7 @@ import type { Camera } from '../domain/model';
 
 export interface Ui {
   userId: string;
+  readerPositions?: Record<string, number>;
   conversations: Record<string, string>;
   canvasContexts: Record<
     string,

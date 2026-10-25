@@ -8,6 +8,7 @@ import { sameConnection } from '../link-identity';
 import { proposalMaterials } from '../proposal-materials';
 import { orderMaterials } from '../material-order';
 import { validLinkPreview } from '../link-previews';
+import { resolveMedia } from '../resolved-media';
 
 type CanvasCommand = Extract<
   Command,
@@ -31,6 +32,7 @@ type CanvasCommand = Extract<
       | 'nodes.assign'
       | 'asset.preview'
       | 'node.link-preview'
+      | 'node.resolve-link'
       | 'node.edit'
       | 'node.delete'
       | 'link.create'
@@ -61,6 +63,22 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       'Material inexistente',
     );
   switch (command.type) {
+    case 'node.resolve-link': {
+      ensure(
+        ['image', 'video'].includes(command.data.kind) &&
+          !!command.data.asset &&
+          Number.isFinite(command.data.ratio) &&
+          command.data.ratio > 0,
+        'ASSET',
+        'Archivo remoto inválido',
+      );
+      const material = world.nodes.find((n) => n.id === command.id);
+      if (material) resolveMedia(material, command.url, command.data);
+      for (const job of world.assignments.filter((a) => a.node === command.id))
+        for (const output of job.output ?? [])
+          resolveMedia(output.material, command.url, command.data);
+      break;
+    }
     case 'node.link-preview': {
       ensure(validLinkPreview(command.metadata), 'PREVIEW', 'Vista previa de enlace inválida');
       const material = world.nodes.find((n) => n.id === command.id);

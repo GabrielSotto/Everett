@@ -9,7 +9,12 @@ export const cameraTuning = {
   maximumInertiaPx: 85,
 } as const;
 /** Canvas permite leer panoramas extensos sin alterar el zoom del Universo. */
-export const canvasCameraTuning = { minimumZoom: 0.01, maximumZoom: 6 } as const;
+export const canvasCameraTuning = {
+  minimumZoom: 0.01,
+  maximumZoom: 6,
+  directZoom: true,
+  zoomSensitivity: 0.00165,
+} as const;
 export const focusTuning = {
   escapeTravelPx: 360,
   minimumGain: 0.1,

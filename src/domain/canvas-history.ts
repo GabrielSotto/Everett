@@ -1,6 +1,7 @@
 import { getWorld, type State, type World } from './model';
 import type { Command } from './command-types';
 import { rebaseAnchor, referenceSource } from './reference-anchors';
+import { resolveMedia } from './resolved-media';
 
 type CanvasSnapshot = Required<
   Pick<
@@ -93,6 +94,13 @@ export class CanvasHistory {
     if (!('world' in command)) return;
     const t = this.timeline(command.world);
     const oldWorld = getWorld(before, command.world);
+    if (command.type === 'node.resolve-link') {
+      for (const entry of [...t.past, ...t.future])
+        for (const snapshot of [entry.before, entry.after])
+          for (const material of snapshot.nodes)
+            if (material.id === command.id) resolveMedia(material, command.url, command.data);
+      return;
+    }
     if (command.type === 'node.link-preview') {
       // Metadatos derivados: conservarlos al deshacer posiciones o nombres.
       for (const entry of [...t.past, ...t.future])

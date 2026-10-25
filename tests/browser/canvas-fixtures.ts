@@ -32,10 +32,10 @@ export function pdfFixture(): Buffer {
   return Buffer.from(text);
 }
 
-export async function videoFixture(context: BrowserContext): Promise<Buffer> {
+export async function videoFixture(context: BrowserContext, duration = 250): Promise<Buffer> {
   const generator = await context.newPage();
   try {
-    const bytes = await generator.evaluate(async () => {
+    const bytes = await generator.evaluate(async (duration) => {
       const canvas = document.createElement('canvas');
       canvas.width = 160;
       canvas.height = 90;
@@ -48,12 +48,18 @@ export async function videoFixture(context: BrowserContext): Promise<Buffer> {
       recorder.ondataavailable = (event) => chunks.push(event.data);
       const stopped = new Promise<void>((resolve) => (recorder.onstop = () => resolve()));
       recorder.start();
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      let frame = 0;
+      const redraw = setInterval(() => {
+        draw.fillStyle = ++frame % 2 ? '#6675bf' : '#8b77b2';
+        draw.fillRect(0, 0, 160, 90);
+      }, 45);
+      await new Promise((resolve) => setTimeout(resolve, duration));
+      clearInterval(redraw);
       recorder.stop();
       await stopped;
       stream.getTracks().forEach((track) => track.stop());
       return [...new Uint8Array(await new Blob(chunks, { type: 'video/webm' }).arrayBuffer())];
-    });
+    }, duration);
     return Buffer.from(bytes);
   } finally {
     await generator.close();

@@ -29,7 +29,7 @@
 
 ## Entorno
 
-Usar Node.js 24 y npm con el `package-lock.json` del repositorio. PowerShell 7 (`pwsh`) ejecuta el empaquetador y sus controles negativos dentro de las pruebas de herramientas. Instalar las dependencias fijadas con:
+Usar Node.js 24.19 o posterior de la rama 24 y npm con el `package-lock.json` del repositorio. PowerShell 7 (`pwsh`) ejecuta el empaquetador y sus controles negativos dentro de las pruebas de herramientas. Instalar las dependencias fijadas con:
 
 ```powershell
 npm ci
@@ -170,7 +170,11 @@ El fixture comprueba las entradas obligatorias de cada caso al terminar sus acci
 
 ## Servicio local de previews
 
-La excepción aprobada para 0.8.15 añade POST /api/link-preview al mismo servidor de preview, ligado únicamente a 127.0.0.1. Se ejecuta con `node scripts/preview.mjs 4173`; requiere `npm ci` y el build vigente. Valida Origin y Host locales, limita solicitudes, cachea seis horas y combina descargas concurrentes del mismo destino. link-preview-js extrae metadatos; Undici descarga con DNS público fijado y valida cada redirección; ipaddr.js clasifica direcciones e image-size limita portadas raster. Las cuatro bibliotecas MIT quedan fijadas en el lockfile. No recibe cookies ni credenciales del navegador, no ejecuta scripts del destino y no incorpora HTML externo. Las imágenes se descargan por el servicio y se conservan como Blobs locales.
+La excepción aprobada para 0.8.15 añade POST /api/link-preview al mismo servidor de preview, ligado únicamente a 127.0.0.1. Se ejecuta con `node scripts/preview.mjs 4173`; requiere `npm ci` y el build vigente. Valida Origin y Host locales, limita solicitudes, cachea seis horas y combina descargas concurrentes del mismo destino. link-preview-js extrae metadatos; Undici descarga con DNS público fijado y valida cada redirección; ipaddr.js clasifica direcciones e image-size limita portadas raster. Las versiones quedan fijadas en el lockfile. No recibe cookies ni credenciales del navegador ni ejecuta scripts del destino. Los archivos y las ilustraciones se descargan por el servicio y se conservan como Blobs locales.
+
+La ampliación 0.8.16 reutiliza `@mozilla/readability` 0.6.0 (Apache-2.0) para seleccionar contenido, `jsdom` 30.1.3 (MIT) para analizar el documento sin ejecutar scripts ni cargar recursos y `dompurify` 3.4.17 (Apache-2.0 o MPL-2.0) para sanearlo en servidor y navegador. `get-video-id` 4.2.0 (MIT) reconoce IDs de YouTube/Vimeo, restringidos además por una lista de hosts; `file-type` 22.2.0 (MIT) identifica archivos por sus bytes. Estas bibliotecas evitan escribir parsers propios; añaden análisis DOM en el servicio y saneamiento al bundle.
+
+Límites: HTML 8 MiB; imagen directa 12 MiB y 24 megapíxeles; video directo 32 MiB; lectura 512 KiB antes de ilustraciones; hasta seis ilustraciones de 512 KiB con 1,5 MiB total. Se valida cada redirección y se limita el tiempo de descarga. Las páginas que requieren sesión o ejecución de JavaScript pueden no ofrecer lectura. El reproductor oficial depende de la autorización del proveedor; no se descarga el video de YouTube/Vimeo. El lector incluye un regreso visible al Canvas porque las teclas capturadas por un iframe externo no llegan al documento padre.
 
 El HTML sigue siendo autónomo para leer tarjetas guardadas. Abrirlo directamente no puede generar previews generales sin el servicio: conserva el enlace y muestra esa condición. IndexedDB depende del origen; abrir por file o cambiar de puerto no traslada los datos del usuario.
 

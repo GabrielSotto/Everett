@@ -2,23 +2,27 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                                                                |
-| ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                              |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                           |
-| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). Candidata 0.8.15 verificada; previews reales de enlaces listas para revisión. |
-| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                    |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                     |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                 |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                               |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                              |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                              |
+| Iteración                     | Estado                        | Trabajo                                                                                                                                            |
+| ----------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                          |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                       |
+| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). 0.8.16 implementada: lectura web y archivos por URL; gate final en curso. |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                 |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                             |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                           |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                          |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                          |
 
 ## Después de 1.0
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
-## Estado actual — enlaces reales en 0.8.15
+## Estado actual — consulta web en 0.8.16
+
+Implementados C08-WEB-01 y las correcciones de la revisión: lectura guardada y navegable dentro de Everett, imágenes y videos directos con bytes locales, reproductores oficiales de YouTube/Vimeo, pegado contextual/nativo, renombre compacto y confirmaciones. La rueda de Canvas responde sin cola y encuadrar la selección permite ampliar por encima del 100 %. Gate final y revisión pública en curso; no declarar lista antes de verificar sus resultados.
+
+## Antecedente — enlaces reales en 0.8.15
 
 Implementación de C08-URL-01 en `feat/canvas-0.8`: previews mediante servicio local mínimo aprobado expresamente por el usuario. Se compararon bibliotecas y se adoptó link-preview-js (MIT) con descarga acotada y almacenamiento local. El usuario autorizó actualizar el preview durante este trabajo y excluyó el ZIP; se conservan el gate completo, revisión visual, informe y fuentes versionadas. No integrar en `dev` ni cerrar 0.8.
 
@@ -28,14 +32,14 @@ Candidata 0.8.15 con gate completo: tipado, formato, 91 pruebas de lógica/herra
 
 El usuario completó los ocho puntos de revisión. Confirmó movimiento, capas, renombre funcional, conservación de tarjetas/nombres/posiciones/portadas al recargar, duplicado identificado como copia, borrado/Undo/Redo y legibilidad del visor. Esos comportamientos deben preservarse. La consulta del contenido sigue siendo insuficiente: entrar con zoom o doble clic repite la tarjeta ampliada y obliga a abrir el destino fuera de Everett.
 
-- Investigar al menos seis canvases, idealmente diez, antes de decidir cómo ampliar los enlaces. La preferencia del usuario es entrar con zoom y leer dentro de Everett. Comparar tarjetas, contenido interactivo, captura de artículos, etiquetas, referencias de origen y mecanismos técnicos; no confundir documentación consultada con pruebas directas de cada producto. [Investigación comparativa](docs/investigaciones/contenido-web-en-canvas.md).
-- Godot: la prueba aislada de `https://docs.godotengine.org/en/stable/` y su variante española reproduce el rechazo del límite actual de 1 MiB. Los HTML medidos contienen 1.334.110 y 1.359.830 bytes; con un límite diagnóstico mayor el mismo parser obtiene título, descripción e imágenes. Corregir límites y diagnóstico sin quitar las cotas de descarga. No atribuirlo a una portada ausente. [Evidencia](output/investigacion-enlaces/godot-diagnostic.json).
+- Dirección aprobada tras comparar diez canvases: entrar con zoom permite leer el contenido web dentro de Everett; la tarjeta identifica la referencia en el panorama. Conservar lectura local, origen y actualización explícita; imágenes y videos tienen su representación correspondiente. Reutilizar bibliotecas existentes, preservando el regreso espacial.
+- Godot: se reprodujo el rechazo del límite actual de 1 MiB; el mismo parser obtiene metadatos con un límite diagnóstico mayor. Corregir límites y diagnóstico sin quitar las cotas de descarga. No atribuirlo a una portada ausente.
 - Pegado: el usuario logró crear enlaces mediante teclado, pero el fondo deja aparecer el menú del navegador interno, sin una acción Pegar de Canvas. Resolver el acceso contextual y comprobar el portapapeles nativo, foco y permisos, además del evento DOM ya cubierto por el arnés.
 - Simplificar el formulario de enlace: el usuario pide reemplazar Cancelar por una X compacta arriba a la derecha. Simplificar también el renombre de materiales de forma coherente con la edición directa de cables. Pide confirmación al descartar o eliminar; definir su aplicación junto con el flujo, preservando borradores y Undo/Redo.
 - Diferenciar entrada vacía, formato inválido, dominio sin protocolo, destino inexistente, error de descarga y límite excedido. El mensaje nativo de `input[type=url]` no explica esas situaciones. Conservar el dato para corregirlo y reintentar.
 - Las portadas genéricas de páginas iniciales de TyC Sports y YouTube no equivalen al contenido de una noticia o un video. La presentación debe identificar el recurso concreto y explicar qué se puede consultar. Agrandar la tarjeta no acredita lectura ni reproducción.
 
-El pedido vigente prioriza la investigación y la elección del comportamiento antes de implementar la lectura web. Se conserva la candidata 0.8.15 servida, sin cambios de aplicación durante esta comparación. Las correcciones, zoom e imágenes/videos siguientes siguen pendientes; no se consideran entregados por completar el estudio.
+Implementación autorizada de lectura web, imágenes/videos y correcciones en la misma rama de 0.8. La candidata anterior conserva su identidad; la siguiente entrega requiere su propio gate completo. No integrar en dev.
 
 ## Feedback abierto de 0.8.15 — zoom de Canvas
 
@@ -97,7 +101,7 @@ Candidata **0.8.15** preparada para revisión del usuario. Gate completo: build,
 
 - [HTML autónomo](dist/Everett-0.8.15.html): 13.880.658 bytes, build `9d40b733709228e1`, SHA-256 `765bab4e8e6f9d306de18e3717c432079429717b748596fa9138d36a12e1152a`.
 - [Informe verificado](output/informe/informe.md), [resultado unitario](output/pruebas/unitarias/2026-10-25_10-33-05-760Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-25_09-56-39-692Z/results.json).
-- [Investigación y decisión técnica](docs/investigaciones/previews-de-enlaces.md) y [revisión visual, alcance y qué probar](output/revision/0.8.15/revision.md).
+- [Revisión visual, alcance y qué probar](output/revision/0.8.15/revision.md). Las dependencias y el servicio se documentan en Desarrollo.
 - Preview único en http://127.0.0.1:4173/, mediante `node scripts/preview.mjs 4173`, con el servicio local de metadatos y portadas. La pestaña y los datos de revisión del usuario se conservaron.
 - Sin empaquetado ZIP por instrucción expresa del usuario para esta entrega. Las fuentes y pruebas quedan versionadas en `feat/canvas-0.8`.
 

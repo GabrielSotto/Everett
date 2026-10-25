@@ -84,6 +84,11 @@ export interface LinkPreview {
   description?: string;
   siteName?: string;
   imageAsset?: string;
+  readerAsset?: string;
+  readerTitle?: string;
+  readerText?: string;
+  readerProblem?: string;
+  embed?: { provider: 'youtube' | 'vimeo'; id: string; hash?: string };
   problem?: string;
 }
 export type NodeData =
@@ -111,6 +116,7 @@ export type NodeData =
       ratio: number;
       preview?: string;
       duration?: number;
+      source?: string;
     }
   | {
       kind: 'link';

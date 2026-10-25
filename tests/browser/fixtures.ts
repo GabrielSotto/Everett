@@ -4,7 +4,36 @@ import { test as base, expect } from '@playwright/test';
 import { installControlProbe, type ControlUse } from './control-probe';
 import { verifyCanvasControls } from '../../scripts/canvas-contracts.mjs';
 
-export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[] }>({
+export const test = base.extend<{
+  runtimeErrors: string[];
+  controls: ControlUse[];
+  confirmationMode: 'accept' | 'manual';
+  confirmations: string[];
+}>({
+  confirmationMode: ['accept', { option: true }],
+  confirmations: async ({ page, confirmationMode }, use, testInfo) => {
+    const messages: string[] = [];
+    if (confirmationMode === 'accept')
+      page.on('dialog', async (dialog) => {
+        const message = dialog.message();
+        if (
+          dialog.type() === 'confirm' &&
+          /^¿(Eliminar |Descartar los cambios sin confirmar)/.test(message)
+        ) {
+          messages.push(message);
+          await dialog.accept();
+        } else {
+          messages.push('UNEXPECTED: ' + message);
+          await dialog.dismiss();
+        }
+      });
+    await use(messages);
+    await testInfo.attach('confirmaciones-nativas', {
+      body: JSON.stringify(messages),
+      contentType: 'application/json',
+    });
+    expect(messages.filter((m) => m.startsWith('UNEXPECTED:'))).toEqual([]);
+  },
   controls: async ({ page }, use) => {
     const controls: ControlUse[] = [];
     await page.exposeFunction('__everettControlsCapture', (entry: ControlUse) => {
@@ -15,7 +44,8 @@ export const test = base.extend<{ runtimeErrors: string[]; controls: ControlUse[
     await use(controls);
   },
   runtimeErrors: [
-    async ({ page, controls }, use, testInfo) => {
+    async ({ page, controls, confirmations }, use, testInfo) => {
+      void confirmations;
       const errors: string[] = [];
       let completed = false;
       page.on('pageerror', (error) => errors.push(error.stack ?? error.message));

@@ -26,3 +26,5 @@
 @import 'transient-panels.css';
 @import '../features/canvas/materials.css';
 @import '../features/canvas/canvas08.css';
+
+@import '../features/canvas/web-content.css';

@@ -92,7 +92,7 @@ export class CanvasZoom {
     const z = Math.max(
       canvasCameraTuning.minimumZoom,
       Math.min(
-        1,
+        selection ? canvasCameraTuning.maximumZoom : 1,
         (width - 96) / Math.max(1, maxX - minX),
         (height - 160) / Math.max(1, maxY - minY),
       ),

@@ -51,7 +51,12 @@ export class SpatialCamera {
     c: Camera,
     private readonly changed: (c: Camera, focus: string | null, strength: number) => void,
     private readonly gravity = false,
-    private readonly zoomLimits: { minimumZoom: number; maximumZoom: number } = cameraTuning,
+    private readonly zoomLimits: {
+      minimumZoom: number;
+      maximumZoom: number;
+      directZoom?: boolean;
+      zoomSensitivity?: number;
+    } = cameraTuning,
   ) {
     this.value = { ...c };
     this.target = { ...c };
@@ -152,16 +157,20 @@ export class SpatialCamera {
   zoom(delta: number, anchor: Point = { x: 0, y: 0 }): void {
     this.manualTravel = true;
     const z = clamp(
-        this.target.z * Math.exp(-delta * cameraTuning.zoomSensitivity),
+        this.target.z *
+          Math.exp(-delta * (this.zoomLimits.zoomSensitivity ?? cameraTuning.zoomSensitivity)),
         this.zoomLimits.minimumZoom,
         this.zoomLimits.maximumZoom,
       ),
       ratio = z / this.target.z;
-    this.set({
-      z,
-      x: anchor.x - (anchor.x - this.target.x) * ratio,
-      y: anchor.y - (anchor.y - this.target.y) * ratio,
-    });
+    this.set(
+      {
+        z,
+        x: anchor.x - (anchor.x - this.target.x) * ratio,
+        y: anchor.y - (anchor.y - this.target.y) * ratio,
+      },
+      this.zoomLimits.directZoom === true,
+    );
   }
   zoomFocused(delta: number): void {
     const item = this.items.find((i) => i.id === this.focused);

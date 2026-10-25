@@ -10,6 +10,84 @@ const moduleAt = (path) => import(pathToFileURL(resolve(path)).href);
 const publicApi = await moduleAt('scripts/link-preview/public-fetch.mjs');
 const { extractPreview } = await moduleAt('scripts/link-preview/extract.mjs');
 const { createLocalServer } = await moduleAt('scripts/local-server.mjs');
+const { extractReader } = await moduleAt('scripts/link-preview/reader.mjs');
+const { providerVideo } = await moduleAt('scripts/link-preview/providers.mjs');
+
+test('C08-U30: lectura real conserva estructura y bytes de ilustraciones sin navegación ni código ejecutable', async () => {
+  const prose = 'Contenido técnico para estudiar una decisión y organizar sus referencias. '.repeat(
+    30,
+  );
+  const source = `<html><head><title>Guía técnica</title></head><body><nav>${'navegacion '.repeat(120000)}</nav><main><article><h1>Guía técnica</h1><p>${prose}</p><pre><code>const answer = 42;</code></pre><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table><p>${prose}</p><a href="../next#part">Continuar</a><img src="/figure.png" alt="Figura"><script>bad()</script><iframe src="https://evil.example/"></iframe></article></main></body></html>`;
+  const png = await readFile('tests/fixtures/link-cover.png');
+  const reader = await extractReader(source, 'https://example.org/docs/guide', {
+    resource: async (url) => ({ url, bytes: png }),
+  });
+  assert.ok(reader.html.includes('const answer = 42;'));
+  assert.ok(reader.html.includes('<table>'));
+  assert.ok(reader.html.includes('data:image/png;base64,'));
+  assert.ok(reader.html.includes('https://example.org/next#part'));
+  assert.ok(!reader.html.includes('navegacion'));
+  assert.ok(!reader.html.includes('<script'));
+  assert.ok(!reader.html.includes('<iframe'));
+  const heading = await extractReader(
+    `<article><h1>Título<a class="headerlink" href="#heading">\uf0c1</a></h1><p>${prose}</p><span aria-hidden="true">icono oculto</span></article>`,
+    'https://example.org/guide',
+  );
+  assert.ok(!heading.html.includes('\uf0c1'));
+  assert.ok(!heading.html.includes('icono oculto'));
+  assert.ok(
+    (
+      await extractReader(
+        '<title>App</title><div id="app"></div><script>render()</script>',
+        'https://example.org/',
+      )
+    ).problem,
+  );
+  const requested = [];
+  const result = await extractPreview('https://example.org/docs', {
+    resource: async (url, maximum) => {
+      requested.push(typeof maximum === 'function' ? maximum('text/html') : maximum);
+      return { url, contentType: 'text/html', bytes: Buffer.from(source) };
+    },
+  });
+  assert.equal(requested[0], 8 * 1024 * 1024);
+  assert.equal(result.title, 'Guía técnica');
+  assert.ok(result.reader.html.includes('answer = 42'));
+});
+
+test('C08-U31: formatos reales y proveedores se reconocen sin confiar en extensiones ni hosts parecidos', async () => {
+  const png = await readFile('tests/fixtures/link-cover.png');
+  const result = await extractPreview('https://example.org/no-extension', {
+    resource: async (url) => ({ url, contentType: 'application/octet-stream', bytes: png }),
+  });
+  assert.equal(result.file.kind, 'image');
+  assert.equal(result.file.mime, 'image/png');
+  assert.deepEqual(Buffer.from(result.file.data, 'base64'), png);
+  assert.deepEqual(providerVideo('https://youtu.be/abc123def45'), {
+    provider: 'youtube',
+    id: 'abc123def45',
+  });
+  assert.deepEqual(providerVideo('https://www.youtube.com/shorts/abc123def45'), {
+    provider: 'youtube',
+    id: 'abc123def45',
+  });
+  assert.deepEqual(providerVideo('https://vimeo.com/123456'), { provider: 'vimeo', id: '123456' });
+  for (const url of [
+    'https://youtube.com.evil.example/watch?v=abc123def45',
+    'https://evil.example/?url=https://youtu.be/abc123def45',
+    'https://youtube.com/',
+  ])
+    assert.equal(providerVideo(url), null);
+  const embed = await extractPreview('https://youtu.be/abc123def45', {
+    resource: async (url) => ({
+      url,
+      contentType: 'application/json',
+      bytes: Buffer.from(JSON.stringify({ title: 'Video publicado' })),
+    }),
+  });
+  assert.equal(embed.title, 'Video publicado');
+  assert.equal(embed.embed.id, 'abc123def45');
+});
 
 test('C08-U27: parser MIT extrae OG, HTML, charset y portadas sin ejecutar contenido externo', async () => {
   const png = await readFile('tests/fixtures/link-cover.png');

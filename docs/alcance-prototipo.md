@@ -50,7 +50,7 @@ Este criterio guía la evaluación de utilidad de 0.8. El usuario autorizó impl
 
 ### Materiales y edición
 
-El usuario autorizó para 0.8.15 un servicio local mínimo para obtener y conservar previews reales de enlaces, basado en bibliotecas MIT. Esta excepción queda limitada a metadatos y portadas; no incorpora inferencia ni procesamiento real de agentes. La investigación y las dependencias están en [Previews de enlaces](investigaciones/previews-de-enlaces.md); C08-URL-01 define el comportamiento verificable.
+El usuario autorizó para 0.8.15 un servicio local mínimo para obtener y conservar previews reales de enlaces. La ampliación aprobada permite incorporar imágenes y videos por URL, reproducir proveedores compatibles y leer contenido web guardado dentro de Everett al entrar con zoom. Reutilizar bibliotecas existentes; conservar origen, datos locales y actualización explícita. El servicio no incorpora inferencia ni procesamiento real de agentes. Las dependencias y condiciones de ejecución se documentan en Desarrollo; C08-URL-01 define las previews de base.
 
 - Representaciones reconocibles de notas, documentos, PDF, imágenes, videos, enlaces y referencias a otras superficies.
 - Previews, portadas y metadatos cuando estén disponibles.
@@ -457,7 +457,7 @@ La 1.0 se publica cuando los recorridos acordados funcionan, las superficies rep
 
 Backend, inferencia, colaboración, autenticación e integraciones reales quedan para el desarrollo del producto.
 
-Excepción aprobada por el usuario para 0.8.15: el servicio local acotado a previews de enlaces de C08-URL-01. El resto de este límite se conserva.
+Excepción aprobada por el usuario para 0.8.15 y ampliada en 0.8.16: servicio local acotado a previews, lectura web guardada y archivos de imagen/video por URL, según C08-URL-01 y C08-WEB-01. El resto de este límite se conserva.
 
 ## Mejoras de Canvas por evaluar
 

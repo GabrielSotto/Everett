@@ -509,7 +509,7 @@ export class EverettApp implements Context {
       ) {
         e.preventDefault();
         const rect = this.viewport.getBoundingClientRect();
-        this.camera?.zoom(delta, {
+        this.camera?.zoom(e.ctrlKey ? delta * 4 : delta, {
           x: e.clientX - rect.x - rect.width / 2,
           y: e.clientY - rect.y - rect.height / 2,
         });
@@ -664,6 +664,17 @@ export class EverettApp implements Context {
       }
       if ((e.key === 'Delete' || e.key === 'Backspace') && this.ui.canvas.selection) {
         e.preventDefault();
+        if (
+          e.repeat ||
+          !confirm(
+            '¿Eliminar ' +
+              (this.ui.canvas.selections.length > 1
+                ? 'los materiales seleccionados'
+                : 'este material') +
+              ' del Canvas? Podés deshacerlo.',
+          )
+        )
+          return;
         this.act(
           this.ui.canvas.selections.length > 1
             ? { type: 'nodes.delete', world: route.world, nodes: this.ui.canvas.selections }

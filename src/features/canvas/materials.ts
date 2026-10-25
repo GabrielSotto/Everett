@@ -111,7 +111,7 @@ const materialKinds: Record<string, { label: string; icon: Parameters<typeof ico
   drawing: { label: 'Dibujos', icon: 'draw' },
   link: { label: 'Enlaces', icon: 'link' },
 };
-function assignedPreview(w: WorldSnapshot, n: Material): string {
+export function assignedPreview(w: WorldSnapshot, n: Material): string {
   if (n.data.kind === 'link')
     return `<div class="assigned-preview assigned-link" data-assigned-id="${n.id}">${linkCardMarkup(n.data, n.id)}</div>`;
   const d = n.data,

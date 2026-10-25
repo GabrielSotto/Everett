@@ -66,9 +66,9 @@ export function previewEndpoint({ extract = extractPreview } = {}) {
             });
             return;
           }
-          job = extract(key, { signal: abort.signal }).catch(() => ({
+          job = extract(key, { signal: abort.signal }).catch((error) => ({
             status: 'error',
-            problem: 'fetch-failed',
+            problem: /demasiado grande/.test(error.message) ? 'too-large' : 'fetch-failed',
             checkedAt: Date.now(),
             resolvedUrl: key,
           }));

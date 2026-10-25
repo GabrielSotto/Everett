@@ -1,6 +1,6 @@
 import { getWorld, need, type State } from './model';
 import { humanParticipants } from './conversations';
-import { validLinkPreview } from './link-previews';
+import { validLinkPreview, linkUrl } from './link-previews';
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -208,6 +208,11 @@ export function validate(s: State): void {
         'Tipo de material desconocido',
       );
       if (n.data.kind === 'image' || n.data.kind === 'video' || n.data.kind === 'pdf') {
+        ensure(
+          n.data.source === undefined || linkUrl(n.data.source) !== null,
+          'URL',
+          'Origen del archivo inválido',
+        );
         ensure(
           !!n.data.asset && Number.isFinite(n.data.ratio) && n.data.ratio > 0,
           'ASSET',
