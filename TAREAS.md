@@ -24,6 +24,19 @@ Implementación de C08-URL-01 en `feat/canvas-0.8`: previews mediante servicio l
 
 Candidata 0.8.15 con gate completo: tipado, formato, 91 pruebas de lógica/herramientas y 167 de navegador aprobadas, sin omisiones ni reintentos. Incluye siete regresiones nuevas de navegador y sesión sostenida de 30 ciclos. El informe, fuentes e identidad del HTML fueron verificados. La prueba pública de MDN sin respuestas sustituidas compara los mismos bytes de portada mediante SHA-256 antes y después de recargar. La evidencia de 0.8.14 se conserva como antecedente en su paquete.
 
+## Revisión del usuario terminada — 0.8.15
+
+El usuario completó los ocho puntos de revisión. Confirmó movimiento, capas, renombre funcional, conservación de tarjetas/nombres/posiciones/portadas al recargar, duplicado identificado como copia, borrado/Undo/Redo y legibilidad del visor. Esos comportamientos deben preservarse. La consulta del contenido sigue siendo insuficiente: entrar con zoom o doble clic repite la tarjeta ampliada y obliga a abrir el destino fuera de Everett.
+
+- Investigar al menos seis canvases, idealmente diez, antes de decidir cómo ampliar los enlaces. La preferencia del usuario es entrar con zoom y leer dentro de Everett. Comparar tarjetas, contenido interactivo, captura de artículos, etiquetas, referencias de origen y mecanismos técnicos; no confundir documentación consultada con pruebas directas de cada producto. [Investigación comparativa](docs/investigaciones/contenido-web-en-canvas.md).
+- Godot: la prueba aislada de `https://docs.godotengine.org/en/stable/` y su variante española reproduce el rechazo del límite actual de 1 MiB. Los HTML medidos contienen 1.334.110 y 1.359.830 bytes; con un límite diagnóstico mayor el mismo parser obtiene título, descripción e imágenes. Corregir límites y diagnóstico sin quitar las cotas de descarga. No atribuirlo a una portada ausente. [Evidencia](output/investigacion-enlaces/godot-diagnostic.json).
+- Pegado: el usuario logró crear enlaces mediante teclado, pero el fondo deja aparecer el menú del navegador interno, sin una acción Pegar de Canvas. Resolver el acceso contextual y comprobar el portapapeles nativo, foco y permisos, además del evento DOM ya cubierto por el arnés.
+- Simplificar el formulario de enlace: el usuario pide reemplazar Cancelar por una X compacta arriba a la derecha. Simplificar también el renombre de materiales de forma coherente con la edición directa de cables. Pide confirmación al descartar o eliminar; definir su aplicación junto con el flujo, preservando borradores y Undo/Redo.
+- Diferenciar entrada vacía, formato inválido, dominio sin protocolo, destino inexistente, error de descarga y límite excedido. El mensaje nativo de `input[type=url]` no explica esas situaciones. Conservar el dato para corregirlo y reintentar.
+- Las portadas genéricas de páginas iniciales de TyC Sports y YouTube no equivalen al contenido de una noticia o un video. La presentación debe identificar el recurso concreto y explicar qué se puede consultar. Agrandar la tarjeta no acredita lectura ni reproducción.
+
+El pedido vigente prioriza la investigación y la elección del comportamiento antes de implementar la lectura web. Se conserva la candidata 0.8.15 servida, sin cambios de aplicación durante esta comparación. Las correcciones, zoom e imágenes/videos siguientes siguen pendientes; no se consideran entregados por completar el estudio.
+
 ## Feedback abierto de 0.8.15 — zoom de Canvas
 
 El usuario confirma que el zoom se siente extraño frente a Figma y otros canvases. Corregir su respuesta al gesto; la verificación anterior de geometría, anclajes y extremos no acredita por sí sola una sensación adecuada de navegación.
