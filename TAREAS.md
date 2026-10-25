@@ -35,16 +35,19 @@ El usuario confirma que el zoom se siente extraño frente a Figma y otros canvas
 
 Este feedback queda pendiente de corrección; no modifica el HTML ni el servidor de la candidata durante esta anotación de revisión.
 
-## Feedback abierto de 0.8.15 — imágenes de Internet
+## Feedback abierto de 0.8.15 — imágenes y videos de Internet
 
-El usuario confirma que reunir imágenes de Pinterest y otros sitios para inspiración, referencias de diseño y moodboards forma parte del trabajo esperado en Canvas. La candidata actual admite previews de páginas HTML, pero rechaza una URL directa de imagen como contenido sin metadatos. Esta capacidad queda pendiente dentro de 0.8.
+El usuario confirma que reunir imágenes de Pinterest y otros sitios para inspiración, referencias de diseño y moodboards forma parte del trabajo esperado en Canvas. Extiende ese recorrido a referencias de video de YouTube y otras plataformas, además de archivos directos. La candidata actual admite previews de páginas HTML, pero rechaza una URL directa de imagen o video como contenido sin metadatos. Los videos reproducibles actuales proceden de archivos locales o ejemplos generados localmente. La incorporación por URL queda pendiente dentro de 0.8.
 
 - Pegar una URL directa de imagen debe incorporar un material Imagen, con bytes guardados localmente y URL de origen conservada. Distinguir el archivo real de una página web por la respuesta y el contenido, no por su extensión.
 - Copiar una imagen del navegador y pegarla en Canvas debe reutilizar la incorporación de archivos de imagen; conservar el origen cuando el portapapeles lo proporcione. Pegar en un editor debe mantener la acción local correspondiente.
 - La URL de una página o de un pin sigue siendo un enlace con preview. Copiar la dirección de su imagen permite incorporar solo esa imagen al trabajo visual.
+- Una URL directa de archivo de video debe poder incorporarse como material Video con los controles existentes, validación del contenido real y límites apropiados para archivos. Resolver reproducción y conservación local manteniendo su origen.
+- Un enlace de YouTube u otro proveedor compatible debe representarse como referencia de video reproducible mediante el reproductor oficial o el mecanismo de incrustación admitido. La referencia, título y portada se conservan; la reproducción del proveedor necesita acceso en línea y no implica descargar una copia local del video. Investigar y reutilizar adaptadores existentes antes de desarrollar uno propio. Referencias primarias: [reproductor de YouTube](https://developers.google.com/youtube/player_parameters) y [oEmbed](https://oembed.com/).
+- Conservar una referencia utilizable y acceso al origen si el proveedor impide la reproducción incrustada. Cubrir persistencia, reproducción explícita, pausa, navegación, foco y convivencia del reproductor con los gestos del Canvas; no presentar una portada como reproducción funcional.
 - Reutilizar el servicio local de descarga y el importador/almacenamiento existentes. Cubrir contenido inválido, redirecciones, descarga rechazada, límites apropiados para materiales, proporción, bytes recuperados tras recarga, duplicación, borrado y pegado de imagen. Como referencia de interacción, [Miro documenta imágenes desde el portapapeles e incorporación por URL](https://help.miro.com/hc/en-us/articles/360017731233-Ways-to-add-content).
 
-La incorporación desde Internet todavía no está implementada; el recorrido disponible es descargar la imagen e importarla como archivo local.
+La incorporación de imágenes o videos desde Internet todavía no está implementada. Los archivos disponibles en la computadora se pueden importar localmente; una preview de página con portada no equivale a importar la imagen ni a tener el video reproducible.
 
 ## Antecedente — Canvas 0.8.14
 
