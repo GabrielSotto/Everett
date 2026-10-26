@@ -1,4 +1,5 @@
 import { exportDiagnostics } from '../platform/export-diagnostics';
+import { confirmRemoval } from '../ui/confirm-removal';
 import { WheelIntent } from '../spatial/wheel-intent';
 import { navigationTuning } from '../spatial/tuning';
 import {
@@ -275,6 +276,11 @@ export class EverettApp implements Context {
     );
   }
   back(intent?: Intent): void {
+    if (this.view?.back?.()) {
+      this.navigationLock = Date.now() + navigationTuning.cooldownMs;
+      this.wheelIntent.lock(navigationTuning.cooldownMs);
+      return;
+    }
     this.origin = null;
     this.act(
       { type: 'back' },
@@ -496,7 +502,7 @@ export class EverettApp implements Context {
     const route = this.store.get().route,
       spatial = route.kind === 'universe' || route.kind === 'world';
     const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
-    if (!spatial && !e.altKey) {
+    if (!spatial && !e.altKey && !(this.view instanceof MediaView && this.view.directWheel)) {
       const zone = target?.closest<HTMLElement>('.zone-materials');
       const localScroll = zone && zone.scrollHeight > zone.clientHeight + 1;
       if (
@@ -664,28 +670,31 @@ export class EverettApp implements Context {
       }
       if ((e.key === 'Delete' || e.key === 'Backspace') && this.ui.canvas.selection) {
         e.preventDefault();
-        if (
-          e.repeat ||
-          !confirm(
-            '¿Eliminar ' +
-              (this.ui.canvas.selections.length > 1
-                ? 'los materiales seleccionados'
-                : 'este material') +
-              ' del Canvas? Podés deshacerlo.',
-          )
-        )
-          return;
-        this.act(
+        if (e.repeat) return;
+        const ids =
           this.ui.canvas.selections.length > 1
-            ? { type: 'nodes.delete', world: route.world, nodes: this.ui.canvas.selections }
-            : { type: 'node.delete', world: route.world, id: this.ui.canvas.selection },
-          'quitar material',
-          'CANVAS-01',
-          'keyboard',
+            ? [...this.ui.canvas.selections]
+            : [this.ui.canvas.selection];
+        confirmRemoval(
+          this.root,
+          ids.length > 1
+            ? `Se retirarán ${ids.length} materiales.`
+            : 'Se retirará el material seleccionado.',
+          () => {
+            this.act(
+              ids.length > 1
+                ? { type: 'nodes.delete', world: route.world, nodes: ids }
+                : { type: 'node.delete', world: route.world, id: ids[0]! },
+              'quitar material',
+              'CANVAS-01',
+              'keyboard',
+            );
+            this.ui.canvas.selection = null;
+            this.ui.canvas.selections = [];
+            this.render();
+          },
+          this.lifetime.signal,
         );
-        this.ui.canvas.selection = null;
-        this.ui.canvas.selections = [];
-        this.render();
       }
     }
   }

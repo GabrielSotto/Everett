@@ -1,8 +1,10 @@
 import type { Context } from '../../app/context';
-import { html, type View } from '../../ui/dom';
+import { type View } from '../../ui/dom';
 import { nodeTitle } from '../../domain/model';
 import { pdfReader } from '../../platform/pdf-preview';
 import { WebReader } from './web-reader';
+import { mediaToolbar } from './media-toolbar';
+import { ImageInspector } from './image-inspector';
 
 /** Visor local: Alt entrega la rueda a la navegación espacial de Everett. */
 export class MediaView implements View {
@@ -12,6 +14,16 @@ export class MediaView implements View {
   private releasePdf: (() => void) | null = null;
   private materialKey: string | null = null;
   private reader: WebReader | null = null;
+  private inspector: ImageInspector | null = null;
+  back(): boolean {
+    return this.reader?.back() ?? false;
+  }
+  get directWheel(): boolean {
+    const route = this.ctx.store.get().route;
+    if (route.kind !== 'material') return false;
+    const data = this.ctx.world().nodes.find((node) => node.id === route.entity)?.data;
+    return data?.kind === 'video' || (data?.kind === 'link' && !!data.metadata?.embed);
+  }
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -27,6 +39,10 @@ export class MediaView implements View {
     root.addEventListener(
       'click',
       (event) => {
+        if (event.target instanceof Element && event.target.closest('[data-media-back]')) {
+          this.ctx.back();
+          return;
+        }
         const button =
           event.target instanceof Element
             ? event.target.closest<HTMLElement>('[data-action=link-preview-retry]')
@@ -61,9 +77,11 @@ export class MediaView implements View {
     this.materialKey = key;
     this.reader?.dispose();
     this.reader = null;
+    this.inspector?.dispose();
+    this.inspector = null;
     this.releasePdf?.();
     this.releasePdf = null;
-    this.root.innerHTML = `<section class="media-view ${d.kind === 'link' ? 'web-content-view' : ''}"><h1>${html(nodeTitle(this.ctx.world(), node))}</h1>${d.kind === 'link' ? '<div class="web-reader"></div>' : '<div class="media-loading" role="status">Recuperando archivo…</div>'}${'source' in d && d.source ? `<a class="media-source" href="${html(d.source)}" target="_blank" rel="noopener noreferrer">${html(new URL(d.source).hostname)} · Origen</a>` : ''}</section>`;
+    this.root.innerHTML = `<section class="media-view ${d.kind === 'link' ? 'web-content-view' : ''} ${d.kind === 'video' || (d.kind === 'link' && d.metadata?.embed) ? 'video-content-view' : ''}">${d.kind === 'link' ? '<div class="web-reader"></div>' : mediaToolbar(nodeTitle(this.ctx.world(), node), 'source' in d ? d.source : undefined) + '<div class="media-loading" role="status">Recuperando archivo…</div>'}</section>`;
     if (d.kind === 'link')
       this.reader = new WebReader(
         this.root.querySelector('.web-reader')!,
@@ -89,9 +107,21 @@ export class MediaView implements View {
             if (media instanceof HTMLVideoElement) {
               media.controls = true;
               media.preload = 'auto';
+              media.autoplay = true;
+              media.playsInline = true;
               if (d.preview) media.poster = d.preview;
             } else media.alt = d.title;
-            host.replaceWith(media);
+            if (media instanceof HTMLImageElement) {
+              await media.decode();
+              if (this.disposed || key !== this.materialKey) return;
+              this.inspector = new ImageInspector(host as HTMLElement, media);
+            } else {
+              host.className = 'native-video-stage';
+              host.replaceChildren(media);
+              void media.play().catch(() => {
+                /* El control nativo permite iniciar si el navegador bloquea autoplay. */
+              });
+            }
           }
         })
         .catch(() => {
@@ -117,6 +147,7 @@ export class MediaView implements View {
     this.disposed = true;
     this.abort.abort();
     this.reader?.dispose();
+    this.inspector?.dispose();
     this.releasePdf?.();
     this.root.querySelectorAll('video').forEach((video) => {
       video.pause();

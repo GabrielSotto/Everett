@@ -13,19 +13,33 @@ export const test = base.extend<{
   confirmationMode: ['accept', { option: true }],
   confirmations: async ({ page, confirmationMode }, use, testInfo) => {
     const messages: string[] = [];
+    if (confirmationMode === 'accept') {
+      await page.exposeFunction('__everettConfirmRemoval', async () => {
+        const dialog = page.locator('dialog.removal-dialog');
+        if (!(await dialog.count())) return;
+        messages.push((await dialog.textContent()) ?? 'Eliminar');
+        await dialog.getByRole('button', { name: 'Eliminar', exact: true }).click();
+      });
+      await page.addInitScript(() => {
+        new MutationObserver((records) => {
+          if (
+            records.some((r) =>
+              [...r.addedNodes].some(
+                (node) => node instanceof Element && node.matches('dialog.removal-dialog'),
+              ),
+            )
+          )
+            void (
+              window as unknown as { __everettConfirmRemoval(): Promise<void> }
+            ).__everettConfirmRemoval();
+        }).observe(document, { subtree: true, childList: true });
+      });
+    }
     if (confirmationMode === 'accept')
       page.on('dialog', async (dialog) => {
         const message = dialog.message();
-        if (
-          dialog.type() === 'confirm' &&
-          /^¿(Eliminar |Descartar los cambios sin confirmar)/.test(message)
-        ) {
-          messages.push(message);
-          await dialog.accept();
-        } else {
-          messages.push('UNEXPECTED: ' + message);
-          await dialog.dismiss();
-        }
+        messages.push('UNEXPECTED: ' + message);
+        await dialog.dismiss();
       });
     await use(messages);
     await testInfo.attach('confirmaciones-nativas', {

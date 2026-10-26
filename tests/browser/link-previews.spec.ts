@@ -108,6 +108,7 @@ test('C08-B88: respuesta tardía durante nombre, movimiento, borrado y Undo cons
   expect(saved.data).toMatchObject({ title: 'Mi nombre manual', metadata: { title: ready.title } });
   await material.focus();
   await page.keyboard.press('Delete');
+  await expect(page.locator('dialog.removal-dialog')).toHaveCount(0);
   await expect(material).toHaveCount(0);
   await page.keyboard.press('Control+z');
   await expect(material).toHaveCount(1);
@@ -123,6 +124,7 @@ test('C08-B88: respuesta tardía durante nombre, movimiento, borrado y Undo cons
   const deleted = await add(page, url + '/removed');
   await page.locator(`[data-node="${deleted}"]`).focus();
   await page.keyboard.press('Delete');
+  await expect(page.locator('dialog.removal-dialog')).toHaveCount(0);
   finish();
   await page.waitForResponse('**/api/link-preview');
   await expect.poll(async () => (await world(page)).nodes.map((n) => n.id)).toEqual([id]);

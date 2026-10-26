@@ -17,6 +17,7 @@ import { bindColorPicker } from './color-picker';
 import { canOrderMaterials } from '../../domain/material-order';
 import { enteredLink } from '../../domain/link-previews';
 import { linkCardMarkup } from './link-card';
+import { confirmRemoval } from '../../ui/confirm-removal';
 import { assignedPreview, materialMarkup } from './materials';
 import { inspectMedia } from '../../platform/media-file';
 import { previewMarkup } from './proposals';
@@ -421,14 +422,20 @@ export class CanvasInteractions {
             );
             break;
           case 'context-remove':
-            if (!confirm('¿Eliminar este material del Canvas? Podés deshacerlo.')) break;
-            this.overlay.replaceChildren();
-            ctx.act(
-              { type: 'node.delete', world: ctx.world().id, id },
-              'quitar material',
-              'C08-MAT-08',
+            confirmRemoval(
+              this.root,
+              'Se retirará este material.',
+              () => {
+                this.overlay.replaceChildren();
+                ctx.act(
+                  { type: 'node.delete', world: ctx.world().id, id },
+                  'quitar material',
+                  'C08-MAT-08',
+                );
+                ctx.notice('Material retirado. Podés deshacer con Ctrl+Z.');
+              },
+              this.previewAbort.signal,
             );
-            ctx.notice('Material retirado. Podés deshacer con Ctrl+Z.');
             break;
           case 'context-zones':
             this.zoneMenu(id);
@@ -672,7 +679,7 @@ export class CanvasInteractions {
           } catch {
             const error = form.querySelector<HTMLElement>('[role=status]');
             if (error)
-              error.textContent = 'Ingresá una URL válida, por ejemplo https://example.com.';
+              error.textContent = 'Ingresá una URL válida, por ejemplo https://example.com';
             form.querySelector('input')?.setAttribute('aria-invalid', 'true');
           }
         } else if (form.id === 'new-comment-form') {
@@ -1051,12 +1058,39 @@ export class CanvasInteractions {
         else this.ctx.notice('El portapapeles no contiene una imagen o URL válida.', true);
       }
     } catch {
-      if (!this.disposed)
-        this.ctx.notice(
-          'No se pudo leer el portapapeles. Hacé clic en el Canvas y usá Ctrl+V.',
-          true,
-        );
+      if (!this.disposed) this.pasteFallback();
     }
+  }
+  private pasteFallback(): void {
+    this.overlay.innerHTML = `<div class="canvas-context-form clipboard-fallback" role="dialog" aria-label="Pegar en Canvas" style="${this.position({ x: innerWidth / 2 - 150, y: innerHeight / 2 - 90 })}"><button class="icon-button link-entry-close" type="button" data-action="context-close" aria-label="Cerrar pegado">${icon('close', 14)}</button><label for="clipboard-paste">Pegar en Canvas</label><p>El navegador no permitió leer el portapapeles. Pegá acá con Ctrl+V.</p><textarea id="clipboard-paste" aria-label="Pegá una imagen o enlace" rows="2"></textarea></div>`;
+    this.fitOverlay();
+    const input = this.overlay.querySelector<HTMLTextAreaElement>('textarea')!;
+    input.focus({ preventScroll: true });
+    input.addEventListener(
+      'paste',
+      (event) => {
+        const files = [...(event.clipboardData?.files ?? [])];
+        const text = event.clipboardData?.getData('text/plain') ?? '';
+        const url = enteredLink(text);
+        if (!files.length && !url) return;
+        event.preventDefault();
+        event.stopPropagation();
+        this.overlay.replaceChildren();
+        if (files.length)
+          void this.importFiles(
+            files,
+            false,
+            undefined,
+            clipboardOrigin(
+              text,
+              event.clipboardData?.getData('text/uri-list'),
+              event.clipboardData?.getData('text/html'),
+            ),
+          );
+        else this.addLink(url!);
+      },
+      { signal: this.previewAbort.signal },
+    );
   }
   private paintLinkCards(id: string): void {
     const world = this.ctx.world();
@@ -1322,14 +1356,6 @@ export class CanvasInteractions {
       });
   }
   close(): boolean {
-    const form = this.overlay.querySelector<HTMLFormElement>('#canvas-new-link,[data-rename]');
-    const field = form?.querySelector<HTMLInputElement>('input');
-    if (
-      field &&
-      field.value !== field.defaultValue &&
-      !confirm('¿Descartar los cambios sin confirmar?')
-    )
-      return true;
     const link = (this.overlay.querySelector('[data-label]') as HTMLElement | null)?.dataset.label;
     const color = this.colorField;
     this.colorField = null;

@@ -404,6 +404,7 @@ test('C08-B36: cables inversos no se duplican, borrado sin menú, historial visi
     contentType: 'image/png',
   });
   await page.keyboard.press('Delete');
+  await expect(page.locator('dialog.removal-dialog')).toHaveCount(0);
   expect(await linkCount()).toBe(1);
   const history = page.getByRole('toolbar', { name: 'Historial de cambios de Canvas' });
   await expect(
@@ -422,6 +423,7 @@ test('C08-B36: cables inversos no se duplican, borrado sin menú, historial visi
   const before = structuredClone((await world(page)).nodes[0]!);
   await page.locator('[data-node=note-a]').click();
   await page.keyboard.press('Backspace');
+  await expect(page.locator('dialog.removal-dialog')).toHaveCount(0);
   expect((await world(page)).nodes.some((n) => n.id === 'note-a')).toBe(false);
   await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
   expect((await world(page)).nodes.find((n) => n.id === 'note-a')).toEqual(before);

@@ -277,6 +277,7 @@ test('C08-B51: buscar sin alterar trabajo, enfocar fuera de pantalla, regresar, 
   await expect(draft).toHaveValue('Este borrador sigue en su conversación');
   await node.click();
   await page.keyboard.press('Delete');
+  await expect(page.locator('dialog.removal-dialog')).toHaveCount(0);
   expect((await world(page)).nodes.some((item) => item.id === 'far-note')).toBe(false);
   await trigger(page).click();
   await search(page).fill('Decisión: guardado local');

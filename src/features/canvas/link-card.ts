@@ -17,6 +17,8 @@ export function linkCardMarkup(
       : '';
   const message = previewMessage(meta);
   const title = data.title !== address.hostname + address.pathname ? data.title : meta?.title;
+  if (meta?.embed)
+    return `<div class="link-card provider-card" data-preview-status="${meta.status}">${image}${interactive ? `<button type="button" class="link-open video-play" data-action="link-open" data-id="${html(id)}" aria-label="Ver video">${icon('play', 24)}</button>` : ''}<span class="provider-card-title">${html(title || 'Video')}</span></div>`;
   const open =
     interactive && (meta?.readerAsset || meta?.embed)
       ? `<button type="button" class="link-open" data-action="link-open" data-id="${html(id)}">${icon(meta.embed ? 'play' : 'docs', 14)}${meta.embed ? 'Ver video' : 'Leer'}</button>`

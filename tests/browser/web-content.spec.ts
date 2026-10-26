@@ -43,81 +43,46 @@ async function bytes(page: Page, asset: string): Promise<number[]> {
   }, asset);
 }
 
-test('C08-B94: lectura persistida, scroll, enlaces internos, actualización fallida y sanitización', async ({
+test('C08-B94: lectura persistida, scroll, navegación con una flecha y sanitización', async ({
   page,
 }, info) => {
   await start(page);
   let count = 0;
-  let finishRefresh!: () => void;
-  const refreshing = new Promise<void>((resolve) => {
-    finishRefresh = resolve;
-  });
   let finishSecond!: () => void;
-  const secondLoading = new Promise<void>((resolve) => {
+  const loading = new Promise<void>((resolve) => {
     finishSecond = resolve;
   });
   await page.route('**/api/link-preview', async (route) => {
     count++;
-    const request = route.request().postDataJSON() as { url: string; refresh: boolean };
-    if (request.url.endsWith('second')) await secondLoading;
-    if (request.refresh) await refreshing;
+    const request = route.request().postDataJSON() as { url: string };
+    if (request.url.endsWith('second')) await loading;
     await route.fulfill({
-      json: request.refresh
-        ? { status: 'error', checkedAt: 200, resolvedUrl: url, problem: 'fetch-failed' }
-        : request.url.endsWith('second')
-          ? ready('<p>' + 'Segunda página de la referencia. '.repeat(50) + '</p>', 'Segunda página')
-          : ready(),
+      json: request.url.endsWith('second')
+        ? ready('<p>' + 'Segunda página de la referencia. '.repeat(50) + '</p>', 'Segunda página')
+        : ready(),
     });
   });
   const id = await add(page);
-  await expect(page.locator(`[data-node="${id}"] .link-open`)).toHaveText('Leer');
   await page.locator(`[data-node="${id}"] .link-open`).click();
   await expect(page.locator('.reader-content')).toContainText('const value = 42;');
   await expect(page.locator('.reader-content table')).toHaveCount(1);
   await expect(page.locator('.reader-content script,.reader-content img')).toHaveCount(0);
   expect(await page.evaluate(() => 'injected' in window)).toBe(false);
+  await expect(page.getByRole('button', { name: 'Actualizar contenido' })).toHaveCount(0);
   const scroll = page.locator('.reader-scroll');
   await scroll.hover();
   await page.mouse.wheel(0, 420);
   await expect.poll(() => scroll.evaluate((e) => e.scrollTop)).toBeGreaterThan(200);
   await page.locator('.reader-content a').click();
-  await expect(page.locator('.reader-update-status')).toHaveText('Actualizando contenido…');
-  await expect(page.getByRole('button', { name: 'Volver al Canvas', exact: false })).toBeVisible();
-  await page.getByRole('button', { name: 'Volver a la lectura', exact: false }).click();
-  const late = page.waitForResponse(
-    (r) =>
-      r.url().endsWith('/api/link-preview') && r.request().postDataJSON().url.endsWith('second'),
-  );
+  await expect(page.locator('.reader-update-status')).toContainText('Recuperando lectura');
+  await expect(page.getByRole('button', { name: 'Volver', exact: true })).toHaveCount(1);
+  await page.getByRole('button', { name: 'Volver', exact: true }).click();
   finishSecond();
-  await late;
   await expect(page.locator('.reader-content')).toContainText('const value = 42;');
   await page.locator('.reader-content a').click();
   await expect(page.locator('.reader-content > h2')).toHaveText('Segunda página');
-  await page.getByRole('button', { name: 'Volver a la lectura', exact: false }).click();
+  await page.getByRole('button', { name: 'Volver', exact: true }).click();
   await expect(page.locator('.reader-content')).toContainText('const value = 42;');
-  await page.getByRole('button', { name: 'Actualizar contenido' }).click();
-  await expect(page.locator('.reader-update-status')).toHaveText('Actualizando contenido…');
-  await expect(page.getByRole('button', { name: 'Actualizar contenido' })).toBeDisabled();
-  await expect(page.locator('.reader-content')).toContainText('const value = 42;');
-  finishRefresh();
-  await expect
-    .poll(
-      async () =>
-        ((await world(page)).nodes[0]!.data as { metadata: { status: string } }).metadata.status,
-    )
-    .toBe('error');
-  await expect(page.locator('.reader-update-status')).toContainText(
-    'Se conserva la última lectura',
-  );
-  await expect(page.getByRole('button', { name: 'Actualizar contenido' })).toBeEnabled();
-  await page.locator('.reader-content a').click();
-  await expect(page.locator('.reader-content > h2')).toHaveText('Segunda página');
-  await page.getByRole('button', { name: 'Actualizar contenido' }).click();
-  await expect(page.locator('.reader-update-status')).toContainText(
-    'Se conserva la última lectura',
-  );
-  await expect(page.locator('.reader-content')).toContainText('Segunda página de la referencia.');
-  await page.getByRole('button', { name: 'Volver a la lectura', exact: false }).click();
   const data = (await world(page)).nodes[0]!.data as { metadata: { readerAsset: string } };
   const saved = await bytes(page, data.metadata.readerAsset);
   const requests = count;
@@ -126,9 +91,7 @@ test('C08-B94: lectura persistida, scroll, enlaces internos, actualización fall
   expect(await bytes(page, data.metadata.readerAsset)).toEqual(saved);
   expect(count).toBe(requests);
   await page.setViewportSize({ width: 390, height: 760 });
-  await expect
-    .poll(() => page.locator('.reader-scroll').evaluate((e) => e.scrollWidth <= e.clientWidth + 1))
-    .toBe(true);
+  await expect.poll(() => scroll.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
   await capture(page, info, 'lectura-local-estrecha');
   await page.keyboard.press('Escape');
   await expect(page.locator(`[data-node="${id}"]`)).toBeVisible();
@@ -273,10 +236,14 @@ test('C08-B96: portapapeles nativo y menú Pegar incorporan URLs e imágenes y r
   await page.locator('.canvas-stage').click({ button: 'right', position: { x: 30, y: 30 } });
   await page.getByRole('menuitem', { name: 'Pegar', exact: false }).click();
   await expect(
-    page.getByText('No se pudo leer el portapapeles. Hacé clic en el Canvas y usá Ctrl+V.', {
+    page.getByText('El navegador no permitió leer el portapapeles. Pegá acá con Ctrl+V.', {
       exact: true,
     }),
   ).toBeVisible();
+  await page.getByLabel('Pegá una imagen o enlace').focus();
+  await page.keyboard.press('Control+v');
+  await expect.poll(async () => (await world(page)).nodes.length).toBe(5);
+  await expect(page.getByRole('dialog', { name: 'Pegar en Canvas', exact: true })).toHaveCount(0);
   await capture(page, info, 'pegado-y-permiso-rechazado');
 });
 
@@ -305,8 +272,7 @@ test('C08-B97: proveedor usa iframe oficial, reproduce contenido y explica recha
   );
   const id = await add(page, 'https://youtu.be/abc123def45');
   await page.locator(`[data-node="${id}"] .link-open`).click();
-  await expect(page.locator('.provider-video iframe')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Reproducir video', exact: true }).click();
+  await expect(page.locator('.provider-play')).toHaveCount(0);
   const iframe = page.locator('.provider-video iframe');
   await expect(iframe).toHaveAttribute(
     'src',
@@ -334,7 +300,7 @@ test('C08-B97: proveedor usa iframe oficial, reproduce contenido y explica recha
     'https://youtu.be/abc123def45',
   );
   await capture(page, info, 'video-en-consulta-y-alternativa');
-  await page.getByRole('button', { name: 'Volver al Canvas', exact: false }).click();
+  await page.getByRole('button', { name: 'Volver', exact: true }).click();
   await expect(iframe).toHaveCount(0);
   await expect(page.locator(`[data-node="${id}"]`)).toBeVisible();
 });
@@ -400,7 +366,7 @@ test('C08-B98: rueda continua revierte sin cola y encuadra una selección peque�
 
 test.describe('confirmaciones de edición', () => {
   test.use({ confirmationMode: 'manual' });
-  test('C08-B99: formulario compacto, URL válida, descarte cancelado y borrado reversible con confirmación', async ({
+  test('C08-B99: formulario sin confirmación redundante y borrado reversible con diálogo local', async ({
     page,
   }) => {
     await start(page);
@@ -411,28 +377,23 @@ test.describe('confirmaciones de edición', () => {
     await input.fill('no es una URL');
     await page.getByRole('button', { name: 'Agregar enlace', exact: true }).click();
     await expect(page.locator('#canvas-new-link [role=status]')).toContainText('URL válida');
-    const dismissal = page.waitForEvent('dialog');
-    const close = page.getByRole('button', { name: 'Cerrar formulario de enlace' }).click();
-    const question = await dismissal;
-    expect(question.message()).toContain('Descartar');
-    await question.dismiss();
-    await close;
-    await expect(input).toHaveValue('no es una URL');
+    await page.getByRole('button', { name: 'Cerrar formulario de enlace' }).click();
+    await expect(page.locator('#canvas-new-link')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
+    await page.locator('[data-action=canvas-link]').click();
     await input.fill('example.org/reference');
     await page.getByRole('button', { name: 'Agregar enlace', exact: true }).click();
     const id = (await world(page)).nodes[0]!.id;
     await page.locator(`[data-node="${id}"]`).focus();
-    const rejection = page.waitForEvent('dialog');
-    const remove = page.keyboard.press('Delete');
-    const dialog = await rejection;
-    expect(dialog.message()).toContain('Eliminar');
-    await dialog.dismiss();
-    await remove;
+    await page.keyboard.press('Delete');
+    const dialog = page.getByRole('dialog', { name: '¿Eliminar del Canvas?' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cancelar', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
     expect((await world(page)).nodes.length).toBe(1);
-    const approval = page.waitForEvent('dialog');
-    const again = page.keyboard.press('Delete');
-    await (await approval).accept();
-    await again;
+    await page.keyboard.press('Delete');
+    await dialog.getByRole('button', { name: 'Eliminar', exact: true }).click();
     await expect.poll(async () => (await world(page)).nodes.length).toBe(0);
     await page.keyboard.press('Control+z');
     await expect(page.locator(`[data-node="${id}"]`)).toBeVisible();

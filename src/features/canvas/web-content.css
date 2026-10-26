@@ -8,31 +8,297 @@
   flex: 0 0 auto;
   margin: 0;
 }
+.media-view {
+  align-items: stretch;
+  overflow: hidden;
+  padding: 12px 20px;
+  gap: 12px;
+}
+.media-toolbar {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 10px;
+  min-height: 32px;
+}
+.media-toolbar h1 {
+  font-size: 14px;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.media-toolbar .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 6px;
+  padding: 0;
+}
+.media-original {
+  color: var(--muted);
+}
+.media-original svg {
+  rotate: -45deg;
+}
+.media-toolbar .icon-button:hover {
+  background: var(--hover);
+}
+.native-video-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+}
+.native-video-stage video {
+  display: block;
+  width: 100%;
+  max-height: 100%;
+  border-radius: 6px;
+  background: #141b20;
+}
+.image-inspector {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.image-stage {
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.image-plane {
+  position: relative;
+  flex: none;
+}
+.image-plane img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  user-select: none;
+}
+.image-tools {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+.image-tools button,
+.image-tools output {
+  padding: 6px 8px;
+  min-width: 32px;
+  min-height: 32px;
+  font-size: 12px;
+  border-radius: 5px;
+  text-align: center;
+}
+.image-tools button:hover {
+  background: var(--hover);
+}
+.image-tools output {
+  min-width: 60px;
+  color: var(--muted);
+}
+.material:is(.image, .video) > :is(img, video),
+.provider-card {
+  border-radius: 6px;
+}
+.material.link:has(.provider-card) {
+  border: 0;
+  background: transparent;
+}
+.provider-card {
+  position: relative;
+  background: #141b20;
+}
+.provider-card > img {
+  height: 100%;
+  object-fit: cover;
+}
+.assigned-link > .provider-card {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+.assigned-link > .provider-card > img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+.provider-card .link-open {
+  position: absolute;
+  display: flex;
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  background: #0008;
+}
+.provider-card-title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 8px 6px;
+  background: linear-gradient(transparent, #000b);
+  color: white;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.video-content-view .reader-scroll {
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.video-content-view .provider-video {
+  width: 100%;
+  max-width: none;
+}
+.video-content-view .provider-video iframe {
+  min-height: 0;
+  max-height: calc(100vh - 180px);
+  border-radius: 6px;
+}
+.provider-wheel-bridge {
+  height: min(calc(100vh - 170px), calc((100vw - 40px) * 9 / 16));
+  width: 100%;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+  container-type: size;
+}
+.provider-wheel-bridge::-webkit-scrollbar {
+  display: none;
+}
+.provider-wheel-track {
+  height: 100%;
+  padding-block: 512px;
+  box-sizing: content-box;
+}
+.provider-wheel-bridge iframe {
+  position: sticky;
+  top: 0;
+  height: 100cqh;
+  max-height: none !important;
+}
+.clipboard-fallback p {
+  font-size: 12px;
+  line-height: 1.5;
+  padding-right: 14px;
+}
+.clipboard-fallback {
+  max-width: calc(100vw - 24px);
+}
+.clipboard-fallback .link-entry-close {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
+/* Transitions.dev: modal open/close, con sus tokens y estados originales. */
+:root {
+  --modal-open-dur: 250ms;
+  --modal-close-dur: 150ms;
+  --modal-scale: 0.96;
+  --modal-scale-close: 0.96;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.t-modal {
+  transform-origin: center;
+  transform: scale(var(--modal-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--modal-open-dur) var(--modal-ease),
+    opacity var(--modal-open-dur) var(--modal-ease);
+  will-change: transform, opacity;
+}
+.t-modal.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-modal.is-closing {
+  transform: scale(var(--modal-scale-close));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--modal-close-dur) var(--modal-ease),
+    opacity var(--modal-close-dur) var(--modal-ease);
+}
+.removal-dialog {
+  width: min(360px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--panel);
+  box-shadow: 0 16px 64px #0005;
+}
+.removal-dialog::backdrop {
+  background: #10182066;
+}
+.removal-dialog h2 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+.removal-dialog p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0;
+}
+.removal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+.removal-actions button {
+  min-height: 32px;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  background: var(--hover);
+}
+.removal-actions [data-choice='remove'] {
+  background: #b93743;
+  color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-modal {
+    transition: none !important;
+  }
+}
+body[data-canvas-motion='reduced'] .t-modal {
+  transition: none !important;
+}
 .web-reader {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
-.reader-toolbar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  padding: 0 0 12px;
-  flex: 0 0 auto;
-  font-size: 12px;
-}
-.reader-toolbar a,
 .reader-content a {
-  color: var(--accent);
   overflow-wrap: anywhere;
-}
-.reader-toolbar > button {
-  padding: 6px 10px;
-  background: var(--hover);
-  border-radius: 6px;
-  font-size: 12px;
 }
 .reader-scroll {
   flex: 1;
@@ -135,22 +401,6 @@
   aspect-ratio: 16/9;
   min-height: 220px;
   background: #111;
-}
-.provider-play {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  aspect-ratio: 16/9;
-  border-radius: 8px;
-  background: #263642;
-  color: #fff;
-  font-size: 42px;
-}
-.provider-play span {
-  font-size: 16px;
 }
 .provider-video p {
   font-size: 13px;

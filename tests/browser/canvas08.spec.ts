@@ -55,6 +55,7 @@ async function toggleHistory(page: Page): Promise<void> {
 async function contextAction(page: Page, id: string, name: string): Promise<void> {
   await page.locator(`.material[data-node="${id}"]`).click({ button: 'right' });
   await page.getByRole('menuitem', { name, exact: true }).click();
+  await expect(page.locator('dialog.removal-dialog')).toHaveCount(0);
 }
 
 test('C08-B01: nombre alcanzable, identidad Docs, copia independiente y retirada con Undo/Redo', async ({

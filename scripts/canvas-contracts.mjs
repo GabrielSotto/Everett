@@ -5,7 +5,19 @@ export const canvasCases = [
     layer: 'unit',
     contracts: ['C08-WEB-01'],
   })),
-  ...['C08-B94', 'C08-B95', 'C08-B96', 'C08-B97', 'C08-B98', 'C08-B99'].map((id) => ({
+  ...[
+    'C08-B94',
+    'C08-B95',
+    'C08-B96',
+    'C08-B97',
+    'C08-B98',
+    'C08-B99',
+    'C08-B100',
+    'C08-B101',
+    'C08-B102',
+    'C08-B103',
+    'C08-B104',
+  ].map((id) => ({
     id,
     layer: 'browser',
     contracts: ['C08-WEB-01'],
@@ -197,6 +209,11 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B100': { 'canvas-link': 1 },
+  'C08-B101': { 'canvas-link': 1 },
+  'C08-B102': { 'canvas-link': 1, 'link-open': 1 },
+  'C08-B103': { 'canvas-link': 1 },
+  'C08-B104': { 'canvas-link': 1 },
   'C08-B94': { 'canvas-link': 1, 'link-open': 1 },
   'C08-B95': { 'canvas-link': 2, 'material-rename': 1 },
   'C08-B96': { 'canvas-link': 1, 'canvas-paste': 1 },

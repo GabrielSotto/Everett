@@ -3,6 +3,8 @@ import type { Context } from '../../app/context';
 import type { LinkPreview } from '../../domain/model';
 import { linkUrl, providerPlayer, retainLinkPreview } from '../../domain/link-previews';
 import { html } from '../../ui/dom';
+import { mediaToolbar } from './media-toolbar';
+import { WheelIntent } from '../../spatial/wheel-intent';
 
 export function safeArticle(source: string): string {
   const template = document.createElement('template');
@@ -57,23 +59,14 @@ export class WebReader {
       (event) => {
         const target = event.target instanceof Element ? event.target : null;
         const action = target?.closest<HTMLElement>('[data-reader-action]')?.dataset.readerAction;
-        if (action === 'canvas')
-          this.ctx.go({
-            kind: 'surface',
-            world: this.ctx.world().id,
-            surface: 'canvas',
-            entity: null,
-          });
-        else if (action === 'back') {
-          this.save();
-          this.stack.pop();
-          void this.paint();
-        } else if (action === 'refresh') {
+        if (target?.closest('[data-media-back]')) {
+          event.stopPropagation();
+          this.ctx.back();
+        } else if (action === 'retry') {
           this.save();
           if (this.stack.length === 1) this.ctx.previews.refresh(this.ctx.world().id, this.id);
           else void this.navigate(this.stack.at(-1)!.url, true);
-        } else if (action === 'play') this.play();
-        else if (target?.closest('.reader-content a[href]')) {
+        } else if (target?.closest('.reader-content a[href]')) {
           const anchor = target.closest<HTMLAnchorElement>('a[href]')!;
           const url = linkUrl(anchor.href);
           if (!url) return;
@@ -115,12 +108,19 @@ export class WebReader {
     );
     void this.paint();
   }
+  back(): boolean {
+    if (this.stack.length <= 1) return false;
+    this.save();
+    this.stack.pop();
+    void this.paint();
+    return true;
+  }
   update(metadata: LinkPreview | undefined): void {
     this.stack[0]!.metadata = metadata;
     if (this.stack.length === 1 && metadata?.status === 'loading') {
       const status = this.host.querySelector('.reader-update-status');
-      if (status) status.textContent = 'Actualizando contenido…';
-      const refresh = this.host.querySelector<HTMLButtonElement>('[data-reader-action=refresh]');
+      if (status) status.textContent = 'Recuperando lectura…';
+      const refresh = this.host.querySelector<HTMLButtonElement>('[data-reader-action=retry]');
       if (refresh) refresh.disabled = true;
     }
     if (this.stack.length === 1 && metadata?.status !== 'loading') {
@@ -164,19 +164,23 @@ export class WebReader {
     const { url, metadata } = this.stack.at(-1)!;
     const status =
       metadata?.status === 'loading'
-        ? 'Actualizando contenido…'
+        ? 'Recuperando lectura…'
         : metadata?.status === 'error' || (metadata?.readerProblem && metadata.readerAsset)
           ? metadata.readerAsset
             ? 'No se pudo actualizar. Se conserva la última lectura guardada. Podés reintentar.'
             : 'No se pudo recuperar el contenido. Podés reintentar.'
           : '';
-    const toolbar = `<div class="reader-toolbar"><button type="button" data-reader-action="canvas">← Volver al Canvas</button>${this.stack.length > 1 ? '<button type="button" data-reader-action="back">← Volver a la lectura</button>' : ''}<a href="${html(url)}" target="_blank" rel="noopener noreferrer">${html(new URL(url).hostname)} · Abrir original</a><button type="button" data-reader-action="refresh" ${metadata?.status === 'loading' ? 'disabled' : ''}>Actualizar contenido</button></div><p class="reader-update-status" role="status">${html(status)}</p>`;
+    const toolbar =
+      mediaToolbar(metadata?.title ?? new URL(url).hostname, url) +
+      `<p class="reader-update-status" role="status">${html(status)}${status && metadata?.status !== 'loading' ? ' <button type="button" data-reader-action="retry">Reintentar lectura</button>' : ''}</p>`;
     this.host.innerHTML =
       toolbar +
       '<div class="reader-scroll"><p class="reader-message" role="status">Recuperando contenido…</p></div>';
     const scroll = this.host.querySelector<HTMLElement>('.reader-scroll')!;
     if (metadata?.embed) {
-      scroll.innerHTML = `<div class="provider-video" data-provider="${metadata.embed.provider}"><button type="button" class="provider-play" data-reader-action="play" aria-label="Reproducir video">▶<span>Reproducir video</span></button><p>Video de ${metadata.embed.provider === 'youtube' ? 'YouTube' : 'Vimeo'} · reproducción en línea</p><p class="provider-status" role="status"></p></div>`;
+      this.host.closest('.media-view')?.classList.add('video-content-view');
+      scroll.innerHTML = `<div class="provider-video" data-provider="${metadata.embed.provider}"><div class="provider-mount"></div><p class="provider-status" role="status"></p></div>`;
+      this.play();
       return;
     }
     if (metadata?.readerAsset) {
@@ -206,7 +210,7 @@ export class WebReader {
         if (this.abort.signal.aborted || serial !== this.serial) return;
       }
     }
-    scroll.innerHTML = `<div class="reader-message"><h2>${html(metadata?.title ?? 'Contenido web')}</h2><p>${metadata?.status === 'loading' ? 'Preparando contenido…' : metadata?.readerProblem === 'not-article' ? 'Esta página es un índice o una aplicación. No se pudo preparar una lectura de artículo.' : 'No se pudo recuperar una lectura de esta página.'}</p><p>El enlace se conserva. Podés reintentar con Actualizar contenido o consultar el original.</p></div>`;
+    scroll.innerHTML = `<div class="reader-message"><h2>${html(metadata?.title ?? 'Contenido web')}</h2><p>${metadata?.status === 'loading' ? 'Preparando contenido…' : metadata?.readerProblem === 'not-article' ? 'Esta página es un índice o una aplicación. No se pudo preparar una lectura de artículo.' : 'No se pudo recuperar una lectura de esta página.'}</p>${metadata?.status === 'loading' ? '' : '<button type="button" data-reader-action="retry">Reintentar lectura</button>'}</div>`;
   }
   private play(): void {
     const embed = this.stack.at(-1)?.metadata?.embed;
@@ -218,8 +222,9 @@ export class WebReader {
     this.playerAbort = new AbortController();
     const signal = this.playerAbort.signal;
     frame.title = `Reproductor de ${embed.provider === 'youtube' ? 'YouTube' : 'Vimeo'}`;
-    frame.src = providerPlayer(embed);
-    frame.allow = 'fullscreen; encrypted-media; picture-in-picture';
+    frame.src =
+      providerPlayer(embed) + (providerPlayer(embed).includes('?') ? '&' : '?') + 'autoplay=1';
+    frame.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
     frame.setAttribute('allowfullscreen', '');
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
     frame.referrerPolicy = 'strict-origin-when-cross-origin';
@@ -261,7 +266,30 @@ export class WebReader {
       },
       { signal },
     );
-    host.querySelector('.provider-play')?.replaceWith(frame);
+    // La rueda no cruza el límite de origen del iframe. Su desplazamiento nativo
+    // sí puede encadenarse: un contenedor con plano fijo recoge ese gesto sin
+    // interceptar clics ni reemplazar los controles oficiales del proveedor.
+    const bridge = document.createElement('div');
+    bridge.className = 'provider-wheel-bridge';
+    const track = document.createElement('div');
+    track.className = 'provider-wheel-track';
+    track.append(frame);
+    bridge.append(track);
+    host.querySelector('.provider-mount')?.replaceWith(bridge);
+    bridge.scrollTop = 512;
+    let previous = bridge.scrollTop;
+    const intent = new WheelIntent();
+    intent.lock(440);
+    bridge.addEventListener(
+      'scroll',
+      () => {
+        const current = bridge.scrollTop;
+        const delta = current - previous;
+        previous = current;
+        if (intent.consume(delta) === 'leave') this.ctx.back();
+      },
+      { signal },
+    );
   }
   dispose(): void {
     this.save();

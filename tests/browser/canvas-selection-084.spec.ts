@@ -120,6 +120,7 @@ test('C08-B41: arrastrar en Seleccionar reúne tres materiales, mueve el grupo, 
   await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
   await boxSelect(page, ids, true);
   await page.keyboard.press('Backspace');
+  await expect(page.locator('dialog.removal-dialog')).toHaveCount(0);
   expect((await world(page)).nodes).toHaveLength(0);
   expect((await world(page)).docs).toEqual(before.docs);
   await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();

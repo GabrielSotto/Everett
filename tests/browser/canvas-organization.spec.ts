@@ -145,6 +145,7 @@ test('C08-B56: formas reversibles, opacidad dentro del color y etiquetas con Ent
   expect((await world(page)).links.at(-1)!.label).toBe('Relaciona');
   await hit.focus();
   await page.keyboard.press('Backspace');
+  await expect(page.locator('dialog.removal-dialog')).toHaveCount(0);
   expect((await world(page)).links).toHaveLength(0);
   await page.keyboard.press('Control+z');
   expect((await world(page)).links.at(-1)!.label).toBe('Relaciona');

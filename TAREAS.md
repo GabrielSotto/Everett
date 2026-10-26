@@ -18,9 +18,9 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
-## Estado actual — consulta web en 0.8.16
+## Estado actual — correcciones de consulta 0.8.17
 
-Implementados C08-WEB-01 y las correcciones de la revisión: lectura guardada y navegable dentro de Everett, imágenes y videos directos con bytes locales, reproductores oficiales de YouTube/Vimeo, pegado contextual/nativo, renombre compacto y confirmaciones. La rueda de Canvas responde sin cola y encuadrar la selección permite ampliar por encima del 100 %. Gate completo y revisión visual terminados; pendiente la revisión del usuario. Fuentes en el commit `f049ddd`, sin integración en dev.
+En implementación tras la revisión de 0.8.16. Corregir navegación espacial por niveles de lectura, controles compactos, consistencia de videos e imágenes, inspección de imágenes, salida con rueda sobre iframe, pegado tras denegación y confirmaciones locales solo donde aportan protección. La automatización solicitada no se activó y fue eliminada por pedido del usuario; el trabajo se inició manualmente. No integrar en dev ni cerrar 0.8. El gate nuevo todavía no está certificado.
 
 ## Antecedente — enlaces reales en 0.8.15
 

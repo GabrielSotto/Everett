@@ -34,6 +34,7 @@ export function preserveFocus(root: HTMLElement): () => void {
   };
 }
 export interface View {
+  back?(): boolean;
   closeTransient?(): boolean;
   render(): void;
   dispose(): void;
