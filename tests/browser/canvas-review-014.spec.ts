@@ -37,7 +37,7 @@ async function settings(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Configuración', exact: true }).click();
 }
 
-test('C08-B81: Preferencias reúne los cuatro switches y el idioma, conserva sus valores y permite regresar', async ({
+test('C08-B81: Preferencias reúne los ajustes de Canvas y el idioma, conserva sus valores y permite regresar', async ({
   page,
 }, info) => {
   await start(page);
@@ -45,7 +45,11 @@ test('C08-B81: Preferencias reúne los cuatro switches y el idioma, conserva sus
   await settings(page);
   await expect(page.locator('.profile-pop').getByRole('switch')).toHaveCount(0);
   await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
-  await expect(page.locator('.profile-pop').getByRole('switch')).toHaveCount(4);
+  await expect(page.locator('.profile-pop').getByRole('switch')).toHaveCount(5);
+  const guides = page.getByRole('switch', { name: 'Guías y ajuste automático', exact: true });
+  await expect(guides).toHaveAttribute('aria-checked', 'true');
+  await guides.press('Space');
+  await expect(guides).toHaveAttribute('aria-checked', 'false');
   const names = [
     'Mostrar botón de Superficies',
     'Dock vertical',
@@ -68,6 +72,7 @@ test('C08-B81: Preferencias reúne los cuatro switches y el idioma, conserva sus
   await settings(page);
   await expect(page.locator('.profile-pop').getByRole('switch')).toHaveCount(0);
   await page.getByRole('button', { name: 'Preferencias', exact: true }).click();
+  await expect(guides).toHaveAttribute('aria-checked', 'false');
   for (const name of names)
     await expect(page.getByRole('switch', { name, exact: true })).toHaveAttribute(
       'aria-checked',

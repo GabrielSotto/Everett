@@ -563,6 +563,9 @@ test('C08-B54: apertura y reversión continuas, campo conservado y contraejemplo
   page,
 }, info) => {
   await prepare(page);
+  const closedWidth = (await page.locator('.global-search').boundingBox())!.width;
+  expect(closedWidth).toBeLessThanOrEqual(36);
+  expect(closedWidth).toBeGreaterThanOrEqual((await trigger(page).boundingBox())!.width + 2);
   const samples: unknown[] = [];
   for (let cycle = 0; cycle < 3; cycle++) {
     await trigger(page).click();
@@ -588,7 +591,7 @@ test('C08-B54: apertura y reversión continuas, campo conservado y contraejemplo
     await expect(search(page)).toHaveAttribute('inert', '');
     await expect
       .poll(async () => (await page.locator('.global-search').boundingBox())!.width)
-      .toBeCloseTo(33, 0);
+      .toBeCloseTo(closedWidth, 0);
   }
   await trigger(page).click();
   await search(page).fill('Decisión: guardado local');

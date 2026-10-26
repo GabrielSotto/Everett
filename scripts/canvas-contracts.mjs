@@ -64,7 +64,7 @@ export const canvasCases = [
   })),
   { id: 'C08-B86', layer: 'browser', contracts: ['C08-ORG-01', 'C08-ZOOM-01', 'C08-MAT-05'] },
   { id: 'C08-U25', layer: 'unit', contracts: ['C08-ORG-01', 'C08-ZOOM-01'] },
-  { id: 'C08-B81', layer: 'browser', contracts: ['C08-KEY-01', 'C08-STATE-01'] },
+  { id: 'C08-B81', layer: 'browser', contracts: ['C08-KEY-01', 'C08-STATE-01', 'C08-ACTIONS-01'] },
   { id: 'C08-B82', layer: 'browser', contracts: ['C08-CHAT-07', 'C08-MAT-05'] },
   { id: 'C08-B83', layer: 'browser', contracts: ['C08-ZOOM-01', 'C08-MAT-07'] },
   { id: 'C08-B84', layer: 'browser', contracts: ['C08-ZOOM-01', 'C08-ORG-01', 'C08-MAT-05'] },
@@ -282,6 +282,7 @@ export const canvasControlRequirements = {
   'C08-B93': { 'canvas-link': 1, 'link-preview-retry': 2 },
   'C08-B86': { 'group-rename': 1 },
   'C08-B81': {
+    'canvas-guides-toggle': 1,
     'surface-toggle': 1,
     'canvas-dock-toggle': 1,
     'canvas-grid-toggle': 1,
