@@ -121,8 +121,11 @@ try {
   await expect
     .poll(async () => (await world()).nodes.find((n) => n.id === id).data.kind, { timeout: 100000 })
     .toBe('image');
-  await page.locator(`[data-node="${id}"]`).click({ button: 'right' });
-  await page.getByRole('menuitem', { name: 'Duplicar', exact: true }).click();
+  await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Importar archivos locales', exact: true }).click();
+  await (await chooser).setFiles('tests/fixtures/link-cover.png');
+  await expect.poll(async () => (await world()).nodes.length).toBe(2);
   const state = await page.evaluate(() => window.EverettDebug.snapshot());
   const project = state.state.worlds.find((w) => w.id === 'scout');
   project.nodes.forEach((n, i) => {
@@ -164,6 +167,23 @@ try {
   await page.mouse.wheel(0, -240);
   await page.keyboard.up('Alt');
   await expect(page.locator('.image-gallery')).toBeVisible();
+  const firstWidth = await page
+    .locator('.image-inspector img')
+    .evaluate((image) => image.naturalWidth);
+  await page.getByRole('button', { name: 'Imagen anterior', exact: true }).click();
+  await expect
+    .poll(() => page.locator('.image-inspector img').evaluate((image) => image.naturalWidth))
+    .not.toBe(firstWidth);
+  const secondWidth = await page
+    .locator('.image-inspector img')
+    .evaluate((image) => image.naturalWidth);
+  expect(firstWidth).toBeGreaterThan(0);
+  expect(secondWidth).toBeGreaterThan(0);
+  evidence.cases.push({
+    kind: 'distinct-gallery-content',
+    naturalWidths: [firstWidth, secondWidth],
+    different: true,
+  });
   await shot('galeria-publica-desktop');
   await page.setViewportSize({ width: 320, height: 760 });
   await page.evaluate(() => (document.documentElement.style.fontSize = '26px'));
