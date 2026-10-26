@@ -136,6 +136,10 @@ export class CanvasShortcuts {
     this.page = 'canvas';
     this.conflict = null;
   }
+  resetPage(): void {
+    this.page = 'config';
+    this.conflict = null;
+  }
   preferences(): string {
     const setting = (
       name: string,

@@ -42,6 +42,7 @@ export class Shell {
         ctx.ui.shell.profileTab = 'settings';
         this.settingsSection = page === 'preferences' ? 'preferences' : 'home';
         if (page === 'shortcuts') this.shortcuts.open();
+        else this.shortcuts.resetPage();
         this.render();
         root
           .querySelector<HTMLElement>(

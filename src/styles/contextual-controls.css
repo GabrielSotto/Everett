@@ -66,6 +66,14 @@
   border-top: 1px solid var(--line);
   margin: 5px 0;
 }
+body[data-canvas-motion='reduced'] :is(.canvas-actions-pop, .canvas-context-menu) {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-actions-pop {
+    animation: none;
+  }
+}
 .arrangement-menu [role='menuitem'] {
   justify-content: flex-start;
   gap: 9px;

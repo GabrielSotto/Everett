@@ -203,6 +203,21 @@ test('C08-B118: menú de Canvas se adapta a selección, teclado, 320 px y texto 
   await page.keyboard.press('Control+k');
   await expect(page.locator('.canvas-actions-pop')).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Buscar en Everett', exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open(page);
+  await expect(page.locator('.canvas-actions-pop')).toHaveCSS('animation-name', 'none');
+  await page.keyboard.press('Escape');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await open(page);
+  await page.getByRole('menuitem', { name: 'Preferencias de Canvas', exact: true }).click();
+  await page.getByRole('switch', { name: 'Reducir animaciones de Canvas', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a Configuración', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Preferencias', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Atajos', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await open(page);
+  await expect(page.locator('.canvas-actions-pop')).toHaveCSS('animation-name', 'none');
 });
 
 test('C08-B119: guías activas por defecto, ajuste desactivable y preferencia única entre cabecera y Configuración', async ({
@@ -210,6 +225,11 @@ test('C08-B119: guías activas por defecto, ajuste desactivable y preferencia ú
 }, info) => {
   test.setTimeout(60000);
   await prepare(page);
+  const legacy = await snapshot(page);
+  delete (legacy.ui.shell as Partial<typeof legacy.ui.shell>).canvasAlignmentGuides;
+  await storedFixture(page, legacy.state, legacy.ui);
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => window.__everettReady)).toBe(true);
   await open(page);
   const setting = page.getByRole('menuitemcheckbox', {
     name: 'Guías y ajuste automático',
