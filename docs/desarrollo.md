@@ -201,3 +201,9 @@ Se consultan las skills originales de [Emil Kowalski](https://github.com/emilkow
 La consulta seleccionada reutiliza Panzoom (MIT); el paso local baja de 0,3 a 0,1 y la rueda espacial consulta el modificador de Atajos. Los recorridos anterior/siguiente no cambian la selección de Canvas ni los archivos. La lectura recuerda el recorrido seguido y conserva sus assets en las copias de emergencia personales.
 
 Para alineación se evaluaron Konva y Moveable. Incorporar otro renderer o su sistema completo de gestos duplicaría los existentes. Se adapta el cálculo de proximidad de `checkSnap` de Moveable (MIT), fuente `packages/react-moveable/src/ables/snappable/snap.ts`, blob `ca9b728fab1680315e6ddff7093f96a88db66dda`; su aviso MIT completo permanece en `src/vendor/snap-axis.ts` y en el HTML generado. No se incorpora código MPL de Penpot. Las guías comparan bordes y centros con una tolerancia de cinco píxeles de pantalla. Ctrl o Meta durante el arrastre suspende temporalmente el ajuste.
+
+### Comprobación pública de consulta
+
+Las fuentes reproducibles viven en `tests/public/`: `canvas-inspection.mjs` comprueba galería, atajos y sugerencias; `canvas-links.mjs` comprueba lectura, bytes, reproducción y gestos con destinos públicos reales. Ejecutarlas contra el único preview de 4173 después de construir; escriben evidencia en `output/revision/<versión>/` y contrastan el HTML cargado.
+
+`node tests/public/evidence.mjs` valida esa evidencia contra el SHA actual y devuelve error si falta una comprobación o falla un gesto. HARNESS-15 comprueba ese bloqueo aunque la regresión controlada haya pasado. La reproducción del caso con foco dentro del iframe externo permanece fallida en 0.8.18 y bloquea considerar completo su contrato espacial; el resultado aprobado de Playwright se presenta como regresión, con ese pendiente explícito.

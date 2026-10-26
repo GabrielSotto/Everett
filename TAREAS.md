@@ -2,17 +2,17 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                                                                                |
-| ----------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                              |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                           |
-| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). Correcciones 0.8.18 implementadas; verificación completa en curso tras el feedback de 0.8.17. |
-| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                    |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                     |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                 |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                               |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                              |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                              |
+| Iteración                     | Estado                        | Trabajo                                                                                                                                                 |
+| ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                               |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                            |
+| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). 0.8.18: regresión verificada; consulta espacial del iframe enfocado pendiente. |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                     |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                      |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                  |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                               |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                               |
 
 ## Después de 1.0
 
@@ -24,9 +24,9 @@ La revisión de 0.8.16 está implementada en `27ef7ce`, `b7200c2` y `689c131`: r
 
 Gate completo aprobado: 95 pruebas unitarias/de herramientas y 181 de navegador, sin omisiones ni reintentos. Se verificaron artefacto, fuentes, controles negativos e informe. La revisión visual y las comprobaciones públicas corresponden al mismo HTML. Su revisión terminó y dio lugar a las correcciones 0.8.18 indicadas debajo. No integrar en dev ni cerrar 0.8.
 
-## Correcciones en curso — 0.8.18
+## Correcciones implementadas — 0.8.18
 
-La revisión de 0.8.17 terminó y el usuario autorizó implementar. Alcance: contrato global de rueda local y modificador espacial configurable en Atajos (Alt por defecto), zoom de imagen gradual, galería acotada a las imágenes seleccionadas, reanudación de lectura, estados útiles para aplicaciones web y fallos de red, sugerencia local aceptable con Tab, renombrado fiable con Enter, encuadre contextual y guías de alineación. Preservar los comportamientos confirmados. El gate de 0.8.17 es la base; todavía no certifica estos cambios.
+La revisión de 0.8.17 terminó y el usuario autorizó implementar. Alcance: contrato global de rueda local y modificador espacial configurable en Atajos (Alt por defecto), zoom de imagen gradual, galería acotada a las imágenes seleccionadas, reanudación de lectura, estados útiles para aplicaciones web y fallos de red, sugerencia local aceptable con Tab, renombrado fiable con Enter, encuadre contextual y guías de alineación. Preservar los comportamientos confirmados. La base es 0.8.17. La regresión actual verifica los cambios; la comprobación pública mantiene abierto el gesto del iframe enfocado.
 
 La galería de selección queda autorizada en 0.8 por el último feedback; no añade otra superficie de biblioteca. Las guías reutilizan el cálculo de proximidad de Moveable (MIT), adaptado al modelo de coordenadas existente, sin incorporar su framework de arrastre ni código de Penpot.
 
@@ -48,7 +48,7 @@ La galería de selección queda autorizada en 0.8 por el último feedback; no a�
 
 Solicitada durante la revisión de 0.8.17: mostrar guías temporales al arrastrar materiales para alinear bordes y centros con otros elementos, con ajuste por proximidad opcional. Contrastar Figma, Canva y otros canvases de diseño y evaluar soluciones reutilizables antes de implementar; no partir de cero por defecto. La investigación es temporal; conservar aquí el alcance y posteriormente las decisiones adoptadas.
 
-Definir tolerancia consistente en píxeles de pantalla durante zoom, desactivación temporal del ajuste, movimiento de selecciones/conjuntos sin deformarlos y convivencia con zonas, pan y conexiones. Ampliar el arnés con arrastres en ambos ejes, distintas escalas, cancelación, Undo/Redo, geometría de las guías y coincidencia con la posición final. El ajuste no debe introducir saltos al soltar ni mover elementos ajenos a la selección. Esta mejora se implementa en 0.8.18 y no formaba parte del HTML 0.8.17 revisado por el usuario.
+La implementación usa cinco píxeles de pantalla y Ctrl/Meta para suspender temporalmente el ajuste. C08-U35, C08-B113 y C08-B115 comprueban bordes, centros, varias escalas, cancelación, Undo/Redo, geometría de guías y movimiento de selecciones/conjuntos sin deformarlos. El ajuste no debe introducir saltos al soltar ni mover elementos ajenos a la selección. Esta mejora se implementa en 0.8.18 y no formaba parte del HTML 0.8.17 revisado por el usuario.
 
 ## Antecedente — enlaces reales en 0.8.15
 
@@ -93,16 +93,18 @@ Canvas sigue en desarrollo. El gate de una candidata no acredita por sí solo la
 
 Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada superficie permanecen en su etapa. Registrar aquí nuevos fallos con versión, reproducción, resultado esperado y regresión asociada. Al corregirlos, conservar el caso en tests y retirar el pendiente; Git conserva el cambio. Los resultados de ejecución viven en output/pruebas hasta la siguiente ejecución de su grupo.
 
-## Verificación y entrega actual
+## Verificación actual — 0.8.18
 
-Candidata **0.8.17** preparada para revisión. Gate completo: build, typecheck, format:check, test:unit, verify:unit, verify:build, test:browser -- --workers=2 y verify:browser. **95 pruebas de lógica/herramientas y 181 de navegador aprobadas**, sin omisiones ni reintentos. La pasada completa duró 25.92 minutos e incluye los 30 ciclos de sesión sostenida y los controles negativos del arnés.
+Fuentes implementadas y versionadas en `c768f49`, `b0f2295`, `6d193aa`, `9098787` y `b05d72a`, con ampliaciones de inspección pública en `de146b7` y `7c5ad21`.
 
-- [HTML autónomo](dist/Everett-0.8.17.html): 14,456,727 bytes, build `df15072e56109a57`, SHA-256 `5d6e82b0beb91030447c31bc58fc44f25d94361b886f49bc8fb70eece343ecca`.
-- [Informe verificado](output/informe/informe.md), [resultado unitario](output/pruebas/unitarias/2026-10-26_03-40-31-178Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-26_03-40-36-370Z/results.json).
-- [Revisión visual, alcance y qué probar](output/revision/0.8.17/revision.md), con tabla de diseño, comprobaciones públicas, bytes conservados tras recarga, imágenes de 20.000 píxeles, texto al 200 %, ventana de 320 px y la limitación observada en Vimeo. Las dependencias y el servicio se documentan en Desarrollo.
-- Preview único en http://127.0.0.1:4173/, mediante `node scripts/preview.mjs 4173`. La pestaña y los datos de revisión del usuario se conservaron.
-- Sin ZIP por instrucción del usuario. Permanecen las decisiones adoptadas, fuentes, pruebas y evidencia vigente.
+**Regresión verificada: 98 pruebas de lógica/herramientas y 189 de navegador**, sin fallos, omisiones ni reintentos. La pasada completa duró 26,66 minutos e incluye la sesión sostenida de 30 ciclos. Se comprobaron build, tipado, formato, fuentes, controles negativos e integridad del informe. Las ejecuciones interrumpidas no se acreditan.
 
-El arnés amplía la extracción, saneamiento, formatos/proveedores, descarga acotada, respuesta tardía durante edición, bytes recuperados, reproducción nativa, portapapeles real, cancelación de navegación pendiente y actualización fallida del lector, dentro de una página seguida y de la referencia original. Los estados de carga conservan los controles de regreso y las respuestas obsoletas no sustituyen la lectura vigente.
+**El gate de entrega sigue bloqueado** por `youtube-focused-modifier`: después de enfocar el iframe externo, Alt no llega a Everett. La comprobación pública y su verificador devuelven error por ese gesto. No se considera resuelto ni se presenta la regresión aprobada como cierre funcional. El lector de artículos tampoco ejecuta la página de inicio de aplicaciones como YouTube; su consulta completa requiere definir un contenedor.
 
-0.8 sigue abierta en `feat/canvas-0.8`. No se integra en `dev` ni se adelanta otra iteración. La revisión y aprobación del usuario continúan pendientes.
+- [HTML actual](dist/Everett-0.8.18.html): 14.513.263 bytes, build `1622184f84c3f972`, SHA-256 `cfb25c753bda83a61cf289d6596bde18c33d30a6fee4dc94e9e11a3eb80be3ea`.
+- [Informe de regresión verificado](output/informe/informe.md), [resultado de navegador](output/pruebas/navegador/2026-10-26_10-49-40-227Z/results.json) y [resultado unitario](output/pruebas/unitarias/2026-10-26_10-55-45-996Z/result.json).
+- [Revisión visual, límites y qué probar](output/revision/0.8.18/revision.md), [comprobación pública](output/revision/0.8.18/destinos-publicos.json) y [veredicto público bloqueado](output/revision/0.8.18/verificacion-publica.json), del mismo SHA.
+- Las fuentes de las comprobaciones públicas están versionadas en `tests/public/`. HARNESS-15 comprueba que un fallo público bloquee el resultado aunque pase la regresión controlada. La galería se contrasta con dos imágenes distintas, controles a 320 px y texto al 200 %.
+- Preview único en http://127.0.0.1:4173/. Se conserva la pestaña y los datos del usuario. Sin ZIP, por su instrucción.
+
+0.8 sigue abierta en `feat/canvas-0.8`. No integrar en `dev`, cerrar 0.8 ni adelantar otra iteración. El pendiente del iframe y la revisión del usuario permanecen explícitos.
