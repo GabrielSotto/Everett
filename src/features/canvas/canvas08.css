@@ -1903,3 +1903,15 @@ body[data-canvas-motion='reduced']
   transform: scale(calc(1 / var(--canvas-zoom))) translate(-50%, -50%);
   transform-origin: top left;
 }
+
+/* La vista rápida es un resumen; el comentario completo se abre desde su burbuja. */
+.comment-preview {
+  max-width: calc(100vw - 24px);
+  overflow-wrap: anywhere;
+}
+.comment-preview > span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+}

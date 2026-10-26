@@ -290,4 +290,21 @@ test('C08-B107: controles de Canvas responden al teclado sin animar y el desbord
   expect(pressed.width).toBeLessThanOrEqual(initial.width);
   await page.mouse.up();
   await capture(page, info, 'comentario-pulsado-zoom-10');
+  await page.locator('.canvas-chat [data-action=chat-close]').click();
+  await page.setViewportSize({ width: 320, height: 760 });
+  await marker.hover();
+  const preview = marker.locator('.comment-preview');
+  const previewBox = (await preview.boundingBox())!;
+  expect(previewBox.x).toBeGreaterThanOrEqual(11);
+  expect(previewBox.x + previewBox.width).toBeLessThanOrEqual(309);
+  expect(previewBox.y).toBeGreaterThanOrEqual(69);
+  const anchor = (await marker.boundingBox())!;
+  expect(
+    previewBox.x + previewBox.width <= anchor.x ||
+      previewBox.x >= anchor.x + anchor.width ||
+      previewBox.y + previewBox.height <= anchor.y ||
+      previewBox.y >= anchor.y + anchor.height,
+  ).toBe(true);
+
+  await capture(page, info, 'comentario-resumen-320');
 });

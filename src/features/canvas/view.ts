@@ -168,6 +168,20 @@ export class CanvasView implements View {
       },
       { signal: this.abort.signal },
     );
+    root.addEventListener('pointerover', (e) => this.positionCommentPreview(e.target), {
+      signal: this.abort.signal,
+    });
+    root.addEventListener('focusin', (e) => this.positionCommentPreview(e.target), {
+      signal: this.abort.signal,
+    });
+    window.addEventListener(
+      'resize',
+      () =>
+        this.positionCommentPreview(
+          root.querySelector('.comment-marker:hover,.comment-marker:focus-visible'),
+        ),
+      { signal: this.abort.signal },
+    );
     root.addEventListener('pointerdown', (e) => this.down(e), { signal: this.abort.signal });
     root.addEventListener('pointermove', (e) => this.move(e), { signal: this.abort.signal });
     root.addEventListener('pointerup', (e) => this.up(e), { signal: this.abort.signal });
@@ -576,6 +590,30 @@ export class CanvasView implements View {
         ui.fill = data.fill ?? true;
       }
     }
+  }
+  private positionCommentPreview(target: EventTarget | null): void {
+    const marker =
+      target instanceof Element ? target.closest<HTMLElement>('.comment-marker') : null;
+    const preview = marker?.querySelector<HTMLElement>('.comment-preview');
+    if (!marker || !preview || !preview.getClientRects().length) return;
+    preview.style.translate = 'none';
+    const bounds = preview.getBoundingClientRect();
+    const scale = marker.getBoundingClientRect().width / marker.offsetWidth;
+    if (!scale) return;
+    const anchor = marker.getBoundingClientRect();
+    let left = anchor.right + 9,
+      top = anchor.top - 8;
+    if (left + bounds.width > innerWidth - 12) {
+      if (anchor.left - bounds.width - 9 >= 12) left = anchor.left - bounds.width - 9;
+      else {
+        left = anchor.left + anchor.width / 2 - bounds.width / 2;
+        top = anchor.bottom + 9;
+        if (top + bounds.height > innerHeight - 12) top = anchor.top - bounds.height - 9;
+      }
+    }
+    left = Math.max(12, Math.min(innerWidth - 12 - bounds.width, left));
+    top = Math.max(70, Math.min(innerHeight - 12 - bounds.height, top));
+    preview.style.translate = `${(left - bounds.left) / scale}px ${(top - bounds.top) / scale}px`;
   }
   private down(e: PointerEvent): void {
     this.locateMotion?.cancel();

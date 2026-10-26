@@ -729,8 +729,9 @@ test('C08-B39: Formas enlaza su menú y estado, lápiz continuo desde la primera
         anchorY: box.top + parseFloat(style.borderTopWidth) * scale,
       };
     });
-    expect(Math.abs(anchoring.x - anchoring.anchorX)).toBeLessThan(1);
-    expect(Math.abs(anchoring.y - anchoring.anchorY)).toBeLessThan(1);
+    // Separación constante del tirador de tamaño, incluso durante el zoom.
+    expect(Math.abs(anchoring.x - anchoring.anchorX - 12)).toBeLessThan(1);
+    expect(Math.abs(anchoring.y - anchoring.anchorY - 12)).toBeLessThan(1);
   }
   await testInfo.attach('comentario-sin-crecer-con-zoom', {
     body: await page.screenshot(),
