@@ -46,7 +46,7 @@ ausentes antes de decidir nuevas herramientas. La organización debe ser útil s
 el procesamiento agéntico real amplía ese trabajo y sigue pendiente de definir. Everett puede
 servir como ejemplo de proyecto complejo para la evaluación; no limita la utilidad a ese caso.
 
-Este criterio guía la evaluación de utilidad de 0.8. El usuario autorizó implementar conjuntos manuales duraderos, referencias a fragmentos de Docs/Code y lectura del panorama; sus contratos están en C08-ORG-01 y C08-REF-01 de la definición detallada. No incorpora herramientas de wireframes ni el editor integral previsto para planificar en 0.9. La revisión de 0.8.17 autoriza la consulta conjunta de imágenes seleccionadas en el visor existente. Las ampliaciones futuras requieren concretar su alcance antes de implementarlas.
+Este criterio guía la evaluación de utilidad de 0.8. El usuario autorizó implementar conjuntos manuales duraderos, referencias a fragmentos de Docs/Code y lectura del panorama; sus contratos están en C08-ORG-01 y C08-REF-01 de la definición detallada. La revisión de 0.8.17 autoriza la consulta conjunta de imágenes seleccionadas en el visor existente. La ampliación posterior a 0.8.18 incorpora alineación, distribución y un menú de acciones y ajustes de Canvas en la barra superior. También requiere resolver bosquejos de interfaz de baja fidelidad como próximo bloque de Canvas, concretando sus piezas y dirección visual antes de implementarlas. Sustituye la postergación anterior de los wireframes. El editor integral conserva su planificación en 0.9.
 
 ### Materiales y edición
 
@@ -461,10 +461,11 @@ Excepción aprobada por el usuario para 0.8.15 y ampliada en 0.8.16: servicio lo
 
 ## Mejoras de Canvas por evaluar
 
-Ideas del feedback de 0.8.1 conservadas para una definición futura, con prioridad baja y sin versión comprometida. No forman parte de las candidatas de 0.8:
+Necesidades de organización y consulta confirmadas durante la revisión de Canvas. El estado de implementación permanece en [Tareas](../TAREAS.md).
 
 - **Galería de imágenes:** autorizada para 0.8.18 como consulta de las imágenes seleccionadas en el visor existente, conservando selección y contexto espacial al regresar. No agrega una biblioteca independiente.
-- **Bocetos rápidos:** mejorar dibujo y formas para preparar esquemas de interfaz; evaluar ergonomía y precisión de los gestos antes de decidir si hacen falta componentes de wireframes.
+- **Organización de la selección:** alinear bordes y centros; distribuir el espacio horizontal o vertical entre piezas de tamaños distintos conservando los extremos. Las guías aparecen automáticamente al arrastrar. Las acciones explícitas pertenecen al menú contextual de la selección y al menú de Canvas en la barra superior. Los ajustes generales y el acceso a Atajos reutilizan las preferencias existentes.
+- **Bosquejos de baja fidelidad:** el usuario requiere componer interfaces coherentes y editables, además de dibujar a mano alzada. Definir una biblioteca inicial de piezas reutilizables; pantallas, texto, botones, campos, tarjetas/listas y marcadores de imagen son una propuesta de alcance, pendiente de concretar su representación. Deben convivir con selección, tamaño, alineación, capas, conjuntos, historial y persistencia. Evaluar primero soluciones reutilizables con licencia compatible; una apariencia dibujada por sí sola no resuelve esta capacidad. El bloque pertenece al trabajo pendiente de 0.8 y deja de ser una idea de prioridad baja sin etapa asignada.
 
 ## Después de 1.0
 
