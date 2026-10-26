@@ -1,4 +1,94 @@
 /* Controles compartidos y búsqueda contextual */
+.canvas-actions {
+  flex: 0 0 auto;
+}
+.canvas-actions-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 1rem;
+}
+.canvas-actions-trigger:hover,
+.canvas-actions-trigger[aria-expanded='true'] {
+  background: var(--panel);
+}
+.canvas-actions-pop {
+  position: fixed;
+  z-index: 60;
+  width: min(17rem, calc(100vw - 16px));
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--raised);
+  box-shadow: 0 12px 32px #0003;
+  transform-origin: top left;
+  animation: popover-in 150ms var(--ease);
+}
+.canvas-actions-pop button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 8px;
+  text-align: left;
+  border-radius: 5px;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.canvas-actions-pop button > svg:last-child:not(:first-child) {
+  margin-left: auto;
+}
+.canvas-actions-pop button:hover:not(:disabled),
+.canvas-actions-pop button:focus-visible {
+  background: var(--panel);
+}
+.canvas-action-check {
+  flex: 0 0 14px;
+  height: 14px;
+}
+.canvas-actions-heading,
+.arrangement-help {
+  display: block;
+  color: var(--muted);
+  padding: 6px 8px;
+  font-size: 0.9231rem;
+  line-height: 1.45;
+}
+.canvas-actions-pop hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 5px 0;
+}
+.arrangement-menu [role='menuitem'] {
+  justify-content: flex-start;
+  gap: 9px;
+}
+.canvas-actions-pop button > svg,
+.arrangement-menu button > svg {
+  flex-shrink: 0;
+}
+.arrangement-menu > button,
+.canvas-actions-back {
+  font-weight: 600;
+}
+@media (max-width: 640px) {
+  .canvas-actions-trigger {
+    width: 28px;
+    justify-content: center;
+    padding: 4px;
+  }
+  .canvas-actions-trigger > span,
+  .canvas-actions-trigger > svg:last-child {
+    display: none;
+  }
+}
 .shell {
   background: var(--surface);
   border-color: var(--line);

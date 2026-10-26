@@ -15,6 +15,7 @@ import { searchWorkspace } from '../domain/workspace-search';
 import { CanvasZoom } from './canvas-zoom';
 import { reducedMotion } from './motion';
 import { spatialHint } from '../domain/spatial-shortcut';
+import { CanvasActions } from './canvas-actions';
 
 export class Shell {
   private abort = new AbortController();
@@ -23,6 +24,7 @@ export class Shell {
   private rendering = false;
   private renderPending = false;
   private readonly zoom: CanvasZoom;
+  private readonly actions: CanvasActions;
   private settingsSection: 'home' | 'preferences' | 'tools' = 'home';
   constructor(
     private root: HTMLElement,
@@ -31,6 +33,24 @@ export class Shell {
     window.addEventListener('resize', () => this.positionSearch(), { signal: this.abort.signal });
     this.shortcuts = new CanvasShortcuts(ctx, () => this.render(), root, this.abort.signal);
     this.zoom = new CanvasZoom(root, ctx, () => this.render(), this.abort.signal);
+    this.actions = new CanvasActions(
+      root,
+      ctx,
+      () => this.render(),
+      (page) => {
+        ctx.ui.shell.profile = true;
+        ctx.ui.shell.profileTab = 'settings';
+        this.settingsSection = page === 'preferences' ? 'preferences' : 'home';
+        if (page === 'shortcuts') this.shortcuts.open();
+        this.render();
+        root
+          .querySelector<HTMLElement>(
+            page === 'shortcuts' ? '#shortcut-spatial' : '[data-action=profile-settings-back]',
+          )
+          ?.focus();
+      },
+      this.abort.signal,
+    );
     this.panels = new PanelMotion(root, [
       '.profile-pop',
       '.status-pop',
@@ -63,7 +83,7 @@ export class Shell {
             .querySelector<HTMLElement>(`[data-action="${action}"]`)
             ?.focus({ preventScroll: true });
       },
-      '.profile-pop,.status-pop,.filter-pop,.surface-menu,[data-action=profile],[data-action=status],[data-action=filters],[data-action=surface-menu]',
+      '.profile-pop,.status-pop,.filter-pop,.surface-menu,.canvas-actions,[data-action=profile],[data-action=status],[data-action=filters],[data-action=surface-menu]',
     );
     root.addEventListener(
       'click',
@@ -330,6 +350,7 @@ export class Shell {
     );
   }
   toggleSearch(): void {
+    this.actions.dismiss();
     const ui = this.ctx.ui.shell;
     ui.searchOpen = !ui.searchOpen;
     ui.filters = ui.status = ui.profile = ui.surfaceMenu = false;
@@ -482,7 +503,7 @@ export class Shell {
       'shell ' + (s.route.kind === 'universe' || s.route.kind === 'world' ? 'dark-shell' : '');
     const search = this.root.querySelector<HTMLElement>('.global-search');
     const template = document.createElement('template');
-    template.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>` : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}${history ? `<div class="canvas-history-controls" role="toolbar" aria-label="Historial de cambios de Canvas">${btn('canvas-undo', 'undo', 'Deshacer · Ctrl+Z', history.undo ? '' : 'disabled')}${btn('canvas-redo', 'redo', 'Rehacer · Ctrl+Shift+Z', history.redo ? '' : 'disabled')}</div>` : ''}<div class="shell-spacer"></div><div class="global-search t-resize ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" type="text" enterkeyhint="search" autocomplete="off" aria-controls="global-results" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : ui.shell.showSurfaceMenu ? btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu) : ''}${this.zoom.markup()}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results" role="region" aria-label="Resultados de búsqueda"></div>`;
+    template.innerHTML = `<button class="wordmark" data-action="wordmark">Everett</button>${w ? `<div class="location"><input id="world-name" aria-label="Nombre del mundo" value="${html(w.name)}" style="width:${Math.min(250, Math.max(75, w.name.length * 8 + 12))}px">${s.route.kind === 'surface' || s.route.kind === 'note' || s.route.kind === 'material' ? icon('chevron', 12) + (s.route.kind === 'surface' && s.route.surface === 'canvas' ? '' : `<span>${s.route.kind === 'note' || s.route.kind === 'material' ? 'Canvas' : surfaceNames[s.route.surface]}</span>`) : ''}${w.shipping.active ? `<span class="shipping-indicator" data-tip="Shipping Mode activo" aria-label="Shipping Mode activo">${icon('rocket', 13)}</span>` : ''}</div>` : ''}${this.actions.markup()}${history ? `<div class="canvas-history-controls" role="toolbar" aria-label="Historial de cambios de Canvas">${btn('canvas-undo', 'undo', 'Deshacer · Ctrl+Z', history.undo ? '' : 'disabled')}${btn('canvas-redo', 'redo', 'Rehacer · Ctrl+Shift+Z', history.redo ? '' : 'disabled')}</div>` : ''}<div class="shell-spacer"></div><div class="global-search t-resize ${ui.shell.searchOpen ? 'open' : ''}"><input id="global-search" type="text" enterkeyhint="search" autocomplete="off" aria-controls="global-results" aria-label="Buscar en Everett" placeholder="Buscar…" value="${html(ui.shell.search)}" ${ui.shell.searchOpen ? '' : 'inert'}>${btn('search', 'search', 'Buscar en Everett', 'aria-expanded="' + ui.shell.searchOpen + '"')}</div>${s.route.kind === 'universe' ? btn('filters', 'filter', 'Filtrar mundos', `data-count="${s.worlds.length}"`, ui.shell.filters) : ui.shell.showSurfaceMenu ? btn('surface-menu', 'grid', 'Superficies', '', ui.shell.surfaceMenu) : ''}${this.zoom.markup()}${btn('status', 'status', 'Estado', '', ui.shell.status)}<button class="profile-button" data-action="profile" aria-label="Perfil de ${html(p.name)}" data-tip="${html(p.name)}">${html(p.name.slice(0, 1).toUpperCase())}</button>${ui.shell.surfaceMenu ? `<div class="surface-menu">${surfaces.map((surface) => btn('surface', surface, surfaceNames[surface], `data-id="${surface}"`, s.route.kind === 'surface' && s.route.surface === surface)).join('')}</div>` : ''}${ui.shell.filters ? `<div class="popover filter-pop"><span class="world-count">${s.worlds.length} mundos actuales</span><span class="world-count-details">${s.worlds.length - s.worlds.filter((world) => world.archived).length} activos · ${s.worlds.filter((world) => world.archived).length} archivados</span><select id="world-filter" aria-label="Región">${['Todas', 'Desarrollo', 'Diseño', 'Investigación', 'Ideas'].map((x) => `<option ${ui.shell.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="filter-archive ${ui.shell.archived ? 'active' : ''}" data-action="archived-filter">${icon('archive', 14)}Archivados</button></div>` : ''}${ui.shell.status ? this.status() : ''}${ui.shell.profile ? this.profile() : ''}<div id="global-results" class="search-results" role="region" aria-label="Resultados de búsqueda"></div>`;
     if (search) {
       for (const child of [...this.root.children]) if (child !== search) child.remove();
       const placeholder = template.content.querySelector('.global-search')!;
@@ -498,6 +519,7 @@ export class Shell {
     } else this.root.replaceChildren(template.content);
     this.results();
     this.positionSearch();
+    this.actions.position();
     finishPanels();
     restore();
   }

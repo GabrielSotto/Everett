@@ -147,7 +147,8 @@ body[data-canvas-input='keyboard']
     .dock-more-menu,
     .conversation-history,
     .popover,
-    .surface-menu
+    .surface-menu,
+    .canvas-actions-pop
   ) {
   animation: none !important;
 }

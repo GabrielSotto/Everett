@@ -1,5 +1,20 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  ...['C08-U36', 'C08-U37', 'C08-U38'].map((id) => ({
+    id,
+    layer: 'unit',
+    contracts: ['C08-ARRANGE-01'],
+  })),
+  ...['C08-B116', 'C08-B117'].map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-ARRANGE-01'],
+  })),
+  ...['C08-B118', 'C08-B119'].map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-ACTIONS-01'],
+  })),
   { id: 'C08-U34', layer: 'unit', contracts: ['C08-KEY-01', 'C08-WEB-01'] },
   { id: 'C08-U35', layer: 'unit', contracts: ['C08-ALIGN-01'] },
   { id: 'C08-B108', layer: 'browser', contracts: ['C08-KEY-01', 'C08-WEB-01'] },
@@ -224,6 +239,15 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B116': { 'selection-arrange': 6, 'context-arrange': 3 },
+  'C08-B117': { 'selection-arrange': 2 },
+  'C08-B118': { 'canvas-actions': 5, 'actions-shortcuts': 1 },
+  'C08-B119': {
+    'canvas-guides-toggle': 2,
+    'actions-preferences': 1,
+    'canvas-grid-toggle': 1,
+    'canvas-dock-toggle': 1,
+  },
   'C08-B108': { 'canvas-link': 1, 'settings-shortcuts': 1 },
   'C08-B109': { 'canvas-link': 3 },
   'C08-B110': { 'canvas-link': 1 },

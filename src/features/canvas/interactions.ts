@@ -23,6 +23,8 @@ import { inspectMedia } from '../../platform/media-file';
 import { previewMarkup } from './proposals';
 import { inlineCompletion } from '../../ui/inline-completion';
 import { frameCanvas } from '../../ui/canvas-frame';
+import { arrangementUnits } from '../../domain/arrangement';
+import { arrangementMarkup, arrangeSelection } from '../../ui/canvas-arrangement';
 
 function clipboardOrigin(plain: string, uriList = '', markup = ''): string | undefined {
   const address = uriList.split(/\r?\n/).find((line) => line.trim() && !line.startsWith('#'));
@@ -45,6 +47,7 @@ export class CanvasInteractions {
   private disposed = false;
   private menuMaterial: string | null = null;
   private loadingSamples = false;
+  private arrangeOrigin: Point = { x: 12, y: 70 };
   private previews = new Map<string, Promise<string>>();
   private colorField: 'color' | 'stroke' | null = null;
   private previewAbort = new AbortController();
@@ -322,6 +325,30 @@ export class CanvasInteractions {
         const button = target(event),
           id = button?.dataset.id ?? '';
         switch (button?.dataset.action) {
+          case 'context-arrange': {
+            const menu = this.overlay.firstElementChild as HTMLElement | null;
+            if (menu)
+              this.arrangeOrigin = {
+                x: parseFloat(menu.style.left),
+                y: parseFloat(menu.style.top),
+              };
+            this.overlay.innerHTML = `<div class="canvas-context-menu arrangement-menu" role="menu" aria-label="Alinear y distribuir" style="${this.position(this.arrangeOrigin)}"><button type="button" role="menuitem" data-action="context-arrange-back">${icon('chevron-left', 14)}Alinear y distribuir</button>${arrangementMarkup(ctx)}</div>`;
+            this.fitOverlay();
+            this.overlay.querySelector<HTMLElement>('[role=menuitem]:not(:disabled)')?.focus();
+            break;
+          }
+          case 'context-arrange-back':
+            if (this.menuMaterial) this.menu(this.menuMaterial, this.arrangeOrigin);
+            break;
+          case 'selection-arrange':
+            this.close();
+            arrangeSelection(ctx, button?.dataset.arrangement);
+            this.root
+              .querySelector<HTMLElement>(
+                `[data-node="${CSS.escape(ctx.ui.canvas.selection ?? '')}"]`,
+              )
+              ?.focus({ preventScroll: true });
+            break;
           case 'context-group':
             this.overlay.replaceChildren();
             ctx.act(
@@ -735,6 +762,20 @@ export class CanvasInteractions {
         }
         // Los controles del panel poseen el teclado: no activan herramientas ni borran materiales.
         event.stopPropagation();
+        if (
+          event.key === 'ArrowRight' &&
+          event.target instanceof HTMLElement &&
+          event.target.dataset.action === 'context-arrange'
+        ) {
+          event.preventDefault();
+          event.target.click();
+          return;
+        }
+        if (event.key === 'ArrowLeft' && this.overlay.querySelector('.arrangement-menu')) {
+          event.preventDefault();
+          this.overlay.querySelector<HTMLElement>('[data-action=context-arrange-back]')?.click();
+          return;
+        }
         // El editor conserva Undo/Redo y las teclas de texto del navegador.
         if (editable(event.target)) return;
         const buttons = [
@@ -953,7 +994,7 @@ export class CanvasInteractions {
           `<button type="button" role="menuitem" data-action="context-order" data-order="${order}" ${canOrderMaterials(this.ctx.world().nodes, this.ctx.ui.canvas.selections, order) ? '' : 'disabled'}>${{ front: 'Traer al frente', forward: 'Avanzar una capa', backward: 'Retroceder una capa', back: 'Enviar al fondo' }[order]}</button>`,
       )
       .join('');
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button>${node.data.kind !== 'reference' || node.data.ref.kind === 'document' ? `<button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button>${node.data.kind !== 'reference' || node.data.ref.kind === 'document' ? `<button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }

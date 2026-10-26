@@ -972,7 +972,7 @@ export class CanvasView implements View {
         point: { x: item.point.x + point.x - d.start.x, y: item.point.y + point.y - d.start.y },
       })) ?? [{ id: d.id, point: { ...d.point } }];
       this.root.querySelector('.alignment-guides')?.remove();
-      if (d.distance > 3 && !e.ctrlKey && !e.metaKey) {
+      if (d.distance > 3 && this.ctx.ui.shell.canvasAlignmentGuides && !e.ctrlKey && !e.metaKey) {
         const items =
           d.kind === 'node'
             ? this.ctx.world().nodes.filter((n) => !n.owner)

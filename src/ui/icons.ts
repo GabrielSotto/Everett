@@ -1,5 +1,21 @@
 import { html } from './dom';
 const paths: Record<string, string> = {
+  'arrange-left':
+    '<path d="M4 3v18"/><rect x="7" y="5" width="13" height="5" rx="1"/><rect x="7" y="14" width="8" height="5" rx="1"/>',
+  'arrange-center-x':
+    '<path d="M12 2v20"/><rect x="3" y="5" width="18" height="5" rx="1"/><rect x="7" y="14" width="10" height="5" rx="1"/>',
+  'arrange-right':
+    '<path d="M20 3v18"/><rect x="4" y="5" width="13" height="5" rx="1"/><rect x="9" y="14" width="8" height="5" rx="1"/>',
+  'arrange-top':
+    '<path d="M3 4h18"/><rect x="5" y="7" width="5" height="13" rx="1"/><rect x="14" y="7" width="5" height="8" rx="1"/>',
+  'arrange-center-y':
+    '<path d="M2 12h20"/><rect x="5" y="3" width="5" height="18" rx="1"/><rect x="14" y="7" width="5" height="10" rx="1"/>',
+  'arrange-bottom':
+    '<path d="M3 20h18"/><rect x="5" y="4" width="5" height="13" rx="1"/><rect x="14" y="9" width="5" height="8" rx="1"/>',
+  'arrange-space-x':
+    '<path d="M3 4v16M21 4v16M7 12h2m6 0h2"/><rect x="10" y="6" width="4" height="12" rx="1"/>',
+  'arrange-space-y':
+    '<path d="M4 3h16M4 21h16M12 7v2m0 6v2"/><rect x="6" y="10" width="12" height="4" rx="1"/>',
   undo: '<path d="M9 4 4 9l5 5M4 9h9a7 7 0 0 1 0 14"/>',
   redo: '<path d="m15 4 5 5-5 5m5-5h-9a7 7 0 0 0 0 14"/>',
   bubble: '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H8l-5 3v-7a8.5 8.5 0 1 1 18-4.5z"/>',

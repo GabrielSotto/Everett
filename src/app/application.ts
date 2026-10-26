@@ -125,7 +125,7 @@ export class EverettApp implements Context {
         // Un menú ya abierto con teclado no debe reiniciar su entrada al pasar al mouse.
         if (document.body.dataset.canvasInput === 'keyboard')
           for (const control of this.root.querySelectorAll<HTMLElement>(
-            '.canvas-context-menu,.canvas-context-form,.dock-more-menu,.conversation-history,.popover,.surface-menu',
+            '.canvas-context-menu,.canvas-context-form,.dock-more-menu,.conversation-history,.popover,.surface-menu,.canvas-actions-pop',
           ))
             control.style.animation = 'none';
         document.body.dataset.canvasInput = 'pointer';

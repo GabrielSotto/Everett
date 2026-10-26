@@ -132,6 +132,10 @@ export class CanvasShortcuts {
     }
     return this.shortcutMarkup();
   }
+  open(): void {
+    this.page = 'canvas';
+    this.conflict = null;
+  }
   preferences(): string {
     const setting = (
       name: string,
@@ -149,6 +153,12 @@ export class CanvasShortcuts {
         shell.showSurfaceMenu,
         'surface-toggle',
         'surface-menu-setting',
+      ) +
+      setting(
+        'Guías y ajuste automático',
+        'Alinea bordes y centros al arrastrar. Ctrl o Meta lo suspende durante el gesto.',
+        shell.canvasAlignmentGuides,
+        'canvas-guides-toggle',
       ) +
       setting(
         'Dock vertical',
