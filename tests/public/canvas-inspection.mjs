@@ -156,6 +156,7 @@ try {
     { state: state.state, ui: state.ui },
   );
   await page.reload();
+  await page.waitForFunction(() => window.__everettReady);
   const ids = (await world()).nodes.map((n) => n.id);
   await page.locator(`[data-node="${ids[0]}"]`).click();
   await page.keyboard.down('Shift');
