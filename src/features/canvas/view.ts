@@ -2207,6 +2207,10 @@ export class CanvasView implements View {
           button.remove();
       menu.style.left = `${Math.max(12, Math.min(innerWidth - menu.offsetWidth - 12, vertical ? bounds.left - menu.offsetWidth - 8 : bounds.left + bounds.width / 2 - menu.offsetWidth / 2))}px`;
       menu.style.top = `${Math.max(70, Math.min(innerHeight - menu.offsetHeight - 12, vertical ? bounds.top : bounds.top - menu.offsetHeight - 8))}px`;
+      const trigger = dock
+        .querySelector<HTMLElement>('[data-action=dock-more]')!
+        .getBoundingClientRect();
+      menu.style.transformOrigin = `${Math.max(0, Math.min(menu.offsetWidth, trigger.x + trigger.width / 2 - parseFloat(menu.style.left)))}px ${Math.max(0, Math.min(menu.offsetHeight, trigger.y + trigger.height / 2 - parseFloat(menu.style.top)))}px`;
     } else this.dockMore = false;
     this.positionStyle();
     this.positionShapeMenu();

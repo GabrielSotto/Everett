@@ -95,6 +95,10 @@
 .material:is(.identified, .selected, :focus-within) .material-identification {
   opacity: 1;
   visibility: visible;
+}
+/* Solo el nombre editable recibe clics: su espacio de separación no tapa
+   el marcador de comentario al reducir la escala del material. */
+.material:is(.identified, .selected, :focus-within) .material-identification > button {
   pointer-events: auto;
 }
 #canvas-plane[data-overview='true']
@@ -329,8 +333,9 @@
   height: 24px;
   right: 0;
   top: 0;
-  translate: calc(12px / var(--canvas-zoom)) calc(-12px / var(--canvas-zoom));
-  scale: calc(1 / var(--canvas-zoom));
+  translate: calc(24px / var(--canvas-zoom)) 0;
+  --control-scale: calc(1 / var(--canvas-zoom));
+  scale: var(--control-scale);
   transform-origin: top right;
   background: transparent;
   color: var(--accent);

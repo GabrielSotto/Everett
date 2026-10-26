@@ -22,7 +22,7 @@
   min-height: 32px;
 }
 .media-toolbar h1 {
-  font-size: 14px;
+  font-size: 1.076923rem;
   margin: 0;
   flex: 1;
   min-width: 0;
@@ -102,7 +102,7 @@
   padding: 6px 8px;
   min-width: 32px;
   min-height: 32px;
-  font-size: 12px;
+  font-size: 0.923077rem;
   border-radius: 5px;
   text-align: center;
 }
@@ -154,7 +154,7 @@
   padding: 16px 8px 6px;
   background: linear-gradient(transparent, #000b);
   color: white;
-  font-size: 11px;
+  font-size: 0.846154rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -199,7 +199,7 @@
   max-height: none !important;
 }
 .clipboard-fallback p {
-  font-size: 12px;
+  font-size: 0.923077rem;
   line-height: 1.5;
   padding-right: 14px;
 }
@@ -257,16 +257,17 @@
   background: #10182066;
 }
 .removal-dialog h2 {
-  font-size: 16px;
+  font-size: 1.230769rem;
   margin: 0 0 8px;
 }
 .removal-dialog p {
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--muted);
   margin: 0;
 }
 .removal-actions {
+  flex-wrap: wrap;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -276,7 +277,7 @@
   min-height: 32px;
   border-radius: 6px;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: 1rem;
   background: var(--hover);
 }
 .removal-actions [data-choice='remove'] {
@@ -289,6 +290,9 @@
   }
 }
 body[data-canvas-motion='reduced'] .t-modal {
+  transition: none !important;
+}
+.removal-dialog[data-instant] {
   transition: none !important;
 }
 .web-reader {
@@ -313,20 +317,21 @@ body[data-canvas-motion='reduced'] .t-modal {
 .reader-update-status {
   flex: 0 0 auto;
   margin: 0 0 10px;
-  font-size: 12px;
+  font-size: 0.923077rem;
   line-height: 1.5;
 }
 .reader-update-status:empty {
   display: none;
 }
 .reader-capture {
+  overflow-wrap: anywhere;
   color: #5c646b;
-  font-size: 12px;
+  font-size: 0.923077rem;
   line-height: 1.6;
   margin-bottom: 20px;
 }
 .reader-content {
-  font-size: 16px;
+  font-size: 1.230769rem;
   line-height: 1.75;
   overflow-wrap: anywhere;
 }
@@ -335,7 +340,7 @@ body[data-canvas-motion='reduced'] .t-modal {
   text-decoration: underline;
 }
 .reader-content h2 {
-  font-size: 26px;
+  font-size: 2rem;
   line-height: 1.3;
   margin: 0 0 20px;
 }
@@ -359,7 +364,7 @@ body[data-canvas-motion='reduced'] .t-modal {
   padding: 16px;
   background: #e8ebeb;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 1rem;
 }
 .reader-content img {
   display: block;
@@ -386,6 +391,7 @@ body[data-canvas-motion='reduced'] .t-modal {
   margin: 20px 0;
 }
 .reader-message {
+  overflow-wrap: anywhere;
   max-width: 640px;
   margin: 48px auto;
   line-height: 1.7;
@@ -403,7 +409,7 @@ body[data-canvas-motion='reduced'] .t-modal {
   background: #111;
 }
 .provider-video p {
-  font-size: 13px;
+  font-size: 1rem;
   margin-top: 12px;
 }
 .link-card-content > .link-open {
@@ -413,7 +419,7 @@ body[data-canvas-motion='reduced'] .t-modal {
   display: flex;
   gap: 5px;
   padding: 3px 8px;
-  font-size: 11px;
+  font-size: 0.846154rem;
   background: var(--hover);
 }
 .link-entry-form {
@@ -434,7 +440,7 @@ body[data-canvas-motion='reduced'] .t-modal {
   display: none;
 }
 .link-entry-form small {
-  font-size: 12px;
+  font-size: 0.923077rem;
   line-height: 1.4;
 }
 @media (max-width: 600px) {
@@ -445,9 +451,9 @@ body[data-canvas-motion='reduced'] .t-modal {
     padding: 20px 16px;
   }
   .reader-content {
-    font-size: 15px;
+    font-size: 1.153846rem;
   }
   .reader-content h2 {
-    font-size: 22px;
+    font-size: 1.692308rem;
   }
 }

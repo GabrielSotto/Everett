@@ -109,10 +109,25 @@ export class EverettApp implements Context {
       capture: true,
       signal: this.lifetime.signal,
     });
+    // La modalidad se captura antes de que un control local detenga el evento.
+    window.addEventListener(
+      'keydown',
+      () => {
+        document.body.dataset.canvasInput = 'keyboard';
+      },
+      { capture: true, signal: this.lifetime.signal },
+    );
     window.addEventListener('keydown', (e) => this.key(e), { signal: this.lifetime.signal });
     window.addEventListener(
       'pointerdown',
       (e) => {
+        // Un menú ya abierto con teclado no debe reiniciar su entrada al pasar al mouse.
+        if (document.body.dataset.canvasInput === 'keyboard')
+          for (const control of this.root.querySelectorAll<HTMLElement>(
+            '.canvas-context-menu,.canvas-context-form,.dock-more-menu,.conversation-history,.popover,.surface-menu',
+          ))
+            control.style.animation = 'none';
+        document.body.dataset.canvasInput = 'pointer';
         if (e.target instanceof Element && !e.target.closest('#shell')) {
           if (
             document.activeElement instanceof HTMLInputElement &&
@@ -694,6 +709,7 @@ export class EverettApp implements Context {
             this.render();
           },
           this.lifetime.signal,
+          true,
         );
       }
     }

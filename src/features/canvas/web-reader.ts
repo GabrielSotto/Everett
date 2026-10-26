@@ -171,7 +171,7 @@ export class WebReader {
             : 'No se pudo recuperar el contenido. Podés reintentar.'
           : '';
     const toolbar =
-      mediaToolbar(metadata?.title ?? new URL(url).hostname, url) +
+      mediaToolbar(metadata?.title?.trim() || new URL(url).hostname, url) +
       `<p class="reader-update-status" role="status">${html(status)}${status && metadata?.status !== 'loading' ? ' <button type="button" data-reader-action="retry">Reintentar lectura</button>' : ''}</p>`;
     this.host.innerHTML =
       toolbar +
@@ -200,7 +200,7 @@ export class WebReader {
           !Number.isFinite(data.capturedAt)
         )
           throw new Error('Lectura no disponible');
-        scroll.innerHTML = `<div class="reader-capture">Lectura guardada · ${html(new Date(data.capturedAt).toLocaleDateString('es-AR'))}${typeof data.byline === 'string' && data.byline ? ' · ' + html(data.byline) : ''}${metadata.readerProblem ? ' · Se conserva la última lectura disponible' : ''}</div><article class="reader-content"><h2>${html(typeof data.title === 'string' ? data.title : (metadata.readerTitle ?? ''))}</h2>${safeArticle(data.html)}</article>`;
+        scroll.innerHTML = `<div class="reader-capture">Lectura guardada · ${html(new Date(data.capturedAt).toLocaleDateString('es-AR'))}${typeof data.byline === 'string' && data.byline ? ' · ' + html(data.byline) : ''}${metadata.readerProblem ? ' · Se conserva la última lectura disponible' : ''}</div><article class="reader-content"><h2>${html((typeof data.title === 'string' && data.title.trim()) || metadata.readerTitle?.trim() || metadata.title?.trim() || new URL(url).hostname)}</h2>${safeArticle(data.html)}</article>`;
         requestAnimationFrame(() => {
           if (!this.abort.signal.aborted)
             scroll.scrollTop = this.ctx.ui.readerPositions?.[this.key()] ?? 0;
@@ -210,7 +210,7 @@ export class WebReader {
         if (this.abort.signal.aborted || serial !== this.serial) return;
       }
     }
-    scroll.innerHTML = `<div class="reader-message"><h2>${html(metadata?.title ?? 'Contenido web')}</h2><p>${metadata?.status === 'loading' ? 'Preparando contenido…' : metadata?.readerProblem === 'not-article' ? 'Esta página es un índice o una aplicación. No se pudo preparar una lectura de artículo.' : 'No se pudo recuperar una lectura de esta página.'}</p>${metadata?.status === 'loading' ? '' : '<button type="button" data-reader-action="retry">Reintentar lectura</button>'}</div>`;
+    scroll.innerHTML = `<div class="reader-message"><h2>${html(metadata?.title?.trim() || new URL(url).hostname)}</h2><p>${metadata?.status === 'loading' ? 'Preparando contenido…' : metadata?.readerProblem === 'not-article' ? 'Esta página es un índice o una aplicación. No se pudo preparar una lectura de artículo.' : 'No se pudo recuperar una lectura de esta página.'}</p>${metadata?.status === 'loading' ? '' : '<button type="button" data-reader-action="retry">Reintentar lectura</button>'}</div>`;
   }
   private play(): void {
     const embed = this.stack.at(-1)?.metadata?.embed;

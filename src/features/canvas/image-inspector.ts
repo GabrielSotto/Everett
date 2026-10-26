@@ -36,7 +36,10 @@ export class ImageInspector {
         (stage.clientWidth - 32) / (w * this.fit),
         (stage.clientHeight - 32) / (h * this.fit),
       );
-      this.panzoom?.setOptions({ startScale: scale, maxScale: Math.max(16, scale * 4) });
+      this.panzoom?.setOptions({
+        startScale: scale,
+        maxScale: Math.max(16, 2 / this.fit, scale * 4),
+      });
       this.panzoom?.reset({ animate: false });
       this.label();
     };
@@ -46,6 +49,7 @@ export class ImageInspector {
       minScale: Math.min(1, this.fit),
       maxScale: Math.max(
         16,
+        2 / this.fit,
         Math.min(
           (stage.clientWidth - 32) / plane.clientWidth,
           (stage.clientHeight - 32) / plane.clientHeight,

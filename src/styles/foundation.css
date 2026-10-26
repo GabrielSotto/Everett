@@ -130,8 +130,29 @@ button {
     transform 0.16s var(--ease);
 }
 
-button:active:not(.world-body):not(.surface-object) {
-  transform: scale(0.96);
+@media (hover: hover) and (pointer: fine) {
+  body[data-canvas-input='pointer']
+    button:active:not(:focus-visible):not(.world-body):not(.surface-object):not(.dock-grip):not(
+      .chat-grip
+    ) {
+    scale: calc(var(--control-scale, 1) * 0.97);
+  }
+}
+/* Atajos y acciones repetidas conservan una respuesta inmediata. La cámara mantiene
+   su transición espacial aprobada; esto afecta los controles superpuestos. */
+body[data-canvas-input='keyboard']
+  :is(
+    .canvas-context-menu,
+    .canvas-context-form,
+    .dock-more-menu,
+    .conversation-history,
+    .popover,
+    .surface-menu
+  ) {
+  animation: none !important;
+}
+body[data-canvas-input='keyboard'] :is(button, .global-search, .global-search input) {
+  transition: none !important;
 }
 
 button:disabled {

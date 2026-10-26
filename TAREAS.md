@@ -20,7 +20,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Estado actual — correcciones de consulta 0.8.17
 
-En implementación tras la revisión de 0.8.16. Corregir navegación espacial por niveles de lectura, controles compactos, consistencia de videos e imágenes, inspección de imágenes, salida con rueda sobre iframe, pegado tras denegación y confirmaciones locales solo donde aportan protección. La automatización solicitada no se activó y fue eliminada por pedido del usuario; el trabajo se inició manualmente. No integrar en dev ni cerrar 0.8. El gate nuevo todavía no está certificado.
+Implementación base en `27ef7ce`: navegación por niveles de lectura, controles compactos, visores, salida con rueda sobre iframe, recuperación del pegado y confirmaciones locales. La automatización fue eliminada por pedido del usuario; el trabajo se inició manualmente. El usuario aportó https://github.com/emilkowalski/skills y pidió usar ampliamente emil-design-eng, review-animations, break-ui y apple-design en todo Canvas, junto con Transitions.dev. Está en curso la revisión de dock, tarjetas, conexiones, conjuntos, zonas, propuestas, chat, gestos y visores; ampliar datos adversos y corregir los hallazgos antes del gate final. Las pasadas anteriores se interrumpieron por ajustes de sincronización y cambios de artefacto: no certifican esta candidata. El gate final todavía no está aprobado. No integrar en dev ni cerrar 0.8.
 
 ## Antecedente — enlaces reales en 0.8.15
 

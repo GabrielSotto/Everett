@@ -212,6 +212,7 @@ test.describe('confirmación dentro de Everett', () => {
     const dialog = page.getByRole('dialog', { name: '¿Eliminar del Canvas?' });
     const cancel = dialog.getByRole('button', { name: 'Cancelar', exact: true });
     await expect(cancel).toBeFocused();
+    expect(await dialog.evaluate((e) => e.getAnimations().length)).toBe(0);
     await page.keyboard.press('Shift+Tab');
     await expect(dialog.getByRole('button', { name: 'Eliminar', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
