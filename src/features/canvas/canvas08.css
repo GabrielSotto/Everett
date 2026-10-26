@@ -1808,6 +1808,20 @@ body[data-canvas-motion='reduced']
 .color-error:empty {
   display: none;
 }
+.alignment-guides {
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 50;
+}
+.alignment-guides line {
+  stroke: #ff7189;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
 .cable-inline-edit.canvas-context-form {
   width: min(210px, calc(100vw - 24px));
   padding: 0;

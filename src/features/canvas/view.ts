@@ -38,6 +38,7 @@ import { strokePicker } from './stroke-picker';
 import { rgb } from './color';
 import { groupBounds, groupDropTarget, groupHeadingSide } from '../../domain/manual-groups';
 import { labelPosition, labeledPath } from '../../domain/cable-labels';
+import { alignRect, selectionBounds } from '../../domain/alignment';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
@@ -969,7 +970,43 @@ export class CanvasView implements View {
       const positions = d.origins?.map((item) => ({
         id: item.id,
         point: { x: item.point.x + point.x - d.start.x, y: item.point.y + point.y - d.start.y },
-      })) ?? [{ id: d.id, point: d.point }];
+      })) ?? [{ id: d.id, point: { ...d.point } }];
+      this.root.querySelector('.alignment-guides')?.remove();
+      if (d.distance > 3 && !e.ctrlKey && !e.metaKey) {
+        const items =
+          d.kind === 'node'
+            ? this.ctx.world().nodes.filter((n) => !n.owner)
+            : this.ctx.world().zones;
+        const selected = new Set(positions.map((item) => item.id));
+        const moving = positions.flatMap((item) => {
+          const original = items.find((node) => node.id === item.id);
+          return original ? [{ ...original, ...item.point }] : [];
+        });
+        if (moving.length) {
+          const snap = alignRect(
+            selectionBounds(moving),
+            items.filter((item) => !selected.has(item.id)),
+            this.cam.current.z,
+          );
+          for (const item of positions) {
+            item.point.x += snap.correction.x;
+            item.point.y += snap.correction.y;
+          }
+          d.point = { x: d.point.x + snap.correction.x, y: d.point.y + snap.correction.y };
+          if (snap.guides.length) {
+            const layer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            layer.classList.add('alignment-guides');
+            layer.setAttribute('aria-hidden', 'true');
+            layer.innerHTML = snap.guides
+              .map(
+                (guide) =>
+                  `<line x1="${guide.axis === 'x' ? guide.position : guide.from}" y1="${guide.axis === 'y' ? guide.position : guide.from}" x2="${guide.axis === 'x' ? guide.position : guide.to}" y2="${guide.axis === 'y' ? guide.position : guide.to}"/>`,
+              )
+              .join('');
+            this.root.querySelector('#canvas-plane')?.append(layer);
+          }
+        }
+      }
       for (const item of positions) {
         const element = this.root.querySelector<HTMLElement>(
           `[data-${d.kind}="${CSS.escape(item.id)}"]`,
@@ -1050,6 +1087,7 @@ export class CanvasView implements View {
     };
   }
   private up(e: PointerEvent): void {
+    this.root.querySelector('.alignment-guides')?.remove();
     const d = this.drag;
     if (!d) return;
     this.drag = null;
@@ -1303,6 +1341,7 @@ export class CanvasView implements View {
     this.render();
   }
   private cancel(): void {
+    this.root.querySelector('.alignment-guides')?.remove();
     if (!this.drag && !this.ctx.ui.canvas.linkStart) return;
     if (this.drag?.kind === 'selection') {
       this.ctx.ui.canvas.selections = this.drag.before;
