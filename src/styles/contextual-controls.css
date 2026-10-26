@@ -189,6 +189,25 @@
   background: var(--panel);
   color: var(--text);
 }
+@media (max-width: 360px) {
+  .shell:has(.canvas-zoom) > .wordmark,
+  .shell:has(.canvas-zoom):has(.global-search.open) > .wordmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 28px;
+    padding: 0;
+    overflow: visible;
+    font-size: 0;
+  }
+  .shell:has(.canvas-zoom) > .wordmark::before {
+    content: 'E';
+    font-size: 20px;
+    letter-spacing: -0.5px;
+  }
+}
 .zoom-pop {
   position: fixed;
   top: 54px;

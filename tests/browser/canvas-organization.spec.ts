@@ -63,6 +63,15 @@ test('C08-B55: búsqueda dentro de cabecera, botones compactos y switch opcional
     expect(history.every((r) => r.width <= 28 && r.height <= 28)).toBe(true);
     measurements.push({ width, samples, history });
     await page.keyboard.press('Escape');
+    for (const name of [
+      'Everett',
+      'Acciones y ajustes de Canvas',
+      'Buscar en Everett',
+      'Superficies',
+      'Estado',
+      'Perfil de Gabi',
+    ])
+      await expect(page.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 1 });
   }
   await capture(page, info, 'cabecera-a-300');
   const searchButton = page.getByRole('button', { name: 'Buscar en Everett', exact: true });
