@@ -33,7 +33,7 @@ La revisión del usuario sigue abierta; conservar el HTML mientras dicta feedbac
 - Video: revisar autoplay al entrar; el usuario cuestiona que empiece solo. La rueda común debe quedar para la acción local del reproductor/visor y Alt + rueda para navegación espacial. Corregir el desplazamiento visible previo a salir y la salida sin Alt observados. Las pruebas deben reproducir el gesto sobre el video/iframe, con foco en los controles y cambios de modificador.
 - Acceso contextual: ofrecer Ajustar a la selección sobre materiales seleccionados desde su menú contextual. Penpot Focus mode también oculta el resto de elementos: no confundir ese aislamiento con el encuadre de cámara existente ni incorporarlo automáticamente.
 - Abrir original: definir dónde abre en la aplicación final, diferenciando la lectura interna, el entorno web y un eventual contenedor de escritorio. El comportamiento actual del navegador de Codex no define esa política.
-- Arrastre de enlaces: confirmar si el destino mencionado era Canvas o la interfaz del navegador de Codex antes de atribuir el comportamiento al producto.
+- Arrastre de enlaces: el usuario aclaró que ocurrió en la interfaz del navegador de Codex. No es un fallo atribuido al Canvas de Everett ni añade una corrección de Canvas a este feedback.
 - Penpot se incorpora como referencia de calidad de vida y de soluciones existentes para el trabajo espacial, junto con la investigación de alineación ya solicitada. Evaluar reutilización de código con su licencia y preservar el alcance acordado.
 
 ## Siguiente mejora de 0.8 — guías de alineación
