@@ -24,6 +24,18 @@ La revisión de 0.8.16 está implementada en `27ef7ce`, `b7200c2` y `689c131`: r
 
 Gate completo aprobado: 95 pruebas unitarias/de herramientas y 181 de navegador, sin omisiones ni reintentos. Se verificaron artefacto, fuentes, controles negativos e informe. La revisión visual y las comprobaciones públicas corresponden al mismo HTML. La revisión del usuario sigue pendiente. No integrar en dev ni cerrar 0.8.
 
+## Feedback en curso — revisión de 0.8.17
+
+La revisión del usuario sigue abierta; conservar el HTML mientras dicta feedback. Registrar hallazgos sin iniciar correcciones hasta que termine.
+
+- Lectura web: la portada de YouTube no ofrece una consulta útil. Distinguir aplicaciones/índices de artículos o videos concretos y resolver un estado accionable; el lector actual no es un navegador de aplicaciones completo.
+- Retomar una lectura: poder regresar a la última página consultada dentro de una referencia (ejemplo: Introduction de Godot) sin recorrer de nuevo la portada. Conservar el historial de regreso y distinguir posición de lectura de identidad de la referencia.
+- Video: revisar autoplay al entrar; el usuario cuestiona que empiece solo. La rueda común debe quedar para la acción local del reproductor/visor y Alt + rueda para navegación espacial. Corregir el desplazamiento visible previo a salir y la salida sin Alt observados. Las pruebas deben reproducir el gesto sobre el video/iframe, con foco en los controles y cambios de modificador.
+- Acceso contextual: ofrecer Ajustar a la selección sobre materiales seleccionados desde su menú contextual. Penpot Focus mode también oculta el resto de elementos: no confundir ese aislamiento con el encuadre de cámara existente ni incorporarlo automáticamente.
+- Abrir original: definir dónde abre en la aplicación final, diferenciando la lectura interna, el entorno web y un eventual contenedor de escritorio. El comportamiento actual del navegador de Codex no define esa política.
+- Arrastre de enlaces: confirmar si el destino mencionado era Canvas o la interfaz del navegador de Codex antes de atribuir el comportamiento al producto.
+- Penpot se incorpora como referencia de calidad de vida y de soluciones existentes para el trabajo espacial, junto con la investigación de alineación ya solicitada. Evaluar reutilización de código con su licencia y preservar el alcance acordado.
+
 ## Siguiente mejora de 0.8 — guías de alineación
 
 Solicitada durante la revisión de 0.8.17: mostrar guías temporales al arrastrar materiales para alinear bordes y centros con otros elementos, con ajuste por proximidad opcional. Contrastar Figma, Canva y otros canvases de diseño y evaluar soluciones reutilizables antes de implementar; no partir de cero por defecto. La investigación es temporal; conservar aquí el alcance y posteriormente las decisiones adoptadas.
