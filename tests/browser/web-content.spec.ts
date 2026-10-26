@@ -87,6 +87,10 @@ test('C08-B94: lectura persistida, scroll, navegación con una flecha y sanitiza
   const saved = await bytes(page, data.metadata.readerAsset);
   const requests = count;
   await page.reload();
+  // La reanudación autorizada recupera la página seguida; el origen sigue guardado.
+  await expect(page.locator('.reader-content > h2')).toHaveText('Segunda página');
+  expect(count).toBe(requests);
+  await page.getByRole('button', { name: 'Volver', exact: true }).click();
   await expect(page.locator('.reader-content')).toContainText('const value = 42;');
   expect(await bytes(page, data.metadata.readerAsset)).toEqual(saved);
   expect(count).toBe(requests);
