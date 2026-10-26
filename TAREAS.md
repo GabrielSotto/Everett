@@ -24,6 +24,12 @@ La revisión de 0.8.16 está implementada en `27ef7ce`, `b7200c2` y `689c131`: r
 
 Gate completo aprobado: 95 pruebas unitarias/de herramientas y 181 de navegador, sin omisiones ni reintentos. Se verificaron artefacto, fuentes, controles negativos e informe. La revisión visual y las comprobaciones públicas corresponden al mismo HTML. La revisión del usuario sigue pendiente. No integrar en dev ni cerrar 0.8.
 
+## Siguiente mejora de 0.8 — guías de alineación
+
+Solicitada durante la revisión de 0.8.17: mostrar guías temporales al arrastrar materiales para alinear bordes y centros con otros elementos, con ajuste por proximidad opcional. Contrastar Figma, Canva y otros canvases de diseño y evaluar soluciones reutilizables antes de implementar; no partir de cero por defecto. La investigación es temporal; conservar aquí el alcance y posteriormente las decisiones adoptadas.
+
+Definir tolerancia consistente en píxeles de pantalla durante zoom, desactivación temporal del ajuste, movimiento de selecciones/conjuntos sin deformarlos y convivencia con zonas, pan y conexiones. Ampliar el arnés con arrastres en ambos ejes, distintas escalas, cancelación, Undo/Redo, geometría de las guías y coincidencia con la posición final. El ajuste no debe introducir saltos al soltar ni mover elementos ajenos a la selección. Esta mejora todavía no forma parte de 0.8.17; mantener el HTML estable durante la revisión del usuario.
+
 ## Antecedente — enlaces reales en 0.8.15
 
 Implementación de C08-URL-01 en `feat/canvas-0.8`: previews mediante servicio local mínimo aprobado expresamente por el usuario. Se compararon bibliotecas y se adoptó link-preview-js (MIT) con descarga acotada y almacenamiento local. El usuario autorizó actualizar el preview durante este trabajo y excluyó el ZIP; se conservan el gate completo, revisión visual, informe y fuentes versionadas. No integrar en `dev` ni cerrar 0.8.
