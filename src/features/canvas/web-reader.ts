@@ -1,10 +1,16 @@
 import DOMPurify from 'dompurify';
 import type { Context } from '../../app/context';
 import type { LinkPreview } from '../../domain/model';
-import { linkUrl, providerPlayer, retainLinkPreview } from '../../domain/link-previews';
+import {
+  linkUrl,
+  providerPlayer,
+  retainLinkPreview,
+  validLinkPreview,
+  previewMessage,
+} from '../../domain/link-previews';
 import { html } from '../../ui/dom';
 import { mediaToolbar } from './media-toolbar';
-import { WheelIntent } from '../../spatial/wheel-intent';
+import { spatialWheel } from '../../domain/spatial-shortcut';
 
 export function safeArticle(source: string): string {
   const template = document.createElement('template');
@@ -46,6 +52,7 @@ export class WebReader {
   private serial = 0;
   private scrollTimer: ReturnType<typeof setTimeout> | null = null;
   private playerAbort: AbortController | null = null;
+  private sessionKey: string;
   constructor(
     private host: HTMLElement,
     private ctx: Context,
@@ -53,7 +60,16 @@ export class WebReader {
     url: string,
     metadata: LinkPreview | undefined,
   ) {
+    this.sessionKey = ctx.world().id + ':' + id;
     this.stack.push({ url, metadata });
+    const path = ctx.ui.readerPaths?.[this.sessionKey];
+    if (Array.isArray(path) && path[0] === url) {
+      for (const destination of path.slice(1, 32)) {
+        if (typeof destination !== 'string' || !linkUrl(destination)) break;
+        const page = ctx.ui.readerPages?.[destination];
+        this.stack.push({ url: destination, metadata: validLinkPreview(page) ? page : undefined });
+      }
+    }
     host.addEventListener(
       'click',
       (event) => {
@@ -107,12 +123,15 @@ export class WebReader {
       { capture: true, signal: this.abort.signal },
     );
     void this.paint();
+    if (this.stack.length > 1 && !this.stack.at(-1)?.metadata)
+      void this.navigate(this.stack.at(-1)!.url, true);
   }
   back(): boolean {
     if (this.stack.length <= 1) return false;
     this.save();
     this.stack.pop();
     void this.paint();
+    if (!this.stack.at(-1)?.metadata) void this.navigate(this.stack.at(-1)!.url, true);
     return true;
   }
   update(metadata: LinkPreview | undefined): void {
@@ -155,6 +174,14 @@ export class WebReader {
     const metadata = await this.ctx.previews.read(url, replace);
     if (this.abort.signal.aborted || serial !== this.serial) return;
     this.stack[this.stack.length - 1] = { url, metadata: retainLinkPreview(previous, metadata) };
+    this.ctx.ui.readerPaths ??= {};
+    this.ctx.ui.readerPages ??= {};
+    this.ctx.ui.readerPaths[this.sessionKey] = this.stack.map((page) => page.url);
+    this.ctx.ui.readerPages[url] = this.stack.at(-1)!.metadata!;
+    const keys = Object.keys(this.ctx.ui.readerPages);
+    for (const key of keys.slice(0, Math.max(0, keys.length - 64)))
+      delete this.ctx.ui.readerPages[key];
+    this.ctx.persist();
     await this.paint();
   }
   private async paint(): Promise<void> {
@@ -183,6 +210,7 @@ export class WebReader {
       this.play();
       return;
     }
+    this.host.closest('.media-view')?.classList.remove('video-content-view');
     if (metadata?.readerAsset) {
       try {
         const blob = await this.ctx.storage!.asset(metadata.readerAsset);
@@ -210,7 +238,9 @@ export class WebReader {
         if (this.abort.signal.aborted || serial !== this.serial) return;
       }
     }
-    scroll.innerHTML = `<div class="reader-message"><h2>${html(metadata?.title?.trim() || new URL(url).hostname)}</h2><p>${metadata?.status === 'loading' ? 'Preparando contenido…' : metadata?.readerProblem === 'not-article' ? 'Esta página es un índice o una aplicación. No se pudo preparar una lectura de artículo.' : 'No se pudo recuperar una lectura de esta página.'}</p>${metadata?.status === 'loading' ? '' : '<button type="button" data-reader-action="retry">Reintentar lectura</button>'}</div>`;
+    const application = metadata?.status !== 'error' && metadata?.readerProblem === 'not-article';
+    scroll.classList.add('reader-unavailable');
+    scroll.innerHTML = `<section class="reader-message"><h2>${html(metadata?.title?.trim() || new URL(url).hostname)}</h2><p>${html(metadata?.status === 'loading' ? 'Preparando contenido…' : application ? 'Este sitio necesita su aplicación interactiva. La lectura de artículos no puede mostrar su página de inicio.' : metadata?.status === 'error' ? previewMessage(metadata) : 'Esta página no ofrece una lectura disponible. Podés consultar el sitio original.')}</p><span class="reader-destination">${html(new URL(url).hostname + new URL(url).pathname)}</span><div>${application ? `<a class="reader-open-original" href="${html(url)}" target="_blank" rel="noopener noreferrer">Abrir ${html(new URL(url).hostname)}</a> <button type="button" data-reader-action="retry">Reintentar lectura</button>` : metadata?.status === 'loading' ? '' : '<button type="button" data-reader-action="retry">Reintentar lectura</button>'}</div></section>`;
   }
   private play(): void {
     const embed = this.stack.at(-1)?.metadata?.embed;
@@ -222,8 +252,7 @@ export class WebReader {
     this.playerAbort = new AbortController();
     const signal = this.playerAbort.signal;
     frame.title = `Reproductor de ${embed.provider === 'youtube' ? 'YouTube' : 'Vimeo'}`;
-    frame.src =
-      providerPlayer(embed) + (providerPlayer(embed).includes('?') ? '&' : '?') + 'autoplay=1';
+    frame.src = providerPlayer(embed);
     frame.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
     frame.setAttribute('allowfullscreen', '');
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
@@ -266,27 +295,27 @@ export class WebReader {
       },
       { signal },
     );
-    // La rueda no cruza el límite de origen del iframe. Su desplazamiento nativo
-    // sí puede encadenarse: un contenedor con plano fijo recoge ese gesto sin
-    // interceptar clics ni reemplazar los controles oficiales del proveedor.
-    const bridge = document.createElement('div');
-    bridge.className = 'provider-wheel-bridge';
-    const track = document.createElement('div');
-    track.className = 'provider-wheel-track';
-    track.append(frame);
-    bridge.append(track);
-    host.querySelector('.provider-mount')?.replaceWith(bridge);
-    bridge.scrollTop = 512;
-    let previous = bridge.scrollTop;
-    const intent = new WheelIntent();
-    intent.lock(440);
-    bridge.addEventListener(
-      'scroll',
+    // Los eventos del iframe externo no se propagan a Everett. Capturar el
+    // gesto solo mientras el documento conoce el modificador preserva sus
+    // controles normales y evita convertir scroll en navegación sin Alt.
+    const player = document.createElement('div');
+    player.className = 'provider-player-frame';
+    const capture = document.createElement('div');
+    capture.className = 'provider-spatial-capture';
+    capture.setAttribute('aria-hidden', 'true');
+    capture.hidden = true;
+    player.append(frame, capture);
+    host.querySelector('.provider-mount')?.replaceWith(player);
+    const modifier = (event: KeyboardEvent | MouseEvent): void => {
+      capture.hidden = !spatialWheel(event, this.ctx.ui.spatialModifier);
+    };
+    window.addEventListener('keydown', modifier, { signal, capture: true });
+    window.addEventListener('keyup', modifier, { signal, capture: true });
+    player.addEventListener('pointerenter', modifier, { signal });
+    window.addEventListener(
+      'blur',
       () => {
-        const current = bridge.scrollTop;
-        const delta = current - previous;
-        previous = current;
-        if (intent.consume(delta) === 'leave') this.ctx.back();
+        capture.hidden = true;
       },
       { signal },
     );

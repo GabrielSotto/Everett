@@ -1,5 +1,5 @@
 import type { Context } from '../app/context';
-import { canvasCameraTuning } from '../spatial/tuning';
+import { frameCanvas } from './canvas-frame';
 import { bindDismiss } from './popover';
 import { icon } from './icons';
 import { target } from './dom';
@@ -72,36 +72,10 @@ export class CanvasZoom {
     return true;
   }
   private fit(selection: boolean): void {
-    const world = this.ctx.world(),
-      ids = this.ctx.ui.canvas.selections;
-    const items = [
-      ...world.nodes.filter((n) => !n.owner && (!selection || ids.includes(n.id))),
-      ...(!selection ? world.zones : []),
-    ];
-    if (!items.length) return;
-    const minX = Math.min(...items.map((n) => n.x)),
-      minY = Math.min(...items.map((n) => n.y));
-    const maxX = Math.max(...items.map((n) => n.x + n.width)),
-      maxY = Math.max(...items.map((n) => n.y + n.height));
-    const chat = document
-      .querySelector('.canvas-chat.docked:not(.compact)')
-      ?.getBoundingClientRect();
-    const left = chat?.right ?? 0,
-      width = innerWidth - left,
-      height = innerHeight - 59;
-    const z = Math.max(
-      canvasCameraTuning.minimumZoom,
-      Math.min(
-        selection ? canvasCameraTuning.maximumZoom : 1,
-        (width - 96) / Math.max(1, maxX - minX),
-        (height - 160) / Math.max(1, maxY - minY),
-      ),
-    );
     this.close();
-    const camera = { x: left / 2 - ((minX + maxX) / 2) * z, y: -28 - ((minY + maxY) / 2) * z, z };
-    this.ctx.camera?.set(camera, true);
-    this.ctx.act({ type: 'camera', camera }, 'encuadrar Canvas', 'C08-ZOOM-01');
+    frameCanvas(this.ctx, selection);
   }
+
   refresh(): void {
     const label = this.root.querySelector('[data-zoom-value]');
     const percent = Math.round(this.ctx.currentCamera().z * 100);

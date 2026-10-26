@@ -7,10 +7,15 @@ import { createDocsUi, type DocsUi } from '../features/docs/state';
 import { createBoardUi, type BoardUi } from '../features/board/state';
 import { createAgentsUi, type AgentsUi } from '../features/agents/state';
 import type { Camera } from '../domain/model';
+import type { LinkPreview } from '../domain/model';
 
 export interface Ui {
   userId: string;
   readerPositions?: Record<string, number>;
+  readerPaths?: Record<string, string[]>;
+  readerPages?: Record<string, LinkPreview>;
+  spatialModifier?: string;
+  linkHistory?: string[];
   conversations: Record<string, string>;
   canvasContexts: Record<
     string,

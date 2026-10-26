@@ -21,6 +21,8 @@ import { confirmRemoval } from '../../ui/confirm-removal';
 import { assignedPreview, materialMarkup } from './materials';
 import { inspectMedia } from '../../platform/media-file';
 import { previewMarkup } from './proposals';
+import { inlineCompletion } from '../../ui/inline-completion';
+import { frameCanvas } from '../../ui/canvas-frame';
 
 function clipboardOrigin(plain: string, uriList = '', markup = ''): string | undefined {
   const address = uriList.split(/\r?\n/).find((line) => line.trim() && !line.startsWith('#'));
@@ -391,6 +393,10 @@ export class CanvasInteractions {
           case 'canvas-paste':
             void this.pasteClipboard();
             break;
+          case 'context-fit':
+            this.close();
+            frameCanvas(ctx, true);
+            break;
           case 'context-order': {
             const order = button.dataset.order;
             if (
@@ -539,6 +545,11 @@ export class CanvasInteractions {
       'input',
       (event) => {
         const input = event.target;
+        if (input instanceof HTMLInputElement && input.id === 'canvas-link-url') {
+          input.removeAttribute('aria-invalid');
+          const status = input.form?.querySelector('[role=status]');
+          if (status) status.textContent = '';
+        }
         if (input instanceof HTMLTextAreaElement && input.id === 'new-comment') {
           ctx.ui.commentDrafts[this.commentKey()] = input.value;
           ctx.persist();
@@ -711,6 +722,17 @@ export class CanvasInteractions {
           this.close();
           return;
         }
+        if (
+          event.key === 'Enter' &&
+          !event.isComposing &&
+          event.target instanceof HTMLInputElement &&
+          event.target.closest('form.compact-edit,form.group-rename-form')
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.target.form?.requestSubmit();
+          return;
+        }
         // Los controles del panel poseen el teclado: no activan herramientas ni borran materiales.
         event.stopPropagation();
         // El editor conserva Undo/Redo y las teclas de texto del navegador.
@@ -840,7 +862,14 @@ export class CanvasInteractions {
     this.overlay.querySelector<HTMLInputElement>('input')?.select();
   }
   private groupMenu(id: string, point: Point): void {
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del conjunto" style="${this.position(point)}"><button role="menuitem" data-action="group-rename" data-id="${id}">Renombrar conjunto</button><button role="menuitem" data-action="group-ungroup" data-id="${id}">Separar conjunto</button></div>`;
+    const group = this.ctx.world().canvasGroups?.find((group) => group.id === id);
+    if (!group) return;
+    this.ctx.ui.canvas.selections = group.nodes.filter((id) =>
+      this.ctx.world().nodes.some((node) => node.id === id && !node.owner),
+    );
+    this.ctx.ui.canvas.selection = this.ctx.ui.canvas.selections.at(-1) ?? null;
+    this.ctx.render();
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del conjunto" style="${this.position(point)}"><button role="menuitem" data-action="group-rename" data-id="${id}">Renombrar conjunto</button><button role="menuitem" data-action="group-ungroup" data-id="${id}">Separar conjunto</button><button role="menuitem" data-action="context-fit" ${this.ctx.ui.canvas.selections.length ? '' : 'disabled'}>Ajustar a la selección</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('button')?.focus();
   }
@@ -924,7 +953,7 @@ export class CanvasInteractions {
           `<button type="button" role="menuitem" data-action="context-order" data-order="${order}" ${canOrderMaterials(this.ctx.world().nodes, this.ctx.ui.canvas.selections, order) ? '' : 'disabled'}>${{ front: 'Traer al frente', forward: 'Avanzar una capa', backward: 'Retroceder una capa', back: 'Enviar al fondo' }[order]}</button>`,
       )
       .join('');
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button>${node.data.kind !== 'reference' || node.data.ref.kind === 'document' ? `<button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button>${node.data.kind !== 'reference' || node.data.ref.kind === 'document' ? `<button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
@@ -1022,15 +1051,33 @@ export class CanvasInteractions {
   }
   private editForm(kind: 'rename' | 'label', id: string, text: string, point: Point): void {
     const field = kind === 'rename' ? 'material-name' : 'cable-text';
-    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit ${kind === 'label' ? 'cable-inline-edit' : ''}" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" value="${html(text)}" placeholder="${kind === 'rename' ? 'Nombre' : 'Etiqueta'}" aria-description="Enter confirma. Esc cancela."></form>`;
+    this.overlay.innerHTML = `<form class="canvas-context-form compact-edit ${kind === 'label' ? 'cable-inline-edit' : ''}" data-${kind}="${id}" style="${this.position(point)}"><label for="${field}">${kind === 'rename' ? 'Nombre del material' : 'Etiqueta de conexión'}</label><input id="${field}" autocomplete="off" value="${html(text)}" placeholder="${kind === 'rename' ? 'Nombre' : 'Etiqueta'}" aria-description="Enter confirma. Esc cancela."></form>`;
   }
   private linkForm(): void {
     this.overlay.innerHTML = `<form id="canvas-new-link" class="canvas-context-form link-entry-form" novalidate style="${this.position({ x: innerWidth / 2 - 140, y: innerHeight / 2 - 80 })}"><label for="canvas-link-url">Dirección del enlace</label><button type="button" class="icon-button link-entry-close" data-action="context-close" aria-label="Cerrar formulario de enlace">${icon('close', 14)}</button><input id="canvas-link-url" inputmode="url" placeholder="https://"><small role="status"></small><button type="submit">Agregar enlace</button></form>`;
     this.fitOverlay();
+    const input = this.overlay.querySelector<HTMLInputElement>('#canvas-link-url')!;
+    const history = [
+      ...(this.ctx.ui.linkHistory ?? []),
+      ...this.ctx
+        .world()
+        .nodes.flatMap((n) =>
+          n.data.kind === 'link'
+            ? [n.data.url]
+            : 'source' in n.data && n.data.source
+              ? [n.data.source]
+              : [],
+        ),
+    ];
+    inlineCompletion(input, [...new Set(history)], this.previewAbort.signal);
     this.overlay.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
   }
   private addLink(value: string): void {
     const url = new URL(value);
+    this.ctx.ui.linkHistory = [
+      url.href,
+      ...(this.ctx.ui.linkHistory ?? []).filter((item) => item !== url.href),
+    ].slice(0, 40);
     this.create({ kind: 'link', title: url.hostname + url.pathname, url: url.href }, 320, 240);
   }
   private async pasteClipboard(): Promise<void> {

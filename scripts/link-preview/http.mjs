@@ -68,7 +68,11 @@ export function previewEndpoint({ extract = extractPreview } = {}) {
           }
           job = extract(key, { signal: abort.signal }).catch((error) => ({
             status: 'error',
-            problem: /demasiado grande/.test(error.message) ? 'too-large' : 'fetch-failed',
+            problem: /demasiado grande/.test(error.message)
+              ? 'too-large'
+              : ['ENOTFOUND', 'EAI_NONAME'].includes(error.cause?.code ?? error.code)
+                ? 'host-not-found'
+                : 'fetch-failed',
             checkedAt: Date.now(),
             resolvedUrl: key,
           }));

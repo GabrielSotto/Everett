@@ -41,6 +41,7 @@ import { AgentsView } from '../features/agents/view';
 import type { Ui } from './ui-state';
 import type { LocalStorage } from '../platform/local-storage';
 import { shortcutCombination } from '../domain/shortcuts';
+import { spatialWheel } from '../domain/spatial-shortcut';
 export class EverettApp implements Context {
   private readonly lifetime = new AbortController();
   private readonly unsubscribe: () => void;
@@ -517,7 +518,7 @@ export class EverettApp implements Context {
     const route = this.store.get().route,
       spatial = route.kind === 'universe' || route.kind === 'world';
     const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
-    if (!spatial && !e.altKey && !(this.view instanceof MediaView && this.view.directWheel)) {
+    if (!spatial && !spatialWheel(e, this.ui.spatialModifier)) {
       const zone = target?.closest<HTMLElement>('.zone-materials');
       const localScroll = zone && zone.scrollHeight > zone.clientHeight + 1;
       if (

@@ -1,5 +1,6 @@
 import Panzoom, { type PanzoomObject } from '@panzoom/panzoom/dist/panzoom.es.js';
 import { icon } from '../../ui/icons';
+import { spatialHint, spatialWheel } from '../../domain/spatial-shortcut';
 
 /** Panzoom conserva el punto bajo el cursor y administra paneo, punteros y pinch. */
 export class ImageInspector {
@@ -11,9 +12,10 @@ export class ImageInspector {
   constructor(
     private host: HTMLElement,
     image: HTMLImageElement,
+    private modifier: () => unknown = () => 'Alt',
   ) {
     host.className = 'image-inspector';
-    host.innerHTML = `<div class="image-stage" tabindex="0" aria-label="Imagen: rueda para ampliar, arrastrar para desplazar; Alt y rueda para volver"><div class="image-plane"></div></div><nav class="image-tools" aria-label="Vista de imagen"><button type="button" data-image="out" aria-label="Alejar imagen">−</button><output aria-label="Zoom de imagen">100 %</output><button type="button" data-image="in" aria-label="Acercar imagen">+</button><button type="button" data-image="fit">Ajustar</button><button type="button" data-image="actual">100 %</button><button type="button" data-image="rotate" aria-label="Rotar imagen">${icon('restore', 16)}</button></nav>`;
+    host.innerHTML = `<div class="image-stage" tabindex="0" aria-label="Imagen: rueda para ampliar, arrastrar para desplazar; ${spatialHint(modifier())} para volver"><div class="image-plane"></div></div><nav class="image-tools" aria-label="Vista de imagen"><button type="button" data-image="out" aria-label="Alejar imagen">−</button><output aria-label="Zoom de imagen">100 %</output><button type="button" data-image="in" aria-label="Acercar imagen">+</button><button type="button" data-image="fit">Ajustar</button><button type="button" data-image="actual">100 %</button><button type="button" data-image="rotate" aria-label="Rotar imagen">${icon('restore', 16)}</button></nav>`;
     const stage = host.querySelector<HTMLElement>('.image-stage')!;
     const plane = host.querySelector<HTMLElement>('.image-plane')!;
     image.draggable = false;
@@ -60,12 +62,13 @@ export class ImageInspector {
         (stage.clientHeight - 32) / plane.clientHeight,
       ),
       animate: false,
+      step: 0.1,
     });
     plane.addEventListener('panzoomchange', () => this.label(), { signal: this.abort.signal });
     stage.addEventListener(
       'wheel',
       (event) => {
-        if (event.altKey) return;
+        if (spatialWheel(event, this.modifier())) return;
         event.stopPropagation();
         this.panzoom?.zoomWithWheel(event);
       },

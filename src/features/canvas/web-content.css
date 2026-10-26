@@ -176,27 +176,13 @@
   max-height: calc(100vh - 180px);
   border-radius: 6px;
 }
-.provider-wheel-bridge {
-  height: min(calc(100vh - 170px), calc((100vw - 40px) * 9 / 16));
+.provider-player-frame {
+  position: relative;
   width: 100%;
-  overflow-y: scroll;
-  scrollbar-width: none;
-  overscroll-behavior: contain;
-  container-type: size;
 }
-.provider-wheel-bridge::-webkit-scrollbar {
-  display: none;
-}
-.provider-wheel-track {
-  height: 100%;
-  padding-block: 512px;
-  box-sizing: content-box;
-}
-.provider-wheel-bridge iframe {
-  position: sticky;
-  top: 0;
-  height: 100cqh;
-  max-height: none !important;
+.provider-spatial-capture {
+  position: absolute;
+  inset: 0;
 }
 .clipboard-fallback p {
   font-size: 0.923077rem;
@@ -395,6 +381,71 @@ body[data-canvas-motion='reduced'] .t-modal {
   max-width: 640px;
   margin: 48px auto;
   line-height: 1.7;
+}
+.reader-scroll.reader-unavailable {
+  background: transparent;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.reader-unavailable .reader-message {
+  margin: 0;
+  width: min(100%, 460px);
+  color: var(--text);
+}
+.reader-message h2 {
+  font-size: 1.25rem;
+}
+.reader-destination {
+  display: block;
+  color: var(--muted);
+  font-size: 0.923077rem;
+  margin: 16px 0;
+}
+.reader-open-original {
+  display: inline-flex;
+  padding: 7px 10px;
+  background: var(--hover);
+  border-radius: 6px;
+}
+.image-gallery {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+}
+.image-gallery span {
+  max-width: min(400px, calc(100vw - 120px));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.923077rem;
+}
+.image-gallery button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
+}
+.inline-completion {
+  position: relative;
+  min-width: 0;
+}
+.inline-completion input {
+  width: 100%;
+}
+.completion-ghost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  white-space: pre;
+  overflow: hidden;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font: inherit;
 }
 .provider-video {
   max-width: 1000px;

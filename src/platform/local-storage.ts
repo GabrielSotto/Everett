@@ -1,6 +1,7 @@
 import type { State } from '../domain/model';
 import type { Ui } from '../app/ui-state';
 import { validate } from '../domain/invariants';
+import { spatialModifier } from '../domain/spatial-shortcut';
 
 interface Personal {
   schema: 1;
@@ -55,6 +56,7 @@ export class LocalStorage {
     const state: State = { ...personal.state, ...shared, version: 1 };
     validate(state);
     const ui = personal.ui;
+    ui.spatialModifier = spatialModifier(ui.spatialModifier);
     ui.shell.showSurfaceMenu = ui.shell.showSurfaceMenu === true;
     ui.shell.canvasDockOrientation =
       ui.shell.canvasDockOrientation === 'vertical' ? 'vertical' : 'horizontal';
@@ -124,6 +126,10 @@ export class LocalStorage {
         ),
       ),
     );
+    for (const page of Object.values(ui.readerPages ?? {})) {
+      if (page.readerAsset) ids.add(page.readerAsset);
+      if (page.imageAsset) ids.add(page.imageAsset);
+    }
     for (const id of ids) {
       const blob = await this.asset(id);
       const data = await new Promise<string>((resolve, reject) => {

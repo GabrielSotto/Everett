@@ -14,6 +14,7 @@ import { shortcutNames } from '../domain/shortcuts';
 import { searchWorkspace } from '../domain/workspace-search';
 import { CanvasZoom } from './canvas-zoom';
 import { reducedMotion } from './motion';
+import { spatialHint } from '../domain/spatial-shortcut';
 
 export class Shell {
   private abort = new AbortController();
@@ -183,7 +184,8 @@ export class Shell {
             break;
           case 'shortcuts':
             ctx.notice(
-              'Alt + rueda: entrar / salir · ' +
+              spatialHint(ctx.ui.spatialModifier) +
+                ': entrar / salir · ' +
                 Object.entries(ctx.ui.shortcuts)
                   .filter(([, key]) => key)
                   .map(([action, key]) => shortcutNames[action] + ': ' + key)

@@ -111,6 +111,10 @@ export function previewMessage(preview: LinkPreview | undefined): string {
   if (preview.problem === 'storage-failed')
     return 'No se pudo conservar la portada. Podés reintentar.';
   if (preview.problem === 'busy') return 'La vista previa está ocupada. Podés reintentar.';
+  if (preview.problem === 'host-not-found')
+    return 'No se encontró este dominio. Revisá la dirección o reintentá más tarde. El enlace se conserva.';
+  if (preview.problem === 'fetch-failed')
+    return 'No se pudo conectar con el sitio. Revisá la dirección y tu conexión; podés reintentar.';
   if (preview.problem === 'too-large')
     return 'El contenido supera el límite de descarga. El enlace se conserva.';
   if (preview.problem === 'unsupported-media')
