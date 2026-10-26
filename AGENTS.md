@@ -8,6 +8,7 @@ Marco común: `C:/Proyectos/AGENTS.md`. Leerlo si no está ya cargado y aplicar 
 - Antes de iniciar una implementación, contar con el alcance y la dirección visual acordados. Preservar los comportamientos aprobados y aplicar los cambios de alcance que autorice el usuario.
 - Distinguir decisiones confirmadas de hipótesis. Comprobar la disponibilidad y el contenido de las referencias antes de afirmar que se inspeccionaron.
 - Mantener las definiciones, el estado y los antecedentes del producto en sus documentos correspondientes dentro de `docs/`.
+- Al incorporar dependencias o código externo, preservar el carácter propietario definido en Producto y aplicar los [criterios de compatibilidad de licencias](docs/desarrollo.md#compatibilidad-de-licencias-con-everett).
 
 ## Organización por iteración
 

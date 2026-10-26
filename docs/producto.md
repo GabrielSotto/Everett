@@ -2,6 +2,8 @@
 
 Everett es el nombre de trabajo de un entorno para crear y desarrollar proyectos en un espacio unificado. Reúne código, documentos, planificación, materiales visuales, conocimiento, assets, agentes, conversaciones e historial. La continuidad del proyecto y su contexto debe conservarse al pasar de una actividad a otra.
 
+Everett es un producto propietario de código cerrado. La selección de dependencias y la reutilización de código externo deben preservar esta decisión.
+
 Este documento recoge la descripción general aportada por el usuario. El detalle de funciones y etapas está en [Alcance del prototipo](alcance-prototipo.md).
 
 ## Mundo
