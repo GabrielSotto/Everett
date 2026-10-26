@@ -2,17 +2,17 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                                                                               |
-| ----------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                             |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                          |
-| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). Candidata 0.8.16 verificada: lectura web y archivos por URL; revisión del usuario pendiente. |
-| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                   |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                    |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                              |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                             |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                             |
+| Iteración                     | Estado                        | Trabajo                                                                                                                                                                                       |
+| ----------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                                                     |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                                                  |
+| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). Candidata 0.8.17 verificada: consulta espacial, multimedia y controles revisados; pendiente de revisión del usuario. |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                                           |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                                            |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                                        |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                                                      |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                                                     |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                                                     |
 
 ## Después de 1.0
 
@@ -20,7 +20,9 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Estado actual — correcciones de consulta 0.8.17
 
-Implementación base en `27ef7ce`: navegación por niveles de lectura, controles compactos, visores, salida con rueda sobre iframe, recuperación del pegado y confirmaciones locales. La automatización fue eliminada por pedido del usuario; el trabajo se inició manualmente. El usuario aportó https://github.com/emilkowalski/skills y pidió usar ampliamente emil-design-eng, review-animations, break-ui y apple-design en todo Canvas, junto con Transitions.dev. Está en curso la revisión de dock, tarjetas, conexiones, conjuntos, zonas, propuestas, chat, gestos y visores; ampliar datos adversos y corregir los hallazgos antes del gate final. Las pasadas anteriores se interrumpieron por ajustes de sincronización y cambios de artefacto: no certifican esta candidata. El gate final todavía no está aprobado. No integrar en dev ni cerrar 0.8.
+La revisión de 0.8.16 está implementada en `27ef7ce`, `b7200c2` y `689c131`: regreso por niveles de lectura, controles compactos, inspección de imágenes, reproducción y salida espacial, pegado recuperable y confirmaciones locales. Se aplicaron ampliamente las skills de Emil, break-ui y Apple junto con Transitions.dev, según los [criterios adoptados](docs/desarrollo.md#criterios-adoptados-para-la-revisión-de-canvas). La revisión transversal cubrió dock, tarjetas, conexiones, conjuntos, zonas, propuestas, chat, gestos y visores; los hallazgos corregidos permanecen en el arnés.
+
+Gate completo aprobado: 95 pruebas unitarias/de herramientas y 181 de navegador, sin omisiones ni reintentos. Se verificaron artefacto, fuentes, controles negativos e informe. La revisión visual y las comprobaciones públicas corresponden al mismo HTML. La revisión del usuario sigue pendiente. No integrar en dev ni cerrar 0.8.
 
 ## Antecedente — enlaces reales en 0.8.15
 
@@ -30,7 +32,7 @@ Candidata 0.8.15 con gate completo: tipado, formato, 91 pruebas de lógica/herra
 
 ## Revisión pendiente del usuario
 
-Las correcciones de la revisión de 0.8.15 están implementadas y cubiertas por C08-WEB-01: Godot supera el límite anterior de HTML, hay lectura guardada dentro de Everett, importación real por URL, pegado contextual/nativo, nombres compactos y confirmaciones. Los fallos corregidos conservan sus regresiones; sus condiciones funcionales permanecen en la definición de 0.8 y en Desarrollo.
+La candidata 0.8.17 conserva la lectura web, los archivos por URL y los comportamientos confirmados. Se simplificó la consulta con una flecha compacta y regreso espacial por niveles, se unificaron los visores y se corrigieron las confirmaciones, el teclado, los datos externos extremos y los comentarios con zoom bajo y ventana estrecha. El detalle de cambios y recorridos de revisión permanece en la evidencia enlazada al final.
 
 - Revisar la utilidad del lector, el regreso desde páginas seguidas y la incorporación de referencias visuales con material propio.
 - La rueda de Canvas responde sin cola y Ajustar a la selección puede ampliar hasta el máximo de cámara. Se conserva 1–600 %; la calibración perceptual y el uso con trackpad físico requieren revisión del usuario. Las pruebas verifican cursor, inversión, detención, unidades de rueda y encuadre.
@@ -67,13 +69,13 @@ Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada sup
 
 ## Verificación y entrega actual
 
-Candidata **0.8.16** preparada para revisión. Gate completo: build, typecheck, format:check, test:unit, verify:unit, verify:build, test:browser -- --workers=2 y verify:browser. **95 pruebas de lógica/herramientas y 173 de navegador aprobadas**, sin omisiones ni reintentos. La pasada completa duró 25.98 minutos e incluye los 30 ciclos de sesión sostenida y controles negativos del arnés.
+Candidata **0.8.17** preparada para revisión. Gate completo: build, typecheck, format:check, test:unit, verify:unit, verify:build, test:browser -- --workers=2 y verify:browser. **95 pruebas de lógica/herramientas y 181 de navegador aprobadas**, sin omisiones ni reintentos. La pasada completa duró 25.92 minutos e incluye los 30 ciclos de sesión sostenida y los controles negativos del arnés.
 
-- [HTML autónomo](dist/Everett-0.8.16.html): 14,312,865 bytes, build `58aea329bd3cc3a7`, SHA-256 `3c979912d3e512bb01b8501e1e3d4131ec767ea2807b07f79be55282935958d4`.
-- [Informe verificado](output/informe/informe.md), [resultado unitario](output/pruebas/unitarias/2026-10-25_21-14-54-072Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-25_21-15-25-660Z/results.json).
-- [Revisión visual, alcance y qué probar](output/revision/0.8.16/revision.md), con comprobaciones públicas de Godot, imagen, video y YouTube, bytes conservados tras recarga y la limitación observada en Vimeo. Las dependencias y el servicio se documentan en Desarrollo.
+- [HTML autónomo](dist/Everett-0.8.17.html): 14,456,727 bytes, build `df15072e56109a57`, SHA-256 `5d6e82b0beb91030447c31bc58fc44f25d94361b886f49bc8fb70eece343ecca`.
+- [Informe verificado](output/informe/informe.md), [resultado unitario](output/pruebas/unitarias/2026-10-26_03-40-31-178Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-26_03-40-36-370Z/results.json).
+- [Revisión visual, alcance y qué probar](output/revision/0.8.17/revision.md), con tabla de diseño, comprobaciones públicas, bytes conservados tras recarga, imágenes de 20.000 píxeles, texto al 200 %, ventana de 320 px y la limitación observada en Vimeo. Las dependencias y el servicio se documentan en Desarrollo.
 - Preview único en http://127.0.0.1:4173/, mediante `node scripts/preview.mjs 4173`. La pestaña y los datos de revisión del usuario se conservaron.
-- Sin ZIP por instrucción del usuario. La investigación comparativa fue temporal y se retiró; permanecen las decisiones adoptadas, fuentes y evidencias de validación.
+- Sin ZIP por instrucción del usuario. Permanecen las decisiones adoptadas, fuentes, pruebas y evidencia vigente.
 
 El arnés amplía la extracción, saneamiento, formatos/proveedores, descarga acotada, respuesta tardía durante edición, bytes recuperados, reproducción nativa, portapapeles real, cancelación de navegación pendiente y actualización fallida del lector, dentro de una página seguida y de la referencia original. Los estados de carga conservan los controles de regreso y las respuestas obsoletas no sustituyen la lectura vigente.
 
