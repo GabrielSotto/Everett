@@ -72,6 +72,11 @@ test('C08-B77: capas contextuales recorren tres materiales superpuestos pese a v
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menuitem', { name: 'Duplicar', exact: true })).toBeFocused();
   await page.keyboard.press('ArrowDown');
+  // El encuadre contextual autorizado es ahora la siguiente acción habilitada.
+  await expect(
+    page.getByRole('menuitem', { name: 'Ajustar a la selección', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press('ArrowDown');
   await expect(
     page.getByRole('menuitem', { name: 'Asignar a una zona', exact: false }),
   ).toBeFocused();

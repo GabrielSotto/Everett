@@ -241,6 +241,8 @@ test('C08-U29: API HTTP valida origen, coalescencia, refresh, errores y cuerpos 
       extract: async (url) => {
         calls++;
         await new Promise((resolve) => setTimeout(resolve, 20));
+        if (url.includes('missing-host'))
+          throw new Error('fetch failed', { cause: { code: 'ENOTFOUND' } });
         if (url.includes('failure')) throw new Error('Fallo controlado');
         return { status: 'ready', checkedAt: 123, resolvedUrl: url, title: 'Título real' };
       },
@@ -283,6 +285,10 @@ test('C08-U29: API HTTP valida origen, coalescencia, refresh, errores y cuerpos 
     assert.equal(
       (await (await post({ url: 'https://example.org/failure' })).json()).problem,
       'fetch-failed',
+    );
+    assert.equal(
+      (await (await post({ url: 'https://example.org/missing-host' })).json()).problem,
+      'host-not-found',
     );
     const unicode = JSON.stringify({ url: 'https://example.org/café' });
     const bytes = Buffer.from(unicode);

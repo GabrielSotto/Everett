@@ -37,8 +37,8 @@ La navegación utiliza zoom, paneo y foco. El usuario enfoca una superficie y en
 
 Cuando una superficie no tiene zoom ni otra acción propia asignada a la rueda, el gesto de zoom
 entra y sale directamente mediante la navegación de Everett. Si tiene zoom, desplazamiento u
-otra acción propia de rueda, Alt actúa como **embrague**: mientras se mantiene, desacopla esa
-acción local y acopla el gesto a la navegación espacial de Everett. Al soltar Alt se recupera la
+otra acción propia de rueda, el modificador espacial configurable (Alt por defecto) actúa como **embrague**: mientras se mantiene, desacopla esa
+acción local y acopla el gesto a la navegación espacial de Everett. Al soltar el modificador se recupera la
 acción local. Es el mismo sistema de entrada y salida, con un acoplamiento temporal según la superficie.
 
 El nombre y la representación de la vista actualmente llamada `Vista atómica` están en revisión. Se conservan sus mecanismos de navegación y su distribución sin un centro jerárquico.

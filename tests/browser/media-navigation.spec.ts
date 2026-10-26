@@ -122,7 +122,7 @@ test('C08-B101: imagen con controles reales de zoom, paneo, rotación y salida A
   await expect(card).toBeVisible();
 });
 
-test('C08-B102: iframe externo inicia sin pantalla intermedia, rueda sobre video vuelve al Canvas', async ({
+test('C08-B102: iframe externo inicia sin autoplay, rueda local conserva el visor y Alt permite regresar', async ({
   page,
   context,
 }, info) => {
@@ -144,14 +144,22 @@ test('C08-B102: iframe externo inicia sin pantalla intermedia, rueda sobre video
   await page.route('https://www.youtube-nocookie.com/embed/**', (route) =>
     route.fulfill({
       contentType: 'text/html',
-      body: `<style>html,body{margin:0;height:100%;overflow:hidden}video{width:100%;height:100%}</style><video controls muted loop autoplay src="data:video/webm;base64,${movie.toString('base64')}"></video>`,
+      body: `<style>html,body{margin:0;height:100%;overflow:hidden}video{width:100%;height:100%}</style><video controls muted loop src="data:video/webm;base64,${movie.toString('base64')}"></video>`,
     }),
   );
   const id = await add(page, 'https://youtu.be/abc123def45');
   await expect(page.locator(`[data-node="${id}"] .provider-card`)).toBeVisible();
   await page.locator(`[data-node="${id}"] .link-open`).click();
   const iframe = page.locator('.provider-video iframe');
-  await expect(iframe).toHaveAttribute('src', /autoplay=1/);
+  await expect(iframe).not.toHaveAttribute('src', /autoplay=1/);
+  await expect(page.frameLocator('.provider-video iframe').locator('video')).toHaveJSProperty(
+    'paused',
+    true,
+  );
+  await page
+    .frameLocator('.provider-video iframe')
+    .locator('video')
+    .evaluate((video: HTMLVideoElement) => video.play());
   await expect(page.locator('.provider-play')).toHaveCount(0);
   await expect
     .poll(() =>
@@ -164,7 +172,14 @@ test('C08-B102: iframe externo inicia sin pantalla intermedia, rueda sobre video
   await capture(page, info, 'video-externo-sin-marco-de-lectura');
   await page.waitForTimeout(500);
   await iframe.hover();
+  const position = await iframe.boundingBox();
   await page.mouse.wheel(0, 240);
+  await expect(iframe).toBeVisible();
+  await page.waitForTimeout(100);
+  expect(await iframe.boundingBox()).toEqual(position);
+  await page.keyboard.down('Alt');
+  await page.mouse.wheel(0, 240);
+  await page.keyboard.up('Alt');
   await expect(page.locator(`[data-node="${id}"]`)).toBeVisible();
   await expect(iframe).toHaveCount(0);
   const input = await snapshot(page);
@@ -257,7 +272,7 @@ test('C08-B104: lectura no disponible explica el límite y reintenta sin duplica
   await expect(page.locator(`[data-node="${id}"] .link-preview-status`)).toBeVisible();
   await page.locator(`[data-node="${id}"]`).hover();
   await spatial(page, -1);
-  await expect(page.locator('.reader-message')).toContainText('índice o una aplicación');
+  await expect(page.locator('.reader-message')).toContainText('necesita su aplicación interactiva');
   await page.getByRole('button', { name: 'Reintentar lectura', exact: true }).click();
   await expect(page.locator('.reader-content > h2')).toHaveText('Lectura recuperada');
   expect((await world(page)).nodes.map((node) => node.id)).toEqual([id]);

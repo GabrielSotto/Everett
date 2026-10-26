@@ -46,7 +46,7 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 | `npm run format`         | Aplica el formato del proyecto.                                                                                |
 | `npm run test:unit`      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                             |
 | `npm run verify:unit`    | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión. |
-| `npm run build`          | Genera `dist/Everett-0.8.17.html` y `dist/build-manifest.json`.                                                |
+| `npm run build`          | Genera `dist/Everett-0.8.18.html` y `dist/build-manifest.json`.                                                |
 | `npm run verify:build`   | Comprueba existencia, bytes, hash, versión e identidad de las fuentes del build.                               |
 | `npm run test:browser`   | Ejecuta los recorridos preparados en Playwright sobre la URL indicada en `EVERETT_TEST_URL`.                   |
 | `npm run verify:browser` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.            |
@@ -195,3 +195,9 @@ La corrección 0.8.17 reutiliza `@panzoom/panzoom` 4.6.2 (MIT) para punteros, pi
 ## Criterios adoptados para la revisión de Canvas
 
 Se consultan las skills originales de [Emil Kowalski](https://github.com/emilkowalski/skills): [emil-design-eng](https://github.com/emilkowalski/skills/blob/main/skills/emil-design-eng/SKILL.md), [review-animations](https://github.com/emilkowalski/skills/blob/main/skills/review-animations/SKILL.md), [break-ui](https://github.com/emilkowalski/skills/blob/main/skills/break-ui/SKILL.md) y [apple-design](https://github.com/emilkowalski/skills/blob/main/skills/apple-design/SKILL.md), junto con Transitions.dev. Se aplican a toda la superficie de Canvas: controles, dock, tarjetas, conexiones, conjuntos, zonas, propuestas, chat y visores. Guiar la jerarquía, respuesta inmediata a teclado, continuidad de gestos, origen de popovers, feedback, texto adaptable y datos extremos. Conservar la navegación espacial y comportamientos aprobados; una recomendación estética no los reemplaza. La revisión conserva hallazgos, decisiones y pruebas del artefacto, sin un informe comparativo permanente ni controles de fixtures dentro de producción.
+
+### Guías de alineación e imágenes seleccionadas (0.8.18)
+
+La consulta seleccionada reutiliza Panzoom (MIT); el paso local baja de 0,3 a 0,1 y la rueda espacial consulta el modificador de Atajos. Los recorridos anterior/siguiente no cambian la selección de Canvas ni los archivos. La lectura recuerda el recorrido seguido y conserva sus assets en las copias de emergencia personales.
+
+Para alineación se evaluaron Konva y Moveable. Incorporar otro renderer o su sistema completo de gestos duplicaría los existentes. Se adapta el cálculo de proximidad de `checkSnap` de Moveable (MIT), fuente `packages/react-moveable/src/ables/snappable/snap.ts`, blob `ca9b728fab1680315e6ddff7093f96a88db66dda`; su aviso MIT completo permanece en `src/vendor/snap-axis.ts` y en el HTML generado. No se incorpora código MPL de Penpot. Las guías comparan bordes y centros con una tolerancia de cinco píxeles de pantalla. Ctrl o Meta durante el arrastre suspende temporalmente el ajuste.

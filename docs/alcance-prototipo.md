@@ -46,7 +46,7 @@ ausentes antes de decidir nuevas herramientas. La organización debe ser útil s
 el procesamiento agéntico real amplía ese trabajo y sigue pendiente de definir. Everett puede
 servir como ejemplo de proyecto complejo para la evaluación; no limita la utilidad a ese caso.
 
-Este criterio guía la evaluación de utilidad de 0.8. El usuario autorizó implementar conjuntos manuales duraderos, referencias a fragmentos de Docs/Code y lectura del panorama; sus contratos están en C08-ORG-01 y C08-REF-01 de la definición detallada. No incorpora herramientas de wireframes, galería ni el editor integral previsto para planificar en 0.9. Las ampliaciones futuras requieren concretar su alcance antes de implementarlas.
+Este criterio guía la evaluación de utilidad de 0.8. El usuario autorizó implementar conjuntos manuales duraderos, referencias a fragmentos de Docs/Code y lectura del panorama; sus contratos están en C08-ORG-01 y C08-REF-01 de la definición detallada. No incorpora herramientas de wireframes ni el editor integral previsto para planificar en 0.9. La revisión de 0.8.17 autoriza la consulta conjunta de imágenes seleccionadas en el visor existente. Las ampliaciones futuras requieren concretar su alcance antes de implementarlas.
 
 ### Materiales y edición
 
@@ -463,7 +463,7 @@ Excepción aprobada por el usuario para 0.8.15 y ampliada en 0.8.16: servicio lo
 
 Ideas del feedback de 0.8.1 conservadas para una definición futura, con prioridad baja y sin versión comprometida. No forman parte de las candidatas de 0.8:
 
-- **Galería de imágenes:** entrar mediante zoom sobre una selección de varias imágenes y recorrerlas juntas, conservando selección y contexto espacial al regresar.
+- **Galería de imágenes:** autorizada para 0.8.18 como consulta de las imágenes seleccionadas en el visor existente, conservando selección y contexto espacial al regresar. No agrega una biblioteca independiente.
 - **Bocetos rápidos:** mejorar dibujo y formas para preparar esquemas de interfaz; evaluar ergonomía y precisión de los gestos antes de decidir si hacen falta componentes de wireframes.
 
 ## Después de 1.0
