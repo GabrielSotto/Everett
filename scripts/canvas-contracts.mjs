@@ -107,7 +107,11 @@ export const canvasCases = [
   { id: 'C08-U14', layer: 'unit', contracts: ['C08-ORG-01'] },
   { id: 'C08-U15', layer: 'unit', contracts: ['C08-REF-01'] },
   { id: 'C08-U16', layer: 'unit', contracts: ['C08-MAT-05', 'C08-LINK-02'] },
-  { id: 'C08-B55', layer: 'browser', contracts: ['C08-MAT-09', 'C08-KEY-01', 'C08-STATE-01'] },
+  {
+    id: 'C08-B55',
+    layer: 'browser',
+    contracts: ['C08-MAT-09', 'C08-KEY-01', 'C08-STATE-01', 'C08-ACTIONS-01'],
+  },
   { id: 'C08-B56', layer: 'browser', contracts: ['C08-MAT-05', 'C08-LINK-02'] },
   { id: 'C08-B57', layer: 'browser', contracts: ['C08-ORG-01', 'C08-STATE-01'] },
   { id: 'C08-B58', layer: 'browser', contracts: ['C08-REF-01', 'C08-STATE-01'] },

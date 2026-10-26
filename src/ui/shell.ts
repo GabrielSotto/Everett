@@ -392,7 +392,10 @@ export class Shell {
         : 0);
     search.style.setProperty(
       '--search-open-width',
-      Math.max(64, Math.min(246, this.root.clientWidth - reserved)) + 'px',
+      Math.max(
+        (search.querySelector<HTMLElement>('button')?.offsetWidth ?? 33) + 2,
+        Math.min(246, this.root.clientWidth - reserved),
+      ) + 'px',
     );
     const results = this.root.querySelector<HTMLElement>('#global-results');
     if (results)
