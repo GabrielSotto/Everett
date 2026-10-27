@@ -66,6 +66,28 @@
   border-top: 1px solid var(--line);
   margin: 5px 0;
 }
+.wireframe-palette {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.canvas-actions-pop .wireframe-palette button {
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 70px;
+  padding: 5px 2px;
+  text-align: center;
+}
+.canvas-actions-pop .wireframe-palette svg {
+  width: 52px;
+  height: 38px;
+  margin: 0;
+}
+.wireframe-palette span {
+  overflow-wrap: anywhere;
+}
 body[data-canvas-motion='reduced'] :is(.canvas-actions-pop, .canvas-context-menu) {
   animation: none;
 }

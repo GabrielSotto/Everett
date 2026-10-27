@@ -9,12 +9,14 @@ import { proposalMaterials } from '../proposal-materials';
 import { orderMaterials } from '../material-order';
 import { validLinkPreview } from '../link-previews';
 import { resolveMedia } from '../resolved-media';
+import { validWireframe } from '../wireframes';
 
 type CanvasCommand = Extract<
   Command,
   {
     type:
       | 'node.create'
+      | 'wireframe.edit'
       | 'assignment.interrupt'
       | 'assignment.retry'
       | 'node.rename'
@@ -62,6 +64,29 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       'Material inexistente',
     );
   switch (command.type) {
+    case 'wireframe.edit': {
+      const material = node(command.id);
+      ensure(!material.owner, 'LOCKED', 'El agente está usando el material.');
+      ensure(
+        material.data.kind === 'wireframe',
+        'WIREFRAME_KIND',
+        'Este material no es un bosquejo.',
+      );
+      ensure(
+        validWireframe(command.content),
+        'WIREFRAME_CONTENT',
+        'El contenido del bosquejo no es válido.',
+      );
+      if (material.data.kind === 'wireframe') {
+        ensure(
+          command.content.type === material.data.content.type,
+          'WIREFRAME_KIND',
+          'La edición no puede cambiar el tipo de pieza.',
+        );
+        material.data.content = structuredClone(command.content);
+      }
+      break;
+    }
     case 'node.resolve-link': {
       ensure(
         ['image', 'video'].includes(command.data.kind) &&
@@ -317,7 +342,9 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       break;
     }
     case 'node.create':
-      world.nodes.push(command.node);
+      if (command.node.data.kind === 'wireframe' && command.node.data.content.type === 'screen')
+        world.nodes.unshift(command.node);
+      else world.nodes.push(command.node);
       break;
     case 'node.move': {
       const x = node(command.id);

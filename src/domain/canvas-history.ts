@@ -40,6 +40,7 @@ const reversible = new Set<Command['type']>([
   'nodes.duplicate',
   'nodes.paste',
   'node.local-edit',
+  'wireframe.edit',
   'node.publish',
   'node.style',
   'link.label',
@@ -149,16 +150,37 @@ export class CanvasHistory {
     const a = capture(getWorld(before, command.world)),
       b = capture(getWorld(after, command.world));
     if (JSON.stringify(a) === JSON.stringify(b)) return;
-    const action = command.type + ('id' in command ? ':' + command.id : '');
+    let action = command.type + ('id' in command ? ':' + command.id : '');
+    let typing =
+      command.type === 'node.edit' ||
+      command.type === 'node.local-edit' ||
+      command.type === 'wireframe.edit';
+    if (command.type === 'wireframe.edit' && command.content.type === 'table') {
+      const old = a.nodes.find((node) => node.id === command.id)?.data;
+      const cells = command.content.cells;
+      typing = false;
+      if (
+        old?.kind === 'wireframe' &&
+        old.content.type === 'table' &&
+        old.content.cells.length === cells.length &&
+        old.content.cells[0]!.length === cells[0]!.length
+      ) {
+        const changed: string[] = [];
+        old.content.cells.forEach((row, r) =>
+          row.forEach((cell, c) => {
+            if (cell !== cells[r]![c]) changed.push(`${r}:${c}`);
+          }),
+        );
+        if (changed.length === 1) {
+          typing = true;
+          action += ':cell:' + changed[0];
+        }
+      }
+    }
     const at = Date.now(),
       previous = t.past.at(-1);
     // Agrupa una ráfaga de escritura; los arrastres se confirman al soltar el puntero.
-    if (
-      (command.type === 'node.edit' || command.type === 'node.local-edit') &&
-      previous?.action === action &&
-      at - previous.at < 750 &&
-      t.future.length === 0
-    ) {
+    if (typing && previous?.action === action && at - previous.at < 750 && t.future.length === 0) {
       previous.after = b;
       previous.at = at;
     } else t.past.push({ before: a, after: b, action, at });

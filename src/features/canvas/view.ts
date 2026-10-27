@@ -23,6 +23,7 @@ import {
 } from './materials';
 import { CanvasChat } from '../chat/controller';
 import { SpatialCamera } from '../../spatial/camera';
+import { wireframeMarkup } from './wireframe-markup';
 import { toWorld, bound } from '../../spatial/math';
 import { canvasCameraTuning } from '../../spatial/tuning';
 import { bindDismiss } from '../../ui/popover';
@@ -199,6 +200,7 @@ export class CanvasView implements View {
     root.addEventListener(
       'dblclick',
       (e) => {
+        if (e.defaultPrevented) return;
         if (
           e.target instanceof Element &&
           e.target.closest('button,input,textarea,select,.material-identification')
@@ -970,7 +972,13 @@ export class CanvasView implements View {
         };
       }
       const element = this.root.querySelector<HTMLElement>(`[data-${d.entity}="${d.id}"]`);
-      if (element) this.applyRect(element, d.rect);
+      if (element) {
+        this.applyRect(element, d.rect);
+        if (material?.data.kind === 'wireframe') {
+          const preview = element.querySelector('.wireframe-content');
+          if (preview) preview.outerHTML = wireframeMarkup({ ...material, ...d.rect });
+        }
+      }
       this.paintLinks([{ id: d.id, point: d.rect }]);
       return;
     }

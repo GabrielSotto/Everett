@@ -65,7 +65,13 @@ export function proposalSummary(world: WorldSnapshot, job: DeepReadonly<Assignme
   const kind = source.data.kind;
   if (kind === 'image' || kind === 'video' || kind === 'pdf')
     return 'Organizar este archivo junto a la zona. Se conserva su contenido completo; la simulación no interpreta ni modifica sus bytes.';
-  if (kind === 'shape' || kind === 'drawing' || kind === 'link')
+  if (
+    kind === 'shape' ||
+    kind === 'drawing' ||
+    kind === 'link' ||
+    kind === 'wireframe' ||
+    kind === 'local'
+  )
     return 'Organizar el material conservando su tipo y contenido.';
   if (kind === 'reference' && source.data.ref.kind !== 'document')
     return 'Organizar la referencia conservando el mismo registro de origen.';

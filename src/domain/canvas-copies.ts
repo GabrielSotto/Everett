@@ -11,6 +11,7 @@ import {
 import { ensure } from './invariants';
 import { referenceExcerpt } from './reference-anchors';
 import { validLocalContent } from './local-content';
+import { validWireframe } from './wireframes';
 import { validLinkPreview, linkUrl } from './link-previews';
 
 export const canvasClipboardMime = 'application/x-everett-canvas';
@@ -23,6 +24,8 @@ const point = (v: unknown): boolean => record(v) && Number.isFinite(v.x) && Numb
 function validData(v: unknown): v is NodeData {
   if (!record(v) || typeof v.title !== 'string') return false;
   switch (v.kind) {
+    case 'wireframe':
+      return validWireframe(v.content);
     case 'note':
       return typeof v.text === 'string' && color(v.color);
     case 'local':

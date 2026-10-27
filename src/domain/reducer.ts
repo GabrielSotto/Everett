@@ -71,6 +71,7 @@ export function reduce(state: State, command: Command): State {
     case 'node.link-preview':
     case 'node.resolve-link':
     case 'node.edit':
+    case 'wireframe.edit':
     case 'node.delete':
     case 'link.create':
     case 'link.delete':

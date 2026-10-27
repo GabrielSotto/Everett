@@ -1,5 +1,11 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  ...['C08-U42', 'C08-U43'].map((id) => ({ id, layer: 'unit', contracts: ['C08-WIRE-01'] })),
+  ...['C08-B126', 'C08-B127', 'C08-B128', 'C08-B129', 'C08-B130'].map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-WIRE-01'],
+  })),
   ...['C08-B120', 'C08-B121', 'C08-B122', 'C08-B124', 'C08-B125'].map((id) => ({
     id,
     layer: 'browser',
@@ -254,6 +260,10 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B126': { 'canvas-actions': 9, 'actions-wireframes': 9, 'wireframe-add': 9 },
+  'C08-B127': { 'canvas-actions': 1, 'actions-wireframes': 1, 'wireframe-add': 1 },
+  'C08-B128': { 'context-group': 1 },
+  'C08-B130': { 'canvas-actions': 2, 'wireframe-add': 1 },
   'C08-B116': { 'selection-arrange': 6, 'context-arrange': 3 },
   'C08-B117': { 'selection-arrange': 2 },
   'C08-B118': { 'canvas-actions': 5, 'actions-shortcuts': 1 },

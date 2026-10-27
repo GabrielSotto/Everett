@@ -33,6 +33,7 @@ import {
 } from '../../domain/canvas-copies';
 import { materialText } from '../../domain/material-content';
 import { publishLocalMaterial } from './local-publish';
+import { bindWireframeEditor, wireframeEditorMarkup } from './wireframe-editor';
 
 function clipboardOrigin(plain: string, uriList = '', markup = ''): string | undefined {
   const address = uriList.split(/\r?\n/).find((line) => line.trim() && !line.startsWith('#'));
@@ -199,6 +200,19 @@ export class CanvasInteractions {
     root.addEventListener(
       'dblclick',
       (event) => {
+        const nodeId =
+          event.target instanceof Element &&
+          !event.target.closest('.material-identification,button')
+            ? event.target.closest<HTMLElement>('[data-node]')?.dataset.node
+            : null;
+        if (
+          nodeId &&
+          ctx.world().nodes.find((node) => node.id === nodeId)?.data.kind === 'wireframe'
+        ) {
+          event.preventDefault();
+          this.editWireframe(nodeId);
+          return;
+        }
         const link =
           event.target instanceof Element
             ? event.target.closest<SVGElement>('[data-action=select-link]')
@@ -329,6 +343,13 @@ export class CanvasInteractions {
         } else if (event.key === ' ' || event.key === 'Enter') {
           event.preventDefault();
           event.stopPropagation();
+          if (
+            event.key === 'Enter' &&
+            ctx.world().nodes.find((node) => node.id === id)?.data.kind === 'wireframe'
+          ) {
+            this.editWireframe(id);
+            return;
+          }
           const destination =
             event.key === 'Enter' ? materialRoute(ctx.store.get(), ctx.world().id, id) : null;
           if (destination) {
@@ -510,6 +531,9 @@ export class CanvasInteractions {
           }
           case 'context-duplicate':
             this.duplicate();
+            break;
+          case 'wireframe-edit':
+            this.editWireframe(id);
             break;
           case 'context-publish':
             this.overlay.replaceChildren();
@@ -1055,7 +1079,7 @@ export class CanvasInteractions {
           `<button type="button" role="menuitem" data-action="context-order" data-order="${order}" ${canOrderMaterials(this.ctx.world().nodes, this.ctx.ui.canvas.selections, order) ? '' : 'disabled'}>${{ front: 'Traer al frente', forward: 'Avanzar una capa', backward: 'Retroceder una capa', back: 'Enviar al fondo' }[order]}</button>`,
       )
       .join('');
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'wireframe' ? `<button type="button" role="menuitem" data-action="wireframe-edit" data-id="${id}">Editar contenido</button>` : ''}${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
@@ -1396,6 +1420,30 @@ export class CanvasInteractions {
     this.ctx.ui.canvas.selections = [id];
     this.ctx.render();
     return id;
+  }
+  private editWireframe(id: string): void {
+    const node = this.ctx.world().nodes.find((node) => node.id === id);
+    if (node?.data.kind !== 'wireframe' || node.owner) return;
+    this.close();
+    this.ctx.ui.canvas.selection = id;
+    this.ctx.ui.canvas.selections = [id];
+    this.overlay.innerHTML = wireframeEditorMarkup(node.data.content);
+    const form = this.overlay.querySelector<HTMLElement>('.wireframe-editor')!;
+    const anchor = this.root
+      .querySelector<HTMLElement>(`[data-node="${CSS.escape(id)}"]`)
+      ?.getBoundingClientRect();
+    if (anchor) {
+      form.style.left = Math.min(innerWidth - 370, anchor.right + 8) + 'px';
+      form.style.top = Math.max(70, anchor.top) + 'px';
+    }
+    bindWireframeEditor(
+      form,
+      this.ctx,
+      id,
+      () => this.close(),
+      () => this.fitOverlay(),
+    );
+    this.fitOverlay();
   }
   private async examples(): Promise<void> {
     this.loadingSamples = true;

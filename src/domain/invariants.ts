@@ -2,6 +2,7 @@ import { getWorld, need, type State } from './model';
 import { humanParticipants } from './conversations';
 import { validLinkPreview, linkUrl } from './link-previews';
 import { validLocalContent } from './local-content';
+import { validWireframe } from './wireframes';
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -212,10 +213,17 @@ export function validate(s: State): void {
           'link',
           'reference',
           'local',
+          'wireframe',
         ].includes(n.data.kind),
         'MATERIAL',
         'Tipo de material desconocido',
       );
+      if (n.data.kind === 'wireframe')
+        ensure(
+          typeof n.data.title === 'string' && validWireframe(n.data.content),
+          'WIREFRAME_CONTENT',
+          'El bosquejo tiene contenido inválido.',
+        );
       if (n.data.kind === 'local')
         ensure(
           typeof n.data.title === 'string' && validLocalContent(n.data.content),

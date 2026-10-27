@@ -46,7 +46,7 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 | `npm run format`         | Aplica el formato del proyecto.                                                                                |
 | `npm run test:unit`      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                             |
 | `npm run verify:unit`    | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión. |
-| `npm run build`          | Genera `dist/Everett-0.8.20.html` y `dist/build-manifest.json`.                                                |
+| `npm run build`          | Genera `dist/Everett-0.8.21.html` y `dist/build-manifest.json`.                                                |
 | `npm run verify:build`   | Comprueba existencia, bytes, hash, versión e identidad de las fuentes del build.                               |
 | `npm run test:browser`   | Ejecuta los recorridos preparados en Playwright sobre la URL indicada en `EVERETT_TEST_URL`.                   |
 | `npm run verify:browser` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.            |
@@ -151,16 +151,26 @@ Penpot usa MPL-2.0 y se mantiene como referencia funcional; no se ha incorporado
 
 Registrar origen, versión, licencia elegida y avisos que deban conservarse al incorporar código. En licencias alternativas, dejar explícita la opción adoptada: para DOMPurify se elige Apache-2.0 de su licencia dual `(MPL-2.0 OR Apache-2.0)`.
 
-| Dependencia        | Uso y motivo                                                                     | Licencia   |
-| ------------------ | -------------------------------------------------------------------------------- | ---------- |
-| TypeScript         | Comprobación estática de contratos, estados y variantes.                         | Apache-2.0 |
-| esbuild            | Bundles del navegador, inclusión de recursos y compilación de pruebas para Node. | MIT        |
-| `@playwright/test` | Navegador real, acciones, trazas, capturas y aserciones de interfaz.             | Apache-2.0 |
-| `@types/node`      | Tipos de las APIs de Node usadas en pruebas y configuración.                     | MIT        |
-| Prettier           | Formato uniforme sin reglas particulares por archivo.                            | MIT        |
-| `pdfjs-dist`       | Portadas reales y lectura multipágina de PDF importados; worker dentro del HTML. | Apache-2.0 |
+| Dependencia        | Uso y motivo                                                                                                                                                         | Licencia   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| TypeScript         | Comprobación estática de contratos, estados y variantes.                                                                                                             | Apache-2.0 |
+| esbuild            | Bundles del navegador, inclusión de recursos y compilación de pruebas para Node.                                                                                     | MIT        |
+| `@playwright/test` | Navegador real, acciones, trazas, capturas y aserciones de interfaz.                                                                                                 | Apache-2.0 |
+| `@types/node`      | Tipos de las APIs de Node usadas en pruebas y configuración.                                                                                                         | MIT        |
+| Prettier           | Formato uniforme sin reglas particulares por archivo.                                                                                                                | MIT        |
+| `pdfjs-dist`       | Portadas reales y lectura multipágina de PDF importados; worker dentro del HTML.                                                                                     | Apache-2.0 |
+| `roughjs` 4.6.6    | Contornos SVG deterministas de bosquejos, con tamaños del Mundo. Reutiliza el generador existente sin introducir otro motor de selección o un framework de interfaz. | MIT        |
 
 Todas están declaradas como dependencias de desarrollo. La aplicación mantiene DOM nativo; PDF.js se incorpora al bundle, incluido su worker, sin solicitar código externo en ejecución. Las versiones exactas y sus dependencias transitivas quedan fijadas en el lockfile; actualizar una herramienta requiere repetir las verificaciones afectadas. Playwright añade la descarga y mantenimiento de su navegador de pruebas.
+
+Bosquejos reutiliza el generador SVG de [Rough.js](https://roughjs.com/) y los mecanismos actuales
+de Canvas. Wired Elements se evaluó como biblioteca de controles, pero incorpora Lit y controles
+funcionales y mide contornos mediante `getBoundingClientRect`; requiere adaptar esas mediciones
+al plano transformado de Everett. La integración usa dimensiones del modelo y una semilla por
+material para evitar regeneraciones aleatorias al acercar, editar o recargar. No se incorpora
+código de Penpot. El build incluye los avisos MIT íntegros de Rough.js y sus dependencias
+`hachure-fill`, `path-data-parser`, `points-on-curve` y `points-on-path`, conservados en
+`src/assets/roughjs-notices.txt`. El manifiesto verifica también ese archivo.
 
 ## Documentación relacionada
 

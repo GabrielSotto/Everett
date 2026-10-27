@@ -8,11 +8,13 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const hash = (data) => createHash('sha256').update(data).digest('hex');
 const packageInfo = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'));
 const template = await readFile(resolve(root, 'index.html'), 'utf8');
+const roughNotices = await readFile(resolve(root, 'src/assets/roughjs-notices.txt'), 'utf8');
 const result = await build({
   absWorkingDir: root,
   entryPoints: ['src/main.ts', 'src/styles/main.css'],
   outdir: 'dist/assets',
   bundle: true,
+  banner: { js: `/*!\n${roughNotices}\n*/` },
   format: 'iife',
   platform: 'browser',
   loader: { '.webp': 'dataurl', '.png': 'dataurl' },
@@ -61,6 +63,7 @@ const inputs = [
     'package-lock.json',
     'tsconfig.json',
     'scripts/build.mjs',
+    'src/assets/roughjs-notices.txt',
     'scripts/preview.mjs',
     'scripts/local-server.mjs',
     ...serverInputs,

@@ -110,6 +110,7 @@ export interface CanvasClipboard {
   groups: CanvasGroup[];
 }
 export type NodeData =
+  | { kind: 'wireframe'; title: string; content: import('./wireframes').WireframeContent }
   | { kind: 'local'; title: string; content: LocalContent }
   | {
       kind: 'note';

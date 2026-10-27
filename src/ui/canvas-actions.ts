@@ -5,11 +5,12 @@ import { frameCanvas } from './canvas-frame';
 import { target } from './dom';
 import { icon } from './icons';
 import { bindDismiss } from './popover';
+import { wireframePalette, addWireframe } from './canvas-wireframes';
 
 /** Acciones y ajustes del Canvas, junto a su ubicación en la cabecera. */
 export class CanvasActions {
   private open = false;
-  private page: 'home' | 'arrange' = 'home';
+  private page: 'home' | 'arrange' | 'wireframes' = 'home';
   private painted = false;
   constructor(
     private root: HTMLElement,
@@ -51,6 +52,15 @@ export class CanvasActions {
             this.page = 'arrange';
             this.render();
             this.focus();
+            break;
+          case 'actions-wireframes':
+            this.page = 'wireframes';
+            this.render();
+            this.focus();
+            break;
+          case 'wireframe-add':
+            this.close(false);
+            addWireframe(ctx, button.dataset.kind);
             break;
           case 'actions-back':
             this.page = 'home';
@@ -112,12 +122,12 @@ export class CanvasActions {
           items[next]?.scrollIntoView({ block: 'nearest' });
         } else if (
           event.key === 'ArrowRight' &&
-          event.target.dataset.action === 'actions-arrange'
+          ['actions-arrange', 'actions-wireframes'].includes(event.target.dataset.action ?? '')
         ) {
           event.preventDefault();
           event.stopPropagation();
           event.target.click();
-        } else if (event.key === 'ArrowLeft' && this.page === 'arrange') {
+        } else if (event.key === 'ArrowLeft' && this.page !== 'home') {
           event.preventDefault();
           event.stopPropagation();
           this.page = 'home';
@@ -186,6 +196,6 @@ export class CanvasActions {
       units = arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections);
     const check = (action: string, name: string, checked: boolean): string =>
       `<button type="button" role="menuitemcheckbox" aria-checked="${checked}" data-action="${action}"><span class="canvas-action-check">${checked ? icon('check', 14) : ''}</span>${name}</button>`;
-    return `<div class="canvas-actions"><button type="button" class="canvas-actions-trigger" data-action="canvas-actions" aria-label="Acciones y ajustes de Canvas" aria-haspopup="menu" aria-expanded="${this.open}" aria-controls="canvas-actions-menu">${icon('canvas', 16)}<span>Canvas</span>${icon('down', 10)}</button>${this.open ? `<div class="canvas-actions-pop" id="canvas-actions-menu" role="menu" aria-label="Acciones y ajustes de Canvas">${this.page === 'arrange' ? `<button type="button" role="menuitem" class="canvas-actions-back" data-action="actions-back">${icon('chevron-left', 16)}Alinear y distribuir</button>${arrangementMarkup(this.ctx)}` : `<small class="canvas-actions-heading">Selección</small><button type="button" role="menuitem" data-action="actions-arrange" ${units.length < 2 ? 'disabled' : ''}>Alinear y distribuir ${icon('chevron', 12)}</button><button type="button" role="menuitem" data-action="actions-fit" data-selection="true" ${units.length ? '' : 'disabled'}>Ajustar a la selección</button><button type="button" role="menuitem" data-action="actions-fit" ${this.ctx.world().nodes.some((node) => !node.owner) || this.ctx.world().zones.length ? '' : 'disabled'}>Ajustar al contenido</button><hr><small class="canvas-actions-heading">Ajustes</small>${check('canvas-guides-toggle', 'Guías y ajuste automático', shell.canvasAlignmentGuides)}${check('canvas-grid-toggle', 'Fondo cuadriculado', shell.canvasBackground === 'grid')}${check('canvas-dock-toggle', 'Dock vertical', shell.canvasDockOrientation === 'vertical')}<hr><button type="button" role="menuitem" data-action="actions-preferences">Preferencias de Canvas</button><button type="button" role="menuitem" data-action="actions-shortcuts">Atajos de Canvas</button>`}</div>` : ''}</div>`;
+    return `<div class="canvas-actions"><button type="button" class="canvas-actions-trigger" data-action="canvas-actions" aria-label="Acciones y ajustes de Canvas" aria-haspopup="menu" aria-expanded="${this.open}" aria-controls="canvas-actions-menu">${icon('canvas', 16)}<span>Canvas</span>${icon('down', 10)}</button>${this.open ? `<div class="canvas-actions-pop" id="canvas-actions-menu" role="menu" aria-label="Acciones y ajustes de Canvas">${this.page === 'wireframes' ? `<button type="button" role="menuitem" class="canvas-actions-back" data-action="actions-back">${icon('chevron-left', 16)}Bosquejos</button>${wireframePalette()}` : this.page === 'arrange' ? `<button type="button" role="menuitem" class="canvas-actions-back" data-action="actions-back">${icon('chevron-left', 16)}Alinear y distribuir</button>${arrangementMarkup(this.ctx)}` : `<button type="button" role="menuitem" data-action="actions-wireframes">Bosquejos <span aria-hidden="true">›</span></button><hr><small class="canvas-actions-heading">Selección</small><button type="button" role="menuitem" data-action="actions-arrange" ${units.length < 2 ? 'disabled' : ''}>Alinear y distribuir ${icon('chevron', 12)}</button><button type="button" role="menuitem" data-action="actions-fit" data-selection="true" ${units.length ? '' : 'disabled'}>Ajustar a la selección</button><button type="button" role="menuitem" data-action="actions-fit" ${this.ctx.world().nodes.some((node) => !node.owner) || this.ctx.world().zones.length ? '' : 'disabled'}>Ajustar al contenido</button><hr><small class="canvas-actions-heading">Ajustes</small>${check('canvas-guides-toggle', 'Guías y ajuste automático', shell.canvasAlignmentGuides)}${check('canvas-grid-toggle', 'Fondo cuadriculado', shell.canvasBackground === 'grid')}${check('canvas-dock-toggle', 'Dock vertical', shell.canvasDockOrientation === 'vertical')}<hr><button type="button" role="menuitem" data-action="actions-preferences">Preferencias de Canvas</button><button type="button" role="menuitem" data-action="actions-shortcuts">Atajos de Canvas</button>`}</div>` : ''}</div>`;
   }
 }

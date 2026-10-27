@@ -9,6 +9,7 @@ export function affectsView(c: Command): 'navigation' | 'content' | 'none' {
           'node.resolve-link',
           'node.edit',
           'node.local-edit',
+          'wireframe.edit',
           'document.edit',
           'sheet.edit',
           'file.edit',

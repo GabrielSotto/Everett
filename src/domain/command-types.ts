@@ -170,6 +170,12 @@ export type Command =
       data: Extract<NodeData, { kind: 'image' | 'video' | 'pdf' }>;
     }
   | {
+      type: 'wireframe.edit';
+      world: string;
+      id: string;
+      content: import('./wireframes').WireframeContent;
+    }
+  | {
       type: 'node.edit';
       world: string;
       id: string;
