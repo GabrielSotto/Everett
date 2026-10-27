@@ -315,6 +315,13 @@ test('C08-B129: tablas y listas extensas acotan preview, rechazan pegado excesiv
   await expect(
     editor.getByRole('button', { name: 'Cerrar edición de bosquejo', exact: true }),
   ).toBeInViewport();
+  const bounds = (await editor.boundingBox())!;
+  expect(bounds.y).toBeGreaterThanOrEqual(70);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(700);
+  await expect(
+    editor.getByRole('textbox', { name: 'Fila 100, columna 20', exact: true }),
+  ).toBeInViewport();
+  await capture(page, info, 'tabla-320-texto200');
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.evaluate(() => (document.documentElement.style.fontSize = ''));

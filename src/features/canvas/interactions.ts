@@ -60,6 +60,7 @@ export class CanvasInteractions {
   private previews = new Map<string, Promise<string>>();
   private colorField: 'color' | 'stroke' | null = null;
   private previewAbort = new AbortController();
+  private closeWireframeEditor: (() => void) | null = null;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -931,6 +932,8 @@ export class CanvasInteractions {
     // Las dimensiones de layout no incluyen la animación de entrada del menú.
     panel.style.left = `${Math.max(12, Math.min(innerWidth - panel.offsetWidth - 12, parseFloat(panel.style.left)))}px`;
     panel.style.top = `${Math.max(70, Math.min(innerHeight - panel.offsetHeight - 12, parseFloat(panel.style.top)))}px`;
+    if (panel.classList.contains('wireframe-editor'))
+      panel.style.setProperty('--wireframe-top', panel.style.top);
   }
   positionColorPicker(): void {
     const panel = this.overlay.querySelector<HTMLElement>('.canvas-color-picker');
@@ -1436,7 +1439,7 @@ export class CanvasInteractions {
       form.style.left = Math.min(innerWidth - 370, anchor.right + 8) + 'px';
       form.style.top = Math.max(70, anchor.top) + 'px';
     }
-    bindWireframeEditor(
+    this.closeWireframeEditor = bindWireframeEditor(
       form,
       this.ctx,
       id,
@@ -1668,6 +1671,8 @@ export class CanvasInteractions {
       });
   }
   close(): boolean {
+    this.closeWireframeEditor?.();
+    this.closeWireframeEditor = null;
     const link = (this.overlay.querySelector('[data-label]') as HTMLElement | null)?.dataset.label;
     const color = this.colorField;
     this.colorField = null;
@@ -1692,6 +1697,8 @@ export class CanvasInteractions {
     return active;
   }
   dispose(): void {
+    this.closeWireframeEditor?.();
+    this.closeWireframeEditor = null;
     this.disposed = true;
     this.previewAbort.abort();
     this.previews.clear();

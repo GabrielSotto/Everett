@@ -9,14 +9,14 @@ import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { wireframeMarkup } from './wireframe-markup';
 
-/** Listeners del formulario: se liberan con su DOM, sin suscripciones o timers retenidos. */
+/** Listeners locales y observación de tamaño con limpieza al cerrar el formulario. */
 export function bindWireframeEditor(
   form: HTMLElement,
   ctx: Context,
   id: string,
   close: () => void,
   position: () => void,
-): void {
+): () => void {
   let activeRow = 0,
     activeColumn = 0;
   form.addEventListener('wheel', (event) => event.stopPropagation(), { passive: true });
@@ -177,10 +177,24 @@ export function bindWireframeEditor(
       } else close();
     }
   });
+  const observer = new ResizeObserver(() => {
+    if (!form.isConnected) {
+      observer.disconnect();
+      return;
+    }
+    position();
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && form.contains(focused))
+      focused.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
+  observer.observe(form);
+  observer.observe(form.querySelector('.wireframe-editor-fields')!);
+  observer.observe(form.querySelector('.wireframe-editor-head')!);
   fields();
   form
     .querySelector<HTMLInputElement | HTMLTextAreaElement>('input,textarea')
     ?.focus({ preventScroll: true });
+  return () => observer.disconnect();
 }
 
 export function wireframeEditorMarkup(content: WireframeContent): string {

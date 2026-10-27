@@ -127,7 +127,7 @@
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
   width: min(360px, calc(100vw - 24px));
-  max-height: calc(100dvh - 90px);
+  max-height: calc(100dvh - var(--wireframe-top, 70px) - 12px);
   overflow: auto;
 }
 .wireframe-editor-fields {
