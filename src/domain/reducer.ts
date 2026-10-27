@@ -13,10 +13,18 @@ import { applyConversationsCommand } from './commands/conversations';
 import { arrangeProposals } from './proposal-layout';
 import { applyOrganizationCommand } from './commands/organization';
 import { rebaseReferences } from './reference-anchors';
+import { applyCopyCommand } from './commands/copies';
 
 export function reduce(state: State, command: Command): State {
   const next = structuredClone(state);
   switch (command.type) {
+    case 'node.duplicate':
+    case 'nodes.duplicate':
+    case 'nodes.paste':
+    case 'node.local-edit':
+    case 'node.publish':
+      applyCopyCommand(next, command);
+      break;
     case 'group.create':
     case 'group.rename':
     case 'group.ungroup':
@@ -48,7 +56,6 @@ export function reduce(state: State, command: Command): State {
     case 'assignment.interrupt':
     case 'assignment.retry':
     case 'node.rename':
-    case 'node.duplicate':
     case 'node.style':
     case 'link.label':
     case 'link.reconnect':

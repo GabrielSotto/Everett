@@ -1,7 +1,9 @@
 import { nodeTitle, type Material, type WorldSnapshot } from './model';
 import { referenceExcerpt } from './reference-anchors';
+import { localText } from './local-content';
 export function materialText(world: WorldSnapshot, material: Material): string {
   const data = material.data;
+  if (data.kind === 'local') return localText(data.content);
   if (data.kind === 'note') return data.text;
   if (data.kind === 'reference') {
     const ref = data.ref;

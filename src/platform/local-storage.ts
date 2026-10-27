@@ -56,6 +56,8 @@ export class LocalStorage {
     const state: State = { ...personal.state, ...shared, version: 1 };
     validate(state);
     const ui = personal.ui;
+    if (ui.shortcuts.duplicate === undefined)
+      ui.shortcuts.duplicate = Object.values(ui.shortcuts).includes('Ctrl+D') ? '' : 'Ctrl+D';
     ui.spatialModifier = spatialModifier(ui.spatialModifier);
     ui.shell.showSurfaceMenu = ui.shell.showSurfaceMenu === true;
     ui.shell.canvasDockOrientation =

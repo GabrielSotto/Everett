@@ -50,7 +50,12 @@ export function searchWorkspace(state: DeepReadonly<State>, query: string): Sear
     for (const node of world.nodes) {
       const title = nodeTitle(world, node);
       if (!matches(title + '\n' + materialText(world, node))) continue;
-      const kind = node.data.kind === 'reference' ? node.data.ref.kind : node.data.kind;
+      const kind =
+        node.data.kind === 'reference'
+          ? node.data.ref.kind
+          : node.data.kind === 'local'
+            ? node.data.content.kind
+            : node.data.kind;
       const [label, symbol] = kinds[kind];
       results.push({
         kind: 'material',

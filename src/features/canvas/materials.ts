@@ -8,6 +8,7 @@ import {
   type Anchor,
   statusNames,
 } from '../../domain/model';
+import { localText, localNames } from '../../domain/local-content';
 import { anchorPoint, linkPath, shapeVertices } from '../../domain/geometry';
 import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
@@ -59,7 +60,13 @@ export function materialMarkup(
 ): string {
   const d = material.data;
   let content: string;
-  if (d.kind === 'note') content = `<h3>${html(d.title)}</h3><p>${html(d.text)}</p>`;
+  if (d.kind === 'local') {
+    content = `<small class="local-copy-label">Solo en Canvas</small><div class="reference-type">${icon(d.content.kind === 'file' ? 'code' : d.content.kind === 'task' ? 'board' : d.content.kind === 'agent' ? 'agents' : 'docs', 17)}</div><h3>${html(d.title)}</h3><${d.content.kind === 'file' ? 'pre' : 'p'}>${html(localText(d.content))}</${d.content.kind === 'file' ? 'pre' : 'p'}>`;
+    if (d.content.kind === 'task') {
+      const task = d.content.task;
+      content += `<div class="task-material-meta"><span aria-label="Estado: ${html(statusNames[task.status])}">${icon('status', 12)}${html(statusNames[task.status])}</span><span aria-label="Prioridad: ${html(task.priority)}">${icon('flag', 12)}${html(task.priority)}</span><span aria-label="Responsable: ${html(task.assignee || 'Sin responsable')}">${icon('user', 12)}${html(task.assignee || 'Sin responsable')}</span></div>`;
+    }
+  } else if (d.kind === 'note') content = `<h3>${html(d.title)}</h3><p>${html(d.text)}</p>`;
   else if (d.kind === 'shape') content = shapeMarkup(material);
   else if (d.kind === 'drawing') content = drawingMarkup(material);
   else if (d.kind === 'image')
@@ -96,7 +103,7 @@ export function materialMarkup(
   } else content = '';
   const comment = w.comments.find((c) => c.node === material.id && !c.resolved);
   const ports = connect ? connectionPorts(material) : '';
-  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
+  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? 'background:' + d.color : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {
   note: { label: 'Notas', icon: 'note' },
@@ -115,22 +122,24 @@ export function assignedPreview(w: WorldSnapshot, n: Material): string {
   if (n.data.kind === 'link')
     return `<div class="assigned-preview assigned-link" data-assigned-id="${n.id}">${linkCardMarkup(n.data, n.id)}</div>`;
   const d = n.data,
-    kind = d.kind === 'reference' ? d.ref.kind : d.kind,
+    kind = d.kind === 'reference' ? d.ref.kind : d.kind === 'local' ? d.content.kind : d.kind,
     meta = materialKinds[kind] ?? materialKinds.note!;
   const text =
-    d.kind === 'reference' && d.ref.fragment
-      ? (referenceExcerpt(w, d.ref) ?? 'Fragmento no disponible. Revisá su origen.')
-      : d.kind === 'note'
-        ? d.text
-        : d.kind === 'reference'
-          ? d.ref.kind === 'document'
-            ? w.docs.find((doc) => doc.id === d.ref.id)?.body
-            : d.ref.kind === 'file'
-              ? w.files.find((file) => file.id === d.ref.id)?.text
-              : d.ref.kind === 'task'
-                ? w.tasks.find((task) => task.id === d.ref.id)?.description
-                : ''
-          : '';
+    d.kind === 'local'
+      ? localText(d.content)
+      : d.kind === 'reference' && d.ref.fragment
+        ? (referenceExcerpt(w, d.ref) ?? 'Fragmento no disponible. Revisá su origen.')
+        : d.kind === 'note'
+          ? d.text
+          : d.kind === 'reference'
+            ? d.ref.kind === 'document'
+              ? w.docs.find((doc) => doc.id === d.ref.id)?.body
+              : d.ref.kind === 'file'
+                ? w.files.find((file) => file.id === d.ref.id)?.text
+                : d.ref.kind === 'task'
+                  ? w.tasks.find((task) => task.id === d.ref.id)?.description
+                  : ''
+            : '';
   return `<div class="assigned-preview" data-assigned-id="${n.id}"><strong>${icon(meta.icon, 13)}<span>${html(nodeTitle(w, n))}</span></strong>${d.kind === 'shape' ? shapeMarkup(n) : d.kind === 'drawing' ? drawingMarkup(n) : d.kind === 'image' || d.kind === 'video' ? `<${d.kind === 'image' ? 'img' : 'video'} data-asset="${d.asset}" ${d.kind === 'image' ? `alt="${html(d.title)}"` : `aria-label="${html(d.title)}"`}>${d.kind === 'video' ? '</video>' : ''}` : d.kind === 'pdf' && d.preview ? `<img src="${d.preview}" alt="${html(d.title)}">` : `<p>${html(text)}</p>`}</div>`;
 }
 function assignedMaterials(w: WorldSnapshot, nodes: Material[]): string {

@@ -464,6 +464,142 @@ body[data-canvas-motion='reduced'] .t-modal {
   margin-top: 12px;
   color: var(--text);
 }
+.local-material-editor {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  width: min(100%, 960px);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 4px;
+}
+.local-material-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.local-material-editor :is(input, textarea, select) {
+  width: 100%;
+  min-width: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  font: inherit;
+}
+.local-material-editor textarea {
+  min-height: 240px;
+  resize: vertical;
+  line-height: 1.6;
+}
+.local-material-editor .copy-code {
+  font-family: monospace;
+  white-space: pre;
+  tab-size: 2;
+}
+.local-copy-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.923077rem;
+}
+.copy-task-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.local-copy-help {
+  color: var(--muted);
+  margin: 0;
+}
+.local-copy-label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.material[data-reference-kind='document'] .local-copy-label {
+  color: #475363;
+}
+.copy-sheet {
+  overflow: auto;
+}
+.copy-sheet td {
+  min-width: 120px;
+}
+.copy-publish-button {
+  align-self: flex-start;
+}
+.copy-publish-dialog {
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: visible;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 24px;
+}
+.copy-publish-dialog::backdrop {
+  background: #0006;
+}
+.copy-publish-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100dvh - 82px);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding-right: 4px;
+}
+.copy-publish-dialog h2 {
+  margin: 0;
+  font-size: 1.153846rem;
+  padding-right: 24px;
+}
+.copy-publish-dialog p {
+  margin: 0;
+  line-height: 1.5;
+}
+.copy-publish-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.copy-publish-dialog input {
+  min-width: 0;
+  width: 100%;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+}
+.copy-publish-dialog button[type='submit'],
+.copy-publish-button {
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--hover);
+}
+.copy-publish-dialog .copy-publish-close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 28px;
+  height: 28px;
+}
+.copy-publish-error {
+  color: var(--text);
+}
+.copy-publish-error:empty {
+  display: none;
+}
 .link-card-content > .link-open {
   position: static;
   width: fit-content;

@@ -7,6 +7,7 @@ import { mediaToolbar } from './media-toolbar';
 import { ImageInspector } from './image-inspector';
 import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
+import { LocalMaterialEditor } from './local-editor';
 
 /** Visor local: Alt entrega la rueda a la navegación espacial de Everett. */
 export class MediaView implements View {
@@ -16,6 +17,7 @@ export class MediaView implements View {
   private releasePdf: (() => void) | null = null;
   private materialKey: string | null = null;
   private reader: WebReader | null = null;
+  private localEditor: LocalMaterialEditor | null = null;
   private inspector: ImageInspector | null = null;
   private images: string[] = [];
   private imageId: string | null = null;
@@ -116,6 +118,8 @@ export class MediaView implements View {
       return;
     }
     this.materialKey = key;
+    this.localEditor?.dispose();
+    this.localEditor = null;
     this.reader?.dispose();
     this.reader = null;
     this.inspector?.dispose();
@@ -143,7 +147,13 @@ export class MediaView implements View {
         this.galleryFocus = null;
       }
     }
-    if (d.kind === 'link')
+    if (d.kind === 'local') {
+      this.localEditor = new LocalMaterialEditor(
+        this.root.querySelector('.media-view')!,
+        this.ctx,
+        node.id,
+      );
+    } else if (d.kind === 'link')
       this.reader = new WebReader(
         this.root.querySelector('.web-reader')!,
         this.ctx,
@@ -210,6 +220,7 @@ export class MediaView implements View {
     this.disposed = true;
     this.abort.abort();
     this.reader?.dispose();
+    this.localEditor?.dispose();
     this.inspector?.dispose();
     this.releasePdf?.();
     this.root.querySelectorAll('video').forEach((video) => {

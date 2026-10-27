@@ -8,6 +8,7 @@ import { createBoardUi, type BoardUi } from '../features/board/state';
 import { createAgentsUi, type AgentsUi } from '../features/agents/state';
 import type { Camera } from '../domain/model';
 import type { LinkPreview } from '../domain/model';
+import { canvasDefaults } from '../domain/shortcuts';
 
 export interface Ui {
   userId: string;
@@ -50,7 +51,7 @@ export function uiState(): Ui {
     chatContexts: {},
     commentDrafts: {},
     revisionDrafts: {},
-    shortcuts: { select: 'V', hand: 'H', note: 'N', comment: 'C', connect: 'L', rename: '' },
+    shortcuts: { ...canvasDefaults },
     composerDrafts: {},
     shell: createShellUi(),
     canvas: createCanvasUi(),

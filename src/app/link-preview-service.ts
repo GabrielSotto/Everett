@@ -143,6 +143,8 @@ export class LinkPreviewService {
         [
           'node.create',
           'node.duplicate',
+          'nodes.duplicate',
+          'nodes.paste',
           'canvas.undo',
           'canvas.redo',
           'assignment.finish',

@@ -5,6 +5,7 @@ export const canvasDefaults: Record<string, string> = {
   comment: 'C',
   connect: 'L',
   rename: '',
+  duplicate: 'Ctrl+D',
 };
 export const shortcutNames: Record<string, string> = {
   select: 'Seleccionar',
@@ -13,6 +14,7 @@ export const shortcutNames: Record<string, string> = {
   comment: 'Comentar',
   connect: 'Conectar',
   rename: 'Renombrar',
+  duplicate: 'Duplicar selección',
 };
 export const reservedShortcuts = new Set([
   'Ctrl+K',
@@ -20,6 +22,8 @@ export const reservedShortcuts = new Set([
   'Ctrl+Z',
   'Ctrl+Shift+Z',
   'Ctrl+Y',
+  'Ctrl+C',
+  'Ctrl+V',
   'Escape',
   'Enter',
   'Delete',

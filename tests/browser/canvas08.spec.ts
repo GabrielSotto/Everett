@@ -89,9 +89,18 @@ test('C08-B01: nombre alcanzable, identidad Docs, copia independiente y retirada
     .fill('Contenido común\nSegundo párrafo');
   await page.keyboard.press('Escape');
   await expect(material.locator('h3')).toHaveText('Nombre desde Docs');
+  const documentCount = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!.docs
+    .length;
   await contextAction(page, ref.id, 'Duplicar');
   current = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
-  const copy = current.nodes.at(-1)!;
+  const local = current.nodes.at(-1)!;
+  expect(local.data.kind).toBe('local');
+  expect(current.docs.length).toBe(documentCount);
+  await page.locator(`[data-node="${local.id}"]`).dblclick();
+  await page.getByRole('button', { name: 'Crear en Docs…', exact: true }).click();
+  await page.getByRole('button', { name: 'Crear en Docs', exact: true }).click();
+  current = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
+  const copy = current.nodes.find((n) => n.id === local.id)!;
   expect(copy.data.kind).toBe('reference');
   if (copy.data.kind !== 'reference') throw new Error('Falta la copia');
   const copyId = copy.data.ref.id;
@@ -100,8 +109,9 @@ test('C08-B01: nombre alcanzable, identidad Docs, copia independiente y retirada
   await page.getByLabel('Contenido del documento', { exact: true }).fill('Solo esta copia');
   await page.keyboard.press('Escape');
   await page.keyboard.press('Control+z');
-  await expect(page.locator(`[data-node="${copy.id}"]`)).toHaveCount(0);
+  await expect(page.locator(`[data-node="${copy.id}"]`)).toBeVisible();
   current = (await snapshot(page)).state.worlds.find((w) => w.id === 'scout')!;
+  expect(current.nodes.find((n) => n.id === copy.id)!.data.kind).toBe('local');
   expect(current.docs.some((d) => d.id === copyId)).toBe(false);
   await page.keyboard.press('Control+Shift+z');
   await expect(page.locator(`[data-node="${copy.id}"]`)).toBeVisible();
@@ -732,7 +742,7 @@ test('C08-B07: enlace sin preview, tarjeta Board compartida y dock alcanzable en
   await expect(taskMaterial.locator('h3')).toHaveText(task.title);
   await expect(taskMaterial.locator('.task-material-meta')).toContainText(task.assignee);
   await taskMaterial.click({ button: 'right' });
-  await expect(page.getByRole('menuitem', { name: 'Duplicar', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('menuitem', { name: 'Duplicar', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 390, height: 760 });
   const toolbar = page.getByRole('toolbar', { name: 'Herramientas de Canvas', exact: true });

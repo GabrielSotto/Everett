@@ -256,11 +256,11 @@ test('C08-U15: fragmentos siguen su origen, se invalidan al borrarse y duplican 
   assert.equal(referenceExcerpt(project(store), ref()), 'Párrafo');
   act({ type: 'node.duplicate', world: 'project', id: 'doc-ref' });
   const copy = project(store).nodes.at(-1)!;
-  assert.equal(copy.data.kind, 'reference');
-  if (copy.data.kind !== 'reference') return;
-  assert.notEqual(copy.data.ref.id, ref().id);
-  assert.notEqual(copy.data.ref.fragment, ref().fragment);
-  assert.equal(referenceExcerpt(project(store), copy.data.ref), 'Párrafo');
+  assert.equal(copy.data.kind, 'local');
+  if (copy.data.kind !== 'local' || copy.data.content.kind !== 'document')
+    throw Error('Falta la copia local');
+  assert.equal(project(store).docs.length, 1);
+  assert.equal(copy.data.content.body, 'Párrafo');
   act({
     type: 'document.edit',
     world: 'project',
@@ -271,7 +271,7 @@ test('C08-U15: fragmentos siguen su origen, se invalidan al borrarse y duplican 
   assert.equal(referenceExcerpt(project(store), ref()), null);
   assert.throws(() => act({ type: 'assign', world: 'project', node: 'doc-ref', agent: 'eve' }));
   assert.equal(project(store).nodes.find((n) => n.id === 'doc-ref')!.owner, null);
-  assert.equal(referenceExcerpt(project(store), copy.data.ref), 'Párrafo');
+  assert.equal(copy.data.content.body, 'Párrafo');
   act({
     type: 'document.edit',
     world: 'project',

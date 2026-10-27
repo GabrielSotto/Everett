@@ -1,4 +1,4 @@
-import { type State, getWorld, type Material, need, nodeTitle } from '../model';
+import { type State, getWorld, type Material, need } from '../model';
 import type { Command } from '../command-types';
 import { ensure } from '../invariants';
 import { releaseZoneMaterials } from '../zone-ownership';
@@ -18,7 +18,6 @@ type CanvasCommand = Extract<
       | 'assignment.interrupt'
       | 'assignment.retry'
       | 'node.rename'
-      | 'node.duplicate'
       | 'node.style'
       | 'link.label'
       | 'link.reconnect'
@@ -242,43 +241,6 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
             'Agente inexistente',
           ).name = command.name.trim();
       } else material.data.title = command.name.trim();
-      break;
-    }
-    case 'node.duplicate': {
-      const original = node(command.id);
-      ensure(!original.owner, 'LOCKED', 'El agente está usando el material');
-      const copy = structuredClone(original);
-      copy.id = uid();
-      copy.x += 28;
-      copy.y += 28;
-      if (copy.data.kind === 'reference') {
-        ensure(
-          copy.data.ref.kind === 'document',
-          'DUPLICATE',
-          'Solo los documentos referenciados se pueden duplicar',
-        );
-        const referenceId = copy.data.ref.id;
-        const doc = structuredClone(
-          need(
-            world.docs.find((d) => d.id === referenceId),
-            'Documento inexistente',
-          ),
-        );
-        doc.id = uid();
-        doc.title += ' — copia';
-        world.docs.push(doc);
-        copy.data.ref.id = doc.id;
-        if (copy.data.ref.fragment) {
-          const fragment = copy.data.ref.fragment;
-          const anchor = world.referenceAnchors?.find((a) => a.id === fragment);
-          if (anchor) {
-            const duplicate = { ...anchor, id: uid(), source: doc.id };
-            world.referenceAnchors!.push(duplicate);
-            copy.data.ref.fragment = duplicate.id;
-          }
-        }
-      } else copy.data.title = nodeTitle(world, original) + ' — copia';
-      world.nodes.push(copy);
       break;
     }
     case 'node.style': {

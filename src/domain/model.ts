@@ -91,7 +91,26 @@ export interface LinkPreview {
   embed?: { provider: 'youtube' | 'vimeo'; id: string; hash?: string };
   problem?: string;
 }
+export type LocalContent =
+  | { kind: 'document'; body: string; sheet: readonly (readonly string[])[] | null }
+  | { kind: 'file'; text: string }
+  | { kind: 'task'; task: Omit<Task, 'id' | 'title'> }
+  | {
+      kind: 'agent';
+      agent: Omit<Agent, 'id' | 'name' | 'capabilities' | 'memory'> & {
+        capabilities: readonly string[];
+        memory: readonly string[];
+      };
+    };
+export interface CanvasClipboard {
+  format: 'everett-canvas';
+  version: 1;
+  nodes: Material[];
+  links: Link[];
+  groups: CanvasGroup[];
+}
 export type NodeData =
+  | { kind: 'local'; title: string; content: LocalContent }
   | {
       kind: 'note';
       title: string;
@@ -377,7 +396,7 @@ export function materialRoute(s: DeepReadonly<State>, world: string, id: string)
       ? { kind: 'note', world, entity: id }
       : n.data.kind === 'reference'
         ? referenceRoute(world, n.data.ref)
-        : ['image', 'video', 'pdf', 'link'].includes(n.data.kind)
+        : ['image', 'video', 'pdf', 'link', 'local'].includes(n.data.kind)
           ? { kind: 'material', world, entity: id }
           : null;
 }

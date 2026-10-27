@@ -68,7 +68,8 @@ El usuario autorizó para 0.8.15 un servicio local mínimo para obtener y conser
   elemento nuevo. Admitir duplicación individual y múltiple y copiar/pegar selecciones completas;
   conservar independencia, disposición relativa, persistencia e historial, según C08-MAT-08 de
   [Canvas 0.8](iteraciones/0.8.md). La aclaración confirmada sustituye el duplicado automático en
-  Docs y la exclusión anterior de tareas de Board; su implementación está pendiente.
+  Docs y la exclusión anterior de tareas de Board. Tras la incorporación explícita, la pieza pasa
+  a representar el nuevo elemento de esa superficie; el original permanece independiente.
 - Eliminar materiales propios y quitar referencias admiten Deshacer y conservan sus originales
   y los archivos externos, según C08-MAT-08 de [Canvas 0.8](iteraciones/0.8.md).
 - Redimensionar imágenes y videos conservando la relación de aspecto y el contenido completo.

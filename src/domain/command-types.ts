@@ -16,6 +16,8 @@ import type {
   ProposalMaterial,
   LinkPreview,
   NodeData,
+  CanvasClipboard,
+  LocalContent,
 } from './model';
 import type { AgentRun } from './operations';
 import type { MaterialOrder } from './material-order';
@@ -34,6 +36,10 @@ export type Command =
   | { type: 'assignment.interrupt' | 'assignment.retry'; world: string; id: string }
   | { type: 'node.rename'; world: string; id: string; name: string }
   | { type: 'node.duplicate'; world: string; id: string }
+  | { type: 'nodes.duplicate'; world: string; nodes: string[]; offset: Point }
+  | { type: 'nodes.paste'; world: string; clipboard: CanvasClipboard; offset: Point }
+  | { type: 'node.local-edit'; world: string; id: string; title: string; content: LocalContent }
+  | { type: 'node.publish'; world: string; id: string; name: string }
   | {
       type: 'node.style';
       world: string;

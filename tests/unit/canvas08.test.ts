@@ -238,6 +238,13 @@ test('C08-U01: renombrado compartido, duplicado independiente, retirada y Undo/R
   assert.equal(project(store).docs[0]!.body, 'Edición posterior');
   store.dispatch({ type: 'canvas.redo', world: 'project' }, intent);
   store.dispatch({ type: 'node.duplicate', world: 'project', id: 'ref' }, intent);
+  const local = project(store).nodes.at(-1)!;
+  assert.equal(local.data.kind, 'local');
+  assert.equal(project(store).docs.length, 1);
+  store.dispatch(
+    { type: 'node.publish', world: 'project', id: local.id, name: 'Documento — copia' },
+    intent,
+  );
   const copy = project(store).docs.at(-1)!;
   assert.notEqual(copy.id, 'document');
   const reference = project(store).nodes.at(-1)!;

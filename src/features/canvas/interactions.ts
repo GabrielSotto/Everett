@@ -5,6 +5,7 @@ import {
   type Material,
   type Point,
   type Anchor,
+  type CanvasClipboard,
 } from '../../domain/model';
 import { html, target, editable } from '../../ui/dom';
 import { icon } from '../../ui/icons';
@@ -25,6 +26,13 @@ import { inlineCompletion } from '../../ui/inline-completion';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { arrangementUnits } from '../../domain/arrangement';
 import { arrangementMarkup, arrangeSelection } from '../../ui/canvas-arrangement';
+import {
+  captureCanvasCopies,
+  parseCanvasClipboard,
+  canvasClipboardMime,
+} from '../../domain/canvas-copies';
+import { materialText } from '../../domain/material-content';
+import { publishLocalMaterial } from './local-publish';
 
 function clipboardOrigin(plain: string, uriList = '', markup = ''): string | undefined {
   const address = uriList.split(/\r?\n/).find((line) => line.trim() && !line.startsWith('#'));
@@ -56,6 +64,7 @@ export class CanvasInteractions {
     private ctx: Context,
     signal: AbortSignal,
     private center: () => Point,
+    private identify: () => void,
   ) {
     this.overlay = document.createElement('div');
     this.overlay.className = 'canvas-context-layer';
@@ -102,6 +111,46 @@ export class CanvasInteractions {
     });
     signal.addEventListener('abort', unsubscribe, { once: true });
     window.addEventListener(
+      'copy',
+      (event) => {
+        if (
+          this.disposed ||
+          editable(event.target) ||
+          editable(document.activeElement) ||
+          !ctx.ui.canvas.selections.length ||
+          document.activeElement?.closest('#shell,.canvas-chat,.canvas-context-layer')
+        )
+          return;
+        try {
+          const copied = captureCanvasCopies(ctx.world(), ctx.ui.canvas.selections);
+          const encoded = JSON.stringify(copied);
+          if (!event.clipboardData) {
+            ctx.notice('No se pudo copiar la selección. Podés usar Duplicar.', true);
+            return;
+          }
+          const text = copied.nodes
+            .map((node) =>
+              [nodeTitle(ctx.world(), node), materialText(ctx.world(), node)].join('\n'),
+            )
+            .join('\n\n');
+          event.clipboardData.setData(canvasClipboardMime, encoded);
+          event.clipboardData.setData(
+            'text/html',
+            `<div data-everett-canvas="${html(encoded)}"><pre>${html(text)}</pre></div>`,
+          );
+          event.clipboardData.setData('text/plain', text);
+          event.preventDefault();
+        } catch (error) {
+          event.preventDefault();
+          ctx.notice(
+            error instanceof Error ? error.message : 'No se pudo copiar la selección.',
+            true,
+          );
+        }
+      },
+      { signal },
+    );
+    window.addEventListener(
       'paste',
       (event) => {
         if (
@@ -115,6 +164,15 @@ export class CanvasInteractions {
           document.activeElement.closest('#shell,.canvas-chat,.canvas-context-layer')
         )
           return;
+        const materialPayload = this.materialClipboard(
+          event.clipboardData?.getData(canvasClipboardMime) ?? '',
+          event.clipboardData?.getData('text/html') ?? '',
+        );
+        if (materialPayload !== null) {
+          event.preventDefault();
+          void this.pasteMaterials(materialPayload);
+          return;
+        }
         const value = event.clipboardData?.getData('text/plain').trim() ?? '';
         const files = [...(event.clipboardData?.files ?? [])];
         if (files.length) {
@@ -294,7 +352,10 @@ export class CanvasInteractions {
         this.cancelHover();
         this.hoverTimer = setTimeout(() => {
           this.hoverTimer = null;
-          if (node.isConnected) node.classList.add('identified');
+          if (node.isConnected) {
+            node.classList.add('identified');
+            this.identify();
+          }
         }, 300);
       },
       { signal },
@@ -308,6 +369,7 @@ export class CanvasInteractions {
           return;
         this.cancelHover();
         node.classList.remove('identified');
+        this.identify();
       },
       { signal },
     );
@@ -447,12 +509,11 @@ export class CanvasInteractions {
             break;
           }
           case 'context-duplicate':
+            this.duplicate();
+            break;
+          case 'context-publish':
             this.overlay.replaceChildren();
-            ctx.act(
-              { type: 'node.duplicate', world: ctx.world().id, id },
-              'duplicar material',
-              'C08-MAT-08',
-            );
+            publishLocalMaterial(this.root, ctx, id, this.previewAbort.signal);
             break;
           case 'context-remove':
             confirmRemoval(
@@ -994,7 +1055,7 @@ export class CanvasInteractions {
           `<button type="button" role="menuitem" data-action="context-order" data-order="${order}" ${canOrderMaterials(this.ctx.world().nodes, this.ctx.ui.canvas.selections, order) ? '' : 'disabled'}>${{ front: 'Traer al frente', forward: 'Avanzar una capa', backward: 'Retroceder una capa', back: 'Enviar al fondo' }[order]}</button>`,
       )
       .join('');
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button>${node.data.kind !== 'reference' || node.data.ref.kind === 'document' ? `<button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
@@ -1121,6 +1182,106 @@ export class CanvasInteractions {
     ].slice(0, 40);
     this.create({ kind: 'link', title: url.hostname + url.pathname, url: url.href }, 320, 240);
   }
+  duplicate(): void {
+    const ids = this.ctx.ui.canvas.selections.length
+      ? [...this.ctx.ui.canvas.selections]
+      : this.ctx.ui.canvas.selection
+        ? [this.ctx.ui.canvas.selection]
+        : [];
+    if (!ids.length) return;
+    const previous = new Set(this.ctx.world().nodes.map((node) => node.id));
+    const z = this.ctx.currentCamera().z;
+    this.overlay.replaceChildren();
+    if (
+      this.ctx.act(
+        {
+          type: 'nodes.duplicate',
+          world: this.ctx.world().id,
+          nodes: ids,
+          offset: { x: 28 / z, y: 28 / z },
+        },
+        'duplicar selección',
+        'C08-MAT-08',
+      )
+    )
+      this.selectCopies(previous);
+  }
+  private selectCopies(previous: Set<string>): void {
+    this.ctx.ui.canvas.selections = this.ctx
+      .world()
+      .nodes.filter((node) => !previous.has(node.id))
+      .map((node) => node.id);
+    this.ctx.ui.canvas.selection = this.ctx.ui.canvas.selections[0] ?? null;
+    this.ctx.ui.canvas.linkSelection = null;
+    this.ctx.ui.canvas.zoneSelection = null;
+    this.ctx.persist();
+    this.ctx.render();
+  }
+  private materialClipboard(raw: string, markup: string): string | null {
+    if (raw) return raw;
+    if (!markup.includes('data-everett-canvas')) return null;
+    const template = document.createElement('template');
+    template.innerHTML = markup;
+    return (
+      template.content
+        .querySelector('[data-everett-canvas]')
+        ?.getAttribute('data-everett-canvas') ?? null
+    );
+  }
+  private async pasteMaterials(raw: string): Promise<void> {
+    try {
+      const clipboard: CanvasClipboard = parseCanvasClipboard(raw);
+      const assets = new Set(
+        clipboard.nodes.flatMap((node) =>
+          'asset' in node.data
+            ? [node.data.asset]
+            : node.data.kind === 'link'
+              ? [node.data.metadata?.imageAsset, node.data.metadata?.readerAsset].filter(
+                  (id): id is string => !!id,
+                )
+              : [],
+        ),
+      );
+      if (assets.size) {
+        if (!this.ctx.storage)
+          throw new Error('No está disponible el almacenamiento de los archivos copiados.');
+        try {
+          await Promise.all([...assets].map((id) => this.ctx.storage!.asset(id)));
+        } catch {
+          throw new Error(
+            'No se pudieron recuperar los archivos copiados. Reintentá y, si vienen de otro Everett, importá sus originales en esta ventana.',
+          );
+        }
+      }
+      if (this.disposed) return;
+      const left = Math.min(...clipboard.nodes.map((node) => node.x)),
+        top = Math.min(...clipboard.nodes.map((node) => node.y));
+      const right = Math.max(...clipboard.nodes.map((node) => node.x + node.width)),
+        bottom = Math.max(...clipboard.nodes.map((node) => node.y + node.height));
+      const center = this.center();
+      const previous = new Set(this.ctx.world().nodes.map((node) => node.id));
+      this.overlay.replaceChildren();
+      if (
+        this.ctx.act(
+          {
+            type: 'nodes.paste',
+            world: this.ctx.world().id,
+            clipboard,
+            offset: { x: center.x - (left + right) / 2, y: center.y - (top + bottom) / 2 },
+          },
+          'pegar materiales',
+          'C08-MAT-08',
+        )
+      )
+        this.selectCopies(previous);
+    } catch (error) {
+      if (!this.disposed)
+        this.ctx.notice(
+          error instanceof Error ? error.message : 'No se pudieron pegar los materiales.',
+          true,
+        );
+    }
+  }
   private async pasteClipboard(): Promise<void> {
     try {
       const entries = await navigator.clipboard.read();
@@ -1137,6 +1298,11 @@ export class CanvasInteractions {
           markup = await (await entry.getType('text/html')).text();
       }
       if (this.disposed) return;
+      const materialPayload = this.materialClipboard('', markup);
+      if (materialPayload !== null) {
+        await this.pasteMaterials(materialPayload);
+        return;
+      }
       this.overlay.replaceChildren();
       if (files.length)
         await this.importFiles(files, false, undefined, clipboardOrigin(value, '', markup));
@@ -1157,6 +1323,16 @@ export class CanvasInteractions {
     input.addEventListener(
       'paste',
       (event) => {
+        const materialPayload = this.materialClipboard(
+          event.clipboardData?.getData(canvasClipboardMime) ?? '',
+          event.clipboardData?.getData('text/html') ?? '',
+        );
+        if (materialPayload !== null) {
+          event.preventDefault();
+          event.stopPropagation();
+          void this.pasteMaterials(materialPayload);
+          return;
+        }
         const files = [...(event.clipboardData?.files ?? [])];
         const text = event.clipboardData?.getData('text/plain') ?? '';
         const url = enteredLink(text);

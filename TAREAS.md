@@ -18,9 +18,13 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
-## Próximo trabajo de 0.8 — pendiente de implementación
+## Trabajo actual de 0.8.20 — verificación en curso
 
-Organización previa solicitada por el usuario; no inicia otra etapa ni implica aprobación de cierre.
+No inicia otra etapa ni implica aprobación de cierre. Las copias locales, duplicación múltiple,
+Ctrl+D y Ctrl+C/Ctrl+V están implementados. La incorporación explícita transforma la pieza en una
+referencia al elemento nuevo, según la decisión confirmada por el usuario. Pruebas dirigidas de
+Docs, Code, Board, archivos reales, grupos y conexiones aprobadas; falta el gate completo del
+artefacto final. La pestaña del usuario continúa en 0.8.19 durante estas comprobaciones aisladas.
 
 ### Correcciones y capacidades confirmadas
 
@@ -30,10 +34,10 @@ Organización previa solicitada por el usuario; no inicia otra etapa ni implica 
 - Duplicación múltiple y copiar/pegar: menú contextual sobre toda la selección, atajo de duplicación
   y Ctrl+C/Ctrl+V. Conservar disposición relativa, tamaño, apariencia, independencia, persistencia
   y una operación de historial coherente; respetar el texto de los editores y manejar los fallos
-  del portapapeles. El atajo concreto y los detalles de conexiones y conjuntos deben definirse.
+  del portapapeles. Atajo Ctrl+D configurable; conservar conexiones internas y conjuntos completos.
 - Incorporación explícita de una copia a Docs, Board o Code: crear un elemento nuevo únicamente
-  cuando el usuario lo pida. Concretar nombre, destino, representación y edición de las copias
-  locales, incluidas referencias a fragmentos, antes de programar el cambio de modelo.
+  cuando el usuario lo pida. Solicitar nombre o ruta y vincular la pieza al elemento recién creado.
+  Los fragmentos se copian como texto independiente, con edición y guardado local.
 - Navegación espacial en reproductores externos: sigue abierto Alt pulsado después de enfocar el
   iframe. Investigar una solución compatible con la acción local y los controles del proveedor;
   conservar la flecha y no presentar el límite como resuelto si exige otro contenedor.

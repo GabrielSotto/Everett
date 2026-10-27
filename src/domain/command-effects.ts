@@ -1,6 +1,6 @@
 import type { Command } from './command-types';
 export function affectsView(c: Command): 'navigation' | 'content' | 'none' {
-  return ['navigate', 'back', 'universe', 'world.create'].includes(c.type)
+  return ['navigate', 'back', 'universe', 'world.create', 'node.publish'].includes(c.type)
     ? 'navigation'
     : [
           'camera',
@@ -8,6 +8,7 @@ export function affectsView(c: Command): 'navigation' | 'content' | 'none' {
           'node.link-preview',
           'node.resolve-link',
           'node.edit',
+          'node.local-edit',
           'document.edit',
           'sheet.edit',
           'file.edit',

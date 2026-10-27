@@ -88,7 +88,8 @@
   visibility: hidden;
   pointer-events: none;
   transition: opacity 100ms ease-out;
-  transform: scale(calc(1 / var(--canvas-zoom))) translateX(-50%);
+  transform: scale(calc(1 / var(--canvas-zoom))) translateX(-50%)
+    translate(var(--identification-shift-x, 0px), var(--identification-shift-y, 0px));
   transform-origin: bottom left;
   z-index: 12;
 }

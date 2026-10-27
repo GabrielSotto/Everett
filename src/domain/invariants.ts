@@ -1,6 +1,7 @@
 import { getWorld, need, type State } from './model';
 import { humanParticipants } from './conversations';
 import { validLinkPreview, linkUrl } from './link-previews';
+import { validLocalContent } from './local-content';
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -201,12 +202,26 @@ export function validate(s: State): void {
         'Geometría inválida',
       );
       ensure(
-        ['note', 'shape', 'drawing', 'image', 'video', 'pdf', 'link', 'reference'].includes(
-          n.data.kind,
-        ),
+        [
+          'note',
+          'shape',
+          'drawing',
+          'image',
+          'video',
+          'pdf',
+          'link',
+          'reference',
+          'local',
+        ].includes(n.data.kind),
         'MATERIAL',
         'Tipo de material desconocido',
       );
+      if (n.data.kind === 'local')
+        ensure(
+          typeof n.data.title === 'string' && validLocalContent(n.data.content),
+          'LOCAL_CONTENT',
+          'La copia local tiene contenido inválido.',
+        );
       if (n.data.kind === 'image' || n.data.kind === 'video' || n.data.kind === 'pdf') {
         ensure(
           n.data.source === undefined || linkUrl(n.data.source) !== null,
@@ -342,7 +357,7 @@ export function validate(s: State): void {
           (n) =>
             n.id === r.entity &&
             !n.owner &&
-            ['image', 'video', 'pdf', 'link'].includes(n.data.kind),
+            ['image', 'video', 'pdf', 'link', 'local'].includes(n.data.kind),
         ),
         'MATERIAL_ROUTE',
         'Material no disponible',

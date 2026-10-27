@@ -37,6 +37,10 @@ const reversible = new Set<Command['type']>([
   'node.create',
   'node.rename',
   'node.duplicate',
+  'nodes.duplicate',
+  'nodes.paste',
+  'node.local-edit',
+  'node.publish',
   'node.style',
   'link.label',
   'link.reconnect',
@@ -150,7 +154,7 @@ export class CanvasHistory {
       previous = t.past.at(-1);
     // Agrupa una ráfaga de escritura; los arrastres se confirman al soltar el puntero.
     if (
-      command.type === 'node.edit' &&
+      (command.type === 'node.edit' || command.type === 'node.local-edit') &&
       previous?.action === action &&
       at - previous.at < 750 &&
       t.future.length === 0

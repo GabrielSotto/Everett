@@ -37,7 +37,7 @@ import { motion, reducedMotion } from '../../ui/motion';
 import { strokePicker } from './stroke-picker';
 import { rgb } from './color';
 import { groupBounds, groupDropTarget, groupHeadingSide } from '../../domain/manual-groups';
-import { labelPosition, labeledPath } from '../../domain/cable-labels';
+import { labelPosition, labeledPath, overlaps } from '../../domain/cable-labels';
 import { alignRect, selectionBounds } from '../../domain/alignment';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
@@ -124,6 +124,7 @@ export class CanvasView implements View {
             this.paintCableLabels();
             this.paintGroups();
           }
+          this.paintMaterialIdentifications();
         }
         this.ctx.cameraChanged?.();
       },
@@ -157,7 +158,13 @@ export class CanvasView implements View {
     this.chat = new CanvasChat(root.querySelector<HTMLElement>('#canvas-chat-host')!, ctx, () =>
       this.renderDock(),
     );
-    this.interactions = new CanvasInteractions(root, ctx, this.abort.signal, () => this.camPoint());
+    this.interactions = new CanvasInteractions(
+      root,
+      ctx,
+      this.abort.signal,
+      () => this.camPoint(),
+      () => this.paintMaterialIdentifications(),
+    );
     root.addEventListener(
       'contextmenu',
       () => {
@@ -291,6 +298,9 @@ export class CanvasView implements View {
   }
   rename(): void {
     this.interactions.rename();
+  }
+  duplicate(): void {
+    this.interactions.duplicate();
   }
   locateMaterial(id: string): void {
     const world = this.ctx.world(),
@@ -1815,6 +1825,70 @@ export class CanvasView implements View {
       }
     }
   }
+  private paintMaterialIdentifications(): void {
+    const labels = [...this.root.querySelectorAll<HTMLElement>('.material-identification')].filter(
+      (label) => label.closest('.selected,.identified,:focus-within'),
+    );
+    const cables = [...this.root.querySelectorAll<SVGTextElement>('.cable-label')].map((label) =>
+      label.getBoundingClientRect(),
+    );
+    const materials = [...this.root.querySelectorAll<HTMLElement>('.material[data-node]')];
+    const placed: Rect[] = [];
+    for (const label of labels) {
+      label.style.setProperty('--identification-shift-x', '0px');
+      label.style.setProperty('--identification-shift-y', '0px');
+    }
+    for (const label of labels.sort(
+      (a, b) =>
+        Number(b.closest('.selected,.identified') !== null) -
+        Number(a.closest('.selected,.identified') !== null),
+    )) {
+      const owner = label.closest<HTMLElement>('.material')!;
+      const box = label.getBoundingClientRect(),
+        card = owner.getBoundingClientRect();
+      // Conservar el anclaje aprobado salvo que el nombre tape una etiqueta de cable.
+      if (!cables.some((cable) => overlaps(box, cable))) continue;
+      const obstacles: Rect[] = [
+        ...cables,
+        ...materials
+          .filter((other) => other !== owner)
+          .map((other) => other.getBoundingClientRect()),
+        ...placed,
+      ];
+      const candidates = [
+        { x: 0, y: 0 },
+        { x: 0, y: -box.height - 8 },
+        { x: 0, y: card.bottom - box.top + 8 },
+        { x: card.left - box.right - 8, y: card.top - box.top },
+        { x: card.right - box.left + 8, y: card.top - box.top },
+      ];
+      const choice =
+        candidates.find((offset) => {
+          const candidate = {
+            x: box.x + offset.x,
+            y: box.y + offset.y,
+            width: box.width,
+            height: box.height,
+          };
+          return (
+            candidate.x >= 0 &&
+            candidate.y >= 74 &&
+            candidate.x + candidate.width <= innerWidth &&
+            candidate.y + candidate.height <= innerHeight &&
+            !obstacles.some((other) => overlaps(candidate, other))
+          );
+        }) ?? candidates[0]!;
+      label.style.setProperty('--identification-shift-x', `${choice.x}px`);
+      label.style.setProperty('--identification-shift-y', `${choice.y}px`);
+      if (owner.matches('.selected,.identified,:focus-within'))
+        placed.push({
+          x: box.x + choice.x,
+          y: box.y + choice.y,
+          width: box.width,
+          height: box.height,
+        });
+    }
+  }
   private paintSelection(keepLinks = false): void {
     const w = this.ctx.world(),
       ui = this.ctx.ui,
@@ -1857,6 +1931,7 @@ export class CanvasView implements View {
       });
       this.paintGroups();
     } else this.paintLinks();
+    this.paintMaterialIdentifications();
     const holder = this.root.querySelector('#selection-actions'),
       node = w.nodes.find((n) => n.id === ui.canvas.selection && !n.owner),
       zone = w.zones.find((z) => z.id === ui.canvas.zoneSelection);

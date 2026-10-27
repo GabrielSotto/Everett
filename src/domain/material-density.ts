@@ -11,7 +11,12 @@ export function materialDensity(count: number): Density {
 export function materialGroups(materials: readonly Material[]): MaterialGroup[] {
   const groups = new Map<string, string[]>();
   for (const material of materials) {
-    const kind = material.data.kind === 'reference' ? material.data.ref.kind : material.data.kind;
+    const kind =
+      material.data.kind === 'reference'
+        ? material.data.ref.kind
+        : material.data.kind === 'local'
+          ? material.data.content.kind
+          : material.data.kind;
     const ids = groups.get(kind) ?? [];
     ids.push(material.id);
     groups.set(kind, ids);
