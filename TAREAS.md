@@ -2,29 +2,29 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                                                                                             |
-| ----------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                                           |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                                        |
-| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). 0.8.19: organización implementada y regresión verificada; consulta espacial del iframe enfocado pendiente. |
-| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                                 |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                                  |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                              |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                                            |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                                           |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                                           |
+| Iteración                     | Estado                        | Trabajo                                                                                                                                                                                             |
+| ----------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                                                           |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                                                        |
+| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). 0.8.20: copias locales verificadas; bosquejos por concretar visualmente y consulta espacial del iframe enfocado pendiente. |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                                                 |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                                                  |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                                              |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                                                            |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                                                           |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                                                           |
 
 ## Después de 1.0
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
-## Trabajo actual de 0.8.20 — verificación en curso
+## Bloque de copias locales — 0.8.20 verificada
 
 No inicia otra etapa ni implica aprobación de cierre. Las copias locales, duplicación múltiple,
 Ctrl+D y Ctrl+C/Ctrl+V están implementados. La incorporación explícita transforma la pieza en una
-referencia al elemento nuevo, según la decisión confirmada por el usuario. Pruebas dirigidas de
-Docs, Code, Board, archivos reales, grupos y conexiones aprobadas; falta el gate completo del
-artefacto final. La pestaña del usuario continúa en 0.8.19 durante estas comprobaciones aisladas.
+referencia al elemento nuevo, según la decisión confirmada por el usuario. Regresión completa:
+104 pruebas unitarias y 199 de navegador aprobadas sobre el HTML final; evidencia e integridad
+verificadas. Servido en 4173, sin recargar la pestaña ni alterar los datos de revisión del usuario.
 
 ### Correcciones y capacidades confirmadas
 
@@ -38,11 +38,15 @@ artefacto final. La pestaña del usuario continúa en 0.8.19 durante estas compr
 - Incorporación explícita de una copia a Docs, Board o Code: crear un elemento nuevo únicamente
   cuando el usuario lo pida. Solicitar nombre o ruta y vincular la pieza al elemento recién creado.
   Los fragmentos se copian como texto independiente, con edición y guardado local.
+
+### Pendientes conservados
+
 - Navegación espacial en reproductores externos: sigue abierto Alt pulsado después de enfocar el
   iframe. Investigar una solución compatible con la acción local y los controles del proveedor;
   conservar la flecha y no presentar el límite como resuelto si exige otro contenedor.
-- Panorama: revisar el solapamiento puntual entre identificación contextual y etiqueta de conexión
-  al seleccionar un documento a 0,4×. La prueba actual no acredita ausencia de ese solapamiento.
+- Panorama: corregido el solapamiento puntual entre identificación contextual y etiqueta de
+  conexión al seleccionar o pasar el puntero por un documento a 0,4×. C08-B123 comprueba la
+  geometría y el material intacto; C08-B84 conserva el recorrido anterior de anclajes y escalas.
 - Zoom: queda pendiente la calibración perceptual con mouse/trackpad y revisión del recorrido
   1–600 %. No cambiar límites solo por su diferencia numérica; contrastar respuesta, punto de
   enfoque, inversión, detención y navegación local/espacial.
@@ -52,9 +56,11 @@ artefacto final. La pestaña del usuario continúa en 0.8.19 durante estas compr
 
 ### Pendientes que requieren definición de alcance o dirección visual
 
-- Bosquejos de interfaz de baja fidelidad: próximo bloque requerido de 0.8; definir piezas
-  editables y dirección visual, investigar reutilización compatible con el producto propietario
-  y acordar el primer alcance antes de implementar. No limitarlo a una apariencia dibujada.
+- Bosquejos de interfaz de baja fidelidad: primer bloque confirmado con pantallas, texto, botones,
+  campos, tarjetas/listas, marcadores de imagen, tablas y menús básicos como piezas editables.
+  Sin formularios funcionales, responsive automático ni generación de código en ese bloque.
+  Concretar dirección visual y reutilización compatible antes de implementar; la apariencia
+  dibujada por sí sola no resuelve la capacidad. La investigación es temporal, sin informe adicional.
 - Arrastrar referencias desde otro navegador, incluido un video de YouTube: idea por evaluar;
   verificar URI/HTML/texto y posición de suelta con un arrastre real entre ventanas.
 - Aplicación final: definir el destino de Abrir original y el contenedor para aplicaciones web
@@ -71,7 +77,7 @@ sigue en 0.9 y el procesamiento real de agentes requiere otro alcance. No integr
 
 YouTube devolvió `onError` 150 para `NIjruQLJQfo` tanto en Everett como en el iframe oficial aislado; `DYoSIFn_nac` reprodujo en ambos. El reproductor distingue los códigos documentados y usa un mensaje neutral cuando no puede identificar la causa. Se conserva Abrir original. C08-B97 cubre los códigos de YouTube, errores desconocidos, origen ajeno y Vimeo. La comparación real reproducible está en `tests/public/youtube-comparison.mjs`.
 
-El HTML corregido está servido en 4173 con SHA-256 `d4e0875a62887255f511a6feed3441c975af943f9c43c45bb80fade8b0d03bca`. Build, tipado, formato, 101 pruebas unitarias y 193 pruebas de navegador verificadas sobre ese HTML. La comparación pública y la captura del rechazo real están en `output/revision/0.8.19/youtube-comparison.json` y `youtube-error-real.png`. La primera regresión paralela agotó el tiempo en borradores de Agents; la ejecución completa posterior con un navegador pasó, incluido ese caso. La evidencia y el hash de la verificación anterior al final de este archivo corresponden al artefacto previo. Sigue pendiente el gesto espacial dentro del iframe enfocado; 0.8 no está cerrada ni integrada en `dev`.
+En la verificación de 0.8.19 se sirvió el HTML corregido en 4173 con SHA-256 `d4e0875a62887255f511a6feed3441c975af943f9c43c45bb80fade8b0d03bca`. Build, tipado, formato, 101 pruebas unitarias y 193 pruebas de navegador verificadas sobre ese HTML. La comparación pública y la captura del rechazo real están en `output/revision/0.8.19/youtube-comparison.json` y `youtube-error-real.png`. La primera regresión paralela agotó el tiempo en borradores de Agents; la ejecución completa posterior con un navegador pasó, incluido ese caso. La evidencia y el hash de la verificación anterior al final de este archivo corresponden al artefacto previo. Sigue pendiente el gesto espacial dentro del iframe enfocado; 0.8 no está cerrada ni integrada en `dev`.
 
 ## Implementado — organización de Canvas 0.8.19
 
@@ -156,17 +162,17 @@ Canvas sigue en desarrollo. El gate de una candidata no acredita por sí solo la
 
 Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada superficie permanecen en su etapa. Registrar aquí nuevos fallos con versión, reproducción, resultado esperado y regresión asociada. Al corregirlos, conservar el caso en tests y retirar el pendiente; Git conserva el cambio. Los resultados de ejecución viven en output/pruebas hasta la siguiente ejecución de su grupo.
 
-## Verificación actual — 0.8.19
+## Verificación actual — 0.8.20
 
-Fuentes de organización implementadas y versionadas en `9fad4c3`, `6d46496`, `34f4951`, `91980ba` y `21f3a91`. El arnés agrega C08-U36–U38 y C08-B116–B119 y amplía las comprobaciones existentes de búsqueda y Preferencias. Incluye geometría efectiva, espacios iguales entre tamaños distintos, conjuntos, Undo/Redo, persistencia, teclado, movimiento reducido y recuperación de guardados anteriores.
+Copias implementadas en `7250022`; presupuesto del recorrido completo de borradores en `7b079cb`, conservando los límites de acciones y aserciones. C08-U39–U41 y C08-B120–B125 cubren independencia, incorporación explícita, grupos, conexiones, portapapeles, archivos ausentes, permisos, persistencia, historial, disposición estrecha y etiquetas.
 
-**Regresión verificada: 101 pruebas de lógica/herramientas y 193 de navegador**, sin fallos, omisiones, reintentos ni casos inestables. La pasada completa duró 43,49 minutos e incluye los 30 ciclos de sesión sostenida, con sus límites de recursos y respuesta cumplidos. Se comprobaron tipado, formato, fuentes, integridad del build, controles negativos, resultados y evidencia derivada. Las ejecuciones parciales e interrumpidas no se acreditan.
+**Regresión verificada: 104 pruebas de lógica/herramientas y 199 de navegador**, sin fallos, omisiones ni reintentos. La ejecución completa con dos workers duró 27,1 minutos. Incluye 30 ciclos sostenidos durante más de nueve minutos, con límites de memoria, listeners, temporizadores y respuesta cumplidos. Tipado, formato, inventario de casos, controles negativos, hashes del build y evidencia vigente comprobados. Las ejecuciones parciales e interrumpidas no se acreditan.
 
-**El gate funcional conserva el bloqueo de `youtube-focused-modifier`:** Alt pulsado después de enfocar el iframe externo no llega a Everett. La comprobación pública del HTML actual y su verificador devuelven error por ese gesto. La rueda común conserva la acción local y la flecha permite regresar. No presentar una regresión controlada aprobada como cierre de ese fallo.
+**El gate funcional conserva el bloqueo de `youtube-focused-modifier`:** Alt pulsado después de enfocar el iframe externo no llega a Everett. La comprobación pública previa documentó ese fallo; este bloque no modifica ni vuelve a acreditar ese recorrido externo. La rueda común conserva la acción local y la flecha permite regresar. No presentar la regresión controlada aprobada como cierre de ese fallo.
 
-- [HTML actual](dist/Everett-0.8.19.html): 14.575.539 bytes, build `7bb56f8db5f6e9bf`, SHA-256 `a5a8bafd4485a7431289d63fa19976319aaf6cf1f5ffaf076c9efc37e0bba99b`.
-- [Resultado unitario](output/pruebas/unitarias/2026-10-26_14-58-15-803Z/result.json), [resultado de navegador](output/pruebas/navegador/2026-10-26_14-58-07-933Z/results.json) y [evidencia derivada verificada](output/informe/informe.md).
-- Inspección visual del mismo artefacto: [acciones de alineación](output/pruebas/navegador/2026-10-26_14-58-07-933Z/artifacts/canvas-arrangement-C08-B11-4bddb-tos-y-no-mueve-sus-extremos/acciones-de-alineacion-y-espacios.png), [menú a 320 px y texto ampliado](output/pruebas/navegador/2026-10-26_14-58-07-933Z/artifacts/canvas-arrangement-C08-B11-1024f-mpliado-sin-perder-acciones/menu-canvas-320-texto-200.png) y [cabecera completa a 300 px](output/pruebas/navegador/2026-10-26_14-58-07-933Z/artifacts/canvas-organization-C08-B5-3e55d-switch-opcional-persistente/cabecera-a-300.png).
+- [HTML actual](dist/Everett-0.8.20.html): 14.702.682 bytes, build `001412edfe8dfa70`, SHA-256 `ea3ba4bd3f371ee35c1de151c75a8f3b6afd03b78d144d8921a793f3c90b143d`.
+- [Resultado unitario](output/pruebas/unitarias/2026-10-27_14-19-26-449Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-27_14-20-32-421Z/results.json).
+- Inspección visual del mismo artefacto: [editor de copia local en el navegador interno](output/revision/0.8.20/copia-local-editor.png) y [formulario a 320 px con texto ampliado](output/pruebas/navegador/2026-10-27_14-20-32-421Z/artifacts/canvas-copies-C08-B124-inc-8ae4c-a-ruta-duplicada-o-inválida/incorporacion-error-320-texto-ampliado.png). La pestaña de prueba se cerró; la pestaña del usuario no se recargó.
 - [Comprobación pública](output/revision/0.8.19/destinos-publicos.json), [inspección de medios](output/revision/0.8.19/inspeccion-medios.json) y [veredicto público bloqueado](output/revision/0.8.19/verificacion-publica.json). HARNESS-15 comprueba que un fallo público bloquee el resultado aunque pase la regresión controlada.
 - Preview único en http://127.0.0.1:4173/. Se conserva la pestaña y el almacenamiento de revisión del usuario. Sin ZIP, por su instrucción.
 
