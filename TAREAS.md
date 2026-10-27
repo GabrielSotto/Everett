@@ -2,23 +2,39 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                                                                                                             |
-| ----------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                                                           |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                                                        |
-| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). 0.8.20: copias locales verificadas; bosquejos por concretar visualmente y consulta espacial del iframe enfocado pendiente. |
-| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                                                 |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                                                  |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                                              |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                                                            |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                                                           |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                                                           |
+| Iteración                     | Estado                        | Trabajo                                                                                                                                                                                              |
+| ----------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                                                            |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                                                         |
+| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). 0.8.21: bosquejos implementados y verificados; copias locales conservadas. Consulta espacial del iframe enfocado pendiente. |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                                                  |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                                                   |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                                               |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                                                             |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                                                            |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                                                            |
 
 ## Después de 1.0
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
-## Bloque de copias locales — 0.8.20 verificada
+## Bosquejos de interfaz — 0.8.21 verificada
+
+Implementados en `44ca124`: Canvas → Bosquejos ofrece las nueve piezas confirmadas, con edición
+automática de contenido y tablas por celdas. Se conservan selección, guías, tamaño, capas,
+conjuntos, conexiones, comentarios, duplicación, portapapeles, búsqueda y persistencia. Pantalla
+y piezas se agrupan explícitamente para mover una composición completa. El contrato permanece
+en C08-WIRE-01; las licencias permisivas y sus avisos están registrados en Desarrollo.
+
+El arnés incorpora C08-U42–U43 y C08-B126–B130. Las pruebas dirigidas encontraron y corrigieron
+el nombre accesible del menú, el desborde de tablas extensas a 320 px/texto 200 %, el contraste
+del texto sobre la pantalla clara y la geometría del borde durante resize. El historial distingue
+escritura en diferentes celdas y cambios estructurales. La revisión visual añadió una regresión
+para conservar la celda enfocada y el panel completo dentro de la ventana al ampliar el texto;
+correcciones en `4e8508e` y `4fe1f33`. Gate completo aprobado sobre el HTML final, servido en 4173
+sin recargar la pestaña ni alterar los datos del usuario. Pendiente de su revisión y aprobación.
+
+## Antecedente: copias locales — 0.8.20 verificada
 
 No inicia otra etapa ni implica aprobación de cierre. Las copias locales, duplicación múltiple,
 Ctrl+D y Ctrl+C/Ctrl+V están implementados. La incorporación explícita transforma la pieza en una
@@ -56,17 +72,10 @@ verificadas. Servido en 4173, sin recargar la pestaña ni alterar los datos de r
 
 ### Pendientes que requieren definición de alcance o dirección visual
 
-- Bosquejos de interfaz de baja fidelidad: primer bloque confirmado con pantallas, texto, botones,
-  campos, tarjetas/listas, marcadores de imagen, tablas y menús básicos como piezas editables.
-  Sin formularios funcionales, responsive automático ni generación de código en ese bloque.
-  Concretar dirección visual y reutilización compatible antes de implementar; la apariencia
-  dibujada por sí sola no resuelve la capacidad. La investigación es temporal, sin informe adicional.
 - Arrastrar referencias desde otro navegador, incluido un video de YouTube: idea por evaluar;
   verificar URI/HTML/texto y posición de suelta con un arrastre real entre ventanas.
 - Aplicación final: definir el destino de Abrir original y el contenedor para aplicaciones web
   completas. El comportamiento del navegador interno de Codex no decide el de Everett.
-- Ejecución del arnés: investigar el margen de tiempo de borradores de Agents y el costo del gate;
-  mejorar confiabilidad y diagnóstico conservando acciones, aserciones y evidencia.
 
 Los errores de YouTube y su contraste ya están corregidos y comprobados debajo. Alineación,
 distribución, menú superior y galería de selección ya están implementados; conservarlos y revisar
@@ -84,7 +93,7 @@ En la verificación de 0.8.19 se sirvió el HTML corregido en 4173 con SHA-256 `
 - Menú de acciones y ajustes en la barra superior, ubicación confirmada por el usuario. Alinear y distribuir también pertenecen al menú contextual de la selección; las guías siguen activas automáticamente por defecto.
 - Seis alineaciones y espacios iguales entre piezas de tamaños distintos, conservando extremos, conjuntos completos, tamaño, pertenencia, historial y persistencia. Contratos C08-ARRANGE-01 y C08-ACTIONS-01; comprobar geometría efectiva, no solo presencia de controles.
 - Menú compacto y anclado, accesible por teclado, a 320 px y con texto ampliado. Los accesos a Preferencias y Atajos reutilizan la configuración y sus valores.
-- Próximo bloque requerido de 0.8: bosquejos de interfaz útiles de baja fidelidad. Definir piezas editables y su representación y evaluar soluciones reutilizables compatibles con el carácter propietario antes de adoptar una biblioteca. La lista inicial propuesta está en [Alcance](docs/alcance-prototipo.md#mejoras-de-canvas-por-evaluar). Sustituye la postergación anterior; todavía no está implementado.
+- Próximo bloque requerido de 0.8: bosquejos de interfaz útiles de baja fidelidad. Definir piezas editables y su representación y evaluar soluciones reutilizables compatibles con el carácter propietario antes de adoptar una biblioteca. La lista inicial propuesta está en [Alcance](docs/alcance-prototipo.md#mejoras-de-canvas-por-evaluar). Sustituye la postergación anterior; la implementación 0.8.21 está verificada y pendiente de revisión del usuario.
 - Preservar los límites de consulta externos documentados debajo. No integrar en `dev` ni cerrar 0.8.
 
 ## Base verificada — consulta 0.8.17
@@ -148,7 +157,7 @@ La evaluación de 0.8.8 identificó pertenencia manual temporal, ausencia de ref
 - Conjuntos: crear desde selección múltiple, nombrar, mover, deshacer, recuperar y separar sin borrar materiales. Conservan miembros durante asignación/devolución y no sustituyen zonas ni propiedad de agentes.
 - Fragmentos de Docs y Code: selección nativa del rango, preview y entrada al mismo origen, seguimiento de ediciones y estado no disponible. Copiar Docs conserva independencia. Las propuestas preservan contenido vecino y rechazan conflictos de origen.
 - Controles: búsqueda siempre en la cabecera, Undo/Redo compactos, salida de Formas, conexión seleccionada con un clic, etiqueta con doble clic y Enter/Esc sin botones, eliminación por teclado, opacidad dentro del color. Superficies está oculto por defecto y tiene un switch persistente en Configuración → Preferencias.
-- Panorama: comprobar etiquetas fuera de tarjetas, continuidad del cable, zoom, movimiento y nombres de conjuntos alcanzables. El nombre de una forma sigue en su identificación contextual; el texto editable para componer interfaces se concretará en el bloque de bosquejos indicado arriba, todavía sin representación implementada.
+- Panorama: comprobar etiquetas fuera de tarjetas, continuidad del cable, zoom, movimiento y nombres de conjuntos alcanzables. El nombre de una forma sigue en su identificación contextual; las piezas de texto editables se implementan en el bloque de bosquejos 0.8.21 indicado arriba.
 
 ## Límites y trabajo posterior
 
@@ -162,18 +171,18 @@ Canvas sigue en desarrollo. El gate de una candidata no acredita por sí solo la
 
 Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada superficie permanecen en su etapa. Registrar aquí nuevos fallos con versión, reproducción, resultado esperado y regresión asociada. Al corregirlos, conservar el caso en tests y retirar el pendiente; Git conserva el cambio. Los resultados de ejecución viven en output/pruebas hasta la siguiente ejecución de su grupo.
 
-## Verificación actual — 0.8.20
+## Verificación actual — 0.8.21
 
-Copias implementadas en `7250022`; presupuesto del recorrido completo de borradores en `7b079cb`, conservando los límites de acciones y aserciones. C08-U39–U41 y C08-B120–B125 cubren independencia, incorporación explícita, grupos, conexiones, portapapeles, archivos ausentes, permisos, persistencia, historial, disposición estrecha y etiquetas.
+Bosquejos implementados en `44ca124`, con los ajustes de panel y foco indicados arriba. C08-U42–U43 y C08-B126–B130 cubren las nueve piezas, edición, tablas y pegado de rangos, límites, contraste, copia, conexiones, grupos, tamaño transitorio, zoom, teclado, recarga y liberación de recursos. Se conserva la cobertura de copias de `7250022` y el presupuesto del recorrido de borradores de `7b079cb`, sin aumentar los límites de acciones o aserciones.
 
-**Regresión verificada: 104 pruebas de lógica/herramientas y 199 de navegador**, sin fallos, omisiones ni reintentos. La ejecución completa con dos workers duró 27,1 minutos. Incluye 30 ciclos sostenidos durante más de nueve minutos, con límites de memoria, listeners, temporizadores y respuesta cumplidos. Tipado, formato, inventario de casos, controles negativos, hashes del build y evidencia vigente comprobados. Las ejecuciones parciales e interrumpidas no se acreditan.
+**Regresión verificada: 106 pruebas de lógica/herramientas y 204 de navegador**, sin fallos, omisiones ni reintentos. La ejecución completa con dos workers duró 27,4 minutos. Incluye 30 ciclos sostenidos durante 550.352 ms, con límites de memoria, listeners, temporizadores y respuesta cumplidos. Tipado, formato, inventario de casos, controles negativos, hashes del build y evidencia vigente comprobados. Las ejecuciones parciales e interrumpidas no se acreditan.
 
 **El gate funcional conserva el bloqueo de `youtube-focused-modifier`:** Alt pulsado después de enfocar el iframe externo no llega a Everett. La comprobación pública previa documentó ese fallo; este bloque no modifica ni vuelve a acreditar ese recorrido externo. La rueda común conserva la acción local y la flecha permite regresar. No presentar la regresión controlada aprobada como cierre de ese fallo.
 
-- [HTML actual](dist/Everett-0.8.20.html): 14.702.682 bytes, build `001412edfe8dfa70`, SHA-256 `ea3ba4bd3f371ee35c1de151c75a8f3b6afd03b78d144d8921a793f3c90b143d`.
-- [Resultado unitario](output/pruebas/unitarias/2026-10-27_14-19-26-449Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-27_14-20-32-421Z/results.json).
-- Inspección visual del mismo artefacto: [editor de copia local en el navegador interno](output/revision/0.8.20/copia-local-editor.png) y [formulario a 320 px con texto ampliado](output/pruebas/navegador/2026-10-27_14-20-32-421Z/artifacts/canvas-copies-C08-B124-inc-8ae4c-a-ruta-duplicada-o-inválida/incorporacion-error-320-texto-ampliado.png). La pestaña de prueba se cerró; la pestaña del usuario no se recargó.
+- [HTML actual](dist/Everett-0.8.21.html): 14.979.499 bytes, build `2055c049a0d1f9b3`, SHA-256 `564e99d734aaf18a494391764fd2ce6bf129d4672c7c8886d77e52f6ac646706`.
+- [Resultado unitario](output/pruebas/unitarias/2026-10-27_19-27-24-668Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-27_19-29-51-585Z/results.json).
+- Inspección visual del mismo artefacto: [biblioteca en el navegador interno](output/revision/0.8.21/biblioteca-iab.png), [composición con las nueve piezas](output/revision/0.8.21/composicion-de-bosquejo.png) y [tabla a 320 px con texto ampliado](output/revision/0.8.21/tabla-320-texto200.png). Las pestañas de prueba se cerraron; la pestaña del usuario no se recargó.
 - [Comprobación pública](output/revision/0.8.19/destinos-publicos.json), [inspección de medios](output/revision/0.8.19/inspeccion-medios.json) y [veredicto público bloqueado](output/revision/0.8.19/verificacion-publica.json). HARNESS-15 comprueba que un fallo público bloquee el resultado aunque pase la regresión controlada.
 - Preview único en http://127.0.0.1:4173/. Se conserva la pestaña y el almacenamiento de revisión del usuario. Sin ZIP, por su instrucción.
 
-0.8 sigue abierta en `feat/canvas-0.8`, sin integrar en `dev`. Los bosquejos de baja fidelidad son el próximo bloque requerido de Canvas; todavía no están implementados. El editor integral conserva su planificación en 0.9.
+0.8 sigue abierta en `feat/canvas-0.8`, sin integrar en `dev`. Los bosquejos de baja fidelidad están implementados y verificados en 0.8.21, pendientes de revisión del usuario. El editor integral conserva su planificación en 0.9.
