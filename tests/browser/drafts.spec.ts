@@ -10,6 +10,9 @@ for (const [surface, prompt, trigger] of [
   test(`UI-DRAFT-01 ${surface}: salir conserva el borrador y enviar lo consume una sola vez`, async ({
     page,
   }) => {
+    // El recorrido completo de Agents midió 29,6 s en serie. Preservar los
+    // límites de cada acción y aserción, con margen para sus tres reentradas.
+    test.setTimeout(60000);
     const open = async () => {
       await openSurface(page, surface);
       if (surface === 'Agents') {
