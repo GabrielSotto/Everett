@@ -22,7 +22,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 YouTube devolvió `onError` 150 para `NIjruQLJQfo` tanto en Everett como en el iframe oficial aislado; `DYoSIFn_nac` reprodujo en ambos. El reproductor distingue los códigos documentados y usa un mensaje neutral cuando no puede identificar la causa. Se conserva Abrir original. C08-B97 cubre los códigos de YouTube, errores desconocidos, origen ajeno y Vimeo. La comparación real reproducible está en `tests/public/youtube-comparison.mjs`.
 
-El HTML actualizado está servido en 4173; el gate completo sigue en ejecución. La evidencia y el hash de la verificación anterior al final de este archivo corresponden al artefacto previo, no al corregido. Sigue pendiente el gesto espacial dentro del iframe enfocado; 0.8 no está cerrada ni integrada en `dev`.
+El HTML corregido está servido en 4173 con SHA-256 `d4e0875a62887255f511a6feed3441c975af943f9c43c45bb80fade8b0d03bca`. Build, tipado, formato, 101 pruebas unitarias y 193 pruebas de navegador verificadas sobre ese HTML. La comparación pública y la captura del rechazo real están en `output/revision/0.8.19/youtube-comparison.json` y `youtube-error-real.png`. La primera regresión paralela agotó el tiempo en borradores de Agents; la ejecución completa posterior con un navegador pasó, incluido ese caso. La evidencia y el hash de la verificación anterior al final de este archivo corresponden al artefacto previo. Sigue pendiente el gesto espacial dentro del iframe enfocado; 0.8 no está cerrada ni integrada en `dev`.
 
 ## Implementado — organización de Canvas 0.8.19
 
