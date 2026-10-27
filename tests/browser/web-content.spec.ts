@@ -271,7 +271,7 @@ test('C08-B97: proveedor usa iframe oficial, reproduce contenido y explica recha
   await page.route('https://www.youtube-nocookie.com/embed/**', async (route) =>
     route.fulfill({
       contentType: 'text/html',
-      body: `<video id="video" controls src="data:video/webm;base64,${movie.toString('base64')}"></video><button onclick="document.getElementById('video').play()">Reproducir prueba</button>`,
+      body: `<video id="video" controls src="data:video/webm;base64,${movie.toString('base64')}"></video><button onclick="document.getElementById('video').play()">Reproducir prueba</button><script>window.commands=[];window.addEventListener('message', e => {try {window.commands.push(JSON.parse(e.data))} catch {}})</script>`,
     }),
   );
   const id = await add(page, 'https://youtu.be/abc123def45');
@@ -282,6 +282,18 @@ test('C08-B97: proveedor usa iframe oficial, reproduce contenido y explica recha
     'src',
     /^https:\/\/www\.youtube-nocookie\.com\/embed\/abc123def45\?/,
   );
+  await expect
+    .poll(() =>
+      page
+        .frameLocator('.provider-video iframe')
+        .locator('body')
+        .evaluate(() =>
+          (window as unknown as { commands: { func?: string; args?: string[] }[] }).commands
+            .filter((command) => command.func === 'addEventListener')
+            .map((command) => command.args?.[0]),
+        ),
+    )
+    .toEqual(['onError', 'onStateChange']);
   await page
     .frameLocator('.provider-video iframe')
     .getByRole('button', { name: 'Reproducir prueba' })
@@ -298,7 +310,41 @@ test('C08-B97: proveedor usa iframe oficial, reproduce contenido y explica recha
     .frameLocator('.provider-video iframe')
     .locator('body')
     .evaluate(() => parent.postMessage(JSON.stringify({ event: 'onError', info: 150 }), '*'));
-  await expect(page.locator('.provider-status')).toContainText('El proveedor no permite');
+  await expect(page.locator('.provider-status')).toContainText('El creador no permite');
+  for (const [code, expected] of [
+    [2, 'dirección del video no es válida'],
+    [5, 'no pudo reproducir el video'],
+    [100, 'no encuentra este video o es privado'],
+    [101, 'El creador no permite'],
+    [153, 'no pudo identificar el origen'],
+    [999, 'No se pudo reproducir este video'],
+  ] as const) {
+    await page
+      .frameLocator('.provider-video iframe')
+      .locator('body')
+      .evaluate(
+        (_, code) => parent.postMessage(JSON.stringify({ event: 'onError', info: code }), '*'),
+        code,
+      );
+    await expect(page.locator('.provider-status')).toContainText(expected);
+  }
+  await page.evaluate(() => window.postMessage({ event: 'onError', info: 101 }, '*'));
+  await expect(page.locator('.provider-status')).toContainText('No se pudo reproducir este video');
+  await page
+    .frameLocator('.provider-video iframe')
+    .locator('body')
+    .evaluate(() => parent.postMessage({ event: 'onError', data: 153 }, '*'));
+  await expect(page.locator('.provider-status')).toContainText('no pudo identificar el origen');
+  await page
+    .frameLocator('.provider-video iframe')
+    .locator('body')
+    .evaluate(() => parent.postMessage({ event: 'onError' }, '*'));
+  await expect(page.locator('.provider-status')).toContainText('No se pudo reproducir este video');
+  await page
+    .frameLocator('.provider-video iframe')
+    .locator('body')
+    .evaluate(() => parent.postMessage(JSON.stringify({ event: 'onStateChange', info: 1 }), '*'));
+  await expect(page.locator('.provider-status')).toBeEmpty();
   await expect(page.getByRole('link', { name: /Abrir original/ })).toHaveAttribute(
     'href',
     'https://youtu.be/abc123def45',
@@ -307,6 +353,30 @@ test('C08-B97: proveedor usa iframe oficial, reproduce contenido y explica recha
   await page.getByRole('button', { name: 'Volver', exact: true }).click();
   await expect(iframe).toHaveCount(0);
   await expect(page.locator(`[data-node="${id}"]`)).toBeVisible();
+  await page.route('**/api/link-preview', async (route) =>
+    route.fulfill({
+      json: {
+        status: 'ready',
+        checkedAt: 123,
+        resolvedUrl: 'https://vimeo.com/12345',
+        embed: { provider: 'vimeo', id: '12345' },
+      },
+    }),
+  );
+  await page.route('https://player.vimeo.com/video/**', async (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<p>Reproductor de prueba</p>' }),
+  );
+  const vimeo = await add(page, 'https://vimeo.com/12345');
+  await page.locator(`[data-node="${vimeo}"] .link-open`).click();
+  await page
+    .frameLocator('.provider-video iframe')
+    .locator('body')
+    .evaluate(() => parent.postMessage({ event: 'error', data: { name: 'PrivacyError' } }, '*'));
+  await expect(page.locator('.provider-status')).toContainText('No se pudo reproducir este video');
+  await expect(page.getByRole('link', { name: /Abrir original/ })).toHaveAttribute(
+    'href',
+    'https://vimeo.com/12345',
+  );
 });
 
 test('C08-B98: rueda continua revierte sin cola y encuadra una selección pequeña por encima del 100%', async ({

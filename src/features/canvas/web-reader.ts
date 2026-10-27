@@ -4,6 +4,7 @@ import type { LinkPreview } from '../../domain/model';
 import {
   linkUrl,
   providerPlayer,
+  providerErrorMessage,
   retainLinkPreview,
   validLinkPreview,
   previewMessage,
@@ -265,10 +266,11 @@ export class WebReader {
             JSON.stringify({ event: 'listening', id: this.id }),
             'https://www.youtube-nocookie.com',
           );
-          frame.contentWindow?.postMessage(
-            JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onError'] }),
-            'https://www.youtube-nocookie.com',
-          );
+          for (const name of ['onError', 'onStateChange'])
+            frame.contentWindow?.postMessage(
+              JSON.stringify({ event: 'command', func: 'addEventListener', args: [name] }),
+              'https://www.youtube-nocookie.com',
+            );
         }
       },
       { signal },
@@ -286,8 +288,14 @@ export class WebReader {
           if (value?.event === 'onError' || value?.event === 'error') {
             const status = host.querySelector('.provider-status');
             if (status)
-              status.textContent =
-                'El proveedor no permite reproducir este video aquí. El enlace al original sigue disponible.';
+              status.textContent = providerErrorMessage(embed.provider, value.info ?? value.data);
+          } else if (
+            embed.provider === 'youtube' &&
+            value?.event === 'onStateChange' &&
+            value.info === 1
+          ) {
+            const status = host.querySelector('.provider-status');
+            if (status) status.textContent = '';
           }
         } catch {
           /* Ignorar mensajes ajenos al protocolo del reproductor. */

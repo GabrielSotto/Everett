@@ -18,6 +18,12 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
+## Corrección en curso — errores de reproducción
+
+YouTube devolvió `onError` 150 para `NIjruQLJQfo` tanto en Everett como en el iframe oficial aislado; `DYoSIFn_nac` reprodujo en ambos. El reproductor distingue los códigos documentados y usa un mensaje neutral cuando no puede identificar la causa. Se conserva Abrir original. C08-B97 cubre los códigos de YouTube, errores desconocidos, origen ajeno y Vimeo. La comparación real reproducible está en `tests/public/youtube-comparison.mjs`.
+
+El HTML actualizado está servido en 4173; el gate completo sigue en ejecución. La evidencia y el hash de la verificación anterior al final de este archivo corresponden al artefacto previo, no al corregido. Sigue pendiente el gesto espacial dentro del iframe enfocado; 0.8 no está cerrada ni integrada en `dev`.
+
 ## Implementado — organización de Canvas 0.8.19
 
 - Menú de acciones y ajustes en la barra superior, ubicación confirmada por el usuario. Alinear y distribuir también pertenecen al menú contextual de la selección; las guías siguen activas automáticamente por defecto.

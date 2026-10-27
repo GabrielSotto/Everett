@@ -96,6 +96,26 @@ export function providerPlayer(embed: NonNullable<LinkPreview['embed']>): string
     : `https://player.vimeo.com/video/${embed.id}${embed.hash ? '?h=' + embed.hash : ''}`;
 }
 
+/** Mensajes basados en los códigos documentados; no inferir restricciones sin evidencia. */
+export function providerErrorMessage(provider: 'youtube' | 'vimeo', code: unknown): string {
+  if (provider === 'youtube') {
+    switch (code) {
+      case 2:
+        return 'La dirección del video no es válida. Revisá el enlace o abrí el original.';
+      case 5:
+        return 'YouTube no pudo reproducir el video en este reproductor. Intentá de nuevo o abrí el original.';
+      case 100:
+        return 'YouTube no encuentra este video o es privado. Abrí el original para comprobarlo.';
+      case 101:
+      case 150:
+        return 'El creador no permite reproducir este video fuera de YouTube. Abrí el original.';
+      case 153:
+        return 'YouTube no pudo identificar el origen del reproductor. Abrí el original o intentá más tarde.';
+    }
+  }
+  return 'No se pudo reproducir este video aquí. Intentá de nuevo o abrí el original.';
+}
+
 export function previewMessage(preview: LinkPreview | undefined): string {
   if (!preview || preview.status === 'loading') return 'Preparando vista previa…';
   if (preview.status === 'ready')
