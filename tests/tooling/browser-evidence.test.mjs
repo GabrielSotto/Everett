@@ -132,3 +132,24 @@ test('HARNESS-14: rechaza controles ausentes, programáticos u ocultos aunque la
   );
   assert.throws(() => verifyBrowserReport(report, expected), /Falta controls-used/);
 });
+
+test('HARNESS-DEV: distingue evidencia de fuentes y de HTML y rechaza tipos y hashes cruzados', () => {
+  const report = valid();
+  const meta = report.config.metadata;
+  meta.targetKind = 'development';
+  meta.sourceSha256 = expected.sha256;
+  delete meta.artifactSha256;
+  const annotation = report.suites[0].specs[0].tests[0].annotations[0];
+  annotation.type = 'source-sha256';
+  assert.equal(verifyBrowserReport(report, { ...expected, kind: 'development' }).length, 1);
+  assert.throws(() => verifyBrowserReport(report, expected), /tipo de objetivo/);
+  assert.throws(
+    () => verifyBrowserReport(report, { ...expected, kind: 'development', sha256: 'otro' }),
+    /otras fuentes/,
+  );
+  annotation.type = 'artifact-sha256';
+  assert.throws(
+    () => verifyBrowserReport(report, { ...expected, kind: 'development' }),
+    /objetivo cargado/,
+  );
+});

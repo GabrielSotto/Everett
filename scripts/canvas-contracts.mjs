@@ -238,8 +238,14 @@ export const canvasCases = [
   { id: 'C08-B32', layer: 'browser', contracts: ['C08-MAT-02', 'C08-MAT-06', 'C08-MAT-05'] },
   { id: 'C08-B33', layer: 'browser', contracts: ['C08-MAT-07', 'C08-PROP-01'] },
 ];
-export function verifyCanvasCoverage(layer, titles) {
-  const required = canvasCases.filter((item) => item.layer === layer);
+export const standaloneCases = ['C08-B13', 'C08-B90'];
+export function verifyCanvasCoverage(layer, titles, { targetKind = 'artifact' } = {}) {
+  if (!['development', 'artifact'].includes(targetKind))
+    throw new Error('Tipo de objetivo inválido.');
+  const required = canvasCases.filter(
+    (item) =>
+      item.layer === layer && (targetKind !== 'development' || !standaloneCases.includes(item.id)),
+  );
   for (const item of required) {
     const matches = titles.filter((title) => title.startsWith(item.id + ':'));
     if (matches.length !== 1)

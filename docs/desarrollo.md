@@ -41,19 +41,40 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 
 | Comando                  | Resultado                                                                                                      |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`            | Vite en `http://127.0.0.1:4173/`, con HMR de estilos y recarga automática del código.                          |
 | `npm run typecheck`      | Comprueba los tipos sin generar archivos.                                                                      |
 | `npm run format:check`   | Comprueba el formato de fuentes, configuración y documentación.                                                |
 | `npm run format`         | Aplica el formato del proyecto.                                                                                |
 | `npm run test:unit`      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                             |
 | `npm run verify:unit`    | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión. |
-| `npm run build`          | Genera `dist/Everett-0.8.22.html` y `dist/build-manifest.json`.                                                |
-| `npm run verify:build`   | Comprueba existencia, bytes, hash, versión e identidad de las fuentes del build.                               |
-| `npm run test:browser`   | Ejecuta los recorridos preparados en Playwright sobre la URL indicada en `EVERETT_TEST_URL`.                   |
+| `npm run build`          | Herramienta histórica de HTML autónomo; fuera del flujo cotidiano de Vite.                                     |
+| `npm run verify:build`   | Comprueba una salida histórica de HTML autónomo, cuando se utiliza ese formato.                                |
+| `npm run test:browser`   | Ejecuta Playwright sobre las fuentes servidas por Vite; usa 4173 o `EVERETT_TEST_URL`.                         |
 | `npm run verify:browser` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.            |
 
 `npm run recover` corresponde a la extracción inicial del HTML original. Rechaza sobrescribir archivos existentes y comprueba primero el hash de la base. El desarrollo cotidiano utiliza las fuentes mantenidas en `src/`.
 
-## Build autónomo
+## Desarrollo continuo
+
+El trabajo cotidiano usa `npm run dev`. Vite 8.3.5 sirve los módulos TypeScript y CSS de
+`src/` directamente, observa sus cambios y gestiona HMR. Los estilos se sustituyen sin recargar
+la página; los cambios de código recargan automáticamente la aplicación DOM nativa y recuperan
+el guardado local. No se conserva el historial de Undo en memoria a través de una recarga de
+código. Confirmar las ediciones transitorias antes de cambiar código durante una revisión.
+Un error de sintaxis mantiene la vista actual y muestra el diagnóstico; corregirlo reanuda la carga.
+
+`vite.config.mjs` y `scripts/development.mjs` adaptan la plantilla y reutilizan el servicio de
+enlaces en el mismo origen. PDF.js conserva su worker como texto mediante el import raw de Vite.
+El servidor escucha solo en `127.0.0.1`, no cambia de puerto si 4173 está ocupado y no abre pestañas.
+Mantener un único servidor cotidiano en 4173 para conservar el almacenamiento de revisión.
+Las pruebas que necesitan otro servidor lo crean en un puerto efímero y lo cierran al terminar.
+
+No generar un HTML autónomo, ZIP ni informe de entrega por cada cambio o revisión de Canvas.
+Las fuentes mantenidas son los módulos de `src/`; `dist/` nunca fue la fuente de desarrollo.
+Los scripts del flujo anterior se conservan para reproducir sus entregas históricas, fuera del
+trabajo cotidiano. El servidor `preview.mjs` queda retirado del uso diario.
+
+## Antecedente: build autónomo
 
 `index.html` contiene los puntos de inserción del script y los estilos. esbuild incorpora los módulos y las imágenes locales al HTML final. La versión procede de `package.json`; el manifiesto registra el hash del HTML, su tamaño y los hashes de sus entradas. El identificador también aparece en la etiqueta `everett-build` del documento y en el diagnóstico exportado.
 
@@ -67,7 +88,7 @@ PDF.js añade el parser y un worker distribuido con el HTML. El DOM y el navegad
 
 La matriz obligatoria de contratos está en `scripts/canvas-contracts.mjs`. Los verificadores exigen todos los C08 de la definición y una ejecución única de cada caso mínimo; descubrir una suite antigua o incompleta no certifica 0.8. Las pruebas adversas ingresan por la frontera de IndexedDB con registros reales y reparables; no insertan DOM de prueba en la interfaz.
 
-El arnés obtiene los bytes del documento cargado mediante una sesión CDP con buffers suficientes para el HTML autónomo, y contrasta su SHA-256 con el manifiesto antes de cada recorrido. Conserva el control del artefacto aunque el documento exceda la caché predeterminada de Playwright.
+En el gate histórico de HTML autónomo, el arnés obtiene los bytes del documento cargado mediante una sesión CDP con buffers suficientes y contrasta su SHA-256 con el manifiesto antes de cada recorrido. Conserva el control del artefacto aunque el documento exceda la caché predeterminada de Playwright. El gate cotidiano de fuentes usa la identidad de desarrollo descrita debajo.
 
 Esa sesión CDP se desconecta al terminar la comprobación, incluso si falla la carga o el hash. Su buffer no se mantiene durante el recorrido. Una ejecución que falla al cargar el documento no certifica el caso; reducir workers permite repetir el gate completo con menos consumo simultáneo, sin reintentos ni omisiones.
 
@@ -87,17 +108,36 @@ Los verificadores usan la última ejecución por defecto; también aceptan su ru
 
 Antes de ejecutar por primera vez, instalar Chromium para la versión fijada de Playwright mediante `npx playwright install chromium`, si el entorno no lo tiene disponible.
 
-Para evaluar el build en la propia computadora, ejecutar `node scripts/preview.mjs` y utilizar la URL que imprime. El servidor escucha exclusivamente en `127.0.0.1`, comprueba el manifiesto y sirve el HTML de `dist/` leído al arrancar. Reiniciarlo después de reconstruir el HTML y detenerlo con Ctrl+C al terminar. El argumento opcional de puerto acepta `0` para elegir uno libre.
+Arrancar Vite con `npm run dev` y ejecutar `npm run test:browser` en otra terminal. No requiere
+construir `dist/`. `EVERETT_TEST_URL` permite indicar otro servidor Vite para pruebas aisladas.
 
-`EVERETT_TEST_URL` debe apuntar a una dirección HTTP(S) admitida que sirva el HTML exacto de `dist/build-manifest.json`. El runner comprueba la respuesta y sus bytes antes de crear una ejecución; cada caso vuelve a comprobarlos antes del recorrido. La configuración no inicia un servidor ni publica archivos.
+El runner guarda `target.json` con versión e identidad SHA-256 de todas las fuentes y recursos
+de aplicación, configuración, lockfile y servicio local. Contrasta esa identidad con el endpoint
+local antes y después de la ejecución. Cada caso verifica el mismo objetivo antes y después del
+recorrido; cambiar fuentes durante las pruebas invalida su evidencia. No confundir ese hash de
+fuentes con el hash de un HTML. `verify:browser` vuelve a calcular la identidad y funciona con
+el servidor detenido.
 
 En una segunda terminal de PowerShell, definir `$env:EVERETT_TEST_URL = 'http://127.0.0.1:4173/'` con el puerto utilizado y ejecutar `npm run test:browser`.
 
-La salida se guarda en `output/pruebas/navegador/<fecha UTC>/`: resultados JSON, informe HTML, trazas, capturas y videos de fallos. Cada caso carga y comprueba los bytes del HTML antes de operar. Los casos leen el diagnóstico para contrastar resultados; las acciones utilizan controles, teclado y arrastres. Un error de consola o de página hace fallar el recorrido.
+La salida se guarda en `output/pruebas/navegador/<fecha UTC>/`: resultados JSON, informe del
+runner, trazas, capturas y videos de fallos. Los casos leen el diagnóstico para contrastar
+resultados; las acciones utilizan controles, teclado y arrastres. Un error de consola o de
+página hace fallar el recorrido. No se genera un informe adicional de entrega.
 
 Las acciones de interfaz tienen un límite de 10 segundos y las navegaciones de 30 segundos, además del límite del recorrido. Un control tapado o inaccesible debe producir un diagnóstico acotado; aumentar el tiempo no corrige su falta de acceso. Los casos que observan transiciones distinguen muestras durante el gesto de geometría final ya estabilizada.
 
-`verify:browser` vuelve a descubrir los casos del proyecto y exige su correspondencia exacta con el informe. Rechaza ejecuciones parciales, omisiones, reintentos, fallos esperados, otro HTML, cambios en las fuentes del arnés y adjuntos ausentes o vacíos. Puede ejecutarse después de detener el servidor: descubre casos sin abrir el navegador.
+`verify:browser` vuelve a descubrir los casos del objetivo y exige su correspondencia exacta
+con el informe. Rechaza ejecuciones parciales, omisiones, reintentos, fallos esperados, otras
+fuentes, cambios en el arnés y adjuntos ausentes o vacíos. HARNESS-DEV y HARNESS-DEV-COVERAGE
+comprueban que no se acepte evidencia cruzada ni se pierdan casos de aplicación.
+
+C08-B13 y C08-B90 verifican exclusivamente abrir el antiguo HTML como archivo y llevan
+`@standalone`. Se conservan en el gate histórico `npm run test:artifact`, que requiere ese
+HTML construido y su servidor, y no se cuentan como aprobados en el gate de fuentes.
+El resto de recorridos, incluido el servicio HTTP y parser real de C08-B91, se ejecutan contra
+Vite sin depender de `dist/`. DEV-01 prueba en una copia temporal cambios reales de CSS y código,
+error y recuperación de compilación, notas, cámara, borradores, PDF, protocolo HTTP y puerto ocupado.
 
 Los recorridos preparados cubren navegación inicial, edición y propuestas de Code, documentos y hojas, Board y Shipping, notas y referencias de Canvas, asignación y devolución de materiales, memoria de agentes y motion de paneles y composers. La matriz de [Reconstrucción de 0.7.5](iteraciones/0.7.5.md) conserva los contratos y recorridos de regresión de la etapa cerrada.
 
@@ -123,7 +163,10 @@ Los resultados completos se rechazan si la traza de la aplicación contiene erro
 
 La comparación admite un nivel de redondeo en los canales premultiplicados por alfa. Esto evita amplificar errores de cuantización al leer colores semitransparentes. El control negativo se repite con la opacidad real de un Mundo atenuado por el filtro y debe seguir detectando la órbita incorrecta.
 
-## Empaquetado y cierre
+## Antecedente: empaquetado y cierre de entregas
+
+Este procedimiento corresponde a las entregas puntuales anteriores. El usuario retiró ese
+flujo del trabajo continuo de Canvas el 27 de octubre de 2026. No ejecutarlo por cada revisión.
 
 Con el gate completo y la revisión visual y de alcance en `output/revision/<versión>/revision.md`, ejecutar en PowerShell 7 usando las rutas emitidas por los runners:
 
@@ -151,15 +194,16 @@ Penpot usa MPL-2.0 y se mantiene como referencia funcional; no se ha incorporado
 
 Registrar origen, versión, licencia elegida y avisos que deban conservarse al incorporar código. En licencias alternativas, dejar explícita la opción adoptada: para DOMPurify se elige Apache-2.0 de su licencia dual `(MPL-2.0 OR Apache-2.0)`.
 
-| Dependencia        | Uso y motivo                                                                                                                                                         | Licencia   |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| TypeScript         | Comprobación estática de contratos, estados y variantes.                                                                                                             | Apache-2.0 |
-| esbuild            | Bundles del navegador, inclusión de recursos y compilación de pruebas para Node.                                                                                     | MIT        |
-| `@playwright/test` | Navegador real, acciones, trazas, capturas y aserciones de interfaz.                                                                                                 | Apache-2.0 |
-| `@types/node`      | Tipos de las APIs de Node usadas en pruebas y configuración.                                                                                                         | MIT        |
-| Prettier           | Formato uniforme sin reglas particulares por archivo.                                                                                                                | MIT        |
-| `pdfjs-dist`       | Portadas reales y lectura multipágina de PDF importados; worker dentro del HTML.                                                                                     | Apache-2.0 |
-| `roughjs` 4.6.6    | Contornos SVG deterministas de bosquejos, con tamaños del Mundo. Reutiliza el generador existente sin introducir otro motor de selección o un framework de interfaz. | MIT        |
+| Dependencia        | Uso y motivo                                                                                                                                                               | Licencia   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| TypeScript         | Comprobación estática de contratos, estados y variantes.                                                                                                                   | Apache-2.0 |
+| esbuild            | Bundles del navegador, inclusión de recursos y compilación de pruebas para Node.                                                                                           | MIT        |
+| `vite` 8.3.5       | Servidor de desarrollo, HMR de CSS, recarga y diagnóstico de módulos. Reutiliza su protocolo y watcher; añade herramientas de desarrollo, sin incluirlas en la aplicación. | MIT        |
+| `@playwright/test` | Navegador real, acciones, trazas, capturas y aserciones de interfaz.                                                                                                       | Apache-2.0 |
+| `@types/node`      | Tipos de las APIs de Node usadas en pruebas y configuración.                                                                                                               | MIT        |
+| Prettier           | Formato uniforme sin reglas particulares por archivo.                                                                                                                      | MIT        |
+| `pdfjs-dist`       | Portadas reales y lectura multipágina de PDF importados; worker dentro del HTML.                                                                                           | Apache-2.0 |
+| `roughjs` 4.6.6    | Contornos SVG deterministas de bosquejos, con tamaños del Mundo. Reutiliza el generador existente sin introducir otro motor de selección o un framework de interfaz.       | MIT        |
 
 Todas están declaradas como dependencias de desarrollo. La aplicación mantiene DOM nativo; PDF.js se incorpora al bundle, incluido su worker, sin solicitar código externo en ejecución. Las versiones exactas y sus dependencias transitivas quedan fijadas en el lockfile; actualizar una herramienta requiere repetir las verificaciones afectadas. Playwright añade la descarga y mantenimiento de su navegador de pruebas.
 

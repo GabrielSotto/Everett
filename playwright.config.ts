@@ -14,7 +14,17 @@ if (!/^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-\d{3}Z$/.test(runId))
   throw new Error('Identificador de ejecución inválido.');
 process.env.EVERETT_BROWSER_RUN_ID = runId;
 const packageInfo = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
-const manifest = JSON.parse(readFileSync('dist/build-manifest.json', 'utf8')) as { sha256: string };
+const targetKind = process.env.EVERETT_TEST_KIND ?? 'artifact';
+if (!['development', 'artifact'].includes(targetKind))
+  throw new Error('Tipo de objetivo inválido.');
+const manifest = JSON.parse(
+  readFileSync(
+    targetKind === 'development'
+      ? `output/pruebas/navegador/${runId}/target.json`
+      : 'dist/build-manifest.json',
+    'utf8',
+  ),
+) as { sha256: string; sourceHashes: { path: string; sha256: string }[] };
 const sourceHashes = [
   ...globSync('tests/browser/**/*.ts'),
   'tests/fixtures/link-cover.png',
@@ -24,6 +34,7 @@ const sourceHashes = [
   'playwright.config.ts',
   'scripts/test-browser.mjs',
   'scripts/artifact-evidence.mjs',
+  'scripts/development-evidence.mjs',
   'scripts/canvas-contracts.mjs',
   'scripts/browser-evidence.mjs',
   'docs/iteraciones/0.8.md',
@@ -45,10 +56,15 @@ export default defineConfig({
     runId,
     target: baseURL.href,
     version: packageInfo.version,
-    artifactSha256: manifest.sha256,
+    targetKind,
+    targetIdentity: manifest,
+    ...(targetKind === 'development'
+      ? { sourceSha256: manifest.sha256 }
+      : { artifactSha256: manifest.sha256 }),
     sourceHashes,
   },
   forbidOnly: true,
+  grepInvert: targetKind === 'development' ? /@standalone/ : /a^/,
   retries: 0,
   workers: 1,
   timeout: 30_000,

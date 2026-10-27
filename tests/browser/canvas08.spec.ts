@@ -763,7 +763,7 @@ test('C08-B07: enlace sin preview, tarjeta Board compartida y dock alcanzable en
     expect((await button.boundingBox())!.width).toBeGreaterThanOrEqual(34);
 });
 
-test('C08-B13: el HTML autónomo abierto como archivo permite PDF, recarga y vuelta espacial', async ({
+test('C08-B13: el HTML autónomo abierto como archivo permite PDF, recarga y vuelta espacial @standalone', async ({
   page,
 }) => {
   const manifest = JSON.parse(await readFile('dist/build-manifest.json', 'utf8')) as {

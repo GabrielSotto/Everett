@@ -27,6 +27,29 @@ El siguiente bloque conserva íntegros los mínimos del roadmap:
 
 ## Gate de cada versión
 
+### Trabajo continuo de Canvas
+
+El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo
+con Vite. El gate cotidiano evalúa directamente las fuentes de la aplicación: tipado, pruebas
+unitarias y del arnés, recorridos reales de navegador, regresión pertinente, revisión visual
+y auditoría del alcance. No requiere construir un HTML autónomo, preparar un ZIP ni redactar
+un informe adicional por cada revisión. Mantener las fuentes versionadas y la evidencia real
+de la ejecución. Una versión de paquete no sustituye la identidad de la revisión evaluada.
+
+`target.json` registra versión, hashes de fuentes, configuración, recursos y servicio, y su hash
+conjunto. El runner y los casos contrastan la identidad con Vite; el verificador vuelve a leer
+las fuentes y descubre exactamente los casos aplicables. Un cambio durante la ejecución o una
+discrepancia de identidad debe invalidar el resultado. Conservar los controles negativos del
+arnés, los recorridos de aplicación y sus contraejemplos. Los casos C08-B13 y C08-B90, exclusivos
+del antiguo archivo autónomo, permanecen en el gate histórico de ese formato y no se acreditan
+como ejecutados contra fuentes.
+
+### Antecedente de entregas puntuales
+
+Las comprobaciones de HTML, empaquetado y hashes de un artefacto distribuible que siguen
+corresponden a ese formato anterior. El trabajo continuo conserva sus criterios funcionales
+y de evidencia; no necesita generar ese formato para iterar ni mostrar los cambios al usuario.
+
 En cada cambio de comportamiento, ampliar o ajustar el arnés junto con la implementación: funciones, superficies, interacciones, gestos, motion y sus combinaciones requieren comprobaciones observables y contraejemplos pertinentes. Cada fallo encontrado durante pruebas o feedback debe quedar cubierto por una regresión reproducible. Conservar las pruebas de comportamientos aprobados y ejecutar las regresiones afectadas; completar la regresión de la etapa antes de integrarla. Los cambios exclusivamente documentales mantienen su verificación específica.
 
 Versionar las fuentes del arnés, sus datos y las instrucciones de ejecución en la misma rama de la iteración. Conservar los resultados, trazas y capturas de la entrega junto con el HTML y las fuentes en un paquete verificado. La continuidad de las pruebas debe depender del repositorio y sus entregas guardadas.

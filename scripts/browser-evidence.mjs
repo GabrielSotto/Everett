@@ -8,8 +8,14 @@ export function verifyBrowserReport(report, expected) {
   const meta = report?.config?.metadata;
   if (!meta || meta.runId !== expected.runId || meta.version !== expected.version)
     throw new Error('La evidencia de navegador pertenece a otra ejecución o versión.');
-  if (meta.artifactSha256 !== expected.sha256)
-    throw new Error('La evidencia de navegador corresponde a otro HTML.');
+  const kind = expected.kind ?? 'artifact';
+  if ((meta.targetKind ?? 'artifact') !== kind) throw new Error('El tipo de objetivo no coincide.');
+  if ((kind === 'development' ? meta.sourceSha256 : meta.artifactSha256) !== expected.sha256)
+    throw new Error(
+      kind === 'development'
+        ? 'La evidencia de navegador corresponde a otras fuentes de desarrollo.'
+        : 'La evidencia de navegador corresponde a otro HTML.',
+    );
   const specs = browserSpecs(report.suites);
   const ids = specs.map((spec) => spec.id).sort();
   if (
@@ -45,10 +51,12 @@ export function verifyBrowserReport(report, expected) {
       throw new Error(`El caso ${spec.title} no tiene una única ejecución aprobada.`);
     if (
       !test.annotations?.some(
-        (item) => item.type === 'artifact-sha256' && item.description === expected.sha256,
+        (item) =>
+          item.type === (kind === 'development' ? 'source-sha256' : 'artifact-sha256') &&
+          item.description === expected.sha256,
       )
     )
-      throw new Error(`El caso ${spec.title} no acredita el HTML cargado.`);
+      throw new Error(`El caso ${spec.title} no acredita el objetivo cargado.`);
     for (const name of ['runtime-errors', 'everett-trace', 'controls-used', 'screenshot', 'trace'])
       if (!result.attachments?.some((item) => item.name === name))
         throw new Error(`Falta ${name} en ${spec.title}.`);

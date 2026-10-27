@@ -164,7 +164,7 @@ test('C08-B89: fallos, retry, HTML no confiable y portada corrupta conservan el 
   await capture(page, info, 'link-partial-error');
 });
 
-test('C08-B90: archivo autónomo conserva tarjetas guardadas y explica la falta del servicio', async ({
+test('C08-B90: archivo autónomo conserva tarjetas guardadas y explica la falta del servicio @standalone', async ({
   page,
   context,
 }) => {
@@ -208,9 +208,6 @@ test('C08-B91: servicio HTTP y parser reales integran portada, zoom, viewer y ap
   const { extractPreview } = await import(
     pathToFileURL(resolve('scripts/link-preview/extract.mjs')).href
   );
-  const manifest = JSON.parse(await readFile('dist/build-manifest.json', 'utf8')) as {
-    artifact: string;
-  };
   const png = await readFile('tests/fixtures/link-cover.png');
   const resource = async (target: string) => ({
     url: target,
@@ -227,10 +224,36 @@ test('C08-B91: servicio HTTP y parser reales integran portada, zoom, viewer y ap
             '</code></pre></article></main>',
         ),
   });
-  const server = createLocalServer(await readFile(resolve('dist', manifest.artifact)), manifest, {
-    extract: (target: string, options: object) => extractPreview(target, { ...options, resource }),
-  });
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const extract = (target: string, options: object) =>
+    extractPreview(target, { ...options, resource });
+  let server: ReturnType<typeof createLocalServer>;
+  let close: () => Promise<void>;
+  if (info.config.metadata.targetKind === 'development') {
+    const { createServer } = await import('vite');
+    const { developmentConfig, developmentPlugin } = await import(
+      pathToFileURL(resolve('scripts/development.mjs')).href
+    );
+    const config = await developmentConfig(process.cwd());
+    const vite = await createServer({
+      ...config,
+      configFile: false,
+      cacheDir: info.outputPath('vite-cache'),
+      server: { ...config.server, port: 0 },
+      plugins: [developmentPlugin(process.cwd(), { extract })],
+    });
+    await vite.listen();
+    server = vite.httpServer;
+    close = () => vite.close();
+  } else {
+    const manifest = JSON.parse(await readFile('dist/build-manifest.json', 'utf8')) as {
+      artifact: string;
+    };
+    server = createLocalServer(await readFile(resolve('dist', manifest.artifact)), manifest, {
+      extract,
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    close = () => new Promise<void>((resolve) => server.close(() => resolve()));
+  }
   try {
     await page.unroute('**/api/link-preview');
     await page.goto(`http://127.0.0.1:${server.address().port}/?seed=42`);
@@ -284,8 +307,7 @@ test('C08-B91: servicio HTTP y parser reales integran portada, zoom, viewer y ap
     await page.keyboard.press('Escape');
     await expect(page.locator(`[data-node="${id}"] .link-card img`)).toBeVisible();
   } finally {
-    server.stopPreviews();
-    await new Promise<void>((resolve) => server.close(resolve));
+    await close();
   }
 });
 
