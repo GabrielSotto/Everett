@@ -18,7 +18,52 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
 
-## Corrección en curso — errores de reproducción
+## Próximo trabajo de 0.8 — pendiente de implementación
+
+Organización previa solicitada por el usuario; no inicia otra etapa ni implica aprobación de cierre.
+
+### Correcciones y capacidades confirmadas
+
+- Copias independientes locales: aplicar C08-MAT-08 actualizado a notas, formas, dibujos, imágenes,
+  videos, PDF, enlaces y materiales de Docs, Board y Code. La copia se guarda en Canvas; editarla,
+  renombrarla o eliminarla no modifica el original ni crea elementos en otras superficies.
+- Duplicación múltiple y copiar/pegar: menú contextual sobre toda la selección, atajo de duplicación
+  y Ctrl+C/Ctrl+V. Conservar disposición relativa, tamaño, apariencia, independencia, persistencia
+  y una operación de historial coherente; respetar el texto de los editores y manejar los fallos
+  del portapapeles. El atajo concreto y los detalles de conexiones y conjuntos deben definirse.
+- Incorporación explícita de una copia a Docs, Board o Code: crear un elemento nuevo únicamente
+  cuando el usuario lo pida. Concretar nombre, destino, representación y edición de las copias
+  locales, incluidas referencias a fragmentos, antes de programar el cambio de modelo.
+- Navegación espacial en reproductores externos: sigue abierto Alt pulsado después de enfocar el
+  iframe. Investigar una solución compatible con la acción local y los controles del proveedor;
+  conservar la flecha y no presentar el límite como resuelto si exige otro contenedor.
+- Panorama: revisar el solapamiento puntual entre identificación contextual y etiqueta de conexión
+  al seleccionar un documento a 0,4×. La prueba actual no acredita ausencia de ese solapamiento.
+- Zoom: queda pendiente la calibración perceptual con mouse/trackpad y revisión del recorrido
+  1–600 %. No cambiar límites solo por su diferencia numérica; contrastar respuesta, punto de
+  enfoque, inversión, detención y navegación local/espacial.
+- Arnés: cubrir las operaciones nuevas y los fallos manuales con datos y representación reales,
+  independencia de originales, no creación automática en otras superficies, recarga, historial,
+  grupos, conexiones, fragmentos, errores y foco. Mantener la regresión y revisión visual.
+
+### Pendientes que requieren definición de alcance o dirección visual
+
+- Bosquejos de interfaz de baja fidelidad: próximo bloque requerido de 0.8; definir piezas
+  editables y dirección visual, investigar reutilización compatible con el producto propietario
+  y acordar el primer alcance antes de implementar. No limitarlo a una apariencia dibujada.
+- Arrastrar referencias desde otro navegador, incluido un video de YouTube: idea por evaluar;
+  verificar URI/HTML/texto y posición de suelta con un arrastre real entre ventanas.
+- Aplicación final: definir el destino de Abrir original y el contenedor para aplicaciones web
+  completas. El comportamiento del navegador interno de Codex no decide el de Everett.
+- Ejecución del arnés: investigar el margen de tiempo de borradores de Agents y el costo del gate;
+  mejorar confiabilidad y diagnóstico conservando acciones, aserciones y evidencia.
+
+Los errores de YouTube y su contraste ya están corregidos y comprobados debajo. Alineación,
+distribución, menú superior y galería de selección ya están implementados; conservarlos y revisar
+feedback nuevo, sin volver a presentarlos como funcionalidades pendientes. El editor integral
+sigue en 0.9 y el procesamiento real de agentes requiere otro alcance. No integrar en `dev`.
+
+## Corregido — errores de reproducción
 
 YouTube devolvió `onError` 150 para `NIjruQLJQfo` tanto en Everett como en el iframe oficial aislado; `DYoSIFn_nac` reprodujo en ambos. El reproductor distingue los códigos documentados y usa un mensaje neutral cuando no puede identificar la causa. Se conserva Abrir original. C08-B97 cubre los códigos de YouTube, errores desconocidos, origen ajeno y Vimeo. La comparación real reproducible está en `tests/public/youtube-comparison.mjs`.
 

@@ -62,10 +62,15 @@ El usuario autorizó para 0.8.15 un servicio local mínimo para obtener y conser
 - Selección discreta y controles pertinentes al tipo. Asignar a una zona y quitar del Canvas
   corresponden al menú contextual del material, separado de los controles visibles al seleccionar.
   Quitar una referencia a Docs o Board conserva el documento o la tarea original en su superficie.
-- Duplicar crea otra copia del material seleccionado. Para documentos referenciados, crea un
-  documento independiente en Docs y una referencia a esa copia en Canvas. Omitir Duplicar en
-  referencias a tareas de Board para 0.8. Eliminar materiales propios y quitar referencias admiten
-  Deshacer, según C08-MAT-08 de [Canvas 0.8](iteraciones/0.8.md).
+- Duplicar crea una copia independiente que vive y se guarda en Canvas, incluidos documentos,
+  tareas y código. Modificarla o eliminarla no altera el original ni crea elementos automáticamente
+  en otras superficies. Incorporarla a Docs, Board o Code requiere una acción explícita y crea un
+  elemento nuevo. Admitir duplicación individual y múltiple y copiar/pegar selecciones completas;
+  conservar independencia, disposición relativa, persistencia e historial, según C08-MAT-08 de
+  [Canvas 0.8](iteraciones/0.8.md). La aclaración confirmada sustituye el duplicado automático en
+  Docs y la exclusión anterior de tareas de Board; su implementación está pendiente.
+- Eliminar materiales propios y quitar referencias admiten Deshacer y conservan sus originales
+  y los archivos externos, según C08-MAT-08 de [Canvas 0.8](iteraciones/0.8.md).
 - Redimensionar imágenes y videos conservando la relación de aspecto y el contenido completo.
 - Conservar identidad y contenido al abrir, referenciar o asignar materiales.
 - Mantener zoom hacia objetos y regreso al contexto espacial de origen.
