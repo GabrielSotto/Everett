@@ -311,6 +311,42 @@ test('C08-B97: proveedor usa iframe oficial, reproduce contenido y explica recha
     .locator('body')
     .evaluate(() => parent.postMessage(JSON.stringify({ event: 'onError', info: 150 }), '*'));
   await expect(page.locator('.provider-status')).toContainText('El creador no permite');
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 760 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const appearance = await page.locator('.provider-status').evaluate((element) => {
+      const luminance = (color: string) => {
+        const values = color
+          .match(/[\d.]+/g)!
+          .slice(0, 3)
+          .map(Number);
+        const linear = values.map((v) => {
+          const s = v / 255;
+          return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * linear[0]! + 0.7152 * linear[1]! + 0.0722 * linear[2]!;
+      };
+      let background: Element | null = element;
+      while (background && getComputedStyle(background).backgroundColor === 'rgba(0, 0, 0, 0)')
+        background = background.parentElement;
+      const foreground = luminance(getComputedStyle(element).color);
+      const paper = luminance(
+        background ? getComputedStyle(background).backgroundColor : 'rgb(255, 255, 255)',
+      );
+      const bounds = element.getBoundingClientRect();
+      const container = element.closest('.reader-scroll')!.getBoundingClientRect();
+      return {
+        contrast: (Math.max(foreground, paper) + 0.05) / (Math.min(foreground, paper) + 0.05),
+        visible:
+          bounds.top >= container.top && bounds.bottom <= container.bottom && bounds.width > 0,
+      };
+    });
+    expect(appearance.contrast).toBeGreaterThanOrEqual(4.5);
+    expect(appearance.visible).toBe(true);
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
   for (const [code, expected] of [
     [2, 'dirección del video no es válida'],
     [5, 'no pudo reproducir el video'],

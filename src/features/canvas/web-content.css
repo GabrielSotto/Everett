@@ -462,6 +462,7 @@ body[data-canvas-motion='reduced'] .t-modal {
 .provider-video p {
   font-size: 1rem;
   margin-top: 12px;
+  color: var(--text);
 }
 .link-card-content > .link-open {
   position: static;
