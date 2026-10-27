@@ -27,7 +27,7 @@ export const canvasCases = [
     layer: 'browser',
     contracts: ['C08-ARRANGE-01'],
   })),
-  ...['C08-B118', 'C08-B119'].map((id) => ({
+  ...['C08-B118', 'C08-B119', 'C08-B131'].map((id) => ({
     id,
     layer: 'browser',
     contracts: ['C08-ACTIONS-01'],
@@ -260,13 +260,14 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
-  'C08-B126': { 'canvas-actions': 9, 'actions-wireframes': 9, 'wireframe-add': 9 },
-  'C08-B127': { 'canvas-actions': 1, 'actions-wireframes': 1, 'wireframe-add': 1 },
+  'C08-B131': { 'canvas-wireframes': 2, 'canvas-organize': 2, 'canvas-view': 2 },
+  'C08-B126': { 'canvas-wireframes': 9, 'wireframe-add': 9 },
+  'C08-B127': { 'canvas-wireframes': 1, 'wireframe-add': 1 },
   'C08-B128': { 'context-group': 1 },
-  'C08-B130': { 'canvas-actions': 2, 'wireframe-add': 1 },
+  'C08-B130': { 'canvas-wireframes': 2, 'wireframe-add': 1 },
   'C08-B116': { 'selection-arrange': 6, 'context-arrange': 3 },
   'C08-B117': { 'selection-arrange': 2 },
-  'C08-B118': { 'canvas-actions': 5, 'actions-shortcuts': 1 },
+  'C08-B118': { 'canvas-view': 5, 'canvas-organize': 1, 'actions-shortcuts': 1 },
   'C08-B119': {
     'canvas-guides-toggle': 2,
     'actions-preferences': 1,

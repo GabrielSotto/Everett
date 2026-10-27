@@ -11,8 +11,7 @@ import {
 
 async function add(page: Page, type: WireframeKind): Promise<string> {
   const before = new Set((await world(page)).nodes.map((n) => n.id));
-  await page.getByRole('button', { name: 'Acciones y ajustes de Canvas', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Bosquejos', exact: true }).click();
+  await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
   await page
     .getByRole('menuitem', {
       name: 'Agregar ' + wireframeNames[type].toLocaleLowerCase(),
@@ -341,9 +340,9 @@ test('C08-B130: biblioteca y editor funcionan por teclado a 320px y texto 200%, 
   const id = await add(page, 'input');
   await page.setViewportSize({ width: 320, height: 700 });
   await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
-  await page.getByRole('button', { name: 'Acciones y ajustes de Canvas', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Bosquejos', exact: true }).press('ArrowRight');
-  const palette = page.getByRole('menu', { name: 'Acciones y ajustes de Canvas', exact: true });
+  await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
+  await page.getByRole('button', { name: 'Bosquejos', exact: true }).press('ArrowDown');
+  const palette = page.getByRole('menu', { name: 'Bosquejos', exact: true });
   const p = (await palette.boundingBox())!;
   expect(p.x).toBeGreaterThanOrEqual(0);
   expect(p.x + p.width).toBeLessThanOrEqual(320);

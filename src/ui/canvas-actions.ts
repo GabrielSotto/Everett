@@ -7,11 +7,11 @@ import { icon } from './icons';
 import { bindDismiss } from './popover';
 import { wireframePalette, addWireframe } from './canvas-wireframes';
 
-/** Acciones y ajustes del Canvas, junto a su ubicación en la cabecera. */
+/** Creación, organización y vista tienen entradas propias en la cabecera. */
 export class CanvasActions {
   private open = false;
-  private page: 'home' | 'arrange' | 'wireframes' = 'home';
-  private painted = false;
+  private page: 'view' | 'arrange' | 'wireframes' = 'view';
+  private painted: string | null = null;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -39,33 +39,28 @@ export class CanvasActions {
         const button = target(event);
         if (!button || button.hasAttribute('disabled')) return;
         switch (button.dataset.action) {
-          case 'canvas-actions':
-            this.open = !this.open;
-            this.page = 'home';
+          case 'canvas-view':
+          case 'canvas-organize':
+          case 'canvas-wireframes': {
+            const page =
+              button.dataset.action === 'canvas-wireframes'
+                ? 'wireframes'
+                : button.dataset.action === 'canvas-organize'
+                  ? 'arrange'
+                  : 'view';
+            this.open = !this.open || this.page !== page;
+            this.page = page;
             ctx.ui.shell.profile = ctx.ui.shell.status = ctx.ui.shell.surfaceMenu = false;
             ctx.ui.shell.searchOpen = false;
             ctx.ui.shell.search = '';
             this.render();
             if (this.open) this.focus();
+            else this.trigger()?.focus({ preventScroll: true });
             break;
-          case 'actions-arrange':
-            this.page = 'arrange';
-            this.render();
-            this.focus();
-            break;
-          case 'actions-wireframes':
-            this.page = 'wireframes';
-            this.render();
-            this.focus();
-            break;
+          }
           case 'wireframe-add':
             this.close(false);
             addWireframe(ctx, button.dataset.kind);
-            break;
-          case 'actions-back':
-            this.page = 'home';
-            this.render();
-            this.focus();
             break;
           case 'selection-arrange':
             if (!button.closest('.canvas-actions')) return;
@@ -101,9 +96,17 @@ export class CanvasActions {
         if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
           event.preventDefault();
           event.stopPropagation();
-          if (!this.open) {
+          const action =
+            event.target.closest<HTMLElement>('.canvas-actions-trigger')?.dataset.action;
+          const requested =
+            action === 'canvas-wireframes'
+              ? 'wireframes'
+              : action === 'canvas-organize'
+                ? 'arrange'
+                : 'view';
+          if (!this.open || (action && requested !== this.page)) {
             this.open = true;
-            this.page = 'home';
+            this.page = requested;
             this.render();
           }
           const items = this.items(),
@@ -117,22 +120,37 @@ export class CanvasActions {
                   ? event.key === 'ArrowUp'
                     ? items.length - 1
                     : 0
-                  : (current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+                  : (current +
+                      (event.key === 'ArrowDown' ? 1 : -1) * (this.page === 'wireframes' ? 3 : 1) +
+                      items.length) %
+                    items.length;
           items[next]?.focus();
           items[next]?.scrollIntoView({ block: 'nearest' });
         } else if (
-          event.key === 'ArrowRight' &&
-          ['actions-arrange', 'actions-wireframes'].includes(event.target.dataset.action ?? '')
+          ['ArrowLeft', 'ArrowRight'].includes(event.key) &&
+          event.target.closest('.canvas-actions-trigger')
         ) {
           event.preventDefault();
           event.stopPropagation();
-          event.target.click();
-        } else if (event.key === 'ArrowLeft' && this.page !== 'home') {
+          const triggers = [...this.root.querySelectorAll<HTMLElement>('.canvas-actions-trigger')];
+          const current = triggers.indexOf(
+            event.target.closest<HTMLElement>('.canvas-actions-trigger')!,
+          );
+          triggers[
+            (current + (event.key === 'ArrowRight' ? 1 : -1) + triggers.length) % triggers.length
+          ]?.focus();
+        } else if (
+          ['ArrowLeft', 'ArrowRight'].includes(event.key) &&
+          this.page === 'wireframes' &&
+          this.open
+        ) {
           event.preventDefault();
           event.stopPropagation();
-          this.page = 'home';
-          this.render();
-          this.focus();
+          const items = this.items();
+          const current = items.indexOf(document.activeElement as HTMLButtonElement);
+          items[
+            (current + (event.key === 'ArrowRight' ? 1 : -1) + items.length) % items.length
+          ]?.focus();
         } else if (event.key === 'Tab' && this.open) {
           event.preventDefault();
           const controls = [
@@ -154,7 +172,9 @@ export class CanvasActions {
     );
   }
   private trigger(): HTMLElement | null {
-    return this.root.querySelector('[data-action=canvas-actions]');
+    return this.root.querySelector(
+      `[data-action=${this.page === 'wireframes' ? 'canvas-wireframes' : this.page === 'arrange' ? 'canvas-organize' : 'canvas-view'}]`,
+    );
   }
   private items(): HTMLButtonElement[] {
     return [
@@ -162,7 +182,7 @@ export class CanvasActions {
     ];
   }
   private focus(): void {
-    this.items()[0]?.focus({ preventScroll: true });
+    (this.items()[0] ?? this.trigger())?.focus({ preventScroll: true });
   }
   private close(focus = true): void {
     this.open = false;
@@ -171,17 +191,17 @@ export class CanvasActions {
   }
   dismiss(): void {
     this.open = false;
-    this.page = 'home';
+    this.painted = null;
   }
   position(): void {
     const menu = this.root.querySelector<HTMLElement>('.canvas-actions-pop'),
       rect = this.trigger()?.getBoundingClientRect();
     if (!menu || !rect) {
-      this.painted = false;
+      this.painted = null;
       return;
     }
-    if (this.painted) menu.style.animation = 'none';
-    this.painted = true;
+    if (this.painted === this.page) menu.style.animation = 'none';
+    this.painted = this.page;
     menu.style.left = Math.max(8, Math.min(innerWidth - menu.offsetWidth - 8, rect.left)) + 'px';
     menu.style.top = rect.bottom + 8 + 'px';
     menu.style.maxHeight = Math.max(80, innerHeight - rect.bottom - 16) + 'px';
@@ -196,6 +216,36 @@ export class CanvasActions {
       units = arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections);
     const check = (action: string, name: string, checked: boolean): string =>
       `<button type="button" role="menuitemcheckbox" aria-checked="${checked}" data-action="${action}"><span class="canvas-action-check">${checked ? icon('check', 14) : ''}</span>${name}</button>`;
-    return `<div class="canvas-actions"><button type="button" class="canvas-actions-trigger" data-action="canvas-actions" aria-label="Acciones y ajustes de Canvas" aria-haspopup="menu" aria-expanded="${this.open}" aria-controls="canvas-actions-menu">${icon('canvas', 16)}<span>Canvas</span>${icon('down', 10)}</button>${this.open ? `<div class="canvas-actions-pop" id="canvas-actions-menu" role="menu" aria-label="Acciones y ajustes de Canvas">${this.page === 'wireframes' ? `<button type="button" role="menuitem" class="canvas-actions-back" data-action="actions-back">${icon('chevron-left', 16)}Bosquejos</button>${wireframePalette()}` : this.page === 'arrange' ? `<button type="button" role="menuitem" class="canvas-actions-back" data-action="actions-back">${icon('chevron-left', 16)}Alinear y distribuir</button>${arrangementMarkup(this.ctx)}` : `<button type="button" role="menuitem" data-action="actions-wireframes">Bosquejos <span aria-hidden="true">›</span></button><hr><small class="canvas-actions-heading">Selección</small><button type="button" role="menuitem" data-action="actions-arrange" ${units.length < 2 ? 'disabled' : ''}>Alinear y distribuir ${icon('chevron', 12)}</button><button type="button" role="menuitem" data-action="actions-fit" data-selection="true" ${units.length ? '' : 'disabled'}>Ajustar a la selección</button><button type="button" role="menuitem" data-action="actions-fit" ${this.ctx.world().nodes.some((node) => !node.owner) || this.ctx.world().zones.length ? '' : 'disabled'}>Ajustar al contenido</button><hr><small class="canvas-actions-heading">Ajustes</small>${check('canvas-guides-toggle', 'Guías y ajuste automático', shell.canvasAlignmentGuides)}${check('canvas-grid-toggle', 'Fondo cuadriculado', shell.canvasBackground === 'grid')}${check('canvas-dock-toggle', 'Dock vertical', shell.canvasDockOrientation === 'vertical')}<hr><button type="button" role="menuitem" data-action="actions-preferences">Preferencias de Canvas</button><button type="button" role="menuitem" data-action="actions-shortcuts">Atajos de Canvas</button>`}</div>` : ''}</div>`;
+    const menus = [
+      {
+        page: 'wireframes',
+        action: 'canvas-wireframes',
+        label: 'Bosquejos',
+        name: 'Bosquejos',
+        glyph: 'panel-left',
+      },
+      {
+        page: 'arrange',
+        action: 'canvas-organize',
+        label: 'Organizar',
+        name: 'Organizar selección',
+        glyph: 'arrange-left',
+      },
+      {
+        page: 'view',
+        action: 'canvas-view',
+        label: 'Vista',
+        name: 'Vista y ajustes de Canvas',
+        glyph: 'canvas',
+      },
+    ] as const;
+    const current = menus.find((menu) => menu.page === this.page)!;
+    const content =
+      this.page === 'wireframes'
+        ? wireframePalette()
+        : this.page === 'arrange'
+          ? arrangementMarkup(this.ctx)
+          : `<button type="button" role="menuitem" data-action="actions-fit" data-selection="true" ${units.length ? '' : 'disabled'}>Ajustar a la selección</button><button type="button" role="menuitem" data-action="actions-fit" ${this.ctx.world().nodes.some((node) => !node.owner) || this.ctx.world().zones.length ? '' : 'disabled'}>Ajustar al contenido</button><hr>${check('canvas-guides-toggle', 'Guías y ajuste automático', shell.canvasAlignmentGuides)}${check('canvas-grid-toggle', 'Fondo cuadriculado', shell.canvasBackground === 'grid')}${check('canvas-dock-toggle', 'Dock vertical', shell.canvasDockOrientation === 'vertical')}<hr><button type="button" role="menuitem" data-action="actions-preferences">Preferencias de Canvas</button><button type="button" role="menuitem" data-action="actions-shortcuts">Atajos de Canvas</button>`;
+    return `<div class="canvas-actions" role="toolbar" aria-label="Creación, organización y vista de Canvas">${menus.map((menu) => `<button type="button" class="canvas-actions-trigger" data-action="${menu.action}" aria-label="${menu.name}" data-tip="${menu.name}" aria-haspopup="menu" aria-expanded="${this.open && this.page === menu.page}" aria-controls="canvas-${menu.page}-menu">${icon(menu.glyph, 16)}<span>${menu.label}</span>${icon('down', 10)}</button>`).join('')}${this.open ? `<div class="canvas-actions-pop ${this.page === 'arrange' ? 'arrangement-menu' : ''}" id="canvas-${this.page}-menu" role="menu" aria-label="${current.name}"><strong class="canvas-menu-title">${current.label}</strong>${content}</div>` : ''}</div>`;
   }
 }

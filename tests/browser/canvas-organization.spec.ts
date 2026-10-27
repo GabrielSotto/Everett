@@ -65,7 +65,9 @@ test('C08-B55: búsqueda dentro de cabecera, botones compactos y switch opcional
     await page.keyboard.press('Escape');
     for (const name of [
       'Everett',
-      'Acciones y ajustes de Canvas',
+      'Bosquejos',
+      'Organizar selección',
+      'Vista y ajustes de Canvas',
       'Buscar en Everett',
       'Superficies',
       'Estado',

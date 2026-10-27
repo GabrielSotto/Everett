@@ -8,16 +8,20 @@ export function bindTooltips(root: HTMLElement, signal: AbortSignal): void {
     tooltip.classList.remove('visible');
   };
   signal.addEventListener('abort', hide, { once: true });
+  root.addEventListener('pointerdown', hide, { capture: true, signal });
   root.addEventListener(
     'pointerover',
     (event) => {
       const target =
         event.target instanceof Element ? event.target.closest<HTMLElement>('[data-tip]') : null;
-      if (!target) return;
+      if (!target || target.getAttribute('aria-expanded') === 'true') {
+        hide();
+        return;
+      }
       if (timer !== null) clearTimeout(timer);
       timer = setTimeout(() => {
         timer = null;
-        if (!target.isConnected) return;
+        if (!target.isConnected || target.getAttribute('aria-expanded') === 'true') return;
         tooltip.textContent = target.dataset.tip ?? '';
         const bounds = target.getBoundingClientRect();
         tooltip.style.left =

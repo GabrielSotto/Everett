@@ -34,11 +34,10 @@ async function prepare(page: Page, grouped = false): Promise<void> {
   await page.keyboard.up('Shift');
   expect((await snapshot(page)).ui.canvas.selections).toHaveLength(4);
 }
-async function open(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Acciones y ajustes de Canvas', exact: true }).click();
-  await expect(
-    page.getByRole('menu', { name: 'Acciones y ajustes de Canvas', exact: true }),
-  ).toBeVisible();
+async function open(page: Page, kind: 'view' | 'arrange' = 'view'): Promise<void> {
+  const name = kind === 'view' ? 'Vista y ajustes de Canvas' : 'Organizar selección';
+  await page.getByRole('button', { name, exact: true }).click();
+  await expect(page.getByRole('menu', { name, exact: true })).toBeVisible();
   await expect(page.locator('.canvas-actions-pop')).toHaveCSS('transform', 'none');
 }
 async function command(page: Page, name: string, contextual = false): Promise<void> {
@@ -46,8 +45,7 @@ async function command(page: Page, name: string, contextual = false): Promise<vo
     await page.locator('[data-node=arr-d]').click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Alinear y distribuir', exact: false }).click();
   } else {
-    await open(page);
-    await page.getByRole('menuitem', { name: 'Alinear y distribuir', exact: false }).click();
+    await open(page, 'arrange');
   }
   await page.getByRole('menuitem', { name, exact: true }).click();
 }
@@ -106,8 +104,7 @@ test('C08-B117: distribución iguala espacios entre tamaños distintos, mantiene
   const before = await world(page),
     group = before.nodes.filter((n) => ['arr-b', 'arr-c'].includes(n.id));
   await command(page, 'Espaciar horizontalmente');
-  await open(page);
-  await page.getByRole('menuitem', { name: 'Alinear y distribuir', exact: false }).click();
+  await open(page, 'arrange');
   await expect(
     page.getByRole('menuitem', { name: 'Espaciar horizontalmente', exact: true }),
   ).toBeDisabled();
@@ -147,12 +144,14 @@ test('C08-B118: menú de Canvas se adapta a selección, teclado, 320 px y texto 
   page,
 }, info) => {
   await start(page);
-  const trigger = page.getByRole('button', { name: 'Acciones y ajustes de Canvas', exact: true });
+  const trigger = page.getByRole('button', { name: 'Vista y ajustes de Canvas', exact: true });
+  await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
+  await expect(
+    page.getByRole('menuitem', { name: 'Alinear a la izquierda', exact: true }),
+  ).toBeDisabled();
+  await page.keyboard.press('Escape');
   await trigger.focus();
   await page.keyboard.press('ArrowDown');
-  await expect(
-    page.getByRole('menuitem', { name: 'Alinear y distribuir', exact: false }),
-  ).toBeDisabled();
   await expect(
     page.getByRole('menuitem', { name: 'Ajustar a la selección', exact: true }),
   ).toBeDisabled();
@@ -175,8 +174,7 @@ test('C08-B118: menú de Canvas se adapta a selección, teclado, 320 px y texto 
         x: r.x,
         right: r.right,
         bottom: r.bottom,
-        anchor: document.querySelector('[data-action=canvas-actions]')!.getBoundingClientRect()
-          .bottom,
+        anchor: document.querySelector('[data-action=canvas-view]')!.getBoundingClientRect().bottom,
       };
     });
     expect(geometry.x).toBeGreaterThanOrEqual(7);
@@ -278,4 +276,92 @@ test('C08-B119: guías activas por defecto, ajuste desactivable y preferencia ú
   await page.keyboard.press('Escape');
   await dragNearGuide(true);
   await capture(page, info, 'ajustes-canvas-compartidos');
+});
+
+test('C08-B131: creación, organización y vista abren directamente y conservan ámbito, selección y acceso en cabecera', async ({
+  page,
+}, info) => {
+  test.setTimeout(90000);
+  await prepare(page);
+  const original = await world(page);
+  const selection = (await snapshot(page)).ui.canvas.selections;
+  const names = ['Bosquejos', 'Organizar selección', 'Vista y ajustes de Canvas'];
+  const sketchTrigger = page.getByRole('button', { name: 'Bosquejos', exact: true });
+  await sketchTrigger.hover();
+  await expect(page.locator('#tooltip')).toHaveClass(/visible/);
+  await sketchTrigger.click();
+  const tooltipFrames = await page.evaluate(async () => {
+    const visible: boolean[] = [];
+    for (let i = 0; i < 25; i++) {
+      await new Promise(requestAnimationFrame);
+      visible.push(document.querySelector('#tooltip')!.classList.contains('visible'));
+    }
+    return visible;
+  });
+  expect(tooltipFrames.every((visible) => !visible)).toBe(true);
+  await page.keyboard.press('Escape');
+  for (const width of [1440, 1100, 800, 480, 320, 300]) {
+    await page.setViewportSize({ width, height: 850 });
+    for (const name of names) {
+      const trigger = page.getByRole('button', { name, exact: true });
+      await expect(trigger).toBeInViewport({ ratio: 1 });
+      await trigger.click();
+      const menu = page.getByRole('menu', { name, exact: true });
+      await expect(menu).toBeVisible();
+      await expect(page.locator('.canvas-actions-pop')).toHaveCount(1);
+      const geometry = await menu.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, bottom: rect.bottom };
+      });
+      expect(geometry.left).toBeGreaterThanOrEqual(7);
+      expect(geometry.right).toBeLessThanOrEqual(width - 7);
+      expect(geometry.bottom).toBeLessThanOrEqual(843);
+      if (name === 'Bosquejos') {
+        await expect(
+          menu.getByRole('menuitem', { name: 'Agregar pantalla', exact: true }),
+        ).toBeVisible();
+        await expect(
+          menu.getByRole('menuitem', { name: /Alinear|Ajustar|Preferencias/ }),
+        ).toHaveCount(0);
+      } else if (name === 'Organizar selección') {
+        await expect(
+          menu.getByRole('menuitem', { name: 'Alinear a la izquierda', exact: true }),
+        ).toBeVisible();
+        await expect(
+          menu.getByRole('menuitem', { name: /Agregar|Ajustar|Preferencias/ }),
+        ).toHaveCount(0);
+      } else {
+        await expect(
+          menu.getByRole('menuitem', { name: 'Ajustar al contenido', exact: true }),
+        ).toBeVisible();
+        await expect(menu.getByRole('menuitem', { name: /Agregar|Alinear/ })).toHaveCount(0);
+      }
+      await page.keyboard.press('Escape');
+      await expect(trigger).toBeFocused();
+    }
+  }
+  await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
+  await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
+  await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
+  await expect(page.getByRole('menu', { name: 'Bosquejos', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('menu', { name: 'Organizar selección', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  const first = page.getByRole('button', { name: 'Bosquejos', exact: true });
+  await first.click();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('menuitem', { name: 'Agregar texto', exact: true })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: 'Agregar tarjeta', exact: true })).toBeFocused();
+  await first.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(
+    page.getByRole('button', { name: 'Organizar selección', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menu', { name: 'Organizar selección', exact: true })).toBeVisible();
+  await expect(page.getByRole('menu', { name: 'Bosquejos', exact: true })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  expect(await world(page)).toEqual(original);
+  expect((await snapshot(page)).ui.canvas.selections).toEqual(selection);
+  await capture(page, info, 'menus-por-funcion-300-texto200');
 });
