@@ -2,21 +2,52 @@
 
 Estado de las iteraciones y correcciones pendientes. El detalle funcional permanece en [Alcance del prototipo](docs/alcance-prototipo.md).
 
-| Iteración                     | Estado                        | Trabajo                                                                                                                                                                                                              |
-| ----------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                                                                            |
-| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                                                                         |
-| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). 0.8.22: menús separados por función y verificados; bosquejos y copias locales conservados. Consulta espacial del iframe enfocado pendiente. |
-| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                                                                  |
-| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                                                                   |
-| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                                                               |
-| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                                                                             |
-| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                                                                            |
-| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                                                                            |
+| Iteración                     | Estado                        | Trabajo                                                                                                                                                                                        |
+| ----------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.7.5                         | Aprobada e integrada en `dev` | [Reconstrucción y arnés](docs/iteraciones/0.7.5.md). Merge `dc1b4f4`. Entrega local en `entregas/0.7.5/`.                                                                                      |
+| Mantenimiento del repositorio | Aprobado e integrado en `dev` | Salidas ordenadas, entrega conservada y reemplazo de ejecuciones comprobado. Rama `chore/orden-repositorio`.                                                                                   |
+| 0.8                           | En desarrollo                 | [Canvas: contratos confirmados y verificación](docs/iteraciones/0.8.md). Desarrollo continuo con Vite; menús, bosquejos y copias conservados. Consulta espacial del iframe enfocado pendiente. |
+| 0.9                           | Pendiente                     | Code y Docs; [editor integral por planificar](docs/alcance-prototipo.md#ampliación-por-planificar-editor-integral).                                                                            |
+| 0.10                          | Pendiente                     | Sessions y Agents.                                                                                                                                                                             |
+| 0.11                          | Pendiente                     | Board y Shipping Mode.                                                                                                                                                                         |
+| 0.12                          | Pendiente                     | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design).                                                                                       |
+| 1.0 RC                        | Pendiente                     | Integración, regresión y pulido; definir el inicio y los nombres de Mundos y superficies.                                                                                                      |
+| 1.0                           | Pendiente                     | Aprobación del prototipo.                                                                                                                                                                      |
 
 ## Después de 1.0
 
 - Por evaluar: [Canvas — comentarios anclados a un punto de una imagen](docs/alcance-prototipo.md#después-de-10).
+
+## Desarrollo continuo de Canvas
+
+El usuario retiró el flujo de entregas puntuales el 27 de octubre de 2026. Usar únicamente
+Vite en 4173 para desarrollar y revisar las fuentes modulares. No generar HTML autónomo, ZIP
+ni informe adicional por cada revisión. Conservar el origen y los datos locales del usuario.
+No integrar en `dev` ni cerrar 0.8. El gate cotidiano evalúa fuentes identificadas y mantiene
+los recorridos funcionales, la regresión, los controles negativos y la revisión visual.
+
+Servidor Vite, protocolo de enlaces y worker PDF adaptados; CSS con HMR y código con recarga
+automática y recuperación del guardado. DEV-01 comprueba cambios reales en una copia temporal,
+recuperación de un error de sintaxis, datos de revisión y rechazo de puerto ocupado. Implementado
+en `83489da`. El arnés
+registra la identidad de las fuentes en `target.json` y rechaza una revisión distinta. Los dos
+casos exclusivos de abrir el antiguo HTML como archivo se conservan en su gate histórico,
+sin contarlos como aprobados sobre fuentes. Se comprobó en la pestaña del usuario que la
+conexión a Vite conserva sus nueve materiales y el zoom del 16 %.
+
+**Verificado: 109 pruebas unitarias/del arnés y 203 recorridos de navegador sobre Vite**, sin
+fallos, omisiones ni reintentos. La regresión duró 29,5 minutos e incluyó 30 ciclos sostenidos
+durante 542.786 ms. Pasaron los verificadores independientes de resultados, identidad de fuentes,
+inventario de casos y adjuntos, además de tipado, formato y revisión en el navegador interno.
+El tipo de objetivo es `development`; no se acredita un HTML ni una entrega empaquetada.
+
+- [Resultado unitario](output/pruebas/unitarias/2026-10-27_23-51-02-466Z/result.json).
+- [Resultado de navegador](output/pruebas/navegador/2026-10-27_23-51-54-021Z/results.json) e [identidad de fuentes](output/pruebas/navegador/2026-10-27_23-51-54-021Z/target.json): SHA-256 `ef2c3484d7286ad802b3d6d5b2279c972a15dde57afe2ca62b829a4ebb1942ff`.
+- [Canvas del usuario servido por Vite](output/revision/0.8.22/vite-iab.png). La conexión HMR está activa y se conserva el mismo origen de almacenamiento.
+
+Solo queda Vite en 4173. El servidor de HTML anterior y las instancias y pestañas auxiliares de
+pruebas se cerraron. La corrección no vuelve a acreditar el gesto dentro del iframe externo
+enfocado: su límite sigue documentado debajo. 0.8 permanece abierta, sin integrar en `dev`.
 
 ## Menús por función — 0.8.22 verificada
 
@@ -183,7 +214,7 @@ Canvas sigue en desarrollo. El gate de una candidata no acredita por sí solo la
 
 Sin fallos abiertos dentro del alcance cerrado de 0.7.5. Los ajustes de cada superficie permanecen en su etapa. Registrar aquí nuevos fallos con versión, reproducción, resultado esperado y regresión asociada. Al corregirlos, conservar el caso en tests y retirar el pendiente; Git conserva el cambio. Los resultados de ejecución viven en output/pruebas hasta la siguiente ejecución de su grupo.
 
-## Verificación actual — 0.8.22
+## Antecedente verificado — HTML 0.8.22
 
 Bosquejos implementados en `44ca124`, con los ajustes de panel y foco indicados arriba. C08-U42–U43 y C08-B126–B130 cubren las nueve piezas, edición, tablas y pegado de rangos, límites, contraste, copia, conexiones, grupos, tamaño transitorio, zoom, teclado, recarga y liberación de recursos. Se conserva la cobertura de copias de `7250022` y el presupuesto del recorrido de borradores de `7b079cb`, sin aumentar los límites de acciones o aserciones.
 
@@ -195,10 +226,10 @@ durante la apertura y controles alcanzables entre 300 y 1440 px y con texto al 2
 
 **El gate funcional conserva el bloqueo de `youtube-focused-modifier`:** Alt pulsado después de enfocar el iframe externo no llega a Everett. La comprobación pública previa documentó ese fallo; este bloque no modifica ni vuelve a acreditar ese recorrido externo. La rueda común conserva la acción local y la flecha permite regresar. No presentar la regresión controlada aprobada como cierre de ese fallo.
 
-- [HTML actual](dist/Everett-0.8.22.html): 14.987.873 bytes, build `49bd97cd1cb2a7e4`, SHA-256 `e56ee06cc31b321505f7ad84bec7e17f0770334e48da9e073559cf4ec1552e78`.
-- [Resultado unitario](output/pruebas/unitarias/2026-10-27_20-20-17-849Z/result.json) y [resultado de navegador](output/pruebas/navegador/2026-10-27_20-21-47-956Z/results.json).
+- [HTML de esa entrega](dist/Everett-0.8.22.html): 14.987.873 bytes, build `49bd97cd1cb2a7e4`, SHA-256 `e56ee06cc31b321505f7ad84bec7e17f0770334e48da9e073559cf4ec1552e78`. Es un antecedente; el servidor actual usa fuentes con Vite.
+- Los resultados de esa ejecución fueron reemplazados por la verificación del flujo de desarrollo, según la conservación de la última ejecución de cada grupo. Sus cifras anteriores no acreditan las fuentes nuevas.
 - Inspección visual del mismo artefacto: [Bosquejos](output/revision/0.8.22/bosquejos-iab.png), [Organizar](output/revision/0.8.22/organizar-iab.png), [Vista](output/revision/0.8.22/vista-iab.png) y [menús a 300 px con texto ampliado](output/revision/0.8.22/menus-300-texto200.png). Las pestañas de prueba se cerraron; la pestaña del usuario no se recargó.
 - [Comprobación pública](output/revision/0.8.19/destinos-publicos.json), [inspección de medios](output/revision/0.8.19/inspeccion-medios.json) y [veredicto público bloqueado](output/revision/0.8.19/verificacion-publica.json). HARNESS-15 comprueba que un fallo público bloquee el resultado aunque pase la regresión controlada.
-- Preview único en http://127.0.0.1:4173/. Se conserva la pestaña y el almacenamiento de revisión del usuario. Sin ZIP, por su instrucción.
+- Esa entrega utilizó el preview de HTML en 4173. El desarrollo continuo lo sustituyó por Vite en el mismo origen y conserva los datos locales de revisión del usuario.
 
 0.8 sigue abierta en `feat/canvas-0.8`, sin integrar en `dev`. Los bosquejos de baja fidelidad y sus menús separados están implementados y verificados en 0.8.22, pendientes de revisión del usuario. El editor integral conserva su planificación en 0.9.
