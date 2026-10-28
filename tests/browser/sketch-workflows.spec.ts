@@ -78,6 +78,16 @@ test('C08-B132: arrastrar desde biblioteca respeta suelta y cámara; cancelar o 
 }, info) => {
   test.setTimeout(90000);
   await start(page);
+  await page.getByRole('button', { name: /^Zoom de Canvas:/ }).click();
+  await page.getByRole('spinbutton', { name: 'Porcentaje de zoom', exact: true }).fill('1');
+  await page.getByRole('spinbutton', { name: 'Porcentaje de zoom', exact: true }).press('Enter');
+  await palette(page);
+  await page.getByRole('menuitem', { name: 'Agregar texto', exact: true }).click();
+  expect((await snapshot(page)).camera.z).toBeCloseTo(1, 5);
+  const initialText = (await world(page)).nodes[0]!;
+  const initialBounds = (await page.locator(`[data-node="${initialText.id}"]`).boundingBox())!;
+  expect(initialBounds.width).toBeLessThanOrEqual(181);
+  expect(initialBounds.height).toBeLessThanOrEqual(33);
   for (const percent of [38, 100, 200]) {
     await page.getByRole('button', { name: /^Zoom de Canvas:/ }).click();
     await page

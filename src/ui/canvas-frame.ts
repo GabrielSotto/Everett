@@ -2,7 +2,11 @@ import type { Context } from '../app/context';
 import { canvasCameraTuning } from '../spatial/tuning';
 
 /** Encuadre compartido por el menú de zoom y el menú contextual. */
-export function frameCanvas(ctx: Context, selection: boolean): void {
+export function frameCanvas(
+  ctx: Context,
+  selection: boolean,
+  options: { maximumZoom?: number } = {},
+): void {
   const world = ctx.world(),
     ids = ctx.ui.canvas.selections;
   const items = [
@@ -19,7 +23,7 @@ export function frameCanvas(ctx: Context, selection: boolean): void {
   const z = Math.max(
     canvasCameraTuning.minimumZoom,
     Math.min(
-      selection ? canvasCameraTuning.maximumZoom : 1,
+      options.maximumZoom ?? (selection ? canvasCameraTuning.maximumZoom : 1),
       (innerWidth - left - 96) / Math.max(1, maxX - minX),
       (innerHeight - 219) / Math.max(1, maxY - minY),
     ),

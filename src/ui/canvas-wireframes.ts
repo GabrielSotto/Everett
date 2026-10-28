@@ -64,7 +64,7 @@ export function addWireframe(ctx: Context, type: string | undefined, drop?: Poin
       projectedWidth > viewport.width - 64 ||
       projectedHeight > viewport.height - 150)
   )
-    frameCanvas(ctx, true);
+    frameCanvas(ctx, true, { maximumZoom: 1 });
   ctx.persist();
   document.querySelector<HTMLElement>(`[data-node="${node.id}"]`)?.focus({ preventScroll: true });
 }
