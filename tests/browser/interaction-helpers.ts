@@ -91,7 +91,9 @@ export async function openSurface(page: Page, name: string): Promise<void> {
   await expect(route).toHaveAttribute('data-route', worldRoute);
   await reachSurface(page, name);
   const surface = page.getByRole('main').getByRole('button', { name, exact: true });
-  await surface.click();
+  // reachSurface comprueba el rótulo. El centro de una superficie grande puede
+  // seguir detrás de la cabecera aunque ese destino visible sea alcanzable.
+  await surface.locator('.surface-label').click();
   await page.keyboard.press('Enter');
   await expect(page.locator('.transition-ghost')).toHaveCount(0);
 }

@@ -1,5 +1,37 @@
 import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
+import { enterWorld, openSurface, reachSurface } from './interaction-helpers';
+
+test('UI-NAV-08: entrar por el rótulo visible cuando el centro de la superficie queda detrás de la cabecera', async ({
+  page,
+}, info) => {
+  await enterWorld(page);
+  await reachSurface(page, 'Agents');
+  const surface = page.getByRole('main').getByRole('button', { name: 'Agents', exact: true });
+  const shell = (await page.locator('#shell').boundingBox())!;
+  const bounds = (await surface.boundingBox())!;
+  const center = bounds.y + bounds.height / 2;
+  if (center >= shell.y + shell.height) {
+    const viewport = page.viewportSize()!;
+    const height = Math.round(viewport.height - 2 * (center - shell.height + 20));
+    expect(height).toBeGreaterThanOrEqual(300);
+    await page.setViewportSize({ width: viewport.width, height });
+  }
+  await expect
+    .poll(async () => {
+      const box = (await surface.boundingBox())!;
+      return box.y + box.height / 2;
+    })
+    .toBeLessThan(shell.y + shell.height);
+  const label = (await surface.locator('.surface-label').boundingBox())!;
+  expect(label.y).toBeGreaterThan(shell.y + shell.height);
+  await info.attach('rotulo-alcanzable-centro-cubierto', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  await openSurface(page, 'Agents');
+  await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'scout/agents/');
+});
 
 async function focusWorld(page: Page): Promise<string> {
   await page.getByRole('button', { name: 'Buscar en Everett', exact: true }).click();
