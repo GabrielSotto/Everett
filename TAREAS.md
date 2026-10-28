@@ -20,6 +20,13 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
+La revisión de bosquejos y organización del 28 de octubre está en corrección: pantalla libre
+con formatos de dispositivo, texto editado sobre su pieza, incorporación por arrastre y clic,
+distribución operable sobre solapamientos y guías con referencias visibles identificadas.
+Se amplía el arnés con composición por gestos, cancelación, tamaño de texto y geometría derivada
+de cables/conjuntos. Pendiente completar el gate sobre las fuentes finales; los totales del
+bloque siguiente corresponden a la base anterior, no certifican estos cambios.
+
 El usuario retiró el flujo de entregas puntuales el 27 de octubre de 2026. Usar únicamente
 Vite en 4173 para desarrollar y revisar las fuentes modulares. No generar HTML autónomo, ZIP
 ni informe adicional por cada revisión. Conservar el origen y los datos locales del usuario.

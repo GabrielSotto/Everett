@@ -63,8 +63,7 @@ export function wireframeMarkup(material: Material): string {
       )}</tbody></table>${content.cells.length > 8 || (content.cells[0]?.length ?? 0) > 6 ? `<small class="wireframe-overflow">${content.cells.length} filas · ${content.cells[0]!.length} columnas</small>` : ''}`;
   } else {
     const lines = content.text.split('\n');
-    if (type === 'screen')
-      body = `<div class="wireframe-screen-bar"><span aria-hidden="true">○ ○ ○</span><span>${html(content.text)}</span></div>`;
+    if (type === 'screen') body = '';
     else if (type === 'list' || type === 'menu')
       body = `<ul>${lines
         .slice(0, 12)

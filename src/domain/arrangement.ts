@@ -40,19 +40,47 @@ export function arrangementMoves(
   const size = axis === 'x' ? 'width' : 'height';
   const positions = new Map<ArrangementUnit, number>();
   if (action.startsWith('space')) {
-    const sorted = [...units].sort((a, b) => a[axis] - b[axis]);
+    const ordered = [...units].sort((a, b) => a[axis] - b[axis]);
+    const total = units.reduce((sum, item) => sum + item[size], 0);
+    const gap =
+      (ordered.at(-1)![axis] + ordered.at(-1)![size] - ordered[0]![axis] - total) /
+      (units.length - 1);
+    // Con solapamiento, repartir centros mantiene un orden estable incluso si
+    // una pantalla contiene otras piezas mucho más pequeñas.
+    const centers = gap < 0;
+    const coordinate = (item: ArrangementUnit) => item[axis] + (centers ? item[size] / 2 : 0);
+    const sorted = centers ? [...units].sort((a, b) => coordinate(a) - coordinate(b)) : ordered;
     const first = sorted[0]!,
       last = sorted.at(-1)!;
-    const gap =
-      (last[axis] + last[size] - first[axis] - sorted.reduce((sum, item) => sum + item[size], 0)) /
-      (sorted.length - 1);
-    // Espaciar conserva los extremos y requiere espacio entre las piezas.
-    if (gap < 0) return [];
+    const step = (coordinate(last) - coordinate(first)) / (sorted.length - 1);
     let position = first[axis];
     sorted.forEach((item, i) => {
-      positions.set(item, i === sorted.length - 1 ? last[axis] : position);
+      positions.set(
+        item,
+        centers
+          ? coordinate(first) + step * i - item[size] / 2
+          : i === sorted.length - 1
+            ? last[axis]
+            : position,
+      );
       position += item[size] + gap;
     });
+    if (centers) {
+      const projected = units.map((item) => ({ item, start: positions.get(item)! }));
+      const start = Math.min(...projected.map((p) => p.start));
+      const end = Math.max(...projected.map((p) => p.start + p.item[size]));
+      const resolvedGap = (end - start - total) / (units.length - 1);
+      // Un elemento muy grande puede ampliar los límites al repartir centros.
+      // Resolver el espacio resultante en el mismo paso evita que repetir la
+      // acción cambie otra vez la disposición.
+      if (resolvedGap >= 0) {
+        let cursor = start;
+        for (const { item } of projected.sort((a, b) => a.start - b.start)) {
+          positions.set(item, cursor);
+          cursor += item[size] + resolvedGap;
+        }
+      }
+    }
   } else {
     const bounds = selectionBounds([...units]);
     const factor = action.startsWith('center') ? 0.5 : ['right', 'bottom'].includes(action) ? 1 : 0;

@@ -1436,7 +1436,17 @@ export class CanvasInteractions {
       .querySelector<HTMLElement>(`[data-node="${CSS.escape(id)}"]`)
       ?.getBoundingClientRect();
     if (anchor) {
-      form.style.left = Math.min(innerWidth - 370, anchor.right + 8) + 'px';
+      const inline = node.data.content.type === 'text';
+      form.classList.toggle('wireframe-inline-editor', inline);
+      if (inline) {
+        form.style.width = Math.max(120, Math.min(600, anchor.width)) + 'px';
+        form.style.setProperty(
+          '--wireframe-editor-font',
+          Math.max(12, Math.min(32, 14 * this.ctx.currentCamera().z)) + 'px',
+        );
+      }
+      form.style.left =
+        (inline ? anchor.left : Math.min(innerWidth - 370, anchor.right + 8)) + 'px';
       form.style.top = Math.max(70, anchor.top) + 'px';
     }
     this.closeWireframeEditor = bindWireframeEditor(

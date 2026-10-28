@@ -20,6 +20,23 @@ test('C08-U34: modificador espacial configurable conserva Alt por defecto y dist
   assert.equal(spatialWheel({ ...event, altKey: true }, undefined), true);
 });
 
+test('C08-U45: la guía elige una referencia cercana y sus marcas corresponden a la posición final en ambos ejes', () => {
+  const moving = { x: 103, y: 102, width: 100, height: 60 };
+  const near = { x: 100, y: 200, width: 100, height: 60 };
+  const distant = { x: 103, y: -2000, width: 100, height: 60 };
+  const result = alignRect(moving, [distant, near], 1);
+  assert.equal(result.correction.x, -3);
+  const x = result.guides.find((g) => g.axis === 'x')!;
+  assert.ok(x.from >= 100);
+  assert.ok(x.to <= 260);
+  assert.deepEqual(x.markers, [132, 230]);
+  for (const z of [0.1, 0.38, 1, 2, 6]) {
+    const a = { x: 100 + 3 / z, y: 202 + 3 / z, width: 100, height: 60 };
+    const r = alignRect(a, [near], z);
+    for (const g of r.guides) assert.ok(Math.abs(r.correction[g.axis]) * z <= 5);
+  }
+});
+
 test('C08-U35: guías comparan bordes y centros con cinco píxeles de pantalla sin mutar objetivos', () => {
   const target = { x: 100, y: -200, width: 100, height: 60 };
   const before = structuredClone(target);

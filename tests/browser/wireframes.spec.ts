@@ -63,6 +63,12 @@ test('C08-B126: biblioteca agrega nueve piezas reales, edita contenido y conserv
       menu: 'Resumen\nMateriales\nTareas',
     }[type];
     await page.getByRole('textbox', { name: 'Contenido del bosquejo', exact: true }).fill(value);
+    if (type === 'screen') {
+      await expect(page.locator(`[data-node="${id}"] .material-identification button`)).toHaveText(
+        value,
+      );
+      await expect(page.locator(`[data-node="${id}"]`)).toHaveAttribute('aria-label', value);
+    }
     await page.keyboard.press('Escape');
     const node = (await world(page)).nodes.find((n) => n.id === id)!;
     expect(

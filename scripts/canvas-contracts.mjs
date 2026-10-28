@@ -1,5 +1,13 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-B136', layer: 'browser', contracts: ['C08-WIRE-01', 'C08-ORG-01', 'C08-LINK-01'] },
+  { id: 'C08-U46', layer: 'unit', contracts: ['C08-WIRE-01'] },
+  { id: 'C08-U44', layer: 'unit', contracts: ['C08-ARRANGE-01'] },
+  { id: 'C08-U45', layer: 'unit', contracts: ['C08-ALIGN-01'] },
+  { id: 'C08-B132', layer: 'browser', contracts: ['C08-WIRE-01'] },
+  { id: 'C08-B133', layer: 'browser', contracts: ['C08-WIRE-01'] },
+  { id: 'C08-B134', layer: 'browser', contracts: ['C08-ARRANGE-01'] },
+  { id: 'C08-B135', layer: 'browser', contracts: ['C08-ALIGN-01'] },
   ...['C08-U42', 'C08-U43'].map((id) => ({ id, layer: 'unit', contracts: ['C08-WIRE-01'] })),
   ...['C08-B126', 'C08-B127', 'C08-B128', 'C08-B129', 'C08-B130'].map((id) => ({
     id,
@@ -266,6 +274,9 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B132': { 'canvas-wireframes': 6, 'wireframe-add': 1 },
+  'C08-B133': { 'canvas-wireframes': 5, 'wireframe-add': 1 },
+  'C08-B134': { 'canvas-organize': 4, 'selection-arrange': 4 },
   'C08-B131': { 'canvas-wireframes': 2, 'canvas-organize': 2, 'canvas-view': 2 },
   'C08-B126': { 'canvas-wireframes': 9, 'wireframe-add': 9 },
   'C08-B127': { 'canvas-wireframes': 1, 'wireframe-add': 1 },

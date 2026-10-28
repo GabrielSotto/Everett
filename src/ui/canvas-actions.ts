@@ -5,7 +5,7 @@ import { frameCanvas } from './canvas-frame';
 import { target } from './dom';
 import { icon } from './icons';
 import { bindDismiss } from './popover';
-import { wireframePalette, addWireframe } from './canvas-wireframes';
+import { wireframePalette, addWireframe, bindWireframeDrag } from './canvas-wireframes';
 
 /** Creación, organización y vista tienen entradas propias en la cabecera. */
 export class CanvasActions {
@@ -19,6 +19,7 @@ export class CanvasActions {
     settings: (page: 'preferences' | 'shortcuts') => void,
     signal: AbortSignal,
   ) {
+    bindWireframeDrag(root, ctx, signal, () => this.close(false));
     bindDismiss(
       signal,
       () => this.open,

@@ -84,6 +84,19 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
           'La edición no puede cambiar el tipo de pieza.',
         );
         material.data.content = structuredClone(command.content);
+        if (command.content.type === 'screen')
+          material.data.title = command.content.text.trim() || 'Pantalla';
+        if (command.height !== undefined) {
+          ensure(
+            command.content.type === 'text' &&
+              Number.isFinite(command.height) &&
+              command.height >= 24 &&
+              command.height <= 10000,
+            'WIREFRAME_SIZE',
+            'Tamaño del texto no válido.',
+          );
+          material.height = command.height;
+        }
       }
       break;
     }

@@ -1818,9 +1818,10 @@ body[data-canvas-motion='reduced']
   pointer-events: none;
   z-index: 50;
 }
-.alignment-guides line {
+.alignment-guides :is(line, path) {
   stroke: #ff7189;
   stroke-width: 1;
+  fill: none;
   vector-effect: non-scaling-stroke;
 }
 .cable-inline-edit.canvas-context-form {

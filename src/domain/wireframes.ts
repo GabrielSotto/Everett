@@ -59,7 +59,7 @@ export function wireframeText(content: WireframeContent): string {
 export function wireframeMaterial(type: WireframeKind, id: string, center: Point): Material {
   const sizes: Record<WireframeKind, [number, number]> = {
     screen: [720, 480],
-    text: [260, 80],
+    text: [180, 32],
     button: [150, 44],
     input: [240, 44],
     card: [260, 180],

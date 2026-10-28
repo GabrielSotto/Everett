@@ -71,19 +71,6 @@
 .wireframe-content[data-wireframe='card'] p {
   margin-top: 12px;
 }
-.wireframe-screen-bar {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  min-height: 30px;
-  padding: 3px 8px;
-  border-bottom: 1px solid #939ba2;
-}
-.wireframe-screen-bar > span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .wireframe-body ul {
   list-style: none;
   padding: 0;
@@ -163,6 +150,58 @@
 .wireframe-editor textarea {
   resize: vertical;
   line-height: 1.5;
+}
+.wireframe-drag-preview {
+  position: fixed;
+  transform-origin: center;
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 2000;
+  outline: 1px solid var(--accent);
+}
+.wireframe-palette button {
+  touch-action: none;
+  cursor: grab;
+}
+.wireframe-palette button:active {
+  cursor: grabbing;
+}
+.wireframe-inline-editor.canvas-context-form {
+  padding: 0;
+  border: 1px solid var(--accent);
+  background: #fbfaf6;
+  box-shadow: 0 2px 8px #0002;
+  animation: none;
+}
+.wireframe-inline-editor .wireframe-editor-head,
+.wireframe-inline-editor > small,
+.wireframe-inline-editor label {
+  font-size: 0;
+  gap: 0;
+}
+.wireframe-inline-editor .wireframe-editor-head {
+  display: none;
+}
+.wireframe-inline-editor textarea {
+  font-size: var(--wireframe-editor-font, 14px);
+  min-height: 30px;
+  border: 0;
+  background: #fbfaf6;
+  color: #26323c;
+  resize: none;
+  padding: 5px;
+  line-height: 1.45;
+  outline: none;
+}
+.wireframe-screen-presets {
+  display: flex;
+  gap: 4px;
+}
+.wireframe-screen-presets button {
+  padding: 6px 8px;
+  background: var(--hover);
+  border-radius: 4px;
+  font-size: 0.92rem;
 }
 .wireframe-editor small {
   color: var(--muted);

@@ -13,6 +13,70 @@ import { traceInput } from '../../src/app/diagnostics/trace-input';
 import { validate } from '../../src/domain/invariants';
 import type { WireframeContent } from '../../src/domain/wireframes';
 
+test('C08-U46: texto y altura se guardan y deshacen juntos; rechazar dimensiones inválidas no cambia contenido ni historial', () => {
+  const { store } = setup();
+  const act = (command: Parameters<typeof store.dispatch>[0]) => store.dispatch(command, intent);
+  const text = wireframeMaterial('text', 'text', { x: 0, y: 0 });
+  act({ type: 'node.create', world: 'project', node: text });
+  act({
+    type: 'wireframe.edit',
+    world: 'project',
+    id: 'text',
+    content: { type: 'text', text: 'Primera línea\nSegunda línea\nTercera línea' },
+    height: 85,
+  });
+  assert.equal(project(store).nodes.find((n) => n.id === 'text')!.height, 85);
+  act({ type: 'canvas.undo', world: 'project' });
+  assert.deepEqual(
+    project(store).nodes.find((n) => n.id === 'text'),
+    text,
+  );
+  act({ type: 'canvas.redo', world: 'project' });
+  const before = store.snapshot();
+  for (const height of [-1, 0, 23, 10001, Infinity, NaN]) {
+    assert.throws(() =>
+      act({
+        type: 'wireframe.edit',
+        world: 'project',
+        id: 'text',
+        content: { type: 'text', text: 'No debe reemplazar' },
+        height,
+      }),
+    );
+    assert.deepEqual(store.snapshot(), before);
+  }
+  act({
+    type: 'node.create',
+    world: 'project',
+    node: wireframeMaterial('screen', 'screen', { x: 0, y: 0 }),
+  });
+  const beforeScreen = store.snapshot();
+  assert.throws(() =>
+    act({
+      type: 'wireframe.edit',
+      world: 'project',
+      id: 'screen',
+      content: { type: 'screen', text: 'No guardar' },
+      height: 100,
+    }),
+  );
+  assert.deepEqual(store.snapshot(), beforeScreen);
+  act({
+    type: 'wireframe.edit',
+    world: 'project',
+    id: 'screen',
+    content: { type: 'screen', text: 'Ingresar al proyecto' },
+  });
+  const screen = project(store).nodes.find((n) => n.id === 'screen')!;
+  assert.ok(screen.data.kind === 'wireframe');
+  assert.equal(screen.data.title, 'Ingresar al proyecto');
+  act({ type: 'canvas.undo', world: 'project' });
+  assert.deepEqual(
+    project(store).nodes.find((n) => n.id === 'screen'),
+    beforeScreen.worlds.find((w) => w.id === 'project')!.nodes.find((n) => n.id === 'screen'),
+  );
+});
+
 test('C08-U42: bosquejos y tablas validan límites y pegan rangos sin truncar ni mutar su origen', () => {
   for (const kind of wireframeKinds) {
     const node = wireframeMaterial(kind, kind, { x: 0, y: 0 });

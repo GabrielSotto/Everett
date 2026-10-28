@@ -107,7 +107,7 @@ test('C08-B117: distribución iguala espacios entre tamaños distintos, mantiene
   await open(page, 'arrange');
   await expect(
     page.getByRole('menuitem', { name: 'Espaciar horizontalmente', exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await capture(page, info, 'acciones-de-alineacion-y-espacios');
   await page.keyboard.press('Escape');
   const after = await world(page),

@@ -174,6 +174,7 @@ export type Command =
       world: string;
       id: string;
       content: import('./wireframes').WireframeContent;
+      height?: number;
     }
   | {
       type: 'node.edit';

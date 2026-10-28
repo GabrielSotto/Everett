@@ -415,6 +415,18 @@ export class Shell {
   refreshCamera(): void {
     this.zoom.refresh();
   }
+  refreshHistory(): void {
+    const state = this.ctx.store.get(),
+      world = activeWorld(state);
+    if (!world || state.route.kind !== 'surface' || state.route.surface !== 'canvas') return;
+    const status = this.ctx.store.canvasHistory.status(world.id);
+    for (const direction of ['undo', 'redo'] as const) {
+      const button = this.root.querySelector<HTMLButtonElement>(
+        `[data-action="canvas-${direction}"]`,
+      );
+      if (button) button.disabled = !status[direction];
+    }
+  }
   private results(): void {
     const holder = this.root.querySelector<HTMLElement>('#global-results');
     if (!holder) return;

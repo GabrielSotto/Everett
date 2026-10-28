@@ -462,6 +462,7 @@ export class EverettApp implements Context {
     } else if (change.command.type !== 'camera') {
       // Las ediciones conservan el DOM del editor; los resultados sí derivan del contenido nuevo.
       this.shell.refreshSearch();
+      this.shell.refreshHistory();
     }
   }
   private mount(

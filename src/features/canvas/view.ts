@@ -1001,9 +1001,19 @@ export class CanvasView implements View {
           return original ? [{ ...original, ...item.point }] : [];
         });
         if (moving.length) {
+          const viewport = this.root.getBoundingClientRect();
+          const a = toWorld({ x: viewport.left, y: viewport.top }, this.cam.current, viewport);
+          const b = toWorld({ x: viewport.right, y: viewport.bottom }, this.cam.current, viewport);
           const snap = alignRect(
             selectionBounds(moving),
-            items.filter((item) => !selected.has(item.id)),
+            items.filter(
+              (item) =>
+                !selected.has(item.id) &&
+                item.x + item.width >= a.x &&
+                item.x <= b.x &&
+                item.y + item.height >= a.y &&
+                item.y <= b.y,
+            ),
             this.cam.current.z,
           );
           for (const item of positions) {
@@ -1018,7 +1028,14 @@ export class CanvasView implements View {
             layer.innerHTML = snap.guides
               .map(
                 (guide) =>
-                  `<line x1="${guide.axis === 'x' ? guide.position : guide.from}" y1="${guide.axis === 'y' ? guide.position : guide.from}" x2="${guide.axis === 'x' ? guide.position : guide.to}" y2="${guide.axis === 'y' ? guide.position : guide.to}"/>`,
+                  `<line x1="${guide.axis === 'x' ? guide.position : guide.from}" y1="${guide.axis === 'y' ? guide.position : guide.from}" x2="${guide.axis === 'x' ? guide.position : guide.to}" y2="${guide.axis === 'y' ? guide.position : guide.to}"/>${guide.markers
+                    .map((p) => {
+                      const x = guide.axis === 'x' ? guide.position : p,
+                        y = guide.axis === 'y' ? guide.position : p,
+                        d = 3 / this.cam.current.z;
+                      return `<path d="M${x - d} ${y - d}l${2 * d} ${2 * d}m0 ${-2 * d}l${-2 * d} ${2 * d}"/>`;
+                    })
+                    .join('')}`,
               )
               .join('');
             this.root.querySelector('#canvas-plane')?.append(layer);
