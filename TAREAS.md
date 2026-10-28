@@ -20,12 +20,18 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
-La revisión de bosquejos y organización del 28 de octubre está en corrección: pantalla libre
-con formatos de dispositivo, texto editado sobre su pieza, incorporación por arrastre y clic,
-distribución operable sobre solapamientos y guías con referencias visibles identificadas.
-Se amplía el arnés con composición por gestos, cancelación, tamaño de texto y geometría derivada
-de cables/conjuntos. Pendiente completar el gate sobre las fuentes finales; los totales del
-bloque siguiente corresponden a la base anterior, no certifican estos cambios.
+La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
+`d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
+por arrastre y clic, distribución operable sobre solapamientos y guías con referencias visibles
+identificadas. Agregar una pieza muy pequeña acerca como máximo al 100 %; el encuadre explícito
+conserva su recorrido. El texto adapta su altura junto con cables, conjuntos e historial; los
+botones Deshacer/Rehacer se actualizan durante la edición. Pendiente de revisión del usuario.
+
+El arnés construye una pantalla con gestos reales y cubre cancelación, zoom, proporciones libres,
+formatos, texto, geometría derivada y persistencia (C08-B132–B136). C08-U44 comprueba además
+2.000 distribuciones reproducibles. La regresión detectó que el helper de navegación intentaba
+pulsar el centro de Agents debajo de la cabecera, aunque había comprobado su rótulo visible.
+`e0a9aed` dirige ese clic al rótulo con hit testing normal; UI-NAV-08 reproduce esa geometría.
 
 El usuario retiró el flujo de entregas puntuales el 27 de octubre de 2026. Usar únicamente
 Vite en 4173 para desarrollar y revisar las fuentes modulares. No generar HTML autónomo, ZIP
@@ -39,18 +45,20 @@ recuperación de un error de sintaxis, datos de revisión y rechazo de puerto oc
 en `83489da`. El arnés
 registra la identidad de las fuentes en `target.json` y rechaza una revisión distinta. Los dos
 casos exclusivos de abrir el antiguo HTML como archivo se conservan en su gate histórico,
-sin contarlos como aprobados sobre fuentes. Se comprobó en la pestaña del usuario que la
-conexión a Vite conserva sus nueve materiales y el zoom del 16 %.
+sin contarlos como aprobados sobre fuentes. La verificación inicial de la conexión a Vite
+comprobó los nueve materiales del usuario y el zoom del 16 %. La revisión visual de bosquejos
+se hizo en una pestaña auxiliar con otro origen de almacenamiento.
 
-**Verificado: 109 pruebas unitarias/del arnés y 203 recorridos de navegador sobre Vite**, sin
-fallos, omisiones ni reintentos. La regresión duró 29,5 minutos e incluyó 30 ciclos sostenidos
-durante 542.786 ms. Pasaron los verificadores independientes de resultados, identidad de fuentes,
+**Verificado: 112 pruebas unitarias/del arnés y 209 recorridos de navegador sobre Vite**, sin
+fallos, omisiones ni reintentos. La regresión duró 29,7 minutos e incluyó 30 ciclos sostenidos
+durante 541.449 ms. Pasaron los verificadores independientes de resultados, identidad de fuentes,
 inventario de casos y adjuntos, además de tipado, formato y revisión en el navegador interno.
 El tipo de objetivo es `development`; no se acredita un HTML ni una entrega empaquetada.
 
-- [Resultado unitario](output/pruebas/unitarias/2026-10-27_23-51-02-466Z/result.json).
-- [Resultado de navegador](output/pruebas/navegador/2026-10-27_23-51-54-021Z/results.json) e [identidad de fuentes](output/pruebas/navegador/2026-10-27_23-51-54-021Z/target.json): SHA-256 `ef2c3484d7286ad802b3d6d5b2279c972a15dde57afe2ca62b829a4ebb1942ff`.
-- [Canvas del usuario servido por Vite](output/revision/0.8.22/vite-iab.png). La conexión HMR está activa y se conserva el mismo origen de almacenamiento.
+- [Resultado unitario](output/pruebas/unitarias/2026-10-28_08-42-51-536Z/result.json).
+- [Resultado de navegador](output/pruebas/navegador/2026-10-28_09-01-59-915Z/results.json) e [identidad de fuentes](output/pruebas/navegador/2026-10-28_09-01-59-915Z/target.json): SHA-256 `2aacd3e6637e66fdc7088295435edf0bcec4de95b426df2dadb95fc079562fce`.
+- Revisión visual: [pantalla compuesta mediante arrastres](output/revision/0.8.22/bosquejo-compuesto.png), [referencia de las guías](output/revision/0.8.22/guias-referencia-visible.png) y [texto conectado y agrupado](output/revision/0.8.22/texto-conectado.png).
+- [Verificación inicial de Vite en la pestaña del usuario](output/revision/0.8.22/vite-iab.png). La conexión HMR está activa y se conserva el mismo origen de almacenamiento.
 
 Solo queda Vite en 4173. El servidor de HTML anterior y las instancias y pestañas auxiliares de
 pruebas se cerraron. La corrección no vuelve a acreditar el gesto dentro del iframe externo
