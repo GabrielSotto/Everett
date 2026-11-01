@@ -3,6 +3,54 @@ import test from 'node:test';
 import { arrangementMoves, arrangementUnits, arrangements } from '../../src/domain/arrangement';
 import { note, setup, project, intent } from './fixtures';
 
+test('C08-U47: separación exacta entre dos o más piezas conserva orden, tamaños, grupos y primera pieza en ambos ejes', () => {
+  const { store } = setup();
+  const w = {
+    ...project(store),
+    canvasGroups: [],
+    nodes: [
+      { ...note('a'), x: -80, y: -50, width: 90, height: 40 },
+      { ...note('b'), x: -20, y: -10, width: 60, height: 80 },
+      { ...note('c'), x: 20, y: 10, width: 110, height: 30 },
+    ],
+  };
+  for (const axis of ['x', 'y'] as const)
+    for (const count of [2, 3])
+      for (const gap of [0, 0.5, 24, 10000]) {
+        const units = arrangementUnits(
+          w,
+          w.nodes.slice(0, count).map((n) => n.id),
+        );
+        const action = axis === 'x' ? 'space-x' : 'space-y';
+        const moves = arrangementMoves(units, action, gap);
+        const size = axis === 'x' ? 'width' : 'height';
+        const placed = units
+          .map((u) => ({ ...u, ...(moves.find((m) => m.id === u.nodes[0]!.id)?.point ?? {}) }))
+          .sort((a, b) => a[axis] - b[axis]);
+        assert.equal(placed[0]![axis], units[0]![axis]);
+        placed
+          .slice(1)
+          .forEach((item, i) =>
+            assert.equal(item[axis] - placed[i]![axis] - placed[i]![size], gap),
+          );
+        assert.deepEqual(arrangementMoves(placed, action, gap), []);
+      }
+  const before = structuredClone(w);
+  const grouped = { ...w, canvasGroups: [{ id: 'g', name: 'G', nodes: ['a', 'b'] }] };
+  grouped.nodes = w.nodes.map((n) => (n.id === 'c' ? { ...n, x: -500 } : n));
+  const units = arrangementUnits(grouped, ['a', 'b', 'c']);
+  assert.equal(units.length, 2);
+  const moves = arrangementMoves(units, 'space-x', 16);
+  const a = moves.find((m) => m.id === 'a')?.point ?? w.nodes[0]!;
+  const b = moves.find((m) => m.id === 'b')?.point ?? w.nodes[1]!;
+  assert.equal(b.x - a.x, 60);
+  const c = moves.find((m) => m.id === 'c')?.point ?? grouped.nodes[2]!;
+  assert.equal(a.x - c.x - grouped.nodes[2]!.width, 16);
+  assert.deepEqual(w, before);
+  for (const value of [-1, NaN, Infinity, 10001])
+    assert.deepEqual(arrangementMoves(units, 'space-x', value), []);
+});
+
 test('C08-U36: seis alineaciones conservan tamaño y eje perpendicular sin mutar los materiales', () => {
   const { store } = setup();
   const w = {

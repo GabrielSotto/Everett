@@ -2,6 +2,7 @@ import type { Material, Point } from './model';
 
 export const wireframeKinds = [
   'screen',
+  'block',
   'text',
   'button',
   'input',
@@ -10,14 +11,27 @@ export const wireframeKinds = [
   'image',
   'table',
   'menu',
+  'video',
+  'carousel',
 ] as const;
 export type WireframeKind = (typeof wireframeKinds)[number];
-export type WireframeContent =
+export interface WireframeAppearance {
+  fill: string;
+  stroke: string;
+  text: string;
+  radius: number;
+}
+export type WireframeContent = (
   | { type: Exclude<WireframeKind, 'table'>; text: string }
-  | { type: 'table'; cells: readonly (readonly string[])[] };
+  | { type: 'table'; cells: readonly (readonly string[])[] }
+) & { appearance?: WireframeAppearance; placeholder?: boolean; placeholderLines?: number };
+export function wireframeAppearance(content: WireframeContent): WireframeAppearance {
+  return content.appearance ?? { fill: '#fbfaf6', stroke: '#485361', text: '#26323c', radius: 0 };
+}
 
 export const wireframeNames: Record<WireframeKind, string> = {
   screen: 'Pantalla',
+  block: 'Bloque',
   text: 'Texto',
   button: 'Botón',
   input: 'Campo',
@@ -26,12 +40,36 @@ export const wireframeNames: Record<WireframeKind, string> = {
   image: 'Imagen',
   table: 'Tabla',
   menu: 'Menú',
+  video: 'Video',
+  carousel: 'Carrusel',
 };
 export const tableLimits = { rows: 100, columns: 20, text: 100_000 };
 export function validWireframe(value: unknown): value is WireframeContent {
   if (!value || typeof value !== 'object') return false;
   const data = value as Record<string, unknown>;
   if (!wireframeKinds.includes(data.type as WireframeKind)) return false;
+  if (data.placeholder !== undefined && typeof data.placeholder !== 'boolean') return false;
+  if (
+    data.placeholderLines !== undefined &&
+    (!Number.isInteger(data.placeholderLines) ||
+      Number(data.placeholderLines) < 1 ||
+      Number(data.placeholderLines) > 12)
+  )
+    return false;
+  if (data.appearance !== undefined) {
+    if (!data.appearance || typeof data.appearance !== 'object') return false;
+    const style = data.appearance as Record<string, unknown>;
+    if (
+      !['fill', 'stroke', 'text'].every(
+        (key) => typeof style[key] === 'string' && /^#[\da-f]{6}([\da-f]{2})?$/i.test(style[key]),
+      ) ||
+      typeof style.radius !== 'number' ||
+      !Number.isFinite(style.radius) ||
+      style.radius < 0 ||
+      style.radius > 10000
+    )
+      return false;
+  }
   if (data.type !== 'table')
     return typeof data.text === 'string' && data.text.length <= tableLimits.text;
   if (!Array.isArray(data.cells) || !data.cells.length || data.cells.length > tableLimits.rows)
@@ -59,6 +97,7 @@ export function wireframeText(content: WireframeContent): string {
 export function wireframeMaterial(type: WireframeKind, id: string, center: Point): Material {
   const sizes: Record<WireframeKind, [number, number]> = {
     screen: [720, 480],
+    block: [160, 100],
     text: [180, 32],
     button: [150, 44],
     input: [240, 44],
@@ -67,9 +106,12 @@ export function wireframeMaterial(type: WireframeKind, id: string, center: Point
     image: [260, 180],
     table: [360, 180],
     menu: [210, 170],
+    video: [320, 180],
+    carousel: [360, 200],
   };
   const text: Record<Exclude<WireframeKind, 'table'>, string> = {
     screen: 'Pantalla',
+    block: '',
     text: 'Escribí tu idea',
     button: 'Continuar',
     input: 'Buscar…',
@@ -77,6 +119,8 @@ export function wireframeMaterial(type: WireframeKind, id: string, center: Point
     list: 'Primer elemento\nSegundo elemento\nTercer elemento',
     image: 'Imagen',
     menu: 'Inicio\nProyectos\nConfiguración',
+    video: 'Video',
+    carousel: 'Imagen 1\nImagen 2\nImagen 3',
   };
   const [width, height] = sizes[type];
   return {
@@ -99,7 +143,13 @@ export function wireframeMaterial(type: WireframeKind, id: string, center: Point
                 ['Otro elemento', 'En curso', 'Sin asignar'],
               ],
             }
-          : { type, text: text[type] },
+          : {
+              type,
+              text: text[type],
+              ...(['text', 'button', 'input', 'card', 'list', 'menu'].includes(type)
+                ? { placeholder: true }
+                : {}),
+            },
     },
   };
 }

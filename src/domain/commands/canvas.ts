@@ -10,6 +10,7 @@ import { orderMaterials } from '../material-order';
 import { validLinkPreview } from '../link-previews';
 import { resolveMedia } from '../resolved-media';
 import { validWireframe } from '../wireframes';
+import { compositionKinds, wireframeComposition } from '../wireframe-compositions';
 
 type CanvasCommand = Extract<
   Command,
@@ -17,6 +18,7 @@ type CanvasCommand = Extract<
     type:
       | 'node.create'
       | 'wireframe.edit'
+      | 'wireframe.compose'
       | 'assignment.interrupt'
       | 'assignment.retry'
       | 'node.rename'
@@ -64,6 +66,25 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       'Material inexistente',
     );
   switch (command.type) {
+    case 'wireframe.compose': {
+      ensure(
+        compositionKinds.includes(command.kind) &&
+          Number.isFinite(command.center.x) &&
+          Number.isFinite(command.center.y),
+        'WIREFRAME_CONTENT',
+        'La composición no es válida.',
+      );
+      const composition = wireframeComposition(command.kind, command.id, command.center);
+      ensure(
+        !world.nodes.some((node) => composition.group.nodes.includes(node.id)) &&
+          !world.canvasGroups?.some((group) => group.id === composition.group.id),
+        'WIREFRAME_ID',
+        'La composición ya existe.',
+      );
+      world.nodes.push(...composition.nodes);
+      (world.canvasGroups ??= []).push(composition.group);
+      break;
+    }
     case 'wireframe.edit': {
       const material = node(command.id);
       ensure(!material.owner, 'LOCKED', 'El agente está usando el material.');

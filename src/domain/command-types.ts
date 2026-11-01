@@ -177,6 +177,13 @@ export type Command =
       height?: number;
     }
   | {
+      type: 'wireframe.compose';
+      world: string;
+      kind: import('./wireframe-compositions').CompositionKind;
+      id: string;
+      center: Point;
+    }
+  | {
       type: 'node.edit';
       world: string;
       id: string;

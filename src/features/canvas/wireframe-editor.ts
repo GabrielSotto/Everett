@@ -3,12 +3,14 @@ import {
   pasteWireframeCells,
   tableLimits,
   wireframeNames,
+  wireframeAppearance,
   type WireframeContent,
 } from '../../domain/wireframes';
 import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { wireframeMarkup } from './wireframe-markup';
+import { bindColorPicker } from './color-picker';
 
 /** Listeners locales y observación de tamaño con limpieza al cerrar el formulario. */
 export function bindWireframeEditor(
@@ -20,6 +22,7 @@ export function bindWireframeEditor(
 ): () => void {
   let activeRow = 0,
     activeColumn = 0;
+  let itemPage = 0;
   const fitText = () => {
     if (!form.classList.contains('wireframe-inline-editor')) return;
     const field = form.querySelector<HTMLTextAreaElement>('textarea');
@@ -35,7 +38,14 @@ export function bindWireframeEditor(
   const save = (content: WireframeContent): boolean => {
     const original = current();
     let height: number | undefined;
-    if (original && content.type === 'text') {
+    const previous = original?.data.kind === 'wireframe' ? original.data.content : null;
+    if (
+      original &&
+      content.type === 'text' &&
+      !content.placeholder &&
+      previous?.type === 'text' &&
+      (previous.text !== content.text || previous.placeholder)
+    ) {
       const measure = document.createElement('div');
       Object.assign(measure.style, {
         position: 'fixed',
@@ -69,6 +79,8 @@ export function bindWireframeEditor(
       return false;
     const node = current();
     if (!node) return false;
+    const heightField = form.querySelector<HTMLInputElement>('[data-size=height]');
+    if (heightField && height !== undefined) heightField.value = String(node.height);
     // El formulario vive fuera del plano. Repintar la geometría conserva su
     // foco y actualiza también puertos, cables, conjuntos e identificación.
     if ((height !== undefined && height !== original?.height) || content.type === 'screen') {
@@ -96,21 +108,38 @@ export function bindWireframeEditor(
           0,
         );
       holder.innerHTML = `<div class="wireframe-table-tools"><button type="button" data-table-action="add-row" ${content.cells.length >= tableLimits.rows ? 'disabled' : ''}>Agregar fila</button><button type="button" data-table-action="add-column" ${content.cells[0]!.length >= tableLimits.columns ? 'disabled' : ''}>Agregar columna</button><button type="button" data-table-action="remove-row" ${content.cells.length <= 1 ? 'disabled' : ''}>Quitar fila</button><button type="button" data-table-action="remove-column" ${content.cells[0]!.length <= 1 ? 'disabled' : ''}>Quitar columna</button></div><small class="wireframe-table-status">${content.cells.length} ${content.cells.length === 1 ? 'fila' : 'filas'} · ${content.cells[0]!.length} ${content.cells[0]!.length === 1 ? 'columna' : 'columnas'}</small><div class="wireframe-table-scroll"><table aria-label="Celdas del bosquejo"><tbody>${content.cells.map((row, r) => `<tr>${row.map((cell, c) => `<td><input data-cell-row="${r}" data-cell-column="${c}" aria-label="Fila ${r + 1}, columna ${c + 1}" value="${html(cell)}" maxlength="${remaining + cell.length}"></td>`).join('')}</tr>`).join('')}</tbody></table></div><small>Elegí una celda para quitar su fila o columna. Podés pegar celdas desde una hoja.</small>`;
+    } else if (['list', 'menu', 'carousel'].includes(content.type)) {
+      const lines = content.text.split('\n');
+      itemPage = Math.min(itemPage, Math.floor((lines.length - 1) / 20));
+      const offset = itemPage * 20;
+      holder.innerHTML = `<div class="wireframe-items" role="group" aria-label="Elementos del bosquejo">${lines
+        .slice(offset, offset + 20)
+        .map((line, local) => {
+          const index = offset + local;
+          return `<div class="wireframe-item"><label>Elemento ${index + 1}<input data-item-index="${index}" aria-label="Elemento ${index + 1}" value="${html(line)}" maxlength="${tableLimits.text - content.text.length + line.length}"></label><button type="button" class="icon-button" data-item-remove="${index}" aria-label="Quitar elemento ${index + 1}" ${lines.length === 1 ? 'disabled' : ''}>${icon('close', 14)}</button></div>`;
+        })
+        .join(
+          '',
+        )}<button type="button" data-item-add ${content.text.length >= tableLimits.text ? 'disabled' : ''}>Agregar elemento</button>${lines.length > 20 ? `<div class="wireframe-items-pages"><button type="button" data-item-page="${itemPage - 1}" ${itemPage === 0 ? 'disabled' : ''}>Anteriores</button><small>${offset + 1}–${Math.min(offset + 20, lines.length)} de ${lines.length}</small><button type="button" data-item-page="${itemPage + 1}" ${offset + 20 >= lines.length ? 'disabled' : ''}>Siguientes</button></div>` : ''}</div>`;
     } else {
       const multiline = ['text', 'card', 'list', 'menu'].includes(content.type);
-      holder.innerHTML = `<label>${content.type === 'screen' ? 'Nombre de la pantalla' : 'Texto'} ${multiline ? `<textarea rows="${content.type === 'text' ? 1 : 4}" aria-label="Contenido del bosquejo" maxlength="${tableLimits.text}">${html(content.text)}</textarea>` : `<input aria-label="Contenido del bosquejo" maxlength="${content.type === 'screen' ? 300 : tableLimits.text}" value="${html(content.type === 'screen' ? node.data.title : content.text)}">`}</label>${['list', 'menu'].includes(content.type) ? '<small>Una opción por línea.</small>' : content.type === 'card' ? '<small>Primera línea: título. Las demás: contenido.</small>' : ''}`;
+      holder.innerHTML = `<label>${content.type === 'screen' ? 'Nombre de la pantalla' : 'Rótulo opcional'} ${multiline ? `<textarea rows="${content.type === 'text' ? 1 : 4}" aria-label="Contenido del bosquejo" maxlength="${tableLimits.text}">${html(content.text)}</textarea>` : `<input aria-label="Contenido del bosquejo" maxlength="${content.type === 'screen' ? 300 : tableLimits.text}" value="${html(content.type === 'screen' ? node.data.title : content.text)}">`}</label>${content.type === 'card' ? '<small>Primera línea: título. Las demás: contenido.</small>' : ''}`;
       if (content.type === 'screen')
         holder.insertAdjacentHTML(
           'afterbegin',
-          '<div class="wireframe-screen-presets" role="group" aria-label="Tamaño de pantalla"><button type="button" data-screen-size="390,844">Teléfono</button><button type="button" data-screen-size="768,1024">Tablet</button><button type="button" data-screen-size="1280,800">Escritorio</button></div><small>También podés darle cualquier proporción arrastrando sus esquinas.</small>',
+          '<div class="wireframe-screen-presets" role="group" aria-label="Tamaño de pantalla"><button type="button" data-screen-size="390,844" aria-label="Teléfono">Teléfono<small>390 × 844</small></button><button type="button" data-screen-size="768,1024" aria-label="Tablet">Tablet<small>768 × 1024</small></button><button type="button" data-screen-size="1280,800" aria-label="Escritorio">Escritorio<small>1280 × 800</small></button></div><small>También podés darle cualquier proporción arrastrando sus esquinas.</small>',
         );
     }
+    const settings = form.querySelector<HTMLElement>('.wireframe-settings')!;
+    const appearance = wireframeAppearance(content);
+    settings.innerHTML = `${content.type !== 'screen' && content.type !== 'table' ? `<label class="wireframe-placeholder-control"><input type="checkbox" data-wireframe-placeholder ${content.placeholder ? 'checked' : ''}>Texto simulado</label>` : ''}<fieldset class="wireframe-dimensions"><legend>Tamaño · px</legend><label>Ancho<input type="number" data-size="width" min="4" max="10000" step="any" value="${node.width}" aria-label="Ancho de la pieza"></label><label>Alto<input type="number" data-size="height" min="4" max="10000" step="any" value="${node.height}" aria-label="Alto de la pieza"></label></fieldset><div class="wireframe-appearance"><label>Radio de esquina · px<input type="number" data-radius min="0" max="10000" step="any" value="${appearance.radius}" aria-label="Radio de esquina"></label><div class="wireframe-color-tools">${(['fill', 'stroke', 'text'] as const).map((field) => `<button type="button" data-wireframe-color="${field}" aria-label="${field === 'fill' ? 'Relleno de la pieza' : field === 'stroke' ? 'Borde de la pieza' : 'Color del texto'}"><span style="background:${appearance[field]}" aria-hidden="true"></span>${field === 'fill' ? 'Relleno' : field === 'stroke' ? 'Borde' : 'Texto'}</button>`).join('')}</div><div class="wireframe-color-panel" hidden></div></div>`;
     fitText();
     position();
   };
   form.addEventListener('input', (event) => {
     if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement))
       return;
+    if (!event.target.closest('.wireframe-editor-fields')) return;
     const node = current();
     if (node?.data.kind !== 'wireframe') return;
     let content: WireframeContent = structuredClone(node.data.content);
@@ -121,7 +150,16 @@ export function bindWireframeEditor(
       content.cells = content.cells.map((cells, r) =>
         cells.map((cell, c) => (r === row && c === column ? value : cell)),
       );
-    } else content.text = event.target.value;
+    } else {
+      if (event.target.dataset.itemIndex !== undefined) {
+        const lines = content.text.split('\n');
+        lines[Number(event.target.dataset.itemIndex)] = event.target.value;
+        content.text = lines.join('\n');
+      } else content.text = event.target.value;
+      content.placeholder = false;
+      const toggle = form.querySelector<HTMLInputElement>('[data-wireframe-placeholder]');
+      if (toggle) toggle.checked = false;
+    }
     fitText();
     if (save(content) && content.type === 'table') {
       const remaining =
@@ -135,6 +173,39 @@ export function bindWireframeEditor(
       });
     }
   });
+  form.addEventListener('change', (event) => {
+    const field = event.target;
+    const node = current();
+    if (!(field instanceof HTMLInputElement) || node?.data.kind !== 'wireframe') return;
+    if (field.hasAttribute('data-wireframe-placeholder')) {
+      save({ ...node.data.content, placeholder: field.checked });
+    } else if (field.dataset.size || field.hasAttribute('data-radius')) {
+      if (!field.reportValidity() || !field.value.trim()) return;
+      if (field.hasAttribute('data-radius')) {
+        save({
+          ...node.data.content,
+          appearance: { ...wireframeAppearance(node.data.content), radius: field.valueAsNumber },
+        });
+      } else {
+        ctx.act(
+          {
+            type: 'node.resize',
+            world: ctx.world().id,
+            id,
+            rect: {
+              x: node.x,
+              y: node.y,
+              width: node.width,
+              height: node.height,
+              [field.dataset.size!]: field.valueAsNumber,
+            },
+          },
+          'cambiar tamaño del bosquejo',
+          'C08-WIRE-01',
+        );
+      }
+    }
+  });
   form.addEventListener('focusin', (event) => {
     if (!(event.target instanceof HTMLInputElement) || event.target.dataset.cellRow === undefined)
       return;
@@ -142,6 +213,62 @@ export function bindWireframeEditor(
     activeColumn = Number(event.target.dataset.cellColumn);
   });
   form.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const page = target?.closest<HTMLElement>('[data-item-page]');
+    if (page) {
+      itemPage = Number(page.dataset.itemPage);
+      fields();
+      form.querySelector<HTMLElement>('[data-item-index]')?.focus({ preventScroll: true });
+      return;
+    }
+    if (target?.closest('[data-wireframe-properties]')) {
+      form.classList.remove('wireframe-inline-editor');
+      form.style.width = 'min(320px, calc(100vw - 24px))';
+      position();
+      return;
+    }
+    const color = target?.closest<HTMLElement>('[data-wireframe-color]');
+    if (color) {
+      const node = current();
+      if (node?.data.kind !== 'wireframe') return;
+      const key = color.dataset.wireframeColor as 'fill' | 'stroke' | 'text';
+      const previous = form.querySelector<HTMLElement>('.wireframe-color-panel')!;
+      const panel = document.createElement('div');
+      panel.className = 'wireframe-color-panel';
+      previous.replaceWith(panel);
+      panel.setAttribute('aria-label', color.getAttribute('aria-label')!);
+      panel.setAttribute('role', 'group');
+      bindColorPicker(panel, wireframeAppearance(node.data.content)[key], (value) => {
+        const currentNode = current();
+        if (currentNode?.data.kind !== 'wireframe') return;
+        save({
+          ...currentNode.data.content,
+          appearance: { ...wireframeAppearance(currentNode.data.content), [key]: value },
+        });
+        color.querySelector<HTMLElement>('span')!.style.background = value;
+      });
+      panel.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    const item = target?.closest<HTMLElement>('[data-item-add],[data-item-remove]');
+    if (item) {
+      const node = current();
+      if (node?.data.kind !== 'wireframe' || node.data.content.type === 'table') return;
+      const lines = node.data.content.text.split('\n');
+      if (item.hasAttribute('data-item-add')) {
+        lines.push('');
+        itemPage = Math.floor((lines.length - 1) / 20);
+      } else if (lines.length > 1) lines.splice(Number(item.dataset.itemRemove), 1);
+      if (save({ ...node.data.content, text: lines.join('\n') })) {
+        fields();
+        const index = Math.min(
+          Number(item.dataset.itemRemove ?? lines.length - 1),
+          lines.length - 1,
+        );
+        form.querySelector<HTMLInputElement>(`[data-item-index="${index}"]`)?.focus();
+      }
+      return;
+    }
     const preset =
       event.target instanceof Element
         ? event.target.closest<HTMLElement>('[data-screen-size]')
@@ -197,7 +324,7 @@ export function bindWireframeEditor(
         if (cells[0]!.length > 1) cells.forEach((row) => row.splice(activeColumn, 1));
         break;
     }
-    if (save({ type: 'table', cells })) {
+    if (save({ ...node.data.content, cells })) {
       fields();
       form
         .querySelector<HTMLInputElement>(
@@ -228,7 +355,7 @@ export function bindWireframeEditor(
       );
       return;
     }
-    if (save({ type: 'table', cells })) {
+    if (save({ ...node.data.content, cells })) {
       fields();
       form
         .querySelector<HTMLInputElement>(
@@ -239,9 +366,24 @@ export function bindWireframeEditor(
   });
   form.addEventListener('keydown', (event) => {
     event.stopPropagation();
+    if (event.target instanceof Element && event.target.closest('.wireframe-color-panel')) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        form.querySelector<HTMLElement>('.wireframe-color-panel')!.hidden = true;
+        form.querySelector<HTMLElement>('[data-wireframe-color]')?.focus();
+      }
+      return;
+    }
     if (event.key === 'Escape') {
       event.preventDefault();
       close();
+    } else if (
+      event.key === 'Enter' &&
+      event.target instanceof HTMLInputElement &&
+      (event.target.dataset.size || event.target.hasAttribute('data-radius'))
+    ) {
+      event.preventDefault();
+      event.target.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (
       event.key === 'Enter' &&
       !event.isComposing &&
@@ -279,5 +421,5 @@ export function bindWireframeEditor(
 }
 
 export function wireframeEditorMarkup(content: WireframeContent): string {
-  return `<section class="canvas-context-form wireframe-editor" role="dialog" aria-label="Editar ${wireframeNames[content.type].toLocaleLowerCase()}"><div class="wireframe-editor-head"><strong>${wireframeNames[content.type]}</strong><button type="button" class="icon-button" data-action="context-close" aria-label="Cerrar edición de bosquejo">${icon('close', 16)}</button></div><div class="wireframe-editor-fields"></div><small>Guardado automático en Canvas</small></section>`;
+  return `<section class="canvas-context-form wireframe-editor" role="dialog" aria-label="Editar ${wireframeNames[content.type].toLocaleLowerCase()}"><div class="wireframe-editor-head"><strong>${wireframeNames[content.type]}</strong><button type="button" class="icon-button" data-action="context-close" aria-label="Cerrar edición de bosquejo">${icon('close', 16)}</button></div><div class="wireframe-editor-fields"></div><button type="button" class="wireframe-inline-properties" data-wireframe-properties>Apariencia y tamaño</button><div class="wireframe-settings"></div><small>Guardado automático en Canvas</small></section>`;
 }

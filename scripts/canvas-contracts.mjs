@@ -1,5 +1,14 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-U47', layer: 'unit', contracts: ['C08-ARRANGE-01'] },
+  { id: 'C08-U48', layer: 'unit', contracts: ['C08-WIRE-01'] },
+  { id: 'C08-U49', layer: 'unit', contracts: ['C08-WIRE-01', 'C08-ORG-01'] },
+  ...['C08-B137', 'C08-B138', 'C08-B140', 'C08-B141', 'C08-B142'].map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-WIRE-01'],
+  })),
+  { id: 'C08-B139', layer: 'browser', contracts: ['C08-ARRANGE-01'] },
   { id: 'C08-B136', layer: 'browser', contracts: ['C08-WIRE-01', 'C08-ORG-01', 'C08-LINK-01'] },
   { id: 'C08-U46', layer: 'unit', contracts: ['C08-WIRE-01'] },
   { id: 'C08-U44', layer: 'unit', contracts: ['C08-ARRANGE-01'] },
@@ -274,11 +283,17 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B137': { 'wireframe-add': 1 },
+  'C08-B139': { 'selection-spacing': 2 },
+  'C08-B140': { 'wireframe-add': 6, 'canvas-undo': 4, 'canvas-redo': 4 },
+  'C08-B141': { 'canvas-wireframes': 3, 'canvas-undo': 2 },
+  'C08-B142': { 'canvas-wireframes': 8, 'wireframe-add': 1 },
   'C08-B132': { 'canvas-wireframes': 6, 'wireframe-add': 1 },
   'C08-B133': { 'canvas-wireframes': 5, 'wireframe-add': 1 },
   'C08-B134': { 'canvas-organize': 4, 'selection-arrange': 4 },
   'C08-B131': { 'canvas-wireframes': 2, 'canvas-organize': 2, 'canvas-view': 2 },
-  'C08-B126': { 'canvas-wireframes': 9, 'wireframe-add': 9 },
+  // Ocho piezas básicas; las cuatro composiciones se ejercitan desde B140.
+  'C08-B126': { 'canvas-wireframes': 8, 'wireframe-add': 8 },
   'C08-B127': { 'canvas-wireframes': 1, 'wireframe-add': 1 },
   'C08-B128': { 'context-group': 1 },
   'C08-B130': { 'canvas-wireframes': 2, 'wireframe-add': 1 },

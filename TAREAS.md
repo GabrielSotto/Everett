@@ -20,6 +20,34 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
+### Revisión del 1 de noviembre — biblioteca por rediseñar
+
+El usuario fijó el alcance en bosquejos y wireframes de baja fidelidad, modernos o tradicionales,
+mediante piezas elementales combinables. Media y alta fidelidad quedan fuera. La biblioteca actual
+no se considera aprobada: rediseñar primero su catálogo y composición, evaluando fuentes MIT o
+Apache-2.0, antes de seguir ampliando tipos aislados. Botones y campos deben poder descomponerse
+en fondo, texto y símbolos. Cubrir login, inicio, invitaciones, alertas, mensajes, diálogos,
+overlays, composers y paneles con una base común.
+
+Quedan observados la selección difícil de una parte y la presentación de la distancia numérica
+como «Separación exacta»: reunir valores y distribución dentro del bloque de alineación. El icono
+de Bosquejos debe usar un lápiz. No se da por resuelto ese diseño con el control provisional.
+
+La base de trabajo añade barras/rótulos, apariencia, dimensiones visibles, tabla que ocupa su alto,
+edición por fila de listas antiguas, composiciones con partes independientes y distancia numérica.
+El arnés incluye C08-U47–U49 y C08-B137–B142, con arrastres, edición real de partes, recarga,
+Undo/Redo y una pantalla completa construida por gestos. Pasaron 115 pruebas unitarias y
+21 recorridos dirigidos sobre las fuentes actuales, sin fallos, omisiones ni reintentos,
+en `output/pruebas/navegador/2026-11-01_23-30-22-957Z/`. Esto no acredita la regresión
+completa actual ni cierra el rediseño solicitado.
+
+Se preparó un [catálogo visual temporal](output/diseno/biblioteca-lowfi/index.html), servido por
+el mismo Vite en `/output/diseno/biblioteca-lowfi/`, con CSS de Chalk y SVG de Phosphor fijados por
+commit y sus licencias MIT. Es una propuesta de diseño separada del Canvas, con 28 muestras y
+ejemplos de pantallas; no agrega dependencias al producto ni se presenta como biblioteca ya
+integrada. La investigación permanece temporal, sin un informe adicional. Conservar los cambios
+y los datos del usuario; completar la implementación acordada y su gate antes de anunciarla lista.
+
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
 por arrastre y clic, distribución operable sobre solapamientos y guías con referencias visibles

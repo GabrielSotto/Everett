@@ -34,12 +34,22 @@ export function arrangementUnits(world: WorldSnapshot, ids: readonly string[]): 
 export function arrangementMoves(
   units: readonly ArrangementUnit[],
   action: Arrangement,
+  spacing?: number,
 ): { id: string; point: Point }[] {
-  if (units.length < (action.startsWith('space') ? 3 : 2)) return [];
+  if (spacing !== undefined && (!Number.isFinite(spacing) || spacing < 0 || spacing > 10000))
+    return [];
+  if (units.length < (action.startsWith('space') && spacing === undefined ? 3 : 2)) return [];
   const axis = ['left', 'center-x', 'right', 'space-x'].includes(action) ? 'x' : 'y';
   const size = axis === 'x' ? 'width' : 'height';
   const positions = new Map<ArrangementUnit, number>();
-  if (action.startsWith('space')) {
+  if (action.startsWith('space') && spacing !== undefined) {
+    const ordered = [...units].sort((a, b) => a[axis] - b[axis]);
+    let cursor = ordered[0]![axis];
+    for (const item of ordered) {
+      positions.set(item, cursor);
+      cursor += item[size] + spacing;
+    }
+  } else if (action.startsWith('space')) {
     const ordered = [...units].sort((a, b) => a[axis] - b[axis]);
     const total = units.reduce((sum, item) => sum + item[size], 0);
     const gap =

@@ -473,6 +473,21 @@ Necesidades de organización y consulta confirmadas durante la revisión de Canv
 - **Organización de la selección:** alinear bordes y centros; distribuir el espacio horizontal o vertical entre piezas de tamaños distintos conservando los extremos. Las guías aparecen automáticamente al arrastrar. Las acciones explícitas pertenecen al menú contextual de la selección y al menú de Canvas en la barra superior. Los ajustes generales y el acceso a Atajos reutilizan las preferencias existentes.
 - **Bosquejos de baja fidelidad:** el usuario requiere componer interfaces coherentes y editables, además de dibujar a mano alzada. El primer bloque confirmado incluye pantallas, texto, botones, campos, tarjetas/listas, marcadores de imagen, tablas y menús básicos como piezas visuales editables. Se representan como piezas monocromas de contorno discreto y texto legible, accesibles desde Canvas → Bosquejos y editables con doble clic, Enter o menú contextual. Reutilizan selección, tamaño, alineación, capas, conjuntos, historial y persistencia. La composición se agrupa explícitamente para moverla completa. No incluye formularios funcionales, responsive automático ni generación de código en este primer bloque. Rough.js aporta los contornos bajo MIT, según los criterios de [Desarrollo](desarrollo.md#dependencias); una apariencia dibujada por sí sola no resuelve esta capacidad. El contrato y los límites se concretan en C08-WIRE-01 de [Canvas 0.8](iteraciones/0.8.md#bosquejos-de-interfaz--0821). El bloque pertenece a 0.8.
 
+### Dirección de la biblioteca de bosquejos
+
+Confirmada el 1 de noviembre de 2026: construir una base coherente de piezas visuales elementales
+que puedan combinarse para formar interfaces completas, aplicando composición y reutilización.
+Ofrecer formas/contenedores, texto simulado y rótulos, líneas, símbolos y regiones de medios,
+junto con composiciones editables de controles, navegación, contenido y comunicación. Botones y
+campos deben conservar acceso a sus partes gráficas. Probar la suficiencia de la base componiendo
+login, inicio, invitaciones, alertas, mensajes, diálogos, overlays, composers y paneles.
+
+Evaluar catálogos, código y recursos MIT o Apache-2.0 antes de dibujar o implementar piezas desde
+cero; verificar por separado la licencia de código, iconos y otros activos. La biblioteca visual
+concreta permanece en diseño. Los ejemplos compuestos sirven para revisar su calidad y cobertura;
+no implican formularios funcionales, generación de código ni responsive automático. El alcance
+continúa limitado a bosquejos y wireframes de baja fidelidad; media y alta se planificarán después.
+
 ## Después de 1.0
 
 Ideas conservadas para evaluar, sin una versión de implementación comprometida.

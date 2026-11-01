@@ -1918,6 +1918,14 @@ export class CanvasView implements View {
     const w = this.ctx.world(),
       ui = this.ctx.ui,
       connect = ui.canvas.tool === 'connect' || !!ui.canvas.linkSelection;
+    this.root.dataset.groupSelection = String(
+      w.canvasGroups?.some(
+        (group) =>
+          group.nodes.length > 1 &&
+          group.nodes.length === ui.canvas.selections.length &&
+          group.nodes.every((id) => ui.canvas.selections.includes(id)),
+      ) ?? false,
+    );
     this.root.dataset.canvasPanel = ui.canvas.zoneSelection
       ? 'inspector'
       : this.revision || this.reviewCamera

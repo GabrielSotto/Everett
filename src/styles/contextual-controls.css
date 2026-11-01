@@ -72,6 +72,39 @@
   font-size: 0.9231rem;
   line-height: 1.45;
 }
+.arrangement-spacing {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 6px 0 0;
+  padding: 8px;
+  min-width: 0;
+}
+.arrangement-spacing legend {
+  color: var(--muted);
+  padding: 0 4px;
+}
+.arrangement-spacing label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 26px;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+.arrangement-spacing input {
+  min-width: 0;
+  width: 100%;
+  padding: 5px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: inherit;
+}
+.arrangement-spacing button {
+  padding: 4px;
+  min-width: 26px;
+  justify-content: center;
+}
 .canvas-actions-pop hr {
   border: 0;
   border-top: 1px solid var(--line);

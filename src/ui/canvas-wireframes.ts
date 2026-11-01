@@ -9,10 +9,12 @@ import { toWorld } from '../spatial/math';
 import { frameCanvas } from './canvas-frame';
 import { wireframeMarkup } from '../features/canvas/wireframe-markup';
 import type { Point } from '../domain/model';
+import { isWireframeComposition, wireframeComposition } from '../domain/wireframe-compositions';
 
 export function wireframePalette(): string {
   const drawings: Record<WireframeKind, string> = {
     screen: '<rect x="4" y="4" width="44" height="28"/>',
+    block: '<rect x="9" y="6" width="34" height="26" rx="3"/>',
     text: '<path d="M8 9h36M8 16h30M8 23h35M8 30h20"/>',
     button: '<rect x="8" y="10" width="36" height="18" rx="2"/><path d="M18 19h16"/>',
     input: '<rect x="4" y="11" width="44" height="17"/><path d="M10 16v7M14 20h15"/>',
@@ -21,8 +23,19 @@ export function wireframePalette(): string {
     image: '<rect x="5" y="5" width="42" height="27"/><path d="m5 5 42 27M5 32 47 5"/>',
     table: '<rect x="5" y="5" width="42" height="27"/><path d="M5 14h42M5 23h42M19 5v27M33 5v27"/>',
     menu: '<rect x="10" y="3" width="32" height="31"/><path d="M15 10h20M15 18h20M15 26h14"/>',
+    video:
+      '<rect x="5" y="5" width="42" height="27" rx="2"/><path d="m23 12 10 6-10 6ZM10 28h32"/>',
+    carousel:
+      '<rect x="9" y="4" width="34" height="24" rx="2"/><path d="m5 12-3 4 3 4m42-8 3 4-3 4M21 33h1m4 0h1m4 0h1"/>',
   };
-  return `<div class="wireframe-palette">${wireframeKinds.map((kind) => `<button type="button" role="menuitem" data-action="wireframe-add" data-kind="${kind}" aria-label="Agregar ${wireframeNames[kind].toLocaleLowerCase()}"><svg viewBox="0 0 52 38" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">${drawings[kind]}</svg><span>${wireframeNames[kind]}</span></button>`).join('')}</div>`;
+  const item = (kind: WireframeKind) =>
+    `<button type="button" role="menuitem" data-action="wireframe-add" data-kind="${kind}" aria-label="Agregar ${wireframeNames[kind].toLocaleLowerCase()}"><svg viewBox="0 0 52 38" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">${drawings[kind]}</svg><span>${wireframeNames[kind]}</span></button>`;
+  return `<small class="canvas-actions-heading">Piezas</small><div class="wireframe-palette">${wireframeKinds
+    .filter((kind) => !isWireframeComposition(kind))
+    .map(item)
+    .join(
+      '',
+    )}</div><small class="canvas-actions-heading">Composiciones · partes editables</small><div class="wireframe-palette">${wireframeKinds.filter(isWireframeComposition).map(item).join('')}</div>`;
 }
 
 export function addWireframe(ctx: Context, type: string | undefined, drop?: Point): void {
@@ -39,9 +52,15 @@ export function addWireframe(ctx: Context, type: string | undefined, drop?: Poin
     viewport,
   );
   const node = wireframeMaterial(type as WireframeKind, 'material-' + crypto.randomUUID(), center);
+  const kind = type as WireframeKind;
+  const composition = isWireframeComposition(kind)
+    ? wireframeComposition(kind, node.id, center)
+    : null;
   if (
     !ctx.act(
-      { type: 'node.create', world: ctx.world().id, node },
+      isWireframeComposition(kind)
+        ? { type: 'wireframe.compose', world: ctx.world().id, kind, id: node.id, center }
+        : { type: 'node.create', world: ctx.world().id, node },
       'agregar pieza de bosquejo',
       'C08-WIRE-01',
     )
@@ -50,7 +69,7 @@ export function addWireframe(ctx: Context, type: string | undefined, drop?: Poin
   Object.assign(ctx.ui.canvas, {
     tool: 'select',
     selection: node.id,
-    selections: [node.id],
+    selections: composition?.group.nodes ?? [node.id],
     zoneSelection: null,
     linkSelection: null,
   });
@@ -115,7 +134,14 @@ export function bindWireframeDrag(
         ghost.setAttribute('aria-hidden', 'true');
         ghost.style.width = material.width + 'px';
         ghost.style.height = material.height + 'px';
-        ghost.innerHTML = wireframeMarkup(material);
+        ghost.innerHTML = isWireframeComposition(pending.kind)
+          ? wireframeComposition(pending.kind, material.id, { x: 0, y: 0 })
+              .nodes.map(
+                (node) =>
+                  `<div style="position:absolute;left:${node.x - material.x}px;top:${node.y - material.y}px;width:${node.width}px;height:${node.height}px">${wireframeMarkup(node)}</div>`,
+              )
+              .join('')
+          : wireframeMarkup(material);
         document.body.append(ghost);
       }
       event.preventDefault();

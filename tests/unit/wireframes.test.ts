@@ -6,12 +6,143 @@ import {
   pasteWireframeCells,
   wireframeKinds,
   wireframeMaterial,
+  wireframeAppearance,
 } from '../../src/domain/wireframes';
 import { captureCanvasCopies, parseCanvasClipboard } from '../../src/domain/canvas-copies';
 import { Store } from '../../src/app/store';
 import { traceInput } from '../../src/app/diagnostics/trace-input';
 import { validate } from '../../src/domain/invariants';
 import type { WireframeContent } from '../../src/domain/wireframes';
+import { compositionKinds } from '../../src/domain/wireframe-compositions';
+
+test('C08-U48: texto simulado y apariencia validan entradas, se conservan en copias y no modifican el contenido anterior', () => {
+  const { store } = setup();
+  const act = (command: Parameters<typeof store.dispatch>[0]) => store.dispatch(command, intent);
+  const node = wireframeMaterial('button', 'styled', { x: 0, y: 0 });
+  act({ type: 'node.create', world: 'project', node });
+  assert.ok(node.data.kind === 'wireframe');
+  const content = node.data.content;
+  assert.equal(node.data.content.placeholder, true);
+  const appearance = { fill: '#ff000080', stroke: '#112233', text: '#112233', radius: 16 };
+  act({
+    type: 'wireframe.edit',
+    world: 'project',
+    id: 'styled',
+    content: { ...node.data.content, appearance },
+  });
+  const styled = project(store).nodes.find((n) => n.id === 'styled')!;
+  assert.ok(styled.data.kind === 'wireframe');
+  assert.deepEqual(wireframeAppearance(styled.data.content), appearance);
+  const before = store.snapshot();
+  for (const invalid of [
+    { ...appearance, radius: -1 },
+    { ...appearance, radius: NaN },
+    { ...appearance, radius: 10001 },
+    { ...appearance, fill: 'url(https://bad)' },
+    { ...appearance, stroke: '#123' },
+    { ...appearance, text: null },
+  ]) {
+    assert.equal(validWireframe({ ...node.data.content, appearance: invalid }), false);
+    assert.throws(() =>
+      act({
+        type: 'wireframe.edit',
+        world: 'project',
+        id: 'styled',
+        content: { ...content, appearance: invalid } as WireframeContent,
+      }),
+    );
+    assert.deepEqual(store.snapshot(), before);
+  }
+  act({ type: 'canvas.undo', world: 'project' });
+  assert.deepEqual(
+    project(store).nodes.find((n) => n.id === 'styled'),
+    node,
+  );
+  act({ type: 'canvas.redo', world: 'project' });
+  const captured = captureCanvasCopies(project(store), ['styled'])!;
+  assert.deepEqual(captured.nodes[0]!.data, styled.data);
+  act({ type: 'nodes.duplicate', world: 'project', nodes: ['styled'], offset: { x: 20, y: 20 } });
+  const copy = project(store).nodes.at(-1)!;
+  assert.ok(copy.data.kind === 'wireframe');
+  act({
+    type: 'wireframe.edit',
+    world: 'project',
+    id: copy.id,
+    content: { ...copy.data.content, appearance: { ...appearance, fill: '#00ff00' } },
+  });
+  assert.deepEqual(
+    project(store).nodes.find((n) => n.id === 'styled'),
+    styled,
+  );
+  assert.equal(validWireframe({ type: 'button', text: 'Contenido anterior' }), true);
+  assert.equal(validWireframe({ type: 'button', text: '', placeholder: 'true' }), false);
+  for (const value of [0, 13, 1.5, NaN, '3'])
+    assert.equal(validWireframe({ type: 'text', text: '', placeholderLines: value }), false);
+});
+
+test('C08-U49: composiciones crean piezas independientes agrupadas en una operación recuperable', () => {
+  const { store } = setup();
+  const act = (command: Parameters<typeof store.dispatch>[0]) => store.dispatch(command, intent);
+  for (const kind of compositionKinds) {
+    const before = store.snapshot();
+    act({
+      type: 'wireframe.compose',
+      world: 'project',
+      kind,
+      id: 'composed-' + kind,
+      center: { x: 0, y: 0 },
+    });
+    const composed = project(store);
+    const group = composed.canvasGroups!.at(-1)!;
+    assert.ok(group.nodes.length >= 4);
+    assert.equal(new Set(group.nodes).size, group.nodes.length);
+    assert.equal(
+      composed.nodes.filter((n) => group.nodes.includes(n.id)).length,
+      group.nodes.length,
+    );
+    const after = store.snapshot();
+    assert.throws(() =>
+      act({
+        type: 'wireframe.compose',
+        world: 'project',
+        kind,
+        id: 'composed-' + kind,
+        center: { x: 0, y: 0 },
+      }),
+    );
+    assert.deepEqual(store.snapshot(), after);
+    const part = composed.nodes.find(
+      (n) =>
+        group.nodes.includes(n.id) && n.data.kind === 'wireframe' && n.data.content.type === 'text',
+    );
+    if (part && part.data.kind === 'wireframe') {
+      const others = composed.nodes.filter((n) => n.id !== part.id);
+      act({
+        type: 'wireframe.edit',
+        world: 'project',
+        id: part.id,
+        content: { type: 'text', text: 'Rótulo propio', placeholder: false },
+      });
+      assert.deepEqual(
+        project(store).nodes.filter((n) => n.id !== part.id),
+        others,
+      );
+      act({ type: 'canvas.undo', world: 'project' });
+    }
+    act({ type: 'canvas.undo', world: 'project' });
+    assert.deepEqual(project(store).nodes, before.worlds.find((w) => w.id === 'project')!.nodes);
+    assert.deepEqual(
+      project(store).canvasGroups ?? [],
+      before.worlds.find((w) => w.id === 'project')!.canvasGroups ?? [],
+    );
+    act({ type: 'canvas.redo', world: 'project' });
+    assert.deepEqual(project(store).nodes, after.worlds.find((w) => w.id === 'project')!.nodes);
+    assert.deepEqual(
+      project(store).canvasGroups,
+      after.worlds.find((w) => w.id === 'project')!.canvasGroups,
+    );
+  }
+});
 
 test('C08-U46: texto y altura se guardan y deshacen juntos; rechazar dimensiones inválidas no cambia contenido ni historial', () => {
   const { store } = setup();

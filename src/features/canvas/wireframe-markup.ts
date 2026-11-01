@@ -1,13 +1,13 @@
 import rough from 'roughjs';
 import type { Material } from '../../domain/model';
-import { wireframeNames } from '../../domain/wireframes';
+import { wireframeNames, wireframeAppearance } from '../../domain/wireframes';
 import { html } from '../../ui/dom';
 
 const generator = rough.generator();
 const borders = new Map<string, string>();
 /** Tamaños del Mundo, no getBoundingClientRect: el zoom no se aplica dos veces. */
-function border(width: number, height: number, id: string, image: boolean): string {
-  const key = [width, height, id, image].join(':');
+function border(width: number, height: number, id: string, image: boolean, radius: number): string {
+  const key = [width, height, id, image, radius].join(':');
   const previous = borders.get(key);
   if (previous) return previous;
   const seed =
@@ -20,14 +20,25 @@ function border(width: number, height: number, id: string, image: boolean): stri
     preserveVertices: true,
   };
   const inset = Math.min(3, width / 4, height / 4);
+  const r = Math.max(
+    0,
+    Math.min(radius - inset, (width - 2 * inset) / 2, (height - 2 * inset) / 2),
+  );
+  const right = width - inset,
+    bottom = height - inset;
   const shapes = [
-    generator.rectangle(
-      inset,
-      inset,
-      Math.max(1, width - inset * 2),
-      Math.max(1, height - inset * 2),
-      opts,
-    ),
+    r > 0
+      ? generator.path(
+          `M${inset + r} ${inset}H${right - r}Q${right} ${inset} ${right} ${inset + r}V${bottom - r}Q${right} ${bottom} ${right - r} ${bottom}H${inset + r}Q${inset} ${bottom} ${inset} ${bottom - r}V${inset + r}Q${inset} ${inset} ${inset + r} ${inset}Z`,
+          opts,
+        )
+      : generator.rectangle(
+          inset,
+          inset,
+          Math.max(1, width - inset * 2),
+          Math.max(1, height - inset * 2),
+          opts,
+        ),
   ];
   if (image) {
     shapes.push(generator.line(inset, inset, width - inset, height - inset, opts));
@@ -47,6 +58,9 @@ export function wireframeMarkup(material: Material): string {
   if (material.data.kind !== 'wireframe') return '';
   const content = material.data.content,
     type = content.type;
+  const appearance = wireframeAppearance(content);
+  const bars = `<span class="wireframe-placeholder" aria-label="Texto simulado">${Array.from({ length: content.placeholderLines ?? 3 }, () => '<i></i>').join('')}</span>`;
+  const text = (value: string) => (content.placeholder ? bars : html(value) || '&nbsp;');
   let body = '';
   if (type === 'table') {
     const cells = content.cells.slice(0, 8);
@@ -65,18 +79,25 @@ export function wireframeMarkup(material: Material): string {
     const lines = content.text.split('\n');
     if (type === 'screen') body = '';
     else if (type === 'list' || type === 'menu')
-      body = `<ul>${lines
+      body = `${type === 'menu' ? '<div class="wireframe-menu-trigger"><span>Menú</span><span aria-hidden="true">⌄</span></div>' : ''}<ul aria-label="${type === 'menu' ? 'Opciones del menú' : 'Elementos de la lista'}">${lines
         .slice(0, 12)
         .map(
-          (line, index) =>
-            `<li ${type === 'menu' && index === 0 ? 'class="wireframe-current"' : ''}>${type === 'list' ? '<span aria-hidden="true">○</span>' : ''}<span>${html(line) || '&nbsp;'}</span></li>`,
+          (line) =>
+            `<li>${type === 'list' ? '<span class="wireframe-list-marker" aria-hidden="true"></span>' : ''}<span>${text(line)}</span></li>`,
         )
         .join(
           '',
         )}</ul>${lines.length > 12 ? `<small class="wireframe-overflow">${lines.length} opciones</small>` : ''}`;
     else if (type === 'card')
-      body = `<strong>${html(lines[0])}</strong><p>${html(lines.slice(1).join('\n'))}</p>`;
-    else body = `<span>${html(content.text) || '&nbsp;'}</span>`;
+      body = `<strong>${text(lines[0] ?? '')}</strong><p>${text(lines.slice(1).join('\n'))}</p>`;
+    else if (type === 'video')
+      body = `<span class="wireframe-video-play" aria-hidden="true">▶</span><span class="wireframe-media-caption">${text(content.text)}</span><div class="wireframe-video-track" aria-hidden="true"><span>▶</span><i></i><span>◖</span></div>`;
+    else if (type === 'carousel')
+      body = `<div class="wireframe-carousel-slide"><span>${text(lines[0] ?? 'Imagen')}</span><span class="wireframe-carousel-prev" aria-hidden="true">‹</span><span class="wireframe-carousel-next" aria-hidden="true">›</span></div><div class="wireframe-carousel-dots" aria-label="${lines.length} diapositivas">${lines
+        .slice(0, 12)
+        .map((_, i) => `<i ${i === 0 ? 'class="current"' : ''}></i>`)
+        .join('')}</div>`;
+    else body = `<span>${text(content.text)}</span>`;
   }
-  return `<div class="wireframe-content" data-wireframe="${type}" title="${wireframeNames[type]} · Doble clic o Enter para editar">${type === 'text' ? '' : border(material.width, material.height, material.id, type === 'image')}<div class="wireframe-body">${body}</div></div>`;
+  return `<div class="wireframe-content" data-wireframe="${type}" style="--wireframe-fill:${appearance.fill};--wireframe-stroke:${appearance.stroke};--wireframe-text:${appearance.text};--wireframe-radius:${appearance.radius}px" title="${wireframeNames[type]} · Doble clic o Enter para editar">${type === 'text' ? '' : border(material.width, material.height, material.id, type === 'image', appearance.radius)}<div class="wireframe-body">${body}</div></div>`;
 }

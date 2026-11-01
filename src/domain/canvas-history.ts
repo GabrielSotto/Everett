@@ -2,6 +2,7 @@ import { getWorld, type State, type World } from './model';
 import type { Command } from './command-types';
 import { rebaseAnchor, referenceSource } from './reference-anchors';
 import { resolveMedia } from './resolved-media';
+import { wireframeAppearance, type WireframeAppearance } from './wireframes';
 
 type CanvasSnapshot = Required<
   Pick<
@@ -41,6 +42,7 @@ const reversible = new Set<Command['type']>([
   'nodes.paste',
   'node.local-edit',
   'wireframe.edit',
+  'wireframe.compose',
   'node.publish',
   'node.style',
   'link.label',
@@ -155,6 +157,36 @@ export class CanvasHistory {
       command.type === 'node.edit' ||
       command.type === 'node.local-edit' ||
       command.type === 'wireframe.edit';
+    if (command.type === 'wireframe.edit') {
+      const old = a.nodes.find((node) => node.id === command.id)?.data;
+      if (old?.kind === 'wireframe') {
+        if (JSON.stringify(old.content.appearance) !== JSON.stringify(command.content.appearance)) {
+          const oldStyle = wireframeAppearance(old.content),
+            newStyle = wireframeAppearance(command.content);
+          const changed = (
+            ['fill', 'stroke', 'text', 'radius'] as (keyof WireframeAppearance)[]
+          ).filter((key) => oldStyle[key] !== newStyle[key]);
+          action += ':appearance:' + changed.join(',');
+        } else if (
+          old.content.placeholder !== command.content.placeholder &&
+          old.content.type !== 'table' &&
+          command.content.type !== 'table' &&
+          old.content.text === command.content.text
+        ) {
+          action += ':placeholder';
+          typing = false;
+        } else if (
+          old.content.type !== 'table' &&
+          command.content.type !== 'table' &&
+          ['list', 'menu', 'carousel'].includes(command.content.type)
+        ) {
+          const before = old.content.text.split('\n'),
+            after = command.content.text.split('\n');
+          if (before.length !== after.length) typing = false;
+          else action += ':item:' + before.findIndex((line, index) => line !== after[index]);
+        }
+      }
+    }
     if (command.type === 'wireframe.edit' && command.content.type === 'table') {
       const old = a.nodes.find((node) => node.id === command.id)?.data;
       const cells = command.content.cells;

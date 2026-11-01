@@ -8,6 +8,7 @@ import {
   wireframeMaterial,
   type WireframeKind,
 } from '../../src/domain/wireframes';
+import { isWireframeComposition } from '../../src/domain/wireframe-compositions';
 
 async function add(page: Page, type: WireframeKind): Promise<string> {
   const before = new Set((await world(page)).nodes.map((n) => n.id));
@@ -37,14 +38,14 @@ async function zoom(page: Page, percent: number): Promise<void> {
   await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(percent / 100, 5);
 }
 
-test('C08-B126: biblioteca agrega nueve piezas reales, edita contenido y conserva una composición tras recargar', async ({
+test('C08-B126: biblioteca agrega piezas reales, edita contenido y conserva una composición tras recargar', async ({
   page,
 }, info) => {
   test.setTimeout(120000);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await start(page);
   const ids = new Map<WireframeKind, string>();
-  for (const type of wireframeKinds) {
+  for (const type of wireframeKinds.filter((kind) => !isWireframeComposition(kind))) {
     const id = await add(page, type);
     ids.set(type, id);
     if (type === 'table') continue;
@@ -54,6 +55,7 @@ test('C08-B126: biblioteca agrega nueve piezas reales, edita contenido y conserv
     } else await openEditor(page, id);
     const value = {
       screen: 'Proyecto Everett',
+      block: '',
       text: 'Organizar el trabajo',
       button: 'Crear tarea',
       input: 'Buscar materiales…',
@@ -61,8 +63,16 @@ test('C08-B126: biblioteca agrega nueve piezas reales, edita contenido y conserv
       list: 'Documentación\nArquitectura\nPróximos pasos',
       image: 'Referencia visual',
       menu: 'Resumen\nMateriales\nTareas',
+      video: 'Presentación del proyecto',
+      carousel: 'Referencia uno\nReferencia dos\nReferencia tres',
     }[type];
-    await page.getByRole('textbox', { name: 'Contenido del bosquejo', exact: true }).fill(value);
+    if (['list', 'menu', 'carousel'].includes(type)) {
+      for (const [index, line] of value.split('\n').entries())
+        await page
+          .getByRole('textbox', { name: 'Elemento ' + (index + 1), exact: true })
+          .fill(line);
+    } else
+      await page.getByRole('textbox', { name: 'Contenido del bosquejo', exact: true }).fill(value);
     if (type === 'screen') {
       await expect(page.locator(`[data-node="${id}"] .material-identification button`)).toHaveText(
         value,
@@ -81,6 +91,7 @@ test('C08-B126: biblioteca agrega nueve piezas reales, edita contenido y conserv
     w = input.state.worlds.find((w) => w.id === 'scout')!;
   const layout: Record<WireframeKind, [number, number, number, number]> = {
     screen: [-450, -300, 900, 620],
+    block: [480, 260, 160, 100],
     text: [-410, -230, 450, 60],
     menu: [-420, -140, 180, 240],
     input: [-210, -130, 300, 44],
@@ -89,6 +100,8 @@ test('C08-B126: biblioteca agrega nueve piezas reales, edita contenido y conserv
     image: [70, -50, 320, 150],
     table: [-210, 130, 600, 130],
     list: [-420, 130, 180, 140],
+    video: [480, -250, 320, 180],
+    carousel: [480, 0, 320, 200],
   };
   for (const [type, id] of ids) {
     const [x, y, width, height] = layout[type];
@@ -103,7 +116,7 @@ test('C08-B126: biblioteca agrega nueve piezas reales, edita contenido y conserv
   await storedFixture(page, input.state, input.ui);
   await page.reload();
   await page.waitForFunction(() => window.__everettReady);
-  await expect(page.locator('.material.wireframe')).toHaveCount(9);
+  await expect(page.locator('.material.wireframe')).toHaveCount(ids.size);
   await expect(page.locator('.wireframe-body').filter({ hasText: 'Crear tarea' })).toBeVisible();
   const contrast = await page
     .locator(`[data-node="${ids.get('text')}"] .wireframe-content`)
@@ -157,11 +170,11 @@ test('C08-B127: tabla edita, agrega y quita la fila elegida, pega rangos y conse
   ).toBeFocused();
   await editor.getByRole('button', { name: 'Agregar fila', exact: true }).click();
   await editor.getByRole('button', { name: 'Agregar columna', exact: true }).click();
-  await expect(editor.locator('input')).toHaveCount(16);
+  await expect(editor.locator('input[data-cell-row]')).toHaveCount(16);
   await editor.getByRole('textbox', { name: 'Fila 3, columna 2', exact: true }).focus();
   await editor.getByRole('button', { name: 'Quitar fila', exact: true }).click();
   await editor.getByRole('button', { name: 'Quitar columna', exact: true }).click();
-  await expect(editor.locator('input')).toHaveCount(9);
+  await expect(editor.locator('input[data-cell-row]')).toHaveCount(9);
   await page.evaluate(() => navigator.clipboard.writeText('Revisión\tGabi\nLista\tMilo'));
   await editor.getByRole('textbox', { name: 'Fila 2, columna 2', exact: true }).focus();
   await page.keyboard.press('Control+v');
@@ -331,9 +344,15 @@ test('C08-B129: tablas y listas extensas acotan preview, rechazan pegado excesiv
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.evaluate(() => (document.documentElement.style.fontSize = ''));
   await openEditor(page, 'long-menu');
-  await expect(
-    page.getByRole('textbox', { name: 'Contenido del bosquejo', exact: true }),
-  ).toHaveValue(menu.data.content.type === 'menu' ? menu.data.content.text : '');
+  await expect(page.getByRole('textbox', { name: 'Elemento 1', exact: true })).toHaveValue(
+    'Sección 0',
+  );
+  await expect(page.locator('[data-item-index]')).toHaveCount(20);
+  await page.getByRole('button', { name: 'Siguientes', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Elemento 21', exact: true })).toHaveValue(
+    'Sección 20',
+  );
+  expect((await world(page)).nodes.find((n) => n.id === 'long-menu')!.data).toEqual(menu.data);
   await page.keyboard.press('Escape');
   await capture(page, info, 'limites-de-bosquejos');
 });

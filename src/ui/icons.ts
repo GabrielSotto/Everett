@@ -1,5 +1,7 @@
 import { html } from './dom';
 const paths: Record<string, string> = {
+  sketch:
+    '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h4M7 15h10M7 18h6"/>',
   'arrange-left':
     '<path d="M4 3v18"/><rect x="7" y="5" width="13" height="5" rx="1"/><rect x="7" y="14" width="8" height="5" rx="1"/>',
   'arrange-center-x':

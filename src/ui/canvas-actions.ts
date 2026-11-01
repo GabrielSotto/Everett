@@ -1,6 +1,6 @@
 import type { Context } from '../app/context';
 import { arrangementUnits } from '../domain/arrangement';
-import { arrangeSelection, arrangementMarkup } from './canvas-arrangement';
+import { arrangeSelection, arrangementMarkup, spacingValue } from './canvas-arrangement';
 import { frameCanvas } from './canvas-frame';
 import { target } from './dom';
 import { icon } from './icons';
@@ -69,6 +69,13 @@ export class CanvasActions {
             arrangeSelection(ctx, button.dataset.arrangement);
             this.trigger()?.focus({ preventScroll: true });
             break;
+          case 'selection-spacing': {
+            const spacing = spacingValue(button);
+            if (spacing === undefined) break;
+            this.close();
+            arrangeSelection(ctx, button.dataset.arrangement, spacing);
+            break;
+          }
           case 'actions-fit':
             this.close();
             frameCanvas(ctx, button.dataset.selection === 'true');
@@ -94,6 +101,14 @@ export class CanvasActions {
       (event) => {
         if (!(event.target instanceof HTMLElement) || !event.target.closest('.canvas-actions'))
           return;
+        if (event.target instanceof HTMLInputElement) {
+          event.stopPropagation();
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.target.closest('label')?.querySelector<HTMLButtonElement>('button')?.click();
+          }
+          return;
+        }
         if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
           event.preventDefault();
           event.stopPropagation();
@@ -112,7 +127,7 @@ export class CanvasActions {
           }
           const items = this.items(),
             current = items.indexOf(document.activeElement as HTMLButtonElement);
-          const next =
+          let next =
             event.key === 'Home'
               ? 0
               : event.key === 'End'
@@ -125,6 +140,31 @@ export class CanvasActions {
                       (event.key === 'ArrowDown' ? 1 : -1) * (this.page === 'wireframes' ? 3 : 1) +
                       items.length) %
                     items.length;
+          if (
+            this.page === 'wireframes' &&
+            current >= 0 &&
+            ['ArrowDown', 'ArrowUp'].includes(event.key)
+          ) {
+            const direction = event.key === 'ArrowDown' ? 1 : -1;
+            const origin = items[current]!.getBoundingClientRect();
+            const candidates = items.map((item, index) => ({
+              index,
+              rect: item.getBoundingClientRect(),
+            }));
+            const following = candidates.filter(({ rect }) => (rect.y - origin.y) * direction > 1);
+            const row = following.length
+              ? Math.min(...following.map(({ rect }) => (rect.y - origin.y) * direction))
+              : 0;
+            const targetY = following.length
+              ? origin.y + row * direction
+              : direction > 0
+                ? Math.min(...candidates.map(({ rect }) => rect.y))
+                : Math.max(...candidates.map(({ rect }) => rect.y));
+            next = candidates
+              .filter(({ rect }) => Math.abs(rect.y - targetY) < 1)
+              .sort((a, b) => Math.abs(a.rect.x - origin.x) - Math.abs(b.rect.x - origin.x))[0]!
+              .index;
+          }
           items[next]?.focus();
           items[next]?.scrollIntoView({ block: 'nearest' });
         } else if (
@@ -153,6 +193,18 @@ export class CanvasActions {
             (current + (event.key === 'ArrowRight' ? 1 : -1) + items.length) % items.length
           ]?.focus();
         } else if (event.key === 'Tab' && this.open) {
+          if (this.page === 'arrange' && event.target.closest('.canvas-actions-pop')) {
+            const fields = [
+              ...this.root.querySelectorAll<HTMLElement>(
+                '.canvas-actions-pop button:not(:disabled),.canvas-actions-pop input:not(:disabled)',
+              ),
+            ];
+            const index = fields.indexOf(event.target);
+            if ((event.shiftKey && index > 0) || (!event.shiftKey && index < fields.length - 1)) {
+              event.stopPropagation();
+              return;
+            }
+          }
           event.preventDefault();
           const controls = [
             ...this.root.querySelectorAll<HTMLElement>('button:not(:disabled),input:not([inert])'),
@@ -223,7 +275,7 @@ export class CanvasActions {
         action: 'canvas-wireframes',
         label: 'Bosquejos',
         name: 'Bosquejos',
-        glyph: 'panel-left',
+        glyph: 'sketch',
       },
       {
         page: 'arrange',

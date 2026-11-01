@@ -25,7 +25,7 @@ import { previewMarkup } from './proposals';
 import { inlineCompletion } from '../../ui/inline-completion';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { arrangementUnits } from '../../domain/arrangement';
-import { arrangementMarkup, arrangeSelection } from '../../ui/canvas-arrangement';
+import { arrangementMarkup, arrangeSelection, spacingValue } from '../../ui/canvas-arrangement';
 import {
   captureCanvasCopies,
   parseCanvasClipboard,
@@ -433,6 +433,14 @@ export class CanvasInteractions {
               )
               ?.focus({ preventScroll: true });
             break;
+          case 'selection-spacing': {
+            if (!button) break;
+            const spacing = spacingValue(button);
+            if (spacing === undefined) break;
+            this.close();
+            arrangeSelection(ctx, button.dataset.arrangement, spacing);
+            break;
+          }
           case 'context-group':
             this.overlay.replaceChildren();
             ctx.act(
@@ -863,7 +871,17 @@ export class CanvasInteractions {
           return;
         }
         // El editor conserva Undo/Redo y las teclas de texto del navegador.
-        if (editable(event.target)) return;
+        if (editable(event.target)) {
+          if (
+            event.key === 'Enter' &&
+            event.target instanceof HTMLInputElement &&
+            event.target.closest('.arrangement-spacing')
+          ) {
+            event.preventDefault();
+            event.target.closest('label')?.querySelector<HTMLButtonElement>('button')?.click();
+          }
+          return;
+        }
         const buttons = [
           ...this.overlay.querySelectorAll<HTMLButtonElement>('[role=menuitem]:not(:disabled)'),
         ];
