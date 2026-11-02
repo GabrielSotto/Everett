@@ -60,6 +60,15 @@ producto ni se presenta como biblioteca integrada. La investigación permanece t
 informe adicional. Conservar los cambios y los datos del usuario; completar la implementación
 acordada y su gate antes de anunciarla lista.
 
+La revisión posterior valora la base visual y observa incoherencias en estados y variantes de
+todas las familias. Pendiente revisar su pertinencia por componente: distinguir estado de una
+acción, selección de un elemento, variante y estado del contenido. Evitar el resaltado de toda
+una toolbar para representar una acción activa y el reemplazo genérico de barras o paneles por
+skeletons de texto. Conservar estructura y controles durante la carga cuando corresponda;
+elegir progreso o skeleton según qué contenido se está esperando. La validación geométrica
+anterior no demuestra esta coherencia semántica: ampliar sus contraejemplos y revisión visual.
+Esta revisión de estados queda pendiente; la biblioteca no tiene aprobación final.
+
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
 por arrastre y clic, distribución operable sobre solapamientos y guías con referencias visibles
