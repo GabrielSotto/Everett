@@ -43,10 +43,22 @@ completa actual ni cierra el rediseño solicitado.
 
 Se preparó un [catálogo visual temporal](output/diseno/biblioteca-lowfi/index.html), servido por
 el mismo Vite en `/output/diseno/biblioteca-lowfi/`, con CSS de Chalk y SVG de Phosphor fijados por
-commit y sus licencias MIT. Es una propuesta de diseño separada del Canvas, con 28 muestras y
-ejemplos de pantallas; no agrega dependencias al producto ni se presenta como biblioteca ya
-integrada. La investigación permanece temporal, sin un informe adicional. Conservar los cambios
-y los datos del usuario; completar la implementación acordada y su gate antes de anunciarla lista.
+commit y sus licencias MIT. La ampliación del 2 de noviembre cubre 95 muestras: 24 piezas y
+variantes de base, 61 composiciones y 10 interfaces. Distingue variantes de estados y abarca
+estructura, formularios, navegación, datos, comunicación y espacios de trabajo. La cobertura se
+evalúa con interfaces completas, no solo con los ejemplos que el usuario mencionó. Incluye
+estados por componente, datos extensos o únicos y revisión de texto al 200 %.
+
+Pasaron cinco comprobaciones del catálogo, que representan 765 combinaciones de muestras,
+estados y datos, y 42 combinaciones en el navegador interno a 320 px con texto al 200 %, sin
+desbordamientos horizontales. Se corrigieron pérdida del filtro al cambiar variantes, contraste
+de hover y el encaje de la cabecera ampliada. Son pruebas de la propuesta temporal; no acreditan
+su futura integración ni sustituyen la regresión de Canvas.
+
+El catálogo continúa separado del Canvas y pendiente de revisión; no agrega dependencias al
+producto ni se presenta como biblioteca integrada. La investigación permanece temporal, sin un
+informe adicional. Conservar los cambios y los datos del usuario; completar la implementación
+acordada y su gate antes de anunciarla lista.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
