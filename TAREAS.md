@@ -41,33 +41,29 @@ Undo/Redo y una pantalla completa construida por gestos. Pasaron 115 pruebas uni
 en `output/pruebas/navegador/2026-11-01_23-30-22-957Z/`. Esto no acredita la regresión
 completa actual ni cierra el rediseño solicitado.
 
-Se preparó un [catálogo visual temporal](output/diseno/biblioteca-lowfi/index.html), servido por
-el mismo Vite en `/output/diseno/biblioteca-lowfi/`, con CSS de Chalk y SVG de Phosphor fijados por
-commit y sus licencias MIT. La ampliación del 2 de noviembre cubre 95 muestras: 24 piezas y
-variantes de base, 61 composiciones y 10 interfaces. Distingue variantes de estados y abarca
-estructura, formularios, navegación, datos, comunicación y espacios de trabajo. La cobertura se
-evalúa con interfaces completas, no solo con los ejemplos que el usuario mencionó. Incluye
-estados por componente, datos extensos o únicos y revisión de texto al 200 %.
+El [catálogo de diseño](design/wireframe-library/index.html), servido por el mismo Vite en
+`/design/wireframe-library/`, contiene 95 muestras: 24 piezas y variantes de base, 61 composiciones
+y 10 interfaces. Sus fuentes y arnés están versionados, separados del Canvas. CSS de Chalk y SVG
+de Phosphor fijados por commit, con sus licencias MIT. La investigación sigue siendo temporal;
+no se agrega un informe comparativo.
 
-Pasaron cinco comprobaciones del catálogo, que representan 765 combinaciones de muestras,
-estados y datos, y 42 combinaciones en el navegador interno a 320 px con texto al 200 %, sin
-desbordamientos horizontales. Se corrigieron pérdida del filtro al cambiar variantes, contraste
-de hover y el encaje de la cabecera ampliada. Son pruebas de la propuesta temporal; no acreditan
-su futura integración ni sustituyen la regresión de Canvas.
+La revisión del usuario detectó estados artificiales y cargas genéricas en todas las familias.
+La validación geométrica anterior no comprobaba su coherencia semántica. Se corrigió el alcance
+por componente: herramienta activa y foco locales, selección distinta del foco, menús abiertos
+anclados a su disparador, carga dentro de la región que espera datos y errores de la operación
+correspondiente. Variantes de orientación, aspecto y tono se eligen por separado. Cada escenario
+identifica qué parte cambia y por qué. Se conserva la estructura durante la carga y se distingue
+texto simulado de skeleton de carga.
 
-El catálogo continúa separado del Canvas y pendiente de revisión; no agrega dependencias al
-producto ni se presenta como biblioteca integrada. La investigación permanece temporal, sin un
-informe adicional. Conservar los cambios y los datos del usuario; completar la implementación
-acordada y su gate antes de anunciarla lista.
-
-La revisión posterior valora la base visual y observa incoherencias en estados y variantes de
-todas las familias. Pendiente revisar su pertinencia por componente: distinguir estado de una
-acción, selección de un elemento, variante y estado del contenido. Evitar el resaltado de toda
-una toolbar para representar una acción activa y el reemplazo genérico de barras o paneles por
-skeletons de texto. Conservar estructura y controles durante la carga cuando corresponda;
-elegir progreso o skeleton según qué contenido se está esperando. La validación geométrica
-anterior no demuestra esta coherencia semántica: ampliar sus contraejemplos y revisión visual.
-Esta revisión de estados queda pendiente; la biblioteca no tiene aprobación final.
+`npm run test:design` cubre BLF-STATE-01–19: 897 combinaciones de muestras, variantes, estados y
+datos; regresiones semánticas y controles negativos; filtros, variantes y acciones de revisión.
+La revisión real detectó y corrigió un desborde del árbol. Pasaron 42 combinaciones de estado y
+datos a 320 px con texto al 200 %, 14 comprobaciones de estados en escritorio y 34 cambios de
+variante mediante los controles, junto con la revisión visual de los casos señalados. Tipado y
+formato correctos. La salida de las pruebas y su identidad de fuentes se conservan en
+`output/pruebas/diseno/result.tap` e `identity.json`.
+La biblioteca continúa pendiente de aprobación e integración; estas pruebas no certifican
+el comportamiento de una biblioteca ya integrada en Canvas.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación

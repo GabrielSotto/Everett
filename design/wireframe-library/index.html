@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Everett · Biblioteca de baja fidelidad — propuesta</title>
+    <link rel="stylesheet" href="vendor/chalk.css" />
+    <link rel="stylesheet" href="catalogue.css" />
+    <script type="module" src="catalogue-expanded.js"></script>
+  </head>
+  <body>
+    <header class="catalogue-header">
+      <a href="/" class="wordmark">Everett</a>
+      <span>Biblioteca de bosquejos <small>Propuesta visual</small></span>
+      <div class="display-options" role="group" aria-label="Representación del texto">
+        <button type="button" data-text="bars" aria-pressed="true">Texto simulado</button>
+        <button type="button" data-text="labels" aria-pressed="false">Rótulos</button>
+      </div>
+    </header>
+    <div class="catalogue-layout">
+      <aside>
+        <h1>Construir con piezas</h1>
+        <p>Una base común, muchas composiciones.</p>
+        <label class="search"
+          >Buscar en la biblioteca<input
+            type="search"
+            id="search"
+            placeholder="Botón, login, alerta…"
+        /></label>
+        <nav aria-label="Familias de la biblioteca" id="families"></nav>
+        <div class="review-filters">
+          <label
+            >Estado de interfaz<select id="state-filter" aria-label="Filtrar por estado"></select
+          ></label>
+          <label
+            >Datos del ejemplo<select id="data-filter" aria-label="Datos del ejemplo">
+              <option value="demo">Habituales</option>
+              <option value="worst">Extensos y numerosos</option>
+              <option value="one">Un solo elemento</option>
+            </select></label
+          >
+        </div>
+        <button type="button" id="parts" aria-pressed="false">Mostrar partes</button>
+        <button type="button" id="text-scale" aria-pressed="false">Texto al 200 %</button>
+        <p class="proposal-note">
+          Catálogo de diseño. Los ejemplos muestran su apariencia; todavía no se incorporan al
+          Canvas.
+        </p>
+        <details>
+          <summary>Recursos reutilizados</summary>
+          <p>
+            CSS de Chalk y símbolos de Phosphor, ambos MIT. Adaptación de proporciones, tipografía y
+            texto simulado para esta propuesta.
+          </p>
+          <a href="vendor/CHALK-LICENSE">Chalk: licencia</a><br /><a href="vendor/PHOSPHOR-LICENSE"
+            >Phosphor: licencia</a
+          >
+        </details>
+      </aside>
+      <main>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Bosquejos y wireframes de baja fidelidad</p>
+            <h2 id="family-title">Piezas y composiciones</h2>
+          </div>
+          <span id="count" role="status"></span>
+        </div>
+        <p id="coverage" class="coverage"></p>
+        <p id="family-description">
+          Formas, texto, símbolos, medios y estructuras que se combinan en controles e interfaces.
+          Las variantes comparten piezas; los estados no se cuentan como elementos nuevos.
+        </p>
+        <button type="button" id="reset" hidden>Limpiar filtros</button>
+        <div class="catalogue-grid" id="catalogue"></div>
+        <p id="empty" hidden>No hay coincidencias. Probá otro nombre o elegí otra familia.</p>
+      </main>
+    </div>
+  </body>
+</html>

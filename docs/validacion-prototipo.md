@@ -52,6 +52,13 @@ y de evidencia; no necesita generar ese formato para iterar ni mostrar los cambi
 
 En cada cambio de comportamiento, ampliar o ajustar el arnés junto con la implementación: funciones, superficies, interacciones, gestos, motion y sus combinaciones requieren comprobaciones observables y contraejemplos pertinentes. Cada fallo encontrado durante pruebas o feedback debe quedar cubierto por una regresión reproducible. Conservar las pruebas de comportamientos aprobados y ejecutar las regresiones afectadas; completar la regresión de la etapa antes de integrarla. Los cambios exclusivamente documentales mantienen su verificación específica.
 
+En el catálogo de bosquejos, comprobar la pertinencia de cada estado por componente, su alcance
+visual y la información conservada. Separar variantes de presentación, valor elegido, foco,
+disponibilidad y estado del contenido. Una toolbar no se activa entera por elegir una herramienta;
+la carga de datos no reemplaza sus controles ni agrega un skeleton de texto indiscriminadamente.
+Verificar estas intenciones con contraejemplos y revisión visual, además del encaje geométrico.
+Las fuentes y el comando específico están en [Desarrollo](desarrollo.md#catálogo-de-diseño-de-bosquejos).
+
 Versionar las fuentes del arnés, sus datos y las instrucciones de ejecución en la misma rama de la iteración. Conservar los resultados, trazas y capturas de la entrega junto con el HTML y las fuentes en un paquete verificado. La continuidad de las pruebas debe depender del repositorio y sus entregas guardadas.
 
 Secuencia mínima recuperada del acuerdo:

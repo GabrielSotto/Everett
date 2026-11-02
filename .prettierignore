@@ -3,4 +3,5 @@ docs/baseline-manifest.json
 dist/
 output/
 node_modules/
+design/wireframe-library/vendor/
 entregas/

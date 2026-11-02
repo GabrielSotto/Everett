@@ -1,0 +1,12 @@
+{
+  "chalk": {
+    "license": "MIT",
+    "commit": "c1e862d50b1968c3cd28010d01ffbd6942a2bd5c",
+    "repository": "https://github.com/okatarismet/chalk"
+  },
+  "icons": {
+    "license": "MIT",
+    "commit": "2b75f3ad12b420c9504ef05df8d2564a28f8500e",
+    "repository": "https://github.com/phosphor-icons/core"
+  }
+}

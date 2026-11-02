@@ -7,6 +7,7 @@
 | `TAREAS.md`                                       | Estado de las iteraciones y fallos abiertos, agrupados por versión.                                                                                        |
 | `src/`                                            | Código y recursos de la aplicación.                                                                                                                        |
 | `tests/unit/`, `tests/browser/`, `tests/tooling/` | Pruebas mantenidas de lógica, interacción y del propio arnés.                                                                                              |
+| `design/wireframe-library/`                       | Catálogo de diseño de bosquejos, separado de la aplicación. Fuentes, contratos de estados y recursos con licencia.                                         |
 | `scripts/`                                        | Construcción, ejecución, verificación y empaquetado.                                                                                                       |
 | `docs/`                                           | Producto, alcance, arquitectura, desarrollo y validación, cada uno en su documento. Los manifiestos JSON comprueban la recuperación de fuentes y recursos. |
 | `docs/iteraciones/`                               | Contratos y criterios específicos que siguen siendo referencia de regresión.                                                                               |
@@ -39,18 +40,19 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 
 ## Comandos
 
-| Comando                  | Resultado                                                                                                      |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`            | Vite en `http://127.0.0.1:4173/`, con HMR de estilos y recarga automática del código.                          |
-| `npm run typecheck`      | Comprueba los tipos sin generar archivos.                                                                      |
-| `npm run format:check`   | Comprueba el formato de fuentes, configuración y documentación.                                                |
-| `npm run format`         | Aplica el formato del proyecto.                                                                                |
-| `npm run test:unit`      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                             |
-| `npm run verify:unit`    | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión. |
-| `npm run build`          | Herramienta histórica de HTML autónomo; fuera del flujo cotidiano de Vite.                                     |
-| `npm run verify:build`   | Comprueba una salida histórica de HTML autónomo, cuando se utiliza ese formato.                                |
-| `npm run test:browser`   | Ejecuta Playwright sobre las fuentes servidas por Vite; usa 4173 o `EVERETT_TEST_URL`.                         |
-| `npm run verify:browser` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.            |
+| Comando                  | Resultado                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`            | Vite en `http://127.0.0.1:4173/`, con HMR de estilos y recarga automática del código.                               |
+| `npm run typecheck`      | Comprueba los tipos sin generar archivos.                                                                           |
+| `npm run format:check`   | Comprueba el formato de fuentes, configuración y documentación.                                                     |
+| `npm run format`         | Aplica el formato del proyecto.                                                                                     |
+| `npm run test:unit`      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                                  |
+| `npm run test:design`    | Comprueba el catálogo de bosquejos: semántica de estados, variantes, composición, recursos y controles de revisión. |
+| `npm run verify:unit`    | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión.      |
+| `npm run build`          | Herramienta histórica de HTML autónomo; fuera del flujo cotidiano de Vite.                                          |
+| `npm run verify:build`   | Comprueba una salida histórica de HTML autónomo, cuando se utiliza ese formato.                                     |
+| `npm run test:browser`   | Ejecuta Playwright sobre las fuentes servidas por Vite; usa 4173 o `EVERETT_TEST_URL`.                              |
+| `npm run verify:browser` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.                 |
 
 `npm run recover` corresponde a la extracción inicial del HTML original. Rechaza sobrescribir archivos existentes y comprueba primero el hash de la base. El desarrollo cotidiano utiliza las fuentes mantenidas en `src/`.
 
@@ -73,6 +75,27 @@ No generar un HTML autónomo, ZIP ni informe de entrega por cada cambio o revisi
 Las fuentes mantenidas son los módulos de `src/`; `dist/` nunca fue la fuente de desarrollo.
 Los scripts del flujo anterior se conservan para reproducir sus entregas históricas, fuera del
 trabajo cotidiano. El servidor `preview.mjs` queda retirado del uso diario.
+
+### Catálogo de diseño de bosquejos
+
+Vite sirve la propuesta en `/design/wireframe-library/`. Las fuentes están versionadas y permanecen
+separadas del Canvas hasta aprobar su diseño e integración. `state-contracts.js` declara los estados
+pertinentes, la parte afectada y su intención por componente. Las variantes de presentación se eligen
+por separado. `components.js` representa esas partes; no hay un reemplazo genérico por skeleton ni
+un estilo que active todos los controles de un escenario. Las muestras son ilustraciones estáticas
+e `inert`; los controles de filtros, variantes y estados pertenecen al catálogo de revisión.
+
+`npm run test:design` ejecuta `tests/design/`: regresiones semánticas, todas las combinaciones
+admitidas de variantes/estados/datos, recursos, vacíos y acciones de la interfaz del catálogo.
+Sus contraejemplos retiran cabeceras, duplican indicadores y activan todas las herramientas para
+comprobar que esas alteraciones fallen. La revisión en navegador contrasta además estilos calculados,
+carga de imágenes y geometría a 320 px con texto al 200 %, datos extensos, estados y variantes.
+La ausencia de desbordamiento no acredita la pertinencia de un estado: revisar también qué parte
+cambia y qué información debe conservarse. Este gate evalúa la propuesta; la integración exige el
+gate de Canvas y sus recorridos reales.
+
+`vendor/sources.json` fija los orígenes y commits de Chalk y Phosphor. Se conservan el CSS de Chalk
+y los SVG de Phosphor junto con sus avisos MIT en `CHALK-LICENSE` y `PHOSPHOR-LICENSE`.
 
 ## Antecedente: build autónomo
 
