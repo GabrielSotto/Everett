@@ -42,8 +42,8 @@ en `output/pruebas/navegador/2026-11-01_23-30-22-957Z/`. Esto no acredita la reg
 completa actual ni cierra el rediseño solicitado.
 
 El [catálogo de diseño](design/wireframe-library/index.html), servido por el mismo Vite en
-`/design/wireframe-library/`, contiene 95 muestras: 24 piezas y variantes de base, 61 composiciones
-y 10 interfaces. Sus fuentes y arnés están versionados, separados del Canvas. CSS de Chalk y SVG
+`/design/wireframe-library/`, contiene 102 muestras: 24 piezas y variantes de base, 65 composiciones
+y 13 interfaces. Sus fuentes y arnés están versionados, separados del Canvas. CSS de Chalk y SVG
 de Phosphor fijados por commit, con sus licencias MIT. La investigación sigue siendo temporal;
 no se agrega un informe comparativo.
 
@@ -55,13 +55,22 @@ correspondiente. Variantes de orientación, aspecto y tono se eligen por separad
 identifica qué parte cambia y por qué. Se conserva la estructura durante la carga y se distingue
 texto simulado de skeleton de carga.
 
-`npm run test:design` cubre BLF-STATE-01–19: 897 combinaciones de muestras, variantes, estados y
-datos; regresiones semánticas y controles negativos; filtros, variantes y acciones de revisión.
-La revisión real detectó y corrigió un desborde del árbol. Pasaron 42 combinaciones de estado y
-datos a 320 px con texto al 200 %, 14 comprobaciones de estados en escritorio y 34 cambios de
-variante mediante los controles, junto con la revisión visual de los casos señalados. Tipado y
-formato correctos. La salida de las pruebas y su identidad de fuentes se conservan en
-`output/pruebas/diseno/result.tap` e `identity.json`.
+La comparación con Apple HIG y Material se aplica a anatomía, función y composición: acciones
+normales, alternancias y destructivas; solo lectura, prefijos/unidades, intervalos y hora;
+calendario completo; navegación inferior; paneles modales y no modales; confirmaciones; filas
+con accesorios, agrupación y selección múltiple; chips por función y avisos con acciones.
+Valor, foco y disponibilidad se combinan sin borrar la selección ni admitir estados incompatibles.
+Cada muestra permite revisar su ancho y regla de composición; las interfaces permiten cambiar
+el título. Reserva móvil, gestión de registros y conversación con panel reutilizan estas piezas.
+
+`npm run test:design` cubre 30 casos BLF-STATE-01–19 y BLF-ANATOMY-01–11: 1266 combinaciones
+de muestra/variante/estado/datos y 488 combinaciones adicionales de estados y función.
+`npm run test:design:browser` añade cinco recorridos desde controles visibles y 2030
+representaciones con geometría y recursos, a 1440/320 px, texto al 200 % y anchos propios
+mínimos/máximos. Los contraejemplos detectan pérdida de valor, calendario incompleto y piezas
+desancladas. Las capturas se revisan además de las aserciones; el gate no equipara geometría
+válida con calidad visual. Tipado y formato correctos. La última salida e identidad de fuentes
+permanecen en `output/pruebas/diseno/`.
 La biblioteca continúa pendiente de aprobación e integración; estas pruebas no certifican
 el comportamiento de una biblioteca ya integrada en Canvas.
 

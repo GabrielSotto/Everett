@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "node scripts/test-unit.mjs",
     "test:design": "node --test tests/design/*.test.mjs",
+    "test:design:browser": "node --test tests/design/browser.spec.mjs",
     "verify:unit": "node scripts/verify-unit.mjs",
     "test:browser": "node scripts/test-browser.mjs",
     "test:artifact": "node scripts/test-browser.mjs --artifact",

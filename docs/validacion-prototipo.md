@@ -27,6 +27,26 @@ El siguiente bloque conserva íntegros los mínimos del roadmap:
 
 ## Gate de cada versión
 
+### Propuesta separada de biblioteca de bosquejos
+
+Antes de integrar el catálogo de `design/wireframe-library/`, ejecutar `test:design` y
+`test:design:browser`, con Vite activo, y revisar sus capturas. Este gate evalúa la propuesta
+visual; no reemplaza las pruebas de edición, selección, historial y persistencia de Canvas
+que requerirá su integración.
+
+BLF-STATE comprueba intención y partes afectadas. BLF-ANATOMY añade valor conservado al
+cambiar foco/disponibilidad, estados incompatibles, acción frente a alternancia, solo lectura,
+prefijos/unidades, calendarios completos y coherentes con el campo, rangos, hora, modalidad,
+destinos frente a pestañas, accesorios, agrupación, selección múltiple y acciones de avisos.
+Los escenarios completos deben reutilizar esas mismas piezas.
+
+BLF-BROWSER recorre controles reales del catálogo, variantes, anchos mínimos/máximos, datos
+habituales/extensos/únicos y texto al 200 %. Comprobar límites de piezas, recursos decodificados,
+dígitos de calendario sin solapamiento y foco de teclado. Distinguir scroll local deliberado
+de recortes accidentales. Contraejemplos de pérdida de valor, calendario incompleto y pieza
+desplazada deben fallar. Conservar la última salida, identidad de fuentes y capturas en
+`output/pruebas/diseno/`; no contar esa evidencia como aprobación del diseño por el usuario.
+
 ### Trabajo continuo de Canvas
 
 El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo

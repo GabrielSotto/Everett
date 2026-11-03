@@ -40,19 +40,20 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 
 ## Comandos
 
-| Comando                  | Resultado                                                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`            | Vite en `http://127.0.0.1:4173/`, con HMR de estilos y recarga automática del código.                               |
-| `npm run typecheck`      | Comprueba los tipos sin generar archivos.                                                                           |
-| `npm run format:check`   | Comprueba el formato de fuentes, configuración y documentación.                                                     |
-| `npm run format`         | Aplica el formato del proyecto.                                                                                     |
-| `npm run test:unit`      | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                                  |
-| `npm run test:design`    | Comprueba el catálogo de bosquejos: semántica de estados, variantes, composición, recursos y controles de revisión. |
-| `npm run verify:unit`    | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión.      |
-| `npm run build`          | Herramienta histórica de HTML autónomo; fuera del flujo cotidiano de Vite.                                          |
-| `npm run verify:build`   | Comprueba una salida histórica de HTML autónomo, cuando se utiliza ese formato.                                     |
-| `npm run test:browser`   | Ejecuta Playwright sobre las fuentes servidas por Vite; usa 4173 o `EVERETT_TEST_URL`.                              |
-| `npm run verify:browser` | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.                 |
+| Comando                       | Resultado                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                 | Vite en `http://127.0.0.1:4173/`, con HMR de estilos y recarga automática del código.                               |
+| `npm run typecheck`           | Comprueba los tipos sin generar archivos.                                                                           |
+| `npm run format:check`        | Comprueba el formato de fuentes, configuración y documentación.                                                     |
+| `npm run format`              | Aplica el formato del proyecto.                                                                                     |
+| `npm run test:unit`           | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                                  |
+| `npm run test:design`         | Comprueba el catálogo de bosquejos: semántica de estados, variantes, composición, recursos y controles de revisión. |
+| `npm run test:design:browser` | Recorre el catálogo servido por Vite, comprueba geometría, recursos y controles y guarda capturas para revisión.    |
+| `npm run verify:unit`         | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión.      |
+| `npm run build`               | Herramienta histórica de HTML autónomo; fuera del flujo cotidiano de Vite.                                          |
+| `npm run verify:build`        | Comprueba una salida histórica de HTML autónomo, cuando se utiliza ese formato.                                     |
+| `npm run test:browser`        | Ejecuta Playwright sobre las fuentes servidas por Vite; usa 4173 o `EVERETT_TEST_URL`.                              |
+| `npm run verify:browser`      | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.                 |
 
 `npm run recover` corresponde a la extracción inicial del HTML original. Rechaza sobrescribir archivos existentes y comprueba primero el hash de la base. El desarrollo cotidiano utiliza las fuentes mantenidas en `src/`.
 
@@ -80,16 +81,26 @@ trabajo cotidiano. El servidor `preview.mjs` queda retirado del uso diario.
 
 Vite sirve la propuesta en `/design/wireframe-library/`. Las fuentes están versionadas y permanecen
 separadas del Canvas hasta aprobar su diseño e integración. `state-contracts.js` declara los estados
-pertinentes, la parte afectada y su intención por componente. Las variantes de presentación se eligen
-por separado. `components.js` representa esas partes; no hay un reemplazo genérico por skeleton ni
+pertinentes, la parte afectada y su intención por componente. `review-model.js` separa valor,
+interacción, disponibilidad y resultado; rechaza combinaciones incompatibles. Presentación,
+función y accesorios se eligen por separado. `composition-rules.js` define límites de tamaño y
+relaciones entre piezas que se pueden comprobar con el control de ancho de cada muestra.
+Estas reglas pertenecen a la propuesta visual; no son un motor de distribución de Canvas.
+`components.js` representa esas partes; no hay un reemplazo genérico por skeleton ni
 un estilo que active todos los controles de un escenario. Las muestras son ilustraciones estáticas
 e `inert`; los controles de filtros, variantes y estados pertenecen al catálogo de revisión.
 
 `npm run test:design` ejecuta `tests/design/`: regresiones semánticas, todas las combinaciones
 admitidas de variantes/estados/datos, recursos, vacíos y acciones de la interfaz del catálogo.
-Sus contraejemplos retiran cabeceras, duplican indicadores y activan todas las herramientas para
-comprobar que esas alteraciones fallen. La revisión en navegador contrasta además estilos calculados,
-carga de imágenes y geometría a 320 px con texto al 200 %, datos extensos, estados y variantes.
+Sus contraejemplos retiran cabeceras y fechas, pierden valores seleccionados, duplican indicadores
+y activan todas las herramientas para comprobar que esas alteraciones fallen.
+Con Vite activo, `npm run test:design:browser` ejecuta `tests/design/browser.spec.mjs` en un contexto
+aislado. Usa el catálogo de 4173; `EVERETT_DESIGN_URL` admite otro puerto local con la misma ruta.
+Contrasta estilos calculados, carga de imágenes y geometría a 320 px con texto al 200 %, datos
+extensos, estados, variantes y límites de tamaño por muestra. Comprueba las acciones de revisión,
+selección conservada y un desplazamiento adverso de una pieza. Las tablas, pestañas y calendarios
+pueden desplazar su contenido sin desbordar su región; Recorte ilustra una máscara deliberada.
+Conservar la última salida de ambos comandos, hashes y capturas en `output/pruebas/diseno/`.
 La ausencia de desbordamiento no acredita la pertinencia de un estado: revisar también qué parte
 cambia y qué información debe conservarse. Este gate evalúa la propuesta; la integración exige el
 gate de Canvas y sus recorridos reales.

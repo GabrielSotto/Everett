@@ -9,6 +9,9 @@ import {
   datasets,
   renderSample,
   esc,
+  changeState,
+  availableStates,
+  settingOptions,
 } from '../../design/wireframe-library/samples.js';
 
 const entry = (id) => {
@@ -151,7 +154,7 @@ test('BLF-STATE-13: todas las combinaciones admitidas son estáticas, tienen par
     assert.equal(new Set(item.states).size, item.states.length, item.id);
     assert.equal(new Set(item.variants.map((v) => v.id)).size, item.variants.length, item.id);
     for (const variant of item.variants)
-      for (const state of item.states)
+      for (const state of availableStates(item, variant.id))
         for (const data of Object.keys(datasets)) {
           const fragment = sample(item.id, state, data, variant.id);
           assert.ok(fragment.querySelector('.specimen[inert]'), item.id);
@@ -300,13 +303,17 @@ async function catalogueUi(query = '') {
     runScripts: 'outside-only',
   });
   dom.window.scrollTo = () => {};
-  new dom.window.Function('entries', 'families', 'stateNames', 'renderSample', 'esc', script)(
-    entries,
-    families,
-    stateNames,
-    renderSample,
-    esc,
-  );
+  new dom.window.Function(
+    'entries',
+    'families',
+    'stateNames',
+    'renderSample',
+    'esc',
+    'changeState',
+    'availableStates',
+    'settingOptions',
+    script,
+  )(entries, families, stateNames, renderSample, esc, changeState, availableStates, settingOptions);
   return dom;
 }
 

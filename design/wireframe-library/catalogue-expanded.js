@@ -1,4 +1,13 @@
-import { entries, families, stateNames, renderSample, esc } from './samples.js';
+import {
+  entries,
+  families,
+  stateNames,
+  renderSample,
+  esc,
+  changeState,
+  availableStates,
+  settingOptions,
+} from './samples.js';
 const params = new URLSearchParams(location.search);
 let family = families.some(([id]) => id === params.get('family')) ? params.get('family') : 'all';
 const search = document.querySelector('#search');
@@ -24,6 +33,8 @@ const normalize = (value) =>
     .toLowerCase();
 const chosenStates = new Map();
 const chosenVariants = new Map();
+const chosenOptions = new Map();
+const chosenReviews = new Map();
 const catalogue = document.querySelector('#catalogue');
 const familyNav = document.querySelector('#families');
 familyNav.innerHTML = families
@@ -39,7 +50,7 @@ document.querySelector('#coverage').textContent =
 catalogue.innerHTML = entries
   .map(
     (item) =>
-      `<article class="catalogue-card ${item.wide ? 'wide' : ''}" data-id="${item.id}"><header><h3>${esc(item.name)}</h3><small>${item.kind}</small></header><div class="sample"></div><div class="sample-review">${item.variants.length > 1 ? `<label>Variante<select data-variant aria-label="Variante de ${esc(item.name)}">${item.variants.map((v) => `<option value="${v.id}">${esc(v.label)}</option>`).join('')}</select></label>` : ''}<div class="sample-states" role="group" aria-label="Estados de ${esc(item.name)}">${item.states.length > 1 ? item.states.map((state) => `<button type="button" data-state="${state}" aria-pressed="${state === 'default'}">${esc(item.stateDetails[state].label)}</button>`).join('') : ''}</div><p class="scenario-note"></p></div><footer>${esc(item.anatomy)}</footer></article>`,
+      `<article class="catalogue-card ${item.wide ? 'wide' : ''}" data-id="${item.id}"><header><h3>${esc(item.name)}</h3><small>${item.kind}</small></header><div class="sample"></div><div class="sample-review">${item.variants.length > 1 ? `<label>Variante<select data-variant aria-label="Variante de ${esc(item.name)}">${item.variants.map((v) => `<option value="${v.id}">${esc(v.label)}</option>`).join('')}</select></label>` : ''}${item.settings.map((setting) => `<label>${esc(setting.label)}<select data-setting="${setting.id}" aria-label="${esc(setting.label)} de ${esc(item.name)}"></select></label>`).join('')}<div class="sample-states" role="group" aria-label="Estados de ${esc(item.name)}">${item.states.length > 1 ? item.states.map((state) => `<button type="button" data-state="${state}" aria-pressed="${state === 'default'}">${esc(item.stateDetails[state].label)}</button>`).join('') : ''}</div><p class="scenario-note"></p>${item.combineStates ? '<p class="combination-hint">Combiná valor, foco y disponibilidad. Base restablece los estados.</p>' : ''}<details class="composition-review"><summary>Composición y tamaño</summary><p>${esc(item.layout.description)}</p><label>Ancho de muestra<input type="range" data-width min="${item.layout.minWidth}" max="${item.layout.maxWidth}" value="${item.layout.width}" step="10" aria-label="Ancho de ${esc(item.name)}"><output>${item.layout.width} px</output></label>${item.family === 'screens' ? `<label>Título del ejemplo<input data-example-title maxlength="500" placeholder="Proyecto Aurora" aria-label="Título de ${esc(item.name)}"></label>` : ''}</details></div><footer>${esc(item.anatomy)}</footer></article>`,
   )
   .join('');
 function syncUrl() {
@@ -54,19 +65,46 @@ function syncUrl() {
   history.replaceState(null, '', location.pathname + (next.size ? '?' + next : ''));
 }
 function updateSample(item, card) {
+  const variant = chosenVariants.get(item.id) ?? item.variants[0].id;
+  const options = { ...(chosenOptions.get(item.id) ?? {}) };
+  for (const setting of item.settings) {
+    const choices = settingOptions(item, setting, variant);
+    if (!choices.some((o) => o.id === options[setting.id])) options[setting.id] = choices[0].id;
+    const select = card.querySelector(`[data-setting="${setting.id}"]`);
+    select.innerHTML = choices
+      .map((o) => `<option value="${o.id}">${esc(o.label)}</option>`)
+      .join('');
+    select.value = options[setting.id];
+  }
+  chosenOptions.set(item.id, options);
+  const allowed = availableStates(item, variant, options);
   const selected =
     chosenStates.get(item.id) ?? (stateSelect.value !== 'all' ? stateSelect.value : 'default');
-  const state = item.states.includes(selected) ? selected : 'default';
-  const variant = chosenVariants.get(item.id) ?? item.variants[0].id;
-  card.querySelector('.sample').innerHTML = renderSample(item, state, dataSelect.value, variant);
-  const detail = item.stateDetails[state];
-  card.querySelector('.scenario-note').innerHTML =
-    `<strong>${esc(detail.target)}.</strong> ${esc(detail.reason)}`;
-  card
-    .querySelectorAll('[data-state]')
-    .forEach((button) =>
-      button.setAttribute('aria-pressed', String(button.dataset.state === state)),
+  const states = (Array.isArray(selected) ? selected : [selected]).filter(
+    (s) => allowed.includes(s) && s !== 'default',
+  );
+  chosenStates.set(item.id, states.length ? states : 'default');
+  card.querySelector('.sample').innerHTML = renderSample(
+    item,
+    states,
+    dataSelect.value,
+    variant,
+    options,
+    chosenReviews.get(item.id),
+  );
+  const details = (states.length ? states : ['default']).map((s) => item.stateDetails[s]);
+  card.querySelector('.scenario-note').innerHTML = details
+    .map((detail) => `<strong>${esc(detail.target)}.</strong> ${esc(detail.reason)}`)
+    .join(' ');
+  card.querySelectorAll('[data-state]').forEach((button) => {
+    button.hidden = !allowed.includes(button.dataset.state);
+    button.setAttribute(
+      'aria-pressed',
+      String(
+        states.length ? states.includes(button.dataset.state) : button.dataset.state === 'default',
+      ),
     );
+  });
 }
 function filter() {
   const query = normalize(search.value.trim());
@@ -75,7 +113,12 @@ function filter() {
     const card = catalogue.querySelector(`[data-id="${item.id}"]`);
     const matches =
       (family === 'all' || item.family === family) &&
-      (stateSelect.value === 'all' || item.states.includes(stateSelect.value)) &&
+      (stateSelect.value === 'all' ||
+        availableStates(
+          item,
+          chosenVariants.get(item.id) ?? item.variants[0].id,
+          chosenOptions.get(item.id) ?? {},
+        ).includes(stateSelect.value)) &&
       query
         .split(/\s+/)
         .every((word) =>
@@ -115,15 +158,36 @@ catalogue.addEventListener('click', (event) => {
   if (!button) return;
   const card = button.closest('[data-id]');
   const item = entries.find((item) => item.id === card.dataset.id);
-  chosenStates.set(item.id, button.dataset.state);
+  chosenStates.set(
+    item.id,
+    changeState(item, chosenStates.get(item.id) ?? 'default', button.dataset.state),
+  );
   updateSample(item, card);
 });
 catalogue.addEventListener('change', (event) => {
-  const select = event.target.closest('[data-variant]');
-  if (!select) return;
-  const card = select.closest('[data-id]');
+  const card = event.target.closest('[data-id]');
+  if (!card) return;
   const item = entries.find((entry) => entry.id === card.dataset.id);
-  chosenVariants.set(item.id, select.value);
+  if (event.target.matches('[data-variant]')) chosenVariants.set(item.id, event.target.value);
+  else if (event.target.matches('[data-setting]'))
+    chosenOptions.set(item.id, {
+      ...chosenOptions.get(item.id),
+      [event.target.dataset.setting]: event.target.value,
+    });
+  else return;
+  updateSample(item, card);
+});
+catalogue.addEventListener('input', (event) => {
+  const card = event.target.closest('[data-id]');
+  if (!card) return;
+  const item = entries.find((entry) => entry.id === card.dataset.id);
+  const review = { ...chosenReviews.get(item.id) };
+  if (event.target.matches('[data-width]')) {
+    review.width = Number(event.target.value);
+    card.querySelector('output').textContent = review.width + ' px';
+  } else if (event.target.matches('[data-example-title]')) review.title = event.target.value;
+  else return;
+  chosenReviews.set(item.id, review);
   updateSample(item, card);
 });
 document.querySelector('#parts').addEventListener('click', (event) => {

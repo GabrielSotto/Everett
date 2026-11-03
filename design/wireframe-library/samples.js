@@ -1,6 +1,9 @@
 // Catálogo de diseño: clases de Chalk y símbolos de Phosphor, ambos MIT.
 import { stateNames, stateContract } from './state-contracts.js';
 export { stateNames };
+import { resolveStates, resolveOptions, availableStates } from './review-model.js';
+export { changeState, availableStates, settingOptions } from './review-model.js';
+import { ruleFor } from './composition-rules.js';
 import {
   esc,
   t,
@@ -27,6 +30,8 @@ import {
   inspector,
   screen,
   components,
+  calendar,
+  bottomNav,
 } from './components.js';
 export const families = [
   ['all', 'Todo', 'Biblioteca de bosquejos'],
@@ -74,7 +79,18 @@ export const datasets = {
 export { esc } from './components.js';
 const items = [];
 const add = (family, id, name, anatomy, render, tags = '', kind = 'Composición', wide = false) =>
-  items.push({ family, id, name, anatomy, render, tags, kind, wide, ...stateContract(id) });
+  items.push({
+    family,
+    id,
+    name,
+    anatomy,
+    render,
+    tags,
+    kind,
+    wide,
+    ...stateContract(id),
+    layout: ruleFor({ family, id }),
+  });
 const base = (id, name, parts, render, kind = 'Pieza') =>
   add('base', id, name, parts, render, '', kind);
 base(
@@ -307,6 +323,20 @@ control(
   components['chips-input'],
   'tags multiselect',
 );
+control(
+  'time',
+  'Hora',
+  'Campos + unidades + esfera opcional',
+  components.time,
+  'time picker horario reloj',
+);
+control(
+  'chip',
+  'Chips por función',
+  'Contenedor + texto + marca o acción',
+  components.chip,
+  'assist filter input suggestion filtro sugerencia',
+);
 const nav = (id, name, parts, render, tags = '') =>
   add('navigation', id, name, parts, render, tags);
 nav(
@@ -387,6 +417,20 @@ nav(
   'Niveles + conectores + filas + acciones',
   components['tree'],
   'tree jerarquía carpetas',
+);
+nav(
+  'bottom-nav',
+  'Navegación inferior',
+  'Destinos + iconos + rótulos + destino actual',
+  components['bottom-nav'],
+  'móvil navegación principal',
+);
+nav(
+  'bottom-sheet',
+  'Panel inferior',
+  'Panel + cabecera + agarre + contenido + cierre',
+  components['bottom-sheet'],
+  'bottom sheet modal',
 );
 const content = (id, name, parts, render, tags = '') =>
   add('content', id, name, parts, render, tags);
@@ -628,7 +672,7 @@ full(
   'Marco + rótulos + campos + opciones + acciones',
   (c) =>
     screen(
-      'Acceso',
+      c.reviewTitle ?? 'Acceso',
       `<div class="login-layout"><div class="demo-heading">${t('Bienvenido')}</div>${t('Entrá a tu espacio de trabajo')}${field('Correo', c.d.email)}${field('Contraseña', '••••••••', 'eye')}<div class="demo-row">${mark(true)}${t('Recordarme')}</div>${btn('Entrar', 'primary')}${t('¿Olvidaste tu contraseña?')}</div>`,
     ),
   'login autenticar',
@@ -639,7 +683,7 @@ full(
   'Marco + progreso + campos + acciones',
   (c) =>
     screen(
-      'Crear cuenta',
+      c.reviewTitle ?? 'Crear cuenta',
       `${tabs(['Cuenta', 'Perfil', 'Confirmar'])}${field('Nombre', c.d.person)}${field('Correo', c.d.email)}${field('Contraseña', '••••••••', 'eye')}${btn('Continuar', 'primary')}`,
     ),
   'onboarding formulario',
@@ -650,7 +694,7 @@ full(
   'Marco + identidad + contexto + acciones',
   (c) =>
     screen(
-      'Invitación',
+      c.reviewTitle ?? 'Invitación',
       `${avatar()}<div class="demo-heading">${t('Te invitaron a ' + c.d.title)}</div>${paragraph(c)}${row(c)}<div class="demo-row wrap">${btn('Ahora no')}${btn('Aceptar invitación', 'primary')}</div>`,
     ),
   'equipo',
@@ -661,7 +705,7 @@ full(
   'Toolbar + navegación + métricas + gráfico + tabla',
   (c) =>
     screen(
-      'Panel de trabajo',
+      c.reviewTitle ?? 'Panel de trabajo',
       `${toolbar(c)}<div class="workspace-layout">${sidebar(c, true)}<div class="grow stack"><div class="metric-grid">${['Referencias', 'Tareas', 'Decisiones'].map((v, i) => `<div class="metric">${t(v)}<strong>${[c.d.amount, '32', '18'][i]}</strong></div>`).join('')}</div>${chart()}${table(c)}</div></div>`,
     ),
   'dashboard panel estadísticas',
@@ -672,7 +716,7 @@ full(
   'Navegación + conversaciones + chat + composer',
   (c) =>
     screen(
-      'Mensajería',
+      c.reviewTitle ?? 'Mensajería',
       `<div class="workspace-layout"><div class="conversation-list">${field('Buscar', 'Conversaciones', 'magnifying-glass')}${list(c, 3)}</div><div class="grow">${chat(c)}</div></div>`,
     ),
   'chat conversaciones',
@@ -683,7 +727,7 @@ full(
   'Toolbar + árbol + área de trabajo + inspector',
   (c) =>
     screen(
-      'Editor de interfaz',
+      c.reviewTitle ?? 'Editor de interfaz',
       `${toolbar(c)}<div class="editor-layout">${sidebar(c, true)}<div class="editor-artboard">${card(c, true)}</div>${inspector(c)}</div>`,
     ),
   'editor diseño inspector complejo',
@@ -694,7 +738,7 @@ full(
   'Búsqueda + filtros + grilla + contenido + páginas',
   (c) =>
     screen(
-      'Explorar referencias',
+      c.reviewTitle ?? 'Explorar referencias',
       `${field('Buscar', c.d.row, 'magnifying-glass')}${tabs(['Todo', 'Imágenes', 'Documentos'])}<div class="demo-row wrap">${badge('Diseño')}${badge('Recientes')}${badge('Mi equipo')}</div><div class="gallery-grid">${card(c, true)}${card({ ...c, d: { ...c.d, title: 'Otra referencia' } }, true)}</div>`,
     ),
   'buscador catálogo ecommerce resultados',
@@ -705,7 +749,7 @@ full(
   'Navegación + secciones + campos + switches',
   (c) =>
     screen(
-      'Preferencias',
+      c.reviewTitle ?? 'Preferencias',
       `${tabs(['General', 'Apariencia', 'Accesibilidad'])}${field('Nombre del espacio', c.d.title)}${field('Idioma', 'Español', 'caret-down')}${['Mostrar cuadrícula', 'Reducir animaciones', 'Recibir notificaciones'].map((v, i) => `<div class="setting-row">${t(v)}${toggle(i !== 1)}</div>`).join('')}${btn('Guardar cambios', 'primary')}`,
     ),
   'ajustes settings',
@@ -716,7 +760,7 @@ full(
   'Toolbar + columnas + tarjetas + estados',
   (c) =>
     screen(
-      'Proyecto',
+      c.reviewTitle ?? 'Proyecto',
       `${toolbar(c)}<div class="kanban-grid">${['Pendiente', 'En curso', 'Hecho'].map((v, i) => `<div><div class="demo-row"><strong>${t(v)}</strong>${badge(String(i + 1))}</div>${card({ ...c, d: { ...c.d, title: i === 0 ? c.d.title : ['Preparar revisión', 'Compartir resultados'][i - 1] } })}${i === 0 ? btn('Agregar', '', 'plus') : ''}</div>`).join('')}</div>`,
     ),
   'kanban tablero tareas complejo',
@@ -727,28 +771,73 @@ full(
   'Toolbar + calendario + selección + lista',
   (c) =>
     screen(
-      'Agenda',
-      `${toolbar(c)}<div class="workspace-layout"><div class="grow"><div class="calendar-grid large">${['L', 'M', 'M', 'J', 'V', 'S', 'D', ...Array.from({ length: 28 }, (_, i) => String(i + 1))].map((v, i) => `<span class="${i === 16 ? 'is-active' : ''}">${v}</span>`).join('')}</div></div><div class="agenda-list"><strong>${t('Próximos eventos')}</strong>${list(c, 2)}</div></div>`,
+      c.reviewTitle ?? 'Agenda',
+      `${toolbar(c)}<div class="workspace-layout"><div class="grow">${calendar({ ...c, state: 'selected', states: ['selected'], variant: 'single' })}</div><div class="agenda-list"><strong>${t('Próximos eventos')}</strong>${list(c, 2)}</div></div>`,
     ),
   'calendario planner agenda',
 );
+full(
+  'booking-mobile',
+  'Reserva móvil',
+  'Marco + fecha + rango + hora + confirmación + navegación',
+  (c) =>
+    screen(
+      c.reviewTitle ?? 'Reservar visita',
+      `<div class="booking-content stack"><strong class="demo-heading">${t(c.d.title)}</strong>${components.date({ ...c, variant: 'range', states: ['selected'], state: 'selected' })}${components.time({ ...c, variant: 'input', states: isScenario(c, 'error') ? ['error', 'focus'] : [], state: 'default' })}${btn('Confirmar reserva', 'primary', '', isScenario(c, 'loading') ? 'loading' : 'default')}</div>${bottomNav({ ...c, state: 'default', states: [] })}`,
+    ),
+  'reserva móvil fechas hora',
+);
+full(
+  'records-workspace',
+  'Gestión con selección múltiple',
+  'Cabecera + filtros + tabla + acciones de lote + aviso',
+  (c) =>
+    screen(
+      c.reviewTitle ?? 'Gestión de materiales',
+      `${toolbar(c)}${components['filter-panel']({ ...c, state: 'default', states: [], variant: 'applied' })}${components['data-grid']({ ...c, embedded: true, variant: 'multiple', state: isScenario(c, 'loading') ? 'loading' : 'selected', states: isScenario(c, 'loading') ? ['loading'] : ['selected'] })}${components.toast({ ...c, state: 'default', states: [], variant: isScenario(c, 'error') ? 'error' : 'success', options: { action: isScenario(c, 'error') ? 'retry' : 'undo' } })}`,
+    ),
+  'datos tabla selección lote ordenar',
+);
+full(
+  'support-workspace',
+  'Conversación con panel',
+  'Historial + composer + datos laterales + estado del mensaje',
+  (c) =>
+    screen(
+      c.reviewTitle ?? 'Consulta del equipo',
+      `<div class="support-layout"><div class="grow">${chat(c)}</div><div class="support-details stack"><strong>${t('Detalle del caso')}</strong>${components.identity({ ...c, state: 'default', states: [] })}${field('Asunto', c.d.title, '', 'readonly')}${components.list({ ...c, state: 'default', states: [], variant: 'two-lines', options: { accessory: 'disclosure' } })}</div></div>`,
+    ),
+  'chat soporte panel errores',
+);
+function isScenario(c, state) {
+  return c.states.includes(state);
+}
 export const entries = items;
-export function renderSample(item, state = 'default', data = 'demo', variant) {
-  if (!item.states.includes(state))
-    throw new Error('Estado no admitido para ' + item.id + ': ' + state);
+export function renderSample(
+  item,
+  state = 'default',
+  data = 'demo',
+  variant,
+  options = {},
+  review = {},
+) {
   if (!Object.hasOwn(datasets, data)) throw new Error('Conjunto de datos desconocido: ' + data);
   const chosen = variant ?? item.variants[0].id;
   if (!item.variants.some((v) => v.id === chosen))
     throw new Error('Variante no admitida para ' + item.id + ': ' + chosen);
-  return (
-    '<div class="specimen" data-sample="' +
-    item.id +
-    '" data-scenario="' +
-    state +
-    '" data-variant="' +
-    chosen +
-    '" inert>' +
-    item.render({ id: item.id, state, data, d: datasets[data], variant: chosen }) +
-    '</div>'
-  );
+  const resolvedOptions = resolveOptions(item, options, chosen);
+  const states = resolveStates(item, state);
+  const allowed = availableStates(item, chosen, resolvedOptions);
+  if (states.some((s) => !allowed.includes(s)))
+    throw new Error('Estado incompatible con la variante o función');
+  const width = review.width ?? item.layout.width;
+  if (!Number.isFinite(width) || width < item.layout.minWidth || width > item.layout.maxWidth)
+    throw new Error('Ancho de muestra fuera de límites');
+  if (review.title !== undefined && (typeof review.title !== 'string' || review.title.length > 500))
+    throw new Error('Título de muestra inválido');
+  const d = {
+    ...datasets[data],
+    ...(review.title !== undefined ? { title: review.title || 'Sin título' } : {}),
+  };
+  return `<div class="specimen" data-sample="${item.id}" data-scenario="${states.join(' ') || 'default'}" data-variant="${chosen}" style="--sample-width:${width}px" inert>${item.render({ id: item.id, state: states[0] ?? 'default', states, data, d, reviewTitle: review.title === undefined ? undefined : review.title || 'Sin título', variant: chosen, options: resolvedOptions })}</div>`;
 }
