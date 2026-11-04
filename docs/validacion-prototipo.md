@@ -38,13 +38,18 @@ BLF-STATE comprueba intención y partes afectadas. BLF-ANATOMY añade valor cons
 cambiar foco/disponibilidad, estados incompatibles, acción frente a alternancia, solo lectura,
 prefijos/unidades, calendarios completos y coherentes con el campo, rangos, hora, modalidad,
 destinos frente a pestañas, accesorios, agrupación, selección múltiple y acciones de avisos.
-Los escenarios completos deben reutilizar esas mismas piezas.
+Los escenarios completos deben reutilizar esas mismas piezas. Comprobar también su contexto:
+identidad de la conversación, envío por icono con nombre accesible, búsqueda de conversaciones,
+pasos de un proceso y contenido de agenda. La reutilización no justifica controles ajenos a la tarea.
 
-BLF-BROWSER recorre controles reales del catálogo, variantes, anchos mínimos/máximos, datos
+BLF-BROWSER recorre controles reales del catálogo, variantes, anchos mínimos/intermedios/máximos, datos
 habituales/extensos/únicos y texto al 200 %. Comprobar límites de piezas, recursos decodificados,
-dígitos de calendario sin solapamiento y foco de teclado. Distinguir scroll local deliberado
+dígitos de calendario sin solapamiento y foco de teclado. Durante resize, los rótulos de controles
+y encabezados deben mantener palabras completas; el texto debe caber en su control, no solamente
+en el marco de la muestra. Verificar alineación y proporciones de los iconos de acción.
+Distinguir scroll local deliberado
 de recortes accidentales. Contraejemplos de pérdida de valor, calendario incompleto y pieza
-desplazada deben fallar. Conservar la última salida, identidad de fuentes y capturas en
+desplazada, palabra partida y chat fuera de contexto deben fallar. Conservar la última salida, identidad de fuentes y capturas en
 `output/pruebas/diseno/`; no contar esa evidencia como aprobación del diseño por el usuario.
 
 ### Trabajo continuo de Canvas

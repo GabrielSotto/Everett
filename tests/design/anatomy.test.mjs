@@ -13,6 +13,84 @@ const entry = (id) => entries.find((e) => e.id === id);
 const sample = (id, state = 'default', variant, options, data = 'demo', review) =>
   JSDOM.fragment(renderSample(entry(id), state, data, variant, options, review));
 
+function verifyConversation(dom) {
+  for (const composer of dom.querySelectorAll('.composer')) {
+    const send = composer.querySelector('.composer-send [role="button"]');
+    assert.ok(send, 'El composer conserva su acción de envío');
+    assert.match(send.getAttribute('aria-label'), /Envia[rn].*mensaje/);
+    assert.equal(send.querySelector('.label'), null, 'El envío se representa solo con icono');
+    assert.ok(send.querySelector('.icon, .spinner'));
+    assert.equal(composer.querySelectorAll('[aria-label="Adjuntar archivo"]').length, 1);
+  }
+  for (const chat of dom.querySelectorAll('.chat-window')) {
+    assert.ok(chat.querySelector('.chat-header .wf-avatar'));
+    assert.match(chat.querySelector('.chat-header').textContent, /Conversación directa/);
+    assert.equal(chat.querySelector('.chat-header .wf-input, .chat-header .demo-toolbar'), null);
+    assert.doesNotMatch(chat.querySelector('.chat-header').textContent, /Documento/);
+  }
+}
+
+test('BLF-ANATOMY-12: todas las composiciones de conversación conservan identidad y envío por icono', () => {
+  let composers = 0;
+  for (const item of entries) {
+    for (const variant of item.variants)
+      for (const state of availableStates(item, variant.id, {})) {
+        const dom = sample(item.id, state, variant.id);
+        composers += dom.querySelectorAll('.composer').length;
+        verifyConversation(dom);
+      }
+  }
+  assert.ok(composers >= 12, 'Se revisan el composer y las composiciones que lo contienen');
+  const messaging = sample('chat-app');
+  assert.match(messaging.querySelector('.conversation-list').textContent, /Buscar conversaciones/);
+  assert.equal(messaging.querySelector('.conversation-items .wf-field'), null);
+  assert.equal(
+    messaging
+      .querySelector('.conversation-items [aria-current="page"]')
+      .textContent.includes('Ana García'),
+    true,
+  );
+  const broken = sample('composer');
+  const label = broken.ownerDocument.createElement('span');
+  label.className = 'label';
+  label.textContent = 'Enviar';
+  broken.querySelector('.composer-send [role="button"]').append(label);
+  assert.throws(() => verifyConversation(broken), /solo con icono/);
+  const wrongHeader = sample('chat');
+  wrongHeader.querySelector('.chat-header strong').textContent = 'Documento';
+  assert.throws(() => verifyConversation(wrongHeader), assert.AssertionError);
+});
+
+test('BLF-ANATOMY-13: los escenarios utilizan controles correspondientes a su tarea', () => {
+  const registration = sample('signup');
+  assert.equal(
+    registration.querySelector('[role="tablist"]'),
+    null,
+    'Un proceso secuencial muestra pasos',
+  );
+  assert.equal(
+    registration.querySelector('[aria-current="step"]').parentElement.textContent,
+    '1Cuenta',
+  );
+  for (const field of sample('inspector', 'disabled').querySelectorAll('[role="textbox"]')) {
+    assert.equal(field.getAttribute('aria-readonly'), 'true');
+    assert.equal(field.getAttribute('aria-disabled'), 'false');
+  }
+  for (const id of ['composer', 'chat', 'chat-app', 'support-workspace']) {
+    for (const action of sample(id).querySelectorAll('.icon-action'))
+      assert.ok(
+        action.getAttribute('aria-label')?.length > 4,
+        'Los iconos conservan un nombre de acción',
+      );
+  }
+  const agenda = sample('calendar-app');
+  assert.equal(agenda.querySelectorAll('.agenda-event').length, 2);
+  assert.match(agenda.querySelector('.agenda-event').textContent, /10:00.*Revisión/s);
+  assert.equal(agenda.querySelector('.agenda-list .person-row'), null);
+  assert.match(sample('invitation').textContent, /invita a colaborar.*Tu acceso.*Editor/s);
+  assert.ok(sample('search-results').querySelector('.pagination [aria-current="page"]'));
+});
+
 test('BLF-ANATOMY-01: marcar, enfocar y deshabilitar conserva el valor y rechaza focos imposibles', () => {
   for (const id of ['checkbox', 'radio', 'switch']) {
     const item = entry(id);

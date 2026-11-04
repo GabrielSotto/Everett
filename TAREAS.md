@@ -63,12 +63,19 @@ Valor, foco y disponibilidad se combinan sin borrar la selección ni admitir est
 Cada muestra permite revisar su ancho y regla de composición; las interfaces permiten cambiar
 el título. Reserva móvil, gestión de registros y conversación con panel reutilizan estas piezas.
 
-`npm run test:design` cubre 30 casos BLF-STATE-01–19 y BLF-ANATOMY-01–11: 1266 combinaciones
+La revisión de rótulos corrige el envío por icono y la cabecera propia de conversación; la
+búsqueda queda en la lista de conversaciones. Paneles, pasos y navegación conservan palabras
+completas al estrecharse. La adaptación usa el ancho de la composición. Registro, agenda,
+invitación e inspector utilizan controles y contenido correspondientes a su tarea.
+
+`npm run test:design` cubre 32 casos BLF-STATE-01–19 y BLF-ANATOMY-01–13: 1266 combinaciones
 de muestra/variante/estado/datos y 488 combinaciones adicionales de estados y función.
-`npm run test:design:browser` añade cinco recorridos desde controles visibles y 2030
+`npm run test:design:browser` añade seis recorridos desde controles visibles y 2132
 representaciones con geometría y recursos, a 1440/320 px, texto al 200 % y anchos propios
-mínimos/máximos. Los contraejemplos detectan pérdida de valor, calendario incompleto y piezas
-desancladas. Las capturas se revisan además de las aserciones; el gate no equipara geometría
+mínimos, intermedios y máximos, más resize por los puntos de cambio. Comprueba palabras completas
+y contenido dentro de su control. Los contraejemplos detectan pérdida de valor, calendario
+incompleto, piezas desancladas, palabras partidas y controles de chat fuera de contexto.
+Las capturas se revisan además de las aserciones; el gate no equipara geometría
 válida con calidad visual. Tipado y formato correctos. La última salida e identidad de fuentes
 permanecen en `output/pruebas/diseno/`.
 La biblioteca continúa pendiente de aprobación e integración; estas pruebas no certifican

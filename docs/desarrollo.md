@@ -97,8 +97,10 @@ y activan todas las herramientas para comprobar que esas alteraciones fallen.
 Con Vite activo, `npm run test:design:browser` ejecuta `tests/design/browser.spec.mjs` en un contexto
 aislado. Usa el catálogo de 4173; `EVERETT_DESIGN_URL` admite otro puerto local con la misma ruta.
 Contrasta estilos calculados, carga de imágenes y geometría a 320 px con texto al 200 %, datos
-extensos, estados, variantes y límites de tamaño por muestra. Comprueba las acciones de revisión,
-selección conservada y un desplazamiento adverso de una pieza. Las tablas, pestañas y calendarios
+extensos, estados, variantes y límites de tamaño por muestra. Recorre anchos intermedios y puntos
+de cambio; comprueba palabras completas y texto contenido en los controles. Comprueba las acciones
+de revisión, selección conservada y contraejemplos de desplazamiento y palabras partidas.
+Las tablas, pestañas y calendarios
 pueden desplazar su contenido sin desbordar su región; Recorte ilustra una máscara deliberada.
 Conservar la última salida de ambos comandos, hashes y capturas en `output/pruebas/diseno/`.
 La ausencia de desbordamiento no acredita la pertinencia de un estado: revisar también qué parte

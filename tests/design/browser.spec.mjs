@@ -89,6 +89,31 @@ async function geometry() {
         if (range.getBoundingClientRect().width > cell.getBoundingClientRect().width - 2)
           failures.push(card.dataset.id + ': dígitos de calendario solapados');
       }
+      // Encajar en la muestra no basta: el texto de una acción debe conservar palabras
+      // completas dentro del propio control, también en composiciones anidadas.
+      if (document.body.classList.contains('labels'))
+        for (const label of sample.querySelectorAll(
+          '.wf-btn .label, .nav-row .label, .demo-tabs .label, .bottom-navigation .label, .choice-list .label, .menu-bar-scene .demo-toolbar .label, .steps .label, .chip-demo .label, .wf-badge .label, .segmented-demo .label, .demo-heading .label',
+        )) {
+          const node = label.firstChild;
+          if (!node || node.nodeType !== Node.TEXT_NODE || !label.getBoundingClientRect().height)
+            continue;
+          for (const match of node.textContent.matchAll(/[\p{L}\p{M}]+/gu)) {
+            const range = document.createRange();
+            range.setStart(node, match.index);
+            range.setEnd(node, match.index + match[0].length);
+            const lines = new Set([...range.getClientRects()].map((rect) => Math.round(rect.top)));
+            if (lines.size > 1) failures.push(`${card.dataset.id}: palabra partida «${match[0]}»`);
+            const text = range.getBoundingClientRect();
+            const control =
+              label.closest(
+                '.wf-btn, .nav-row, [role="tab"], .bottom-navigation > span, [role="menuitem"], .chip-demo, .wf-badge',
+              ) ?? label;
+            const box = control.getBoundingClientRect();
+            if (text.left < box.left - 1 || text.right > box.right + 1)
+              failures.push(`${card.dataset.id}: rótulo fuera de su control «${match[0]}»`);
+          }
+        }
     }
     return [...new Set(failures)];
   });
@@ -209,7 +234,11 @@ test(
         for (const item of entries) {
           const details = card(item.id).locator('.composition-review');
           if (!(await details.evaluate((el) => el.open))) await details.locator('summary').click();
-          for (const size of [item.layout.minWidth, item.layout.maxWidth]) {
+          for (const size of [
+            item.layout.minWidth,
+            Math.round((item.layout.minWidth + item.layout.width) / 2),
+            item.layout.maxWidth,
+          ]) {
             await card(item.id).locator('[data-width]').fill(String(size));
             await settledGeometry();
             scenarios++;
@@ -297,4 +326,63 @@ test('BLF-BROWSER-05: accesorios, acciones y modalidad conservan su contexto', a
   await state('chip', 'focus');
   await capture('chip', 'filter-chip');
   await settledGeometry();
+});
+
+test('BLF-BROWSER-06: rótulos íntegros durante resize y chats con envío por icono', async () => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.locator('[data-family="workspace"]').click();
+  await page.locator('#state-filter').selectOption('default');
+  await page.locator('#data-filter').selectOption('demo');
+  await card('split-pane').locator('summary').click();
+  // Cruza los puntos de cambio, no solamente los extremos declarados.
+  for (const width of [720, 650, 640, 520, 510, 420, 360, 350, 320, 280, 240, 400, 720]) {
+    await card('split-pane').locator('[data-width]').fill(String(width));
+    await settledGeometry();
+    assert.equal(await card('split-pane').locator('.nav-row .label').count(), 4);
+    for (const label of await card('split-pane').locator('.nav-row .label').all())
+      assert.ok(await label.isVisible(), 'El resize conserva los destinos de navegación');
+  }
+  await card('split-pane').locator('[data-width]').fill('320');
+  await capture('split-pane', 'split-labels-narrow');
+
+  // Un elemento contenido puede seguir siendo ilegible: reproducir la palabra partida.
+  const badWrapping = await page.addStyleTag({
+    content: `
+    [data-id="split-pane"] .nav-row { width: 48px; }
+    [data-id="split-pane"] .nav-row .label { overflow-wrap: anywhere; }
+  `,
+  });
+  assert.ok((await geometry()).some((f) => f.includes('palabra partida')));
+  await badWrapping.evaluate((el) => el.remove());
+  await settledGeometry();
+
+  for (const id of ['composer', 'chat']) {
+    for (const value of ['default', 'loading', 'error']) {
+      await state(id, value);
+      const send = card(id).locator('.composer-send [role="button"]');
+      assert.match(await send.getAttribute('aria-label'), /Envia[rn].*mensaje/);
+      assert.equal(await send.locator('.label').count(), 0);
+      const size = await send.boundingBox();
+      assert.ok(
+        Math.abs(size.width - size.height) < 1 && size.width >= 32,
+        `${id}/${value}: envío ${size.width} × ${size.height}`,
+      );
+      assert.match(await card(id).locator('.composer-draft').innerText(), /propuesta/);
+      await settledGeometry();
+    }
+    await state(id, 'default');
+  }
+  await capture('chat', 'chat-context');
+  await page.locator('[data-family="screens"]').click();
+  await card('chat-app').locator('summary').click();
+  await card('chat-app').locator('[data-width]').fill('1000');
+  await capture('chat-app', 'messaging-labels-wide');
+  await card('chat-app').locator('[data-width]').fill('320');
+  await settledGeometry();
+  await capture('chat-app', 'messaging-labels-narrow');
+  await page.locator('[data-text="bars"]').click();
+  await settledGeometry();
+  assert.equal(await card('chat-app').locator('.composer-send .icon').count(), 1);
+  await capture('chat-app', 'messaging-bars');
+  await page.locator('[data-text="labels"]').click();
 });

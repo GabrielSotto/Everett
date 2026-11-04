@@ -17,9 +17,7 @@ import {
   media,
   mark,
   toggle,
-  row,
   empty,
-  list,
   toolbar,
   sidebar,
   tabs,
@@ -27,6 +25,7 @@ import {
   chart,
   card,
   chat,
+  conversations,
   inspector,
   screen,
   components,
@@ -633,7 +632,7 @@ work(
   'Paneles divididos',
   'Contenedores + divisor + contenido',
   (c) =>
-    `<div class="split-demo">${sidebar(c)}<i class="split-handle"></i><div class="grow stack">${toolbar(c, true)}${card(c)}</div></div>`,
+    `<div class="split-demo">${sidebar(c)}<i class="split-handle"></i><div class="grow stack">${toolbar(c, c.d.file)}${card(c)}</div></div>`,
   'split panes divisor',
 );
 work(
@@ -684,7 +683,7 @@ full(
   (c) =>
     screen(
       c.reviewTitle ?? 'Crear cuenta',
-      `${tabs(['Cuenta', 'Perfil', 'Confirmar'])}${field('Nombre', c.d.person)}${field('Correo', c.d.email)}${field('Contraseña', '••••••••', 'eye')}${btn('Continuar', 'primary')}`,
+      `${components.steps({ ...c, stepIndex: 0 })}${field('Nombre', c.d.person)}${field('Correo', c.d.email)}${field('Contraseña', '••••••••', 'eye')}${btn('Continuar', 'primary')}`,
     ),
   'onboarding formulario',
 );
@@ -695,7 +694,7 @@ full(
   (c) =>
     screen(
       c.reviewTitle ?? 'Invitación',
-      `${avatar()}<div class="demo-heading">${t('Te invitaron a ' + c.d.title)}</div>${paragraph(c)}${row(c)}<div class="demo-row wrap">${btn('Ahora no')}${btn('Aceptar invitación', 'primary')}</div>`,
+      `${avatar()}<div class="demo-heading">${t('Te invitaron a ' + c.d.title)}</div><p>${t(c.d.person + ' te invita a colaborar en este espacio.')}</p>${field('Tu acceso', 'Editor: podés crear y modificar materiales', '', 'readonly')}<div class="demo-row wrap">${btn('Ahora no')}${btn('Aceptar invitación', 'primary')}</div>`,
     ),
   'equipo',
 );
@@ -717,7 +716,7 @@ full(
   (c) =>
     screen(
       c.reviewTitle ?? 'Mensajería',
-      `<div class="workspace-layout"><div class="conversation-list">${field('Buscar', 'Conversaciones', 'magnifying-glass')}${list(c, 3)}</div><div class="grow">${chat(c)}</div></div>`,
+      `<div class="workspace-layout">${conversations(c)}<div class="grow">${chat(c)}</div></div>`,
     ),
   'chat conversaciones',
 );
@@ -739,7 +738,7 @@ full(
   (c) =>
     screen(
       c.reviewTitle ?? 'Explorar referencias',
-      `${field('Buscar', c.d.row, 'magnifying-glass')}${tabs(['Todo', 'Imágenes', 'Documentos'])}<div class="demo-row wrap">${badge('Diseño')}${badge('Recientes')}${badge('Mi equipo')}</div><div class="gallery-grid">${card(c, true)}${card({ ...c, d: { ...c.d, title: 'Otra referencia' } }, true)}</div>`,
+      `${field('Buscar', c.d.row, 'magnifying-glass')}${tabs(['Todo', 'Imágenes', 'Documentos'])}<div class="demo-row wrap">${badge('Diseño')}${badge('Recientes')}${badge('Mi equipo')}</div><div class="gallery-grid">${card(c, true)}${card({ ...c, d: { ...c.d, title: 'Otra referencia' } }, true)}</div>${components.pagination({ ...c, state: 'default', states: [] })}`,
     ),
   'buscador catálogo ecommerce resultados',
 );
@@ -772,7 +771,7 @@ full(
   (c) =>
     screen(
       c.reviewTitle ?? 'Agenda',
-      `${toolbar(c)}<div class="workspace-layout"><div class="grow">${calendar({ ...c, state: 'selected', states: ['selected'], variant: 'single' })}</div><div class="agenda-list"><strong>${t('Próximos eventos')}</strong>${list(c, 2)}</div></div>`,
+      `${toolbar(c, 'Agenda del equipo')}<div class="workspace-layout"><div class="grow">${calendar({ ...c, state: 'selected', states: ['selected'], variant: 'single' })}</div><div class="agenda-list"><strong>${t('10 de noviembre')}</strong><div class="demo-list">${(c.data === 'one' ? ['Revisión de ' + c.d.title] : ['Revisión de ' + c.d.title, 'Planificación del equipo']).map((title, i) => `<div class="agenda-event"><span class="event-time">${t(i === 0 ? '10:00' : '14:30')}</span><div class="grow"><strong>${t(title)}</strong><small>${t(i === 0 ? 'Con ' + c.d.person : '30 min · Sala de reuniones')}</small></div></div>`).join('')}</div></div></div>`,
     ),
   'calendario planner agenda',
 );
@@ -805,7 +804,7 @@ full(
   (c) =>
     screen(
       c.reviewTitle ?? 'Consulta del equipo',
-      `<div class="support-layout"><div class="grow">${chat(c)}</div><div class="support-details stack"><strong>${t('Detalle del caso')}</strong>${components.identity({ ...c, state: 'default', states: [] })}${field('Asunto', c.d.title, '', 'readonly')}${components.list({ ...c, state: 'default', states: [], variant: 'two-lines', options: { accessory: 'disclosure' } })}</div></div>`,
+      `<div class="support-layout"><div class="grow">${chat(c)}</div><div class="support-details stack"><strong>${t('Detalle del caso')}</strong>${components.identity({ ...c, state: 'default', states: [] })}${field('Asunto', c.d.title, '', 'readonly')}<strong>${t('Participantes')}</strong>${components.list({ ...c, state: 'default', states: [], variant: 'one-line', options: { accessory: 'disclosure' } })}</div></div>`,
     ),
   'chat soporte panel errores',
 );

@@ -42,8 +42,32 @@ export const btn = (
   action = 'normal',
 ) =>
   `<div class="wf-btn interactive-part ${variant} ${modifiers(state)} ${has(state, 'loading') ? 'is-busy' : ''}" data-action="${action}" ${action === 'toggle' ? `aria-pressed="${has(state, 'selected')}"` : ''} role="button" aria-disabled="${has(state, 'disabled') || has(state, 'loading')}" ${has(state, 'loading') ? 'aria-busy="true"' : ''} data-part="fondo">${has(state, 'loading') ? spinner() : glyph ? ico(glyph) : ''}${t(has(state, 'loading') ? 'Procesando…' : v)}</div>`;
-export const act = (glyph, selected = false, state = 'default', toggleable = selected) =>
-  `<span class="icon-action interactive-part ${selected ? 'is-active' : ''} ${modifiers(state)}" role="button" aria-label="${esc(glyph)}" aria-disabled="${has(state, 'disabled')}" ${toggleable ? `aria-pressed="${selected}"` : ''} data-part="fondo">${ico(glyph)}</span>`;
+const actionNames = {
+  'arrow-left': 'Volver',
+  'arrow-right': 'Siguiente',
+  'arrow-up': 'Subir',
+  'magnifying-glass': 'Buscar',
+  'dots-three': 'Más opciones',
+  'pencil-simple': 'Dibujar',
+  rows: 'Organizar',
+  copy: 'Copiar',
+  link: 'Copiar enlace',
+  minus: 'Reducir',
+  plus: 'Agregar',
+  paperclip: 'Adjuntar archivo',
+  x: 'Cerrar',
+  play: 'Reproducir',
+  'sliders-horizontal': 'Ajustar propiedades',
+  'squares-four': 'Distribuir',
+};
+export const act = (
+  glyph,
+  selected = false,
+  state = 'default',
+  toggleable = selected,
+  label = actionNames[glyph] ?? glyph,
+) =>
+  `<span class="icon-action interactive-part ${selected ? 'is-active' : ''} ${modifiers(state)}" role="button" aria-label="${esc(label)}" title="${esc(label)}" aria-disabled="${has(state, 'disabled') || has(state, 'loading')}" ${has(state, 'loading') ? 'aria-busy="true"' : ''} ${toggleable ? `aria-pressed="${selected}"` : ''} data-part="fondo">${has(state, 'loading') ? spinner() : ico(glyph)}</span>`;
 export const badge = (v) => `<span class="wf-badge" data-part="fondo">${t(v)}</span>`;
 export const field = (name, value, glyph = '', state = 'default', help, adornments = {}) =>
   `<div class="wf-field"><div class="wf-label">${t(name)}</div><div class="wf-input interactive-part ${modifiers(state)} ${has(state, 'error') ? 'is-error' : ''}" role="textbox" aria-readonly="${has(state, 'readonly')}" aria-disabled="${has(state, 'disabled')}" aria-invalid="${has(state, 'error')}" ${has(state, 'loading') ? 'aria-busy="true"' : ''} data-part="contenedor">${adornments.prefix ? `<span class="field-affix" data-affix="prefix">${t(adornments.prefix)}</span>` : ''}<span class="field-value">${t(has(state, 'empty') ? 'Escribí acá…' : value)}</span>${adornments.suffix ? `<span class="field-affix" data-affix="suffix">${t(adornments.suffix)}</span>` : ''}${has(state, 'loading') ? spinner() : glyph ? ico(glyph) : ''}</div>${has(state, 'error') || has(state, 'success') ? `<small class="field-help">${ico(has(state, 'error') ? 'warning-circle' : 'check-circle')}<span>${esc(help ?? (has(state, 'error') ? 'Revisá este campo' : 'Dato válido'))}</span></small>` : ''}</div>`;
@@ -70,8 +94,8 @@ export const list = (c, count = 3) => {
       : rows.join('');
   return `<div class="demo-list">${is(c, 'loading') ? loading('Cargando elementos…') : is(c, 'empty') ? empty(c, 'elementos') : is(c, 'error') ? fail('No se pudieron cargar los elementos.') : content}</div>`;
 };
-export const toolbar = (c, compact = false) =>
-  `<div class="demo-toolbar" data-part="contenedor">${act('arrow-left')}<div class="grow">${t(compact ? 'Documento' : c.d.title)}</div>${act('magnifying-glass')}${act('dots-three')}</div>`;
+export const toolbar = (c, title = c.d.title) =>
+  `<div class="demo-toolbar" data-part="contenedor">${act('arrow-left')}<div class="grow">${t(title)}</div>${act('magnifying-glass')}${act('dots-three')}</div>`;
 export const sidebar = (c, compact = false) =>
   `<div class="demo-sidebar" data-part="contenedor">${['Resumen', 'Materiales', 'Actividad', 'Equipo'].map((v, i) => `<div class="nav-row ${i === 0 ? 'is-active' : ''} ${i === 1 && is(c, 'focus') ? 'is-focused' : ''} ${i === 3 && is(c, 'disabled') ? 'is-disabled' : ''}" role="link" ${i === 0 ? 'aria-current="page"' : ''} aria-disabled="${i === 3 && is(c, 'disabled')}">${ico(['squares-four', 'folder', 'bell', 'user'][i])}${compact ? '' : t(v)}</div>`).join('')}</div>`;
 export const tabs = (names = ['Resumen', 'Actividad', 'Equipo'], selected = 0, c = {}) =>
@@ -90,13 +114,15 @@ const imageRegion = (c) =>
 export const card = (c, picture = false) =>
   `<div class="wf-card ${is(c, 'selected') ? 'is-selected' : ''}" ${is(c, 'selected') ? 'aria-selected="true"' : ''} data-part="contenedor">${picture ? imageRegion(c) : ''}<strong>${t(c.d.title)}</strong>${is(c, 'loading') ? (picture ? '' : loading('Cargando contenido…')) : is(c, 'empty') ? empty(c, 'contenido') : is(c, 'error') ? (picture ? '' : fail('No se pudo cargar el contenido de la tarjeta.')) : paragraph(c)}<div class="demo-row wrap">${badge('Borrador')}${btn('Ver detalle', '', '', is(c, 'loading') ? 'disabled' : 'default')}</div></div>`;
 export const composer = (c) =>
-  `<div class="composer" data-part="contenedor"><div class="composer-draft ${is(c, 'focus') ? 'is-focused' : ''}" role="textbox">${t(c.d.message)}</div><div class="demo-row">${act('plus')}${act('paperclip')}<span class="grow"></span><span class="composer-send" aria-disabled="${['disabled', 'loading'].includes(c.state)}">${btn('Enviar', 'primary', 'paper-plane-tilt', ['loading', 'disabled'].includes(c.state) ? c.state : 'default')}</span></div>${is(c, 'error') ? '<small class="field-help">No se pudo enviar el mensaje. Conservá el borrador y reintentá con Enviar.</small>' : ''}</div>`;
+  `<div class="composer" data-part="contenedor"><div class="composer-draft ${is(c, 'focus') ? 'is-focused' : ''}" role="textbox" aria-label="Mensaje" aria-multiline="true">${t(c.d.message)}</div><div class="demo-row">${act('paperclip')}<span class="grow"></span><span class="composer-send" aria-disabled="${is(c, 'disabled') || is(c, 'loading')}">${act('paper-plane-tilt', false, is(c, 'loading') ? 'loading' : is(c, 'disabled') ? 'disabled' : 'default', false, is(c, 'loading') ? 'Enviando mensaje' : 'Enviar mensaje')}</span></div>${is(c, 'error') ? '<small class="field-help">No se pudo enviar. El borrador se conserva; podés reintentar.</small>' : ''}</div>`;
 const message = (c, own = false) =>
   `<div class="chat-line ${own ? 'own' : ''}">${own ? '' : avatar()}<div class="bubble ${own ? 'own' : ''}">${t(own ? 'Lo reviso y te comparto mis observaciones.' : c.d.message)}${own && is(c, 'error') ? '<small class="message-status">No enviado <span role="button" data-ui="retry">Reintentar</span></small>' : ''}</div></div>`;
 export const chat = (c) =>
-  `<div class="chat-window" data-part="contenedor">${toolbar(c, true)}<div class="chat-history">${is(c, 'loading') ? loading('Cargando mensajes anteriores…') : ''}${is(c, 'empty') ? empty(c, 'mensajes') : message(c) + message(c, true)}</div>${composer({ ...c, states: undefined, state: 'default' })}</div>`;
+  `<div class="chat-window" data-part="contenedor"><div class="chat-header" data-part="contenedor">${avatar()}<div class="grow"><strong>${t(c.d.person)}</strong><small>${t('Conversación directa')}</small></div>${act('dots-three', false, 'default', false, 'Opciones de la conversación')}</div><div class="chat-history">${is(c, 'loading') ? loading('Cargando mensajes anteriores…') : ''}${is(c, 'empty') ? `<div class="chat-empty">${t('Todavía no hay mensajes')}${t('Escribí el primero para iniciar la conversación.')}</div>` : message(c) + message(c, true)}</div>${composer({ ...c, states: undefined, state: 'default' })}</div>`;
+export const conversations = (c) =>
+  `<div class="conversation-list"><strong>${t('Conversaciones')}</strong>${field('Buscar conversaciones', 'Buscar por nombre', 'magnifying-glass')}<div class="conversation-items">${(c.data === 'one' ? [c.d.person] : [c.d.person, 'Equipo de diseño', 'Jo']).map((name, i) => `<div class="conversation-row ${i === 0 ? 'is-selected' : ''}" role="link" ${i === 0 ? 'aria-current="page"' : ''}>${avatar()}<div class="grow"><strong>${t(name)}</strong><small>${t(i === 0 ? c.d.message : i === 1 ? 'Compartió una referencia' : 'Gracias, nos vemos mañana.')}</small></div></div>`).join('')}</div></div>`;
 export const inspector = (c) =>
-  `<div class="demo-inspector" data-part="contenedor"><div class="demo-row"><strong>${t('Propiedades')}</strong><span class="grow"></span>${act('dots-three')}</div>${tabs(['Diseño', 'Opciones'])}${is(c, 'empty') ? `<div class="wf-empty">${ico('sliders-horizontal')}${t('Seleccioná un elemento para ver sus propiedades')}</div>` : `<div class="property-section"><small>${t(is(c, 'disabled') ? 'Solo lectura' : 'Posición y tamaño')}</small><div class="property-grid">${field('X', '24')}${field('Y', '32')}${field('Ancho', '320')}${field('Alto', '180')}</div></div><div class="property-section">${t('Alineación')}<div class="demo-row">${['rows', 'squares-four', 'sliders-horizontal'].map((glyph) => act(glyph, false, is(c, 'disabled') ? 'disabled' : 'default')).join('')}</div></div><div class="property-section">${field('Radio de esquina', '8')}${field('Relleno', '#FFFFFF')}${field('Opacidad', '100 %')}</div>`}</div>`;
+  `<div class="demo-inspector" data-part="contenedor"><div class="demo-row"><strong>${t('Propiedades')}</strong><span class="grow"></span>${act('dots-three')}</div>${tabs(['Diseño', 'Opciones'])}${is(c, 'empty') ? `<div class="wf-empty">${ico('sliders-horizontal')}${t('Seleccioná un elemento para ver sus propiedades')}</div>` : `<div class="property-section"><small>${t(is(c, 'disabled') ? 'Solo lectura' : 'Posición y tamaño')}</small><div class="property-grid">${field('X', '24', '', is(c, 'disabled') ? 'readonly' : 'default')}${field('Y', '32', '', is(c, 'disabled') ? 'readonly' : 'default')}${field('Ancho', '320', '', is(c, 'disabled') ? 'readonly' : 'default')}${field('Alto', '180', '', is(c, 'disabled') ? 'readonly' : 'default')}</div></div><div class="property-section">${t('Alineación')}<div class="demo-row">${['rows', 'squares-four', 'sliders-horizontal'].map((glyph) => act(glyph, false, is(c, 'disabled') ? 'disabled' : 'default')).join('')}</div></div><div class="property-section">${field('Radio de esquina', '8', '', is(c, 'disabled') ? 'readonly' : 'default')}${field('Relleno', '#FFFFFF', '', is(c, 'disabled') ? 'readonly' : 'default')}${field('Opacidad', '100 %', '', is(c, 'disabled') ? 'readonly' : 'default')}</div>`}</div>`;
 export const carousel = (c) =>
   `<div class="carousel"><div class="carousel-slide">${is(c, 'empty') ? empty(c, 'imágenes') : imageRegion(c)}${!is(c, 'empty') ? `<span class="carousel-prev">${act('arrow-left', false, is(c, 'loading') ? 'disabled' : 'default')}</span><span class="carousel-next">${act('arrow-right', false, is(c, 'loading') ? 'disabled' : 'default')}</span>` : ''}</div>${is(c, 'empty') ? '' : `<div class="pagination-dots">${[0, 1, 2, 3].map((i) => `<i class="${i === 0 ? 'current' : ''}" data-part="punto"></i>`).join('')}</div>`}</div>`;
 export const modal = (c) => {
@@ -161,8 +187,8 @@ const tree = (c) =>
 const steps = (c) =>
   `<div class="steps">${['Cuenta', 'Perfil', 'Confirmar']
     .map((v, i) => {
-      const complete = is(c, 'success') || i === 0;
-      const current = !is(c, 'success') && i === 1;
+      const complete = is(c, 'success') || i < (c.stepIndex ?? 1);
+      const current = !is(c, 'success') && i === (c.stepIndex ?? 1);
       return `<div class="${current && is(c, 'error') ? 'step-error' : ''}"><span class="${complete ? 'is-complete' : current ? 'is-current' : ''}" ${current ? 'aria-current="step"' : ''}>${complete ? ico('check') : current && is(c, 'error') ? ico('warning-circle') : i + 1}</span>${t(v)}</div>`;
     })
     .join(
@@ -319,7 +345,7 @@ export const components = {
   list,
   table,
   'data-grid': (c) =>
-    `<div class="data-grid-demo">${c.embedded ? '' : toolbar(c, true)}${tabs(['Todo', 'Pendientes'])}${table(c)}<div class="table-footer">${t(is(c, 'loading') ? 'Recuento pendiente' : is(c, 'empty') ? '0 registros' : c.d.count + (c.data === 'one' ? ' registro' : ' registros'))}${act('arrow-right', false, ['loading', 'empty'].includes(c.state) ? 'disabled' : 'default')}</div></div>`,
+    `<div class="data-grid-demo">${c.embedded ? '' : toolbar(c, 'Materiales')}${tabs(['Todo', 'Pendientes'])}${table(c)}<div class="table-footer">${t(is(c, 'loading') ? 'Recuento pendiente' : is(c, 'empty') ? '0 registros' : c.d.count + (c.data === 'one' ? ' registro' : ' registros'))}${act('arrow-right', false, ['loading', 'empty'].includes(c.state) ? 'disabled' : 'default')}</div></div>`,
   identity: (c) =>
     `<div class="person-row"><span class="wf-avatar ${c.variant === 'online' ? 'has-presence' : ''}" data-part="máscara">${is(c, 'loading') ? spinner() : ico('user')}</span><div class="grow">${t(c.d.person)}<small>${t(c.d.email)}</small></div></div>`,
   tags: (c) =>
@@ -346,16 +372,11 @@ export const components = {
     `<div class="chat-line">${avatar()}<div class="bubble">${t(c.d.message)}<small class="message-status">${is(c, 'loading') ? spinner() + ' Enviando…' : is(c, 'error') ? 'No enviado <span role="button" data-ui="retry">Reintentar</span>' : 'Enviado · 11:42'}</small></div></div>`,
   chat,
   composer,
-  inspector: (c) => {
-    const body = inspector(c);
-    return is(c, 'disabled')
-      ? body.replaceAll('role="textbox"', 'role="textbox" aria-readonly="true"')
-      : body;
-  },
+  inspector,
   'command-palette': (c) =>
     `<div class="command-demo">${field('Buscar acciones', is(c, 'empty') ? 'Exportar plano orbital' : 'Buscar una acción…', 'magnifying-glass')}<small>${t('Acciones disponibles')}</small><div class="choice-list">${is(c, 'empty') ? empty(c, 'coincidencias') : ['Crear documento', 'Incorporar material', 'Abrir configuración'].map((v, i) => `<div class="${is(c, 'focus') && i === 1 ? 'is-focused' : ''}">${ico(['file', 'plus', 'gear-six'][i])}${t(v)}<kbd>↵</kbd></div>`).join('')}</div></div>`,
   'file-browser': (c) =>
-    `<div class="split-demo">${sidebar({ ...c, states: undefined, state: 'default' }, true)}<div class="grow stack">${toolbar(c, true)}${table(c)}</div></div>`,
+    `<div class="split-demo">${sidebar({ ...c, states: undefined, state: 'default' }, true)}<div class="grow stack">${toolbar(c, 'Archivos')}${table(c)}</div></div>`,
   'filter-panel': (c) =>
     `<div class="filter-demo">${field('Estado', c.variant === 'applied' ? 'Pendientes' : 'Todos', 'caret-down')}${field('Equipo', c.variant === 'applied' ? c.d.person : 'Todos los equipos', 'caret-down')}<div class="demo-row">${mark(c.variant === 'applied')}${t('Solo pendientes')}</div>${c.variant === 'applied' ? badge('2 filtros aplicados') : ''}<div class="demo-row wrap">${btn('Limpiar', '', '', c.variant === 'applied' ? 'default' : 'disabled')}${btn('Aplicar filtros', 'primary', '', is(c, 'disabled') ? 'disabled' : 'default')}</div></div>`,
   accordion: (c) =>
