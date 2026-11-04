@@ -29,6 +29,7 @@ test(
     try {
       for (const path of [
         'src',
+        'design/wireframe-library',
         'scripts',
         'index.html',
         'package.json',
@@ -70,6 +71,9 @@ test(
       assert.doesNotMatch(html, /\{\{BUILD_ID\}\}|EVERETT_SCRIPT/);
       await assert.rejects(readFile(resolve(fixture, 'dist/build-manifest.json')), /ENOENT/);
       const identity = await developmentIdentity(fixture);
+      assert.ok(
+        identity.sourceHashes.some((entry) => entry.path === 'design/wireframe-library/samples.js'),
+      );
       await verifyServedDevelopment(url, identity);
       const duplicate = await createServer({
         ...config,

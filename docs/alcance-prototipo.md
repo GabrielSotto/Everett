@@ -483,8 +483,10 @@ campos deben conservar acceso a sus partes gráficas. Probar la suficiencia de l
 login, inicio, invitaciones, alertas, mensajes, diálogos, overlays, composers y paneles.
 
 Evaluar catálogos, código y recursos MIT o Apache-2.0 antes de dibujar o implementar piezas desde
-cero; verificar por separado la licencia de código, iconos y otros activos. La biblioteca visual
-concreta permanece en diseño. Los ejemplos compuestos sirven para revisar su calidad y cobertura;
+cero; verificar por separado la licencia de código, iconos y otros activos. El 4 de noviembre de
+2026 el usuario aprobó incorporar la biblioteca visual al Canvas. Sus definiciones compartidas
+producen composiciones de piezas editables, con variantes, estados y rótulos opcionales. Los
+ejemplos compuestos sirven también para revisar su calidad y cobertura;
 no implican formularios funcionales, generación de código ni responsive automático. El alcance
 continúa limitado a bosquejos y wireframes de baja fidelidad; media y alta se planificarán después.
 

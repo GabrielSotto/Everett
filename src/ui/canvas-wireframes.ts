@@ -10,6 +10,7 @@ import { frameCanvas } from './canvas-frame';
 import { wireframeMarkup } from '../features/canvas/wireframe-markup';
 import type { Point } from '../domain/model';
 import { isWireframeComposition, wireframeComposition } from '../domain/wireframe-compositions';
+import { entries } from '../../design/wireframe-library/samples.js';
 
 export function wireframePalette(): string {
   const drawings: Record<WireframeKind, string> = {
@@ -30,7 +31,7 @@ export function wireframePalette(): string {
   };
   const item = (kind: WireframeKind) =>
     `<button type="button" role="menuitem" data-action="wireframe-add" data-kind="${kind}" aria-label="Agregar ${wireframeNames[kind].toLocaleLowerCase()}"><svg viewBox="0 0 52 38" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">${drawings[kind]}</svg><span>${wireframeNames[kind]}</span></button>`;
-  return `<small class="canvas-actions-heading">Piezas</small><div class="wireframe-palette">${wireframeKinds
+  return `<button type="button" role="menuitem" data-action="sketch-library">Biblioteca de componentes · ${entries.length} piezas y composiciones</button><small class="canvas-actions-heading">Piezas rápidas</small><div class="wireframe-palette">${wireframeKinds
     .filter((kind) => !isWireframeComposition(kind))
     .map(item)
     .join(

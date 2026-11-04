@@ -975,7 +975,7 @@ export class CanvasView implements View {
       if (element) {
         this.applyRect(element, d.rect);
         if (material?.data.kind === 'wireframe') {
-          const preview = element.querySelector('.wireframe-content');
+          const preview = element.querySelector('.wireframe-content,[data-library-piece]');
           if (preview) preview.outerHTML = wireframeMarkup({ ...material, ...d.rect });
         }
       }

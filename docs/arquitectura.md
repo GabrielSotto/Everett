@@ -47,6 +47,12 @@ Las conversaciones locales ordenan iniciador, agente y personas invitadas. `huma
 
 ## Navegación y presentación
 
+La biblioteca de bosquejos comparte sus definiciones de `design/wireframe-library/` con Canvas.
+El adaptador de `src/features/canvas/library/` convierte el layout resuelto en partes gráficas
+con estilo permitido, texto y símbolos locales. `src/domain/sketch-library.ts` valida esas
+partes y las materializa como bosquejos independientes dentro de un conjunto. El dominio no
+depende del DOM ni guarda HTML; reutiliza edición, capas, historial y persistencia de materiales.
+
 El dominio conserva ruta y contextos de regreso con sus cámaras. La cámara espacial interpreta los gestos usando los parámetros de `src/spatial/tuning.ts`. Las transiciones animan el cambio ya confirmado y conservan el contexto visual de salida.
 
 Canvas usa límites de cámara propios (1–600 %) sin alterar Universo. `CanvasZoom`, en la cabecera, confirma escalas explícitas y encuadres inmediatamente para persistir el destino exacto; la rueda del Canvas confirma directamente su destino sin cola de interpolación. La lectura del porcentaje se actualiza sin reconstruir el shell por fotograma. El selector de color DOM reúne saturación/brillo, tono, alfa y HEX; sus eventos de teclado no alcanzan los comandos del Canvas. El tamaño flotante del chat pertenece al contexto personal, no al contenido del Mundo. Desacoplar recupera las dimensiones compactas; la altura del panel anclado no las modifica. La lectura limita los tamaños excesivos de guardados anteriores.

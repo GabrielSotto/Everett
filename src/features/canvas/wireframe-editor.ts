@@ -11,6 +11,7 @@ import { icon } from '../../ui/icons';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { wireframeMarkup } from './wireframe-markup';
 import { bindColorPicker } from './color-picker';
+import { sketchSymbols } from '../../domain/sketch-symbols';
 
 /** Listeners locales y observación de tamaño con limpieza al cerrar el formulario. */
 export function bindWireframeEditor(
@@ -44,7 +45,9 @@ export function bindWireframeEditor(
       content.type === 'text' &&
       !content.placeholder &&
       previous?.type === 'text' &&
-      (previous.text !== content.text || previous.placeholder)
+      (previous.text !== content.text ||
+        previous.placeholder ||
+        previous.piece?.style.fontSize !== content.piece?.style.fontSize)
     ) {
       const measure = document.createElement('div');
       Object.assign(measure.style, {
@@ -55,11 +58,18 @@ export function bindWireframeEditor(
         overflowWrap: 'anywhere',
         font: '14px/1.45 Inter, system-ui, sans-serif',
       });
+      if (content.piece)
+        Object.assign(measure.style, {
+          width: original.width + 'px',
+          fontSize: content.piece.style.fontSize,
+          lineHeight: content.piece.style.lineHeight,
+          fontWeight: content.piece.style.fontWeight,
+        });
       measure.textContent = content.text || ' ';
       document.body.append(measure);
       height = Math.min(
         10000,
-        Math.max(32, Math.ceil(measure.getBoundingClientRect().height) + 10),
+        Math.max(24, Math.ceil(measure.getBoundingClientRect().height) + (content.piece ? 0 : 10)),
       );
       measure.remove();
     }
@@ -88,7 +98,7 @@ export function bindWireframeEditor(
       return true;
     }
     const preview = document.querySelector<HTMLElement>(
-      `[data-node="${CSS.escape(id)}"] .wireframe-content`,
+      `[data-node="${CSS.escape(id)}"] :is(.wireframe-content,[data-library-piece])`,
     );
     if (preview) preview.outerHTML = wireframeMarkup(structuredClone(node));
     return true;
@@ -98,7 +108,18 @@ export function bindWireframeEditor(
     if (!node || node.data.kind !== 'wireframe') return;
     const content = node.data.content;
     const holder = form.querySelector('.wireframe-editor-fields')!;
-    if (content.type === 'table') {
+    if (content.piece && content.type !== 'text') {
+      holder.innerHTML = content.piece.symbol
+        ? `<label>Símbolo<select data-piece-symbol aria-label="Símbolo de la pieza">${Object.entries(
+            sketchSymbols,
+          )
+            .map(
+              ([id, name]) =>
+                `<option value="${id}" ${content.piece!.symbol === id ? 'selected' : ''}>${name}</option>`,
+            )
+            .join('')}</select></label>`
+        : '';
+    } else if (content.type === 'table') {
       activeRow = Math.min(activeRow, content.cells.length - 1);
       activeColumn = Math.min(activeColumn, content.cells[0]!.length - 1);
       const remaining =
@@ -133,6 +154,13 @@ export function bindWireframeEditor(
     const settings = form.querySelector<HTMLElement>('.wireframe-settings')!;
     const appearance = wireframeAppearance(content);
     settings.innerHTML = `${content.type !== 'screen' && content.type !== 'table' ? `<label class="wireframe-placeholder-control"><input type="checkbox" data-wireframe-placeholder ${content.placeholder ? 'checked' : ''}>Texto simulado</label>` : ''}<fieldset class="wireframe-dimensions"><legend>Tamaño · px</legend><label>Ancho<input type="number" data-size="width" min="4" max="10000" step="any" value="${node.width}" aria-label="Ancho de la pieza"></label><label>Alto<input type="number" data-size="height" min="4" max="10000" step="any" value="${node.height}" aria-label="Alto de la pieza"></label></fieldset><div class="wireframe-appearance"><label>Radio de esquina · px<input type="number" data-radius min="0" max="10000" step="any" value="${appearance.radius}" aria-label="Radio de esquina"></label><div class="wireframe-color-tools">${(['fill', 'stroke', 'text'] as const).map((field) => `<button type="button" data-wireframe-color="${field}" aria-label="${field === 'fill' ? 'Relleno de la pieza' : field === 'stroke' ? 'Borde de la pieza' : 'Color del texto'}"><span style="background:${appearance[field]}" aria-hidden="true"></span>${field === 'fill' ? 'Relleno' : field === 'stroke' ? 'Borde' : 'Texto'}</button>`).join('')}</div><div class="wireframe-color-panel" hidden></div></div>`;
+    if (content.piece && content.type !== 'text')
+      settings.querySelector('.wireframe-placeholder-control')?.remove();
+    if (content.piece && content.type === 'text')
+      settings.insertAdjacentHTML(
+        'afterbegin',
+        `<fieldset class="wireframe-dimensions"><legend>Tipografía</legend><label>Tamaño<input data-piece-font type="number" min="6" max="200" value="${parseFloat(content.piece.style.fontSize ?? '13')}" aria-label="Tamaño del texto"></label><label>Peso<select data-piece-weight aria-label="Peso del texto">${['400', '500', '600', '700'].map((weight) => `<option value="${weight}" ${content.piece!.style.fontWeight === weight ? 'selected' : ''}>${weight}</option>`).join('')}</select></label></fieldset>`,
+      );
     fitText();
     position();
   };
@@ -176,7 +204,27 @@ export function bindWireframeEditor(
   form.addEventListener('change', (event) => {
     const field = event.target;
     const node = current();
-    if (!(field instanceof HTMLInputElement) || node?.data.kind !== 'wireframe') return;
+    if (
+      !(field instanceof HTMLInputElement || field instanceof HTMLSelectElement) ||
+      node?.data.kind !== 'wireframe'
+    )
+      return;
+    if (
+      node.data.content.piece &&
+      field.matches('[data-piece-symbol],[data-piece-font],[data-piece-weight]')
+    ) {
+      if (!field.reportValidity()) return;
+      const content: WireframeContent = structuredClone(node.data.content);
+      if (field.matches('[data-piece-symbol]')) content.piece!.symbol = field.value;
+      else if (field.matches('[data-piece-weight]')) content.piece!.style.fontWeight = field.value;
+      else {
+        content.piece!.style.fontSize = field.value + 'px';
+        content.piece!.style.lineHeight = Number(field.value) * 1.45 + 'px';
+      }
+      save(content);
+      return;
+    }
+    if (!(field instanceof HTMLInputElement)) return;
     if (field.hasAttribute('data-wireframe-placeholder')) {
       save({ ...node.data.content, placeholder: field.checked });
     } else if (field.dataset.size || field.hasAttribute('data-radius')) {
@@ -380,7 +428,9 @@ export function bindWireframeEditor(
     } else if (
       event.key === 'Enter' &&
       event.target instanceof HTMLInputElement &&
-      (event.target.dataset.size || event.target.hasAttribute('data-radius'))
+      (event.target.dataset.size ||
+        event.target.hasAttribute('data-radius') ||
+        event.target.hasAttribute('data-piece-font'))
     ) {
       event.preventDefault();
       event.target.dispatchEvent(new Event('change', { bubbles: true }));

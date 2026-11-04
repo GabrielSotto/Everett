@@ -1,5 +1,11 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-U50', layer: 'unit', contracts: ['C08-LIBRARY-01'] },
+  ...['C08-B143', 'C08-B144', 'C08-B145', 'C08-B146', 'C08-B147'].map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-LIBRARY-01'],
+  })),
   { id: 'C08-U47', layer: 'unit', contracts: ['C08-ARRANGE-01'] },
   { id: 'C08-U48', layer: 'unit', contracts: ['C08-WIRE-01'] },
   { id: 'C08-U49', layer: 'unit', contracts: ['C08-WIRE-01', 'C08-ORG-01'] },
@@ -283,6 +289,10 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B143': { 'canvas-wireframes': 1, 'sketch-library': 1, 'canvas-undo': 1, 'canvas-redo': 1 },
+  'C08-B144': { 'canvas-wireframes': 1, 'sketch-library': 1 },
+  'C08-B145': { 'canvas-wireframes': 1, 'sketch-library': 1 },
+  'C08-B147': { 'canvas-wireframes': 1, 'sketch-library': 1 },
   'C08-B137': { 'wireframe-add': 1 },
   'C08-B139': { 'selection-spacing': 2 },
   'C08-B140': { 'wireframe-add': 6, 'canvas-undo': 4, 'canvas-redo': 4 },

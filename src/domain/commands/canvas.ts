@@ -11,6 +11,7 @@ import { validLinkPreview } from '../link-previews';
 import { resolveMedia } from '../resolved-media';
 import { validWireframe } from '../wireframes';
 import { compositionKinds, wireframeComposition } from '../wireframe-compositions';
+import { instantiateLibrary, validLibraryComposition } from '../sketch-library';
 
 type CanvasCommand = Extract<
   Command,
@@ -19,6 +20,7 @@ type CanvasCommand = Extract<
       | 'node.create'
       | 'wireframe.edit'
       | 'wireframe.compose'
+      | 'wireframe.library'
       | 'assignment.interrupt'
       | 'assignment.retry'
       | 'node.rename'
@@ -66,6 +68,24 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       'Material inexistente',
     );
   switch (command.type) {
+    case 'wireframe.library': {
+      ensure(
+        validLibraryComposition(command.composition) &&
+          [command.center.x, command.center.y].every(Number.isFinite),
+        'WIREFRAME_CONTENT',
+        'La composición no es válida.',
+      );
+      const result = instantiateLibrary(command.composition, command.id, command.center);
+      ensure(
+        !world.nodes.some((n) => result.nodes.some((part) => part.id === n.id)) &&
+          !world.canvasGroups?.some((g) => g.id === result.group?.id),
+        'WIREFRAME_ID',
+        'La composición ya existe.',
+      );
+      world.nodes.push(...result.nodes);
+      if (result.group) (world.canvasGroups ??= []).push(result.group);
+      break;
+    }
     case 'wireframe.compose': {
       ensure(
         compositionKinds.includes(command.kind) &&

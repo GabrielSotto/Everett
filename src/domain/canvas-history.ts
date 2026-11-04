@@ -43,6 +43,7 @@ const reversible = new Set<Command['type']>([
   'node.local-edit',
   'wireframe.edit',
   'wireframe.compose',
+  'wireframe.library',
   'node.publish',
   'node.style',
   'link.label',

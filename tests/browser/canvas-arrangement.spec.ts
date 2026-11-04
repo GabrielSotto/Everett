@@ -348,6 +348,9 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   await page.keyboard.press('Escape');
   const first = page.getByRole('button', { name: 'Bosquejos', exact: true });
   await first.click();
+  await expect(page.getByRole('menuitem', { name: /Biblioteca de componentes/ })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: 'Agregar pantalla', exact: true })).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('menuitem', { name: 'Agregar bloque', exact: true })).toBeFocused();
   await page.keyboard.press('ArrowDown');

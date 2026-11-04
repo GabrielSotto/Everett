@@ -54,6 +54,13 @@ desplazada, palabra partida y chat fuera de contexto deben fallar. Conservar la 
 
 ### Trabajo continuo de Canvas
 
+La integración del catálogo añade C08-U50 y C08-B143–B147. Recorrer la biblioteca desde Bosquejos,
+crear por botón y arrastre, editar partes después de agrupar, duplicar y recargar. Comprobar
+cancelación, cámara conservada, historial atómico, recursos fallidos y recuperación. La conversión
+compara píxeles de muestras representativas con sus piezas de Canvas; retirar textos es un
+contraejemplo que debe empeorar esa comparación. Preparar todas las entradas con sus variantes
+y estados no sustituye los recorridos de edición ni la revisión de las capturas de Canvas.
+
 El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo
 con Vite. El gate cotidiano evalúa directamente las fuentes de la aplicación: tipado, pruebas
 unitarias y del arnés, recorridos reales de navegador, regresión pertinente, revisión visual

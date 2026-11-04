@@ -13,7 +13,11 @@ export async function developmentIdentity(root) {
     'scripts/development-evidence.mjs',
     'scripts/artifact-evidence.mjs',
   ];
-  for (const pattern of ['src/**/*', 'scripts/link-preview/**/*.mjs'])
+  for (const pattern of [
+    'src/**/*',
+    'scripts/link-preview/**/*.mjs',
+    'design/wireframe-library/**/*',
+  ])
     for await (const entry of glob(pattern, { cwd: root, withFileTypes: true }))
       if (entry.isFile())
         paths.push(relative(root, resolve(entry.parentPath, entry.name)).replaceAll('\\', '/'));

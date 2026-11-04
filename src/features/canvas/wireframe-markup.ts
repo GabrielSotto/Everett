@@ -2,6 +2,7 @@ import rough from 'roughjs';
 import type { Material } from '../../domain/model';
 import { wireframeNames, wireframeAppearance } from '../../domain/wireframes';
 import { html } from '../../ui/dom';
+import { libraryPieceMarkup } from './library/piece-markup';
 
 const generator = rough.generator();
 const borders = new Map<string, string>();
@@ -56,6 +57,7 @@ function border(width: number, height: number, id: string, image: boolean, radiu
 
 export function wireframeMarkup(material: Material): string {
   if (material.data.kind !== 'wireframe') return '';
+  if (material.data.content.piece) return libraryPieceMarkup(material.data.content);
   const content = material.data.content,
     type = content.type;
   const appearance = wireframeAppearance(content);

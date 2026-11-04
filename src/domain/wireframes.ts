@@ -1,4 +1,5 @@
 import type { Material, Point } from './model';
+import { validSketchPiece, type SketchPiece } from './sketch-pieces';
 
 export const wireframeKinds = [
   'screen',
@@ -24,9 +25,42 @@ export interface WireframeAppearance {
 export type WireframeContent = (
   | { type: Exclude<WireframeKind, 'table'>; text: string }
   | { type: 'table'; cells: readonly (readonly string[])[] }
-) & { appearance?: WireframeAppearance; placeholder?: boolean; placeholderLines?: number };
+) & {
+  appearance?: WireframeAppearance;
+  placeholder?: boolean;
+  placeholderLines?: number;
+  piece?: SketchPiece;
+};
 export function wireframeAppearance(content: WireframeContent): WireframeAppearance {
-  return content.appearance ?? { fill: '#fbfaf6', stroke: '#485361', text: '#26323c', radius: 0 };
+  if (content.appearance) return content.appearance;
+  if (content.piece) {
+    const hex = (value: string | undefined, fallback: string): string => {
+      if (!value || value === 'transparent') return fallback;
+      if (value.startsWith('#')) return value;
+      const channels = value.match(/[\d.]+/g)?.map(Number);
+      if (!channels || channels.length < 3) return fallback;
+      return (
+        '#' +
+        channels
+          .slice(0, 3)
+          .map((n) => Math.round(n).toString(16).padStart(2, '0'))
+          .join('') +
+        (channels[3] === undefined || channels[3] === 1
+          ? ''
+          : Math.round(channels[3] * 255)
+              .toString(16)
+              .padStart(2, '0'))
+      );
+    };
+    const style = content.piece.style;
+    return {
+      fill: hex(style.backgroundColor, '#ffffff00'),
+      stroke: hex(style.borderTopColor, '#485361'),
+      text: hex(style.color, '#26323c'),
+      radius: parseFloat(style.borderRadius ?? '0') || 0,
+    };
+  }
+  return { fill: '#fbfaf6', stroke: '#485361', text: '#26323c', radius: 0 };
 }
 
 export const wireframeNames: Record<WireframeKind, string> = {
@@ -48,6 +82,7 @@ export function validWireframe(value: unknown): value is WireframeContent {
   if (!value || typeof value !== 'object') return false;
   const data = value as Record<string, unknown>;
   if (!wireframeKinds.includes(data.type as WireframeKind)) return false;
+  if (data.piece !== undefined && !validSketchPiece(data.piece)) return false;
   if (data.placeholder !== undefined && typeof data.placeholder !== 'boolean') return false;
   if (
     data.placeholderLines !== undefined &&

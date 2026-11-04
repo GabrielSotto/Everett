@@ -177,6 +177,13 @@ export type Command =
       height?: number;
     }
   | {
+      type: 'wireframe.library';
+      world: string;
+      id: string;
+      center: Point;
+      composition: import('./sketch-library').LibraryComposition;
+    }
+  | {
       type: 'wireframe.compose';
       world: string;
       kind: import('./wireframe-compositions').CompositionKind;

@@ -79,8 +79,8 @@ trabajo cotidiano. El servidor `preview.mjs` queda retirado del uso diario.
 
 ### Catálogo de diseño de bosquejos
 
-Vite sirve la propuesta en `/design/wireframe-library/`. Las fuentes están versionadas y permanecen
-separadas del Canvas hasta aprobar su diseño e integración. `state-contracts.js` declara los estados
+Vite sirve el catálogo en `/design/wireframe-library/`. Sus definiciones y recursos se comparten
+con Bosquejos → Biblioteca de componentes en Canvas. `state-contracts.js` declara los estados
 pertinentes, la parte afectada y su intención por componente. `review-model.js` separa valor,
 interacción, disponibilidad y resultado; rechaza combinaciones incompatibles. Presentación,
 función y accesorios se eligen por separado. `composition-rules.js` define límites de tamaño y
@@ -89,6 +89,13 @@ Estas reglas pertenecen a la propuesta visual; no son un motor de distribución 
 `components.js` representa esas partes; no hay un reemplazo genérico por skeleton ni
 un estilo que active todos los controles de un escenario. Las muestras son ilustraciones estáticas
 e `inert`; los controles de filtros, variantes y estados pertenecen al catálogo de revisión.
+
+`src/features/canvas/library/` aísla esos estilos en Shadow DOM, resuelve la disposición y la
+convierte en piezas gráficas tipadas. `wireframe.library` valida y crea los materiales y su
+conjunto en una operación de historial. No se persiste HTML. El editor conserva los bosquejos
+anteriores y permite modificar texto, símbolos y apariencia de las piezas nuevas. La identidad
+del desarrollo incluye `design/wireframe-library/`, ahora necesario para la aplicación; Vite
+sirve CSS e iconos locales sin servicios externos ni nuevas dependencias.
 
 `npm run test:design` ejecuta `tests/design/`: regresiones semánticas, todas las combinaciones
 admitidas de variantes/estados/datos, recursos, vacíos y acciones de la interfaz del catálogo.

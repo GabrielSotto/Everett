@@ -6,6 +6,7 @@ import { target } from './dom';
 import { icon } from './icons';
 import { bindDismiss } from './popover';
 import { wireframePalette, addWireframe, bindWireframeDrag } from './canvas-wireframes';
+import { openSketchLibrary, closeSketchLibrary } from './sketch-library';
 
 /** Creación, organización y vista tienen entradas propias en la cabecera. */
 export class CanvasActions {
@@ -43,6 +44,7 @@ export class CanvasActions {
           case 'canvas-view':
           case 'canvas-organize':
           case 'canvas-wireframes': {
+            closeSketchLibrary();
             const page =
               button.dataset.action === 'canvas-wireframes'
                 ? 'wireframes'
@@ -62,6 +64,10 @@ export class CanvasActions {
           case 'wireframe-add':
             this.close(false);
             addWireframe(ctx, button.dataset.kind);
+            break;
+          case 'sketch-library':
+            this.close(false);
+            openSketchLibrary(ctx, signal);
             break;
           case 'selection-arrange':
             if (!button.closest('.canvas-actions')) return;
@@ -243,6 +249,7 @@ export class CanvasActions {
     if (focus) this.trigger()?.focus({ preventScroll: true });
   }
   dismiss(): void {
+    closeSketchLibrary();
     this.open = false;
     this.painted = null;
   }

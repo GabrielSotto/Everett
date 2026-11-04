@@ -24,7 +24,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 El usuario fijó el alcance en bosquejos y wireframes de baja fidelidad, modernos o tradicionales,
 mediante piezas elementales combinables. Media y alta fidelidad quedan fuera. La biblioteca actual
-no se considera aprobada: rediseñar primero su catálogo y composición, evaluando fuentes MIT o
+no se consideraba aprobada: rediseñar primero su catálogo y composición, evaluando fuentes MIT o
 Apache-2.0, antes de seguir ampliando tipos aislados. Botones y campos deben poder descomponerse
 en fondo, texto y símbolos. Cubrir login, inicio, invitaciones, alertas, mensajes, diálogos,
 overlays, composers y paneles con una base común.
@@ -43,7 +43,7 @@ completa actual ni cierra el rediseño solicitado.
 
 El [catálogo de diseño](design/wireframe-library/index.html), servido por el mismo Vite en
 `/design/wireframe-library/`, contiene 102 muestras: 24 piezas y variantes de base, 65 composiciones
-y 13 interfaces. Sus fuentes y arnés están versionados, separados del Canvas. CSS de Chalk y SVG
+y 13 interfaces. Sus fuentes y arnés están versionados. CSS de Chalk y SVG
 de Phosphor fijados por commit, con sus licencias MIT. La investigación sigue siendo temporal;
 no se agrega un informe comparativo.
 
@@ -78,8 +78,17 @@ incompleto, piezas desancladas, palabras partidas y controles de chat fuera de c
 Las capturas se revisan además de las aserciones; el gate no equipara geometría
 válida con calidad visual. Tipado y formato correctos. La última salida e identidad de fuentes
 permanecen en `output/pruebas/diseno/`.
-La biblioteca continúa pendiente de aprobación e integración; estas pruebas no certifican
-el comportamiento de una biblioteca ya integrada en Canvas.
+El 4 de noviembre el usuario aprobó integrar la biblioteca en Canvas. El trabajo incorpora
+el catálogo compartido, variantes/estados, creación por botón y arrastre, piezas independientes
+dentro de conjuntos y edición de texto, símbolos y apariencia. Las pruebas del catálogo por sí
+solas no certifican esa integración: C08-U50 y C08-B143–B147 añaden historial, duplicación,
+persistencia, cancelación, errores de recursos y correspondencia visual. El gate completo aprobó
+116 pruebas unitarias y 220 recorridos de navegador sobre las fuentes actuales, incluidos los
+controles negativos del arnés y la sesión sostenida. La comparación de 568 representaciones
+comprueba rótulos y barras, su geometría y color; se revisaron además las capturas de creación,
+edición y ventana estrecha. El catálogo conserva sus 32 pruebas y seis recorridos aprobados.
+Evidencia vigente en `output/pruebas/navegador/2026-11-04_10-23-51-276Z/`. La integración queda
+disponible para revisión del usuario; 0.8 permanece abierta, sin integrar en `dev`.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
