@@ -12,6 +12,8 @@ for (const [seed, reducedMotion] of [
     page,
   }, testInfo) => {
     test.setTimeout(90_000);
+    await page.clock.install();
+    await page.reload();
     await page.emulateMedia({ reducedMotion });
     await enterWorld(page);
     await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
@@ -30,6 +32,10 @@ for (const [seed, reducedMotion] of [
           seed + round,
         )) {
           await page.getByRole('button', { name: 'Superficies', exact: true }).click();
+          // Mantener estos gestos dentro de la transición, independientemente de la
+          // carga del runner. Sin reloj, la rueda podía llegar tras los 440 ms de
+          // protección y provocar legítimamente otra navegación.
+          await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
           await page
             .locator('.surface-menu')
             .getByRole('button', { name: surface, exact: true })
@@ -42,6 +48,7 @@ for (const [seed, reducedMotion] of [
           await page.mouse.wheel(0, 60);
           await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).press('Enter');
           await page.keyboard.press('Escape');
+          await page.clock.resume();
           await expect(page.locator('#viewport')).toHaveAttribute('data-route', 'world/scout');
           await expect(page.locator('.profile-pop:not(.panel-exit)')).toHaveCount(0);
           await expect(page.locator('.transition-ghost')).toHaveCount(0);

@@ -82,13 +82,33 @@ El 4 de noviembre el usuario aprobó integrar la biblioteca en Canvas. El trabaj
 el catálogo compartido, variantes/estados, creación por botón y arrastre, piezas independientes
 dentro de conjuntos y edición de texto, símbolos y apariencia. Las pruebas del catálogo por sí
 solas no certifican esa integración: C08-U50 y C08-B143–B147 añaden historial, duplicación,
-persistencia, cancelación, errores de recursos y correspondencia visual. El gate completo aprobó
-116 pruebas unitarias y 220 recorridos de navegador sobre las fuentes actuales, incluidos los
+persistencia, cancelación, errores de recursos y correspondencia visual. El gate inicial aprobó
+116 pruebas unitarias y 220 recorridos de navegador sobre las fuentes de esa integración, incluidos los
 controles negativos del arnés y la sesión sostenida. La comparación de 568 representaciones
 comprueba rótulos y barras, su geometría y color; se revisaron además las capturas de creación,
 edición y ventana estrecha. El catálogo conserva sus 32 pruebas y seis recorridos aprobados.
-Evidencia vigente en `output/pruebas/navegador/2026-11-04_10-23-51-276Z/`. La integración queda
-disponible para revisión del usuario; 0.8 permanece abierta, sin integrar en `dev`.
+Evidencia de esa integración en `output/pruebas/navegador/2026-11-04_10-23-51-276Z/`.
+La revisión posterior la sustituye; 0.8 permanece abierta, sin integrar en `dev`.
+
+La revisión posterior rechazó la navegación y detectó miniaturas descentradas y poco contraste.
+La corrección retira la paleta anterior y abre un desplegable de hasta 280 × 360 px anclado a
+Bosquejos, con categorías, búsqueda y scroll interno. Clic o arrastre insertan y cierran la
+biblioteca; no hay ficha intermedia, formulario de ancho ni botón adicional para agregar.
+Las variantes y estados útiles quedan en opciones compactas junto a la pieza; se cierran si
+su anclaje se desplaza. Texto simulado/rótulos se elige en la biblioteca.
+Los materiales ya guardados conservan sus editores. Se encuadra la tinta visible y se refuerza el
+contraste de las miniaturas sin alterar el material insertado. La revisión con Emil e Impeccable
+detectó además contraste insuficiente en la pestaña activa y componentes pequeños reducidos por
+el espacio vacío del catálogo; ambos se corrigen. C08-B148–B149 añaden navegación, ventanas bajas,
+creación sucesiva y centrado de las 24 piezas básicas, con contraejemplos de desplazamiento y
+contraste insuficiente. La corrección supera 116 pruebas unitarias y 222 recorridos de navegador,
+sin fallos, omisiones ni reintentos, incluidos los controles negativos y 30 ciclos sostenidos entre
+superficies. Se revisaron las capturas del desplegable, miniaturas y opciones a 550 y 1440 px;
+el arnés cubre también 320 px, ventanas bajas y texto al 200 %. Tipado y formato correctos.
+Evidencia vigente en `output/pruebas/unitarias/2026-11-05_01-45-49-678Z/` y
+`output/pruebas/navegador/2026-11-05_01-52-31-003Z/`, verificada contra las fuentes servidas por
+Vite en 4173, SHA-256 `ab5bde0374269f0fff79f635a6d35379c3bebce3f05c610b348ec416e10325da`.
+Pendiente de revisión del usuario; 0.8 permanece abierta y sin integrar en `dev`.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación

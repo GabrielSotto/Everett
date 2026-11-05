@@ -54,12 +54,28 @@ desplazada, palabra partida y chat fuera de contexto deben fallar. Conservar la 
 
 ### Trabajo continuo de Canvas
 
-La integración del catálogo añade C08-U50 y C08-B143–B147. Recorrer la biblioteca desde Bosquejos,
+La integración del catálogo añade C08-U50 y C08-B143–B149. Recorrer la biblioteca desde Bosquejos,
 crear por botón y arrastre, editar partes después de agrupar, duplicar y recargar. Comprobar
 cancelación, cámara conservada, historial atómico, recursos fallidos y recuperación. La conversión
 compara píxeles de muestras representativas con sus piezas de Canvas; retirar textos es un
 contraejemplo que debe empeorar esa comparación. Preparar todas las entradas con sus variantes
 y estados no sustituye los recorridos de edición ni la revisión de las capturas de Canvas.
+
+El desplegable debe ser la única entrada de creación, anclado al disparador y acotado a
+280 × 360 px con scroll interno. Comprobar inserción directa, cierre, cambio de categoría,
+opciones contextuales sin ficha de tamaño, búsqueda sin resultados y espacio libre a 550/320 px.
+Probar altura de 360 px, foco de las opciones, desplazamiento del anclaje y contraste de la
+pestaña activa con un contraejemplo del color insuficiente anterior.
+Medir el centrado de la tinta de las 24 piezas básicas, incluidos símbolos, puntos y recortes;
+un rectángulo DOM centrado no lo demuestra. Las pruebas deben rechazar tanto una miniatura
+desplazada como contornos sin contraste; comprobar también tinta reconocible en miniaturas
+compuestas, tamaño reconocible de símbolos y barras claras sobre botones oscuros. Revisar
+capturas además de las medidas. El detector de Impeccable complementa las guías de Emil:
+verificar cada hallazgo en contexto; una tipografía existente o el recorte deliberado del Canvas
+no se sustituyen por un aviso genérico. Un escaneo limpio tampoco acredita calidad visual.
+Los recorridos
+del catálogo retirado cargan explícitamente materiales guardados para comprobar su edición;
+los recorridos de creación y composición usan la paleta nueva y sus dimensiones reales.
 
 El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo
 con Vite. El gate cotidiano evalúa directamente las fuentes de la aplicación: tipado, pruebas
@@ -138,6 +154,10 @@ Además del bloque original, cubrir los siguientes riesgos cuando afecten al rec
 - **Regresión de lo aprobado.** Incluir Universo, gravedad, minimapa, navegación, zoom semántico y regreso al origen, además de las funciones conservadas de todas las superficies. Registrar los fallos de base por separado para distinguirlos de los introducidos.
 
 Definir criterios observables y límites apropiados para cada caso antes de considerarlo aprobado. No sustituir cobertura por una cantidad arbitraria de tests, capturas o tiempo de ejecución.
+
+UI-SEQUENCE-01 controla el reloj durante los gestos que deben llegar dentro de una transición
+y lo reanuda antes de comprobar su finalización. Así verifica el intervalo previsto incluso
+con carga del runner; no depende de que varias llamadas de automatización terminen en 440 ms.
 
 ## Comprobar también el arnés
 

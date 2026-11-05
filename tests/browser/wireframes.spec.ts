@@ -2,27 +2,12 @@ import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { start, snapshot, world, capture, moveMaterial, connect } from './canvas-utility-helpers';
 import { storedFixture } from './canvas-fixtures';
-import {
-  wireframeKinds,
-  wireframeNames,
-  wireframeMaterial,
-  type WireframeKind,
-} from '../../src/domain/wireframes';
+import { wireframeKinds, wireframeMaterial, type WireframeKind } from '../../src/domain/wireframes';
+import { legacyWireframe, openLibrary } from './sketch-library-helpers';
 import { isWireframeComposition } from '../../src/domain/wireframe-compositions';
 
 async function add(page: Page, type: WireframeKind): Promise<string> {
-  const before = new Set((await world(page)).nodes.map((n) => n.id));
-  await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
-  await page
-    .getByRole('menuitem', {
-      name: 'Agregar ' + wireframeNames[type].toLocaleLowerCase(),
-      exact: true,
-    })
-    .click();
-  const node = (await world(page)).nodes.find((n) => !before.has(n.id))!;
-  expect(node.data.kind === 'wireframe' && node.data.content.type).toBe(type);
-  await expect(page.locator(`[data-node="${node.id}"]`)).toBeInViewport();
-  return node.id;
+  return (await legacyWireframe(page, type)).id;
 }
 async function openEditor(page: Page, id: string): Promise<void> {
   await page.locator(`[data-node="${id}"]`).focus();
@@ -38,7 +23,7 @@ async function zoom(page: Page, percent: number): Promise<void> {
   await expect.poll(async () => (await snapshot(page)).camera.z).toBeCloseTo(percent / 100, 5);
 }
 
-test('C08-B126: biblioteca agrega piezas reales, edita contenido y conserva una composición tras recargar', async ({
+test('C08-B126: bosquejos guardados del catálogo anterior permiten editar contenido y conserva una composición tras recargar', async ({
   page,
 }, info) => {
   test.setTimeout(120000);
@@ -367,11 +352,14 @@ test('C08-B130: biblioteca y editor funcionan por teclado a 320px y texto 200%, 
   await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
   await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
   await page.getByRole('button', { name: 'Bosquejos', exact: true }).press('ArrowDown');
-  const palette = page.getByRole('menu', { name: 'Bosquejos', exact: true });
+  const palette = await openLibrary(page);
   const p = (await palette.boundingBox())!;
   expect(p.x).toBeGreaterThanOrEqual(0);
   expect(p.x + p.width).toBeLessThanOrEqual(320);
-  await expect(page.getByRole('menuitem', { name: 'Agregar tabla', exact: true })).toBeInViewport();
+  await palette.getByRole('searchbox').fill('Tabla de datos');
+  await expect(
+    palette.getByRole('button', { name: 'Agregar Tabla de datos', exact: true }),
+  ).toBeInViewport();
   await page.keyboard.press('Escape');
   await openEditor(page, id);
   const camera = (await snapshot(page)).camera;

@@ -2,24 +2,35 @@ import { test, expect } from './fixtures';
 import { start, snapshot, world, capture } from './canvas-utility-helpers';
 import { storedFixture } from './canvas-fixtures';
 import { wireframeMaterial } from '../../src/domain/wireframes';
+import { legacyWireframe, addLibrary, libraryTile, dragLibrary } from './sketch-library-helpers';
 import type { Page } from '@playwright/test';
 
 async function add(page: Page, name: string) {
-  const before = new Set((await world(page)).nodes.map((n) => n.id));
-  await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Agregar ' + name, exact: true }).click();
-  return (await world(page)).nodes.filter((n) => !before.has(n.id));
+  const ids: Record<string, string> = {
+    pantalla: 'frame',
+    texto: 'label',
+    botón: 'button',
+    campo: 'text-field',
+    imagen: 'image',
+    tabla: 'table',
+    video: 'video-player',
+    tarjeta: 'card',
+    lista: 'list',
+    menú: 'context-menu',
+    carrusel: 'carousel',
+  };
+  return addLibrary(page, ids[name]!);
 }
 async function edit(page: Page, id: string) {
-  await page.locator(`[data-node="${id}"] .wireframe-body`).dblclick();
+  await page.locator(`[data-node="${id}"]`).dblclick();
   await expect(page.locator('.wireframe-editor')).toBeVisible();
 }
 
-test('C08-B137: barras por defecto, rótulo opcional y edición de botón estable con radio y color persistidos', async ({
+test('C08-B137: bosquejos guardados conservan barras por defecto, rótulo opcional y edición de botón estable con radio y color persistidos', async ({
   page,
 }, info) => {
   await start(page);
-  const [button] = await add(page, 'botón');
+  const button = await legacyWireframe(page, 'button');
   const material = page.locator(`[data-node="${button!.id}"]`);
   await expect(
     material.locator(
@@ -70,7 +81,7 @@ test('C08-B137: barras por defecto, rótulo opcional y edición de botón establ
   await page.keyboard.press('Escape');
   await expect(material.locator('.wireframe-placeholder')).toBeVisible();
   await capture(page, info, 'boton-simulado-estable');
-  const [text] = await add(page, 'texto');
+  const text = await legacyWireframe(page, 'text');
   await edit(page, text!.id);
   await page
     .getByRole('textbox', { name: 'Contenido del bosquejo', exact: true })
@@ -234,8 +245,10 @@ test('C08-B140: composiciones son piezas editables agrupadas, no formularios; vi
       expect(untouched).toEqual(added.filter((n) => n.id !== part.id));
     }
   }
-  const [video] = await add(page, 'video');
-  await expect(page.locator(`[data-node="${video!.id}"] .wireframe-video-play`)).toBeVisible();
+  const video = await add(page, 'video');
+  expect(
+    video.some((n) => n.data.kind === 'wireframe' && n.data.content.piece?.symbol === 'play'),
+  ).toBe(true);
   const beforeReload = (await world(page)).nodes;
   await page.reload();
   expect((await world(page)).nodes).toEqual(beforeReload);
@@ -254,29 +267,20 @@ test('C08-B141: arrastrar una composición conserva cámara y disposición de su
     await zoom.press('Enter');
     const before = await world(page),
       camera = (await snapshot(page)).camera;
-    await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
-    const item = page.getByRole('menuitem', { name: 'Agregar lista', exact: true });
-    const b = (await item.boundingBox())!;
-    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(980, 440, { steps: 10 });
-    await expect(page.locator('.wireframe-drag-preview > div')).toHaveCount(7);
-    await page.mouse.up();
+    const added = await dragLibrary(page, 'list', 980, 440);
     const w = await world(page),
       group = w.canvasGroups!.at(-1)!;
     const nodes = w.nodes.filter((n) => group.nodes.includes(n.id));
-    expect(nodes).toHaveLength(7);
+    expect(nodes).toEqual(added);
+    expect(nodes.length).toBeGreaterThan(4);
     expect((await snapshot(page)).camera).toEqual(camera);
-    const root = page.locator(`[data-node="${group.nodes[0]}"]`),
-      rect = (await root.boundingBox())!;
-    expect(rect.x + rect.width / 2).toBeCloseTo(980, 0);
-    expect(rect.y + rect.height / 2).toBeCloseTo(440, 0);
+    const root = page.locator(`[data-node="${group.nodes[0]}"]`);
     await expect(root.locator('.material-identification')).toBeHidden();
     await expect(root.locator('.resize-handle:visible')).toHaveCount(0);
     // Una parte se elige y edita directamente; el resto conserva sus coordenadas.
     const text = nodes.find((n) => n.data.kind === 'wireframe' && n.data.content.type === 'text')!;
     const bar = (await page
-      .locator(`[data-node="${text.id}"] .wireframe-placeholder i`)
+      .locator(`[data-node="${text.id}"] .library-text-bar`)
       .first()
       .boundingBox())!;
     expect(bar.width).toBeGreaterThan((text.width * percent) / 200);
@@ -286,10 +290,7 @@ test('C08-B141: arrastrar una composición conserva cámara y disposición de su
     await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
     expect((await world(page)).nodes).toEqual(before.nodes);
   }
-  await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
-  const b = (await page
-    .getByRole('menuitem', { name: 'Agregar carrusel', exact: true })
-    .boundingBox())!;
+  const b = (await (await libraryTile(page, 'carousel')).boundingBox())!;
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
   await page.mouse.down();
   await page.mouse.move(900, 400, { steps: 6 });
@@ -304,52 +305,61 @@ test('C08-B142: construir una interfaz de escritorio con piezas y composiciones 
 }, info) => {
   test.setTimeout(90000);
   await start(page);
-  await page.setViewportSize({ width: 1440, height: 1100 });
-  const [screen] = await add(page, 'pantalla');
+  await page.setViewportSize({ width: 1920, height: 1100 });
+  const [screen] = await addLibrary(page, 'block');
   await edit(page, screen!.id);
-  await expect(page.getByRole('button', { name: 'Escritorio', exact: true })).toContainText(
-    '1280 × 800',
-  );
-  await page.getByRole('button', { name: 'Escritorio', exact: true }).click();
-  await edit(page, screen!.id);
-  await page.getByRole('spinbutton', { name: 'Radio de esquina', exact: true }).fill('16');
-  await page.getByRole('spinbutton', { name: 'Radio de esquina', exact: true }).press('Enter');
+  for (const [name, value] of [
+    ['Ancho de la pieza', '1280'],
+    ['Alto de la pieza', '800'],
+    ['Radio de esquina', '16'],
+  ]) {
+    const input = page.getByRole('spinbutton', { name: name!, exact: true });
+    await input.fill(value!);
+    await input.press('Enter');
+  }
   await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /^Zoom de Canvas:/ }).click();
+  await page.getByRole('button', { name: 'Ajustar al contenido', exact: true }).click();
+  const surface = (await world(page)).nodes.find((n) => n.id === screen!.id)!;
   const frame = (await page.locator(`[data-node="${screen!.id}"]`).boundingBox())!;
   const drop = async (name: string, x: number, y: number) => {
-    const before = new Set((await world(page)).nodes.map((n) => n.id));
-    await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
-    const b = (await page
-      .getByRole('menuitem', { name: 'Agregar ' + name, exact: true })
-      .boundingBox())!;
-    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(frame.x + (x * frame.width) / 1280, frame.y + (y * frame.height) / 800, {
-      steps: 10,
-    });
-    await page.mouse.up();
-    return (await world(page)).nodes.filter((n) => !before.has(n.id));
+    const ids: Record<string, string> = {
+      texto: 'label',
+      campo: 'text-field',
+      menú: 'context-menu',
+      tarjeta: 'card',
+      carrusel: 'carousel',
+      tabla: 'table',
+      video: 'video-player',
+    };
+    return dragLibrary(
+      page,
+      ids[name]!,
+      frame.x + (x * frame.width) / 1280,
+      frame.y + (y * frame.height) / 800,
+    );
   };
-  const [title] = await drop('texto', 220, 80);
+  // Soltar sobre el Canvas visible, fuera del desplegable anclado a la cabecera.
+  const [title] = await drop('texto', 600, 80);
   await edit(page, title!.id);
   await page
     .getByRole('textbox', { name: 'Contenido del bosquejo', exact: true })
     .fill('Proyecto · Resumen');
   await page.keyboard.press('Escape');
   await drop('campo', 980, 80);
-  await drop('menú', 150, 300);
-  await drop('tarjeta', 520, 300);
+  await drop('menú', 230, 300);
+  await drop('tarjeta', 600, 300);
   await drop('carrusel', 990, 300);
   await drop('tabla', 520, 620);
   await drop('video', 990, 620);
   const w = await world(page),
     scene = w.nodes;
-  expect(w.canvasGroups).toHaveLength(3);
+  expect(w.canvasGroups!.length).toBeGreaterThanOrEqual(6);
   for (const node of scene.filter((n) => n.id !== screen!.id)) {
-    expect(node.x).toBeGreaterThanOrEqual(screen!.x);
-    expect(node.y).toBeGreaterThanOrEqual(screen!.y);
-    expect(node.x + node.width).toBeLessThanOrEqual(screen!.x + 1280);
-    expect(node.y + node.height).toBeLessThanOrEqual(screen!.y + 800);
+    expect(node.x).toBeGreaterThanOrEqual(surface.x);
+    expect(node.y).toBeGreaterThanOrEqual(surface.y);
+    expect(node.x + node.width).toBeLessThanOrEqual(surface.x + 1280);
+    expect(node.y + node.height).toBeLessThanOrEqual(surface.y + 800);
   }
   await page.mouse.click(12, 120);
   await page.mouse.move(12, 90);

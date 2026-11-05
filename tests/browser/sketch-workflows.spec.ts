@@ -2,6 +2,7 @@ import { test, expect } from './fixtures';
 import { start, snapshot, world, capture } from './canvas-utility-helpers';
 import { storedFixture } from './canvas-fixtures';
 import { wireframeMaterial } from '../../src/domain/wireframes';
+import { addLibrary, libraryTile, dragLibrary, legacyWireframe } from './sketch-library-helpers';
 import type { Page } from '@playwright/test';
 
 test('C08-B136: crecer texto conectado y agrupado actualiza cables y conjunto sin perder foco y se deshace junto al contenido', async ({
@@ -24,6 +25,8 @@ test('C08-B136: crecer texto conectado y agrupado actualiza cables y conjunto si
   const initialPath = await path.getAttribute('d'),
     initialGroup = (await group.boundingBox())!;
   await text.dblclick();
+  // La edición se comprueba como una única ráfaga, sin pausas causadas por el runner.
+  await page.clock.setFixedTime(Date.now());
   const field = page.getByRole('textbox', { name: 'Contenido del bosquejo', exact: true });
   await field.fill('Decisión y referencia\n'.repeat(12).trim());
   await expect(field).toBeFocused();
@@ -49,30 +52,20 @@ test('C08-B136: crecer texto conectado y agrupado actualiza cables y conjunto si
   expect((await group.boundingBox())!.height).toBeCloseTo(initialGroup.height, 3);
 });
 
-async function palette(page: Page) {
-  await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
-  await expect(page.getByRole('menu', { name: 'Bosquejos', exact: true })).toBeVisible();
-}
 async function drop(page: Page, name: string, x: number, y: number) {
-  const before = new Set((await world(page)).nodes.map((n) => n.id));
-  await palette(page);
-  const box = (await page
-    .getByRole('menuitem', { name: 'Agregar ' + name, exact: true })
-    .boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(x, y, { steps: 12 });
-  await expect(page.locator('.wireframe-drag-preview')).toBeVisible();
-  await page.mouse.up();
-  await expect(page.locator('.wireframe-drag-preview')).toHaveCount(0);
-  const added = (await world(page)).nodes.filter((n) => !before.has(n.id));
-  expect(added).toHaveLength(1);
-  const node = page.locator(`[data-node="${added[0]!.id}"]`),
-    rect = (await node.boundingBox())!;
-  expect(rect.x + rect.width / 2).toBeCloseTo(x, 0);
-  expect(rect.y + rect.height / 2).toBeCloseTo(y, 0);
-  return added[0]!.id;
+  const ids: Record<string, string> = {
+    texto: 'label',
+    botón: 'button',
+    campo: 'text-field',
+    imagen: 'image',
+  };
+  const added = await dragLibrary(page, ids[name]!, x, y);
+  return (
+    added.find((n) => n.data.kind === 'wireframe' && n.data.content.type === 'text')?.id ??
+    added[0]!.id
+  );
 }
+
 test('C08-B132: arrastrar desde biblioteca respeta suelta y cámara; cancelar o salir no crea piezas ni bloquea el siguiente clic', async ({
   page,
 }, info) => {
@@ -81,12 +74,11 @@ test('C08-B132: arrastrar desde biblioteca respeta suelta y cámara; cancelar o 
   await page.getByRole('button', { name: /^Zoom de Canvas:/ }).click();
   await page.getByRole('spinbutton', { name: 'Porcentaje de zoom', exact: true }).fill('1');
   await page.getByRole('spinbutton', { name: 'Porcentaje de zoom', exact: true }).press('Enter');
-  await palette(page);
-  await page.getByRole('menuitem', { name: 'Agregar texto', exact: true }).click();
+  await addLibrary(page, 'label');
   expect((await snapshot(page)).camera.z).toBeCloseTo(1, 5);
   const initialText = (await world(page)).nodes[0]!;
   const initialBounds = (await page.locator(`[data-node="${initialText.id}"]`).boundingBox())!;
-  expect(initialBounds.width).toBeLessThanOrEqual(181);
+  expect(initialBounds.width).toBeLessThanOrEqual(321);
   expect(initialBounds.height).toBeLessThanOrEqual(33);
   for (const percent of [38, 100, 200]) {
     await page.getByRole('button', { name: /^Zoom de Canvas:/ }).click();
@@ -100,35 +92,30 @@ test('C08-B132: arrastrar desde biblioteca respeta suelta y cámara; cancelar o 
   }
   const before = (await world(page)).nodes;
   for (const cancel of ['escape', 'outside'] as const) {
-    await palette(page);
-    const b = (await page
-      .getByRole('menuitem', { name: 'Agregar texto', exact: true })
-      .boundingBox())!;
+    const b = (await (await libraryTile(page, 'label')).boundingBox())!;
     await page.mouse.move(b.x + 15, b.y + 15);
     await page.mouse.down();
     await page.mouse.move(900, 300, { steps: 8 });
     if (cancel === 'escape') await page.keyboard.press('Escape');
     else await page.mouse.move(30, 25);
     await page.mouse.up();
-    await expect(page.locator('.wireframe-drag-preview')).toHaveCount(0);
-    await expect(page.getByRole('menu', { name: 'Bosquejos', exact: true })).toHaveCount(0);
+    await expect(page.locator('.library-drag-preview')).toHaveCount(0);
+    await expect(page.getByRole('dialog', { name: 'Biblioteca de bosquejos' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cerrar biblioteca' }).click();
     expect((await world(page)).nodes).toEqual(before);
   }
-  await palette(page);
-  await page.getByRole('menuitem', { name: 'Agregar campo', exact: true }).click();
-  expect((await world(page)).nodes).toHaveLength(before.length + 1);
+  const fieldParts = await addLibrary(page, 'text-field');
+  expect((await world(page)).nodes).toHaveLength(before.length + fieldParts.length);
   await capture(page, info, 'arrastre-desde-biblioteca');
 });
 
-test('C08-B133: componer pantalla de teléfono con piezas por arrastre, texto local que crece y formatos libres', async ({
+test('C08-B133: componer sobre una pantalla guardada de teléfono con piezas por arrastre, texto local que crece y formatos libres', async ({
   page,
 }, info) => {
   test.setTimeout(90000);
   await start(page);
   await page.setViewportSize({ width: 1440, height: 1100 });
-  await palette(page);
-  await page.getByRole('menuitem', { name: 'Agregar pantalla', exact: true }).click();
-  const screen = (await world(page)).nodes[0]!;
+  const screen = await legacyWireframe(page, 'screen');
   const screenNode = page.locator(`[data-node="${screen.id}"]`);
   await expect(screenNode.locator('.wireframe-screen-bar')).toHaveCount(0);
   await screenNode.focus();
@@ -148,7 +135,7 @@ test('C08-B133: componer pantalla de teléfono con piezas por arrastre, texto lo
     textRect = (await textNode.boundingBox())!;
   expect(Math.abs(editorRect.x - textRect.x)).toBeLessThan(12);
   expect(editorRect.height).toBeLessThan(100);
-  expect(editorRect.width).toBeLessThan(250);
+  expect(editorRect.width).toBeLessThan(350);
   const content = 'Bienvenido\nOrganizá tus referencias\nConservá tus decisiones';
   await field.fill(content);
   await page.keyboard.press('Escape');

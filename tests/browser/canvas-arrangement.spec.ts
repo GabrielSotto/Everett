@@ -306,9 +306,12 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
       const trigger = page.getByRole('button', { name, exact: true });
       await expect(trigger).toBeInViewport({ ratio: 1 });
       await trigger.click();
-      const menu = page.getByRole('menu', { name, exact: true });
+      const menu =
+        name === 'Bosquejos'
+          ? page.getByRole('dialog', { name: 'Biblioteca de bosquejos' })
+          : page.getByRole('menu', { name, exact: true });
       await expect(menu).toBeVisible();
-      await expect(page.locator('.canvas-actions-pop')).toHaveCount(1);
+      await expect(page.locator('.canvas-actions-pop,.sketch-library')).toHaveCount(1);
       const geometry = await menu.evaluate((element) => {
         const rect = element.getBoundingClientRect();
         return { left: rect.left, right: rect.right, bottom: rect.bottom };
@@ -318,7 +321,7 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
       expect(geometry.bottom).toBeLessThanOrEqual(843);
       if (name === 'Bosquejos') {
         await expect(
-          menu.getByRole('menuitem', { name: 'Agregar pantalla', exact: true }),
+          menu.getByRole('button', { name: 'Agregar Bloque rectangular', exact: true }),
         ).toBeVisible();
         await expect(
           menu.getByRole('menuitem', { name: /Alinear|Ajustar|Preferencias/ }),
@@ -343,18 +346,22 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
   await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
   await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
-  await expect(page.getByRole('menu', { name: 'Bosquejos', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Biblioteca de bosquejos' })).toHaveCount(0);
   await expect(page.getByRole('menu', { name: 'Organizar selección', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   const first = page.getByRole('button', { name: 'Bosquejos', exact: true });
   await first.click();
-  await expect(page.getByRole('menuitem', { name: /Biblioteca de componentes/ })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: 'Agregar pantalla', exact: true })).toBeFocused();
+  await expect(
+    page.getByRole('searchbox', { name: 'Buscar piezas y composiciones' }),
+  ).toBeFocused();
+  const tile = page.getByRole('button', { name: 'Agregar Bloque rectangular', exact: true });
+  await tile.focus();
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('menuitem', { name: 'Agregar bloque', exact: true })).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: 'Agregar Forma redondeada', exact: true }),
+  ).toBeFocused();
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menuitem', { name: 'Agregar campo', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Agregar Polígono', exact: true })).toBeFocused();
   await first.focus();
   await page.keyboard.press('ArrowRight');
   await expect(
@@ -362,7 +369,7 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   ).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menu', { name: 'Organizar selección', exact: true })).toBeVisible();
-  await expect(page.getByRole('menu', { name: 'Bosquejos', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Biblioteca de bosquejos' })).toHaveCount(0);
   await page.keyboard.press('Escape');
   expect(await world(page)).toEqual(original);
   expect((await snapshot(page)).ui.canvas.selections).toEqual(selection);
