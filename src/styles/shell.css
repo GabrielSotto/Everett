@@ -34,11 +34,19 @@
 }
 
 .location input {
+  field-sizing: content;
+  min-width: 4ch;
+  width: auto;
   font-size: 11px;
   color: var(--text);
   border-radius: 5px;
   padding: 5px 3px;
-  max-width: 310px;
+  max-width: 250px;
+  text-overflow: ellipsis;
+}
+.location input:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -2px var(--accent);
 }
 
 .location input:hover {
@@ -101,7 +109,7 @@
 }
 
 .global-search:has(input:focus-visible) {
-  border-bottom-color: #bba6dd;
+  box-shadow: inset 0 -2px var(--accent);
 }
 .global-search.open input {
   flex: 1;

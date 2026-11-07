@@ -217,13 +217,13 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
             textTransform: css.textTransform,
             opacity: String(opacity),
           };
-          if (choice.entry.family === 'base') textStyle.backgroundColor = '#ffffff';
           add(
             textRect,
             label ? 'Texto' : child.textContent.trim().slice(0, 60),
             clipped(textRect, {
               style: textStyle,
               label: !!label,
+              ...(choice.entry.family === 'base' ? { autoInk: true } : {}),
               ...(label ? { placeholderColor: barColors.get(label) ?? '#c6cbd1' } : {}),
             }),
             child.textContent.trim(),

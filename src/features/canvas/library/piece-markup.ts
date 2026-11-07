@@ -28,7 +28,7 @@ export function libraryPieceMarkup(content: WireframeContent): string {
       ? `<svg viewBox="${html(piece.viewBox ?? '0 0 220 100')}" preserveAspectRatio="none">${piece.paths.map((path) => `<path d="${html(path.d)}" fill="${html(content.appearance?.fill ?? path.fill)}" stroke="${html(content.appearance?.stroke ?? path.stroke)}" stroke-width="${path.width}"/>`).join('')}</svg>`
       : text
         ? content.placeholder
-          ? `<span class="library-text-bar" style="background:${html(piece.placeholderColor ?? '#c6cbd1')}" aria-label="Texto simulado"></span>`
+          ? `<span class="library-text-bar" style="box-shadow:${html(piece.style.textShadow ?? 'none')};background:${html(piece.placeholderColor ?? '#c6cbd1')}" aria-label="Texto simulado"></span>`
           : html(text)
         : '';
   return `<div class="library-piece wireframe-body ${text ? 'library-text' : ''}" data-library-piece style="${html(css)}">${body}</div>`;

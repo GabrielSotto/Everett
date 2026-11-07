@@ -94,6 +94,15 @@ funciona con ratón, Espacio y Enter, actualiza previews e inserciones y conserv
 Comprobar movimiento reducido y texto al 200 %: pestañas sin solapamiento y miniaturas en una
 columna cuando su texto requiere más ancho, con navegación por teclado correspondiente.
 
+C08-B154 observa fotogramas durante clics repetidos y pulsación sostenida del switch y apertura/
+cierre de búsqueda en las tres categorías. Comprueba continuidad de tarjetas, pintura y escala;
+quitar un filtro recupera previews ya preparadas. C08-B155 mide el grosor proyectado de bordes CSS,
+trazos SVG y pistas, sin modificar el material insertado; texto transparente con tinta legible
+sobre Canvas, bloque claro y sus límites, persistencia y símbolo convencional de máscara.
+C08-U52 conserva colores explícitos y descarta fondos distantes o delante del texto.
+C08-B156 distingue foco de mouse/teclado, comprueba nombres de glifos estrechos y largos y
+cabeceras de 1440/550/320 px.
+
 El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo
 con Vite. El gate cotidiano evalúa directamente las fuentes de la aplicación: tipado, pruebas
 unitarias y del arnés, recorridos reales de navegador, regresión pertinente, revisión visual

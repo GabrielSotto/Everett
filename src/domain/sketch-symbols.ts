@@ -8,6 +8,7 @@ export const sketchSymbols: Record<string, string> = {
   'caret-down': 'Desplegar',
   'check-circle': 'Completado',
   check: 'Marca',
+  'circle-half': 'Máscara',
   copy: 'Copiar',
   'dots-three': 'Más opciones',
   eye: 'Visible',

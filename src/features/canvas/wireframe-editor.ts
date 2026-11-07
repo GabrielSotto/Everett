@@ -100,7 +100,7 @@ export function bindWireframeEditor(
     const preview = document.querySelector<HTMLElement>(
       `[data-node="${CSS.escape(id)}"] :is(.wireframe-content,[data-library-piece])`,
     );
-    if (preview) preview.outerHTML = wireframeMarkup(structuredClone(node));
+    if (preview) preview.outerHTML = wireframeMarkup(structuredClone(node), ctx.world());
     return true;
   };
   const fields = () => {

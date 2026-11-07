@@ -183,3 +183,72 @@ test('C08-U50: biblioteca materializa piezas independientes, valida el límite y
   ])
     assert.equal(validSketchPiece(bad), false);
 });
+
+test('C08-U52: texto sin placa mantiene contraste por fondo, respeta color elegido y no muta el material', async () => {
+  const { sketchTextInk } = await import('../../src/domain/sketch-text-ink');
+  const { wireframeMaterial } = await import('../../src/domain/wireframes');
+  const { store } = setup();
+  const w = structuredClone(project(store)) as World;
+  const text = wireframeMaterial('text', 'text-ink', { x: 100, y: 100 });
+  assert.ok(text.data.kind === 'wireframe');
+  text.data.content = {
+    type: 'text',
+    text: 'Título',
+    piece: { style: { color: '#26323c' }, autoInk: true },
+  };
+  w.nodes = [text];
+  const original = structuredClone(text);
+  assert.equal(sketchTextInk(text, w).piece!.style.color, '#e0e7ed');
+  const panel = wireframeMaterial('block', 'panel', { x: 0, y: 0 });
+  assert.ok(panel.data.kind === 'wireframe');
+  Object.assign(panel, { x: 0, y: 0, width: 1200, height: 800 });
+  panel.data.content = {
+    type: 'block',
+    text: '',
+    piece: { style: { backgroundColor: '#ffffff' } },
+  };
+  w.nodes = [panel, text];
+  assert.equal(sketchTextInk(text, w).piece!.style.color, '#26323c');
+  panel.data.content.piece!.style.backgroundColor = '#ffffff10';
+  assert.equal(sketchTextInk(text, w).piece!.style.color, '#e0e7ed');
+  panel.data.content.piece!.style.backgroundColor = '#ffffff';
+  w.nodes = [text, panel];
+  assert.equal(sketchTextInk(text, w).piece!.style.color, '#e0e7ed', 'solo cuentan fondos detrás');
+  w.nodes = [panel, text];
+  panel.x = 2000;
+  assert.equal(
+    sketchTextInk(text, w).piece!.style.color,
+    '#e0e7ed',
+    'no tomar el color de una pieza distante',
+  );
+  assert.deepEqual(text, original);
+  panel.x = text.x + text.width / 2;
+  const crossing = sketchTextInk(text, w);
+  assert.equal(crossing.piece!.style.color, '#e0e7ed');
+  assert.notEqual(
+    crossing.piece!.style.textShadow,
+    'none',
+    'proteger tinta entre fondos claros y oscuros',
+  );
+  panel.x = 0;
+  assert.equal(
+    sketchTextInk(text, w).piece!.style.textShadow,
+    'none',
+    'no contornear innecesariamente sobre un fondo uniforme',
+  );
+  text.data.content.appearance = {
+    fill: '#ffffff00',
+    stroke: '#000000',
+    text: '#ff0000',
+    radius: 0,
+  };
+  assert.equal(sketchTextInk(text, w), text.data.content, 'respetar elección explícita');
+  delete text.data.content.appearance;
+  delete text.data.content.piece!.autoInk;
+  assert.equal(
+    sketchTextInk(text, w),
+    text.data.content,
+    'preservar piezas anteriores y composiciones',
+  );
+  assert.ok(!validSketchPiece({ style: {}, autoInk: 'true' }));
+});

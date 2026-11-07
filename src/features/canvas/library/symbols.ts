@@ -1,3 +1,4 @@
+import maskSymbol from '../../../../design/wireframe-library/vendor/circle-half.svg?raw';
 import svg0 from '../../../../design/wireframe-library/vendor/arrow-left.svg?raw';
 import svg1 from '../../../../design/wireframe-library/vendor/arrow-right.svg?raw';
 import svg2 from '../../../../design/wireframe-library/vendor/arrow-up.svg?raw';
@@ -33,6 +34,7 @@ import svg31 from '../../../../design/wireframe-library/vendor/x.svg?raw';
 
 /** Recursos locales incluidos al cargar Everett; la biblioteca no depende de peticiones tardías. */
 const symbols: Record<string, string> = {
+  'circle-half': 'data:image/svg+xml,' + encodeURIComponent(maskSymbol),
   'arrow-left': 'data:image/svg+xml,' + encodeURIComponent(svg0),
   'arrow-right': 'data:image/svg+xml,' + encodeURIComponent(svg1),
   'arrow-up': 'data:image/svg+xml,' + encodeURIComponent(svg2),

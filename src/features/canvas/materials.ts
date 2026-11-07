@@ -62,7 +62,7 @@ export function materialMarkup(
 ): string {
   const d = material.data;
   let content: string;
-  if (d.kind === 'wireframe') content = wireframeMarkup(material);
+  if (d.kind === 'wireframe') content = wireframeMarkup(material, w);
   else if (d.kind === 'local') {
     content = `<small class="local-copy-label">Solo en Canvas</small><div class="reference-type">${icon(d.content.kind === 'file' ? 'code' : d.content.kind === 'task' ? 'board' : d.content.kind === 'agent' ? 'agents' : 'docs', 17)}</div><h3>${html(d.title)}</h3><${d.content.kind === 'file' ? 'pre' : 'p'}>${html(localText(d.content))}</${d.content.kind === 'file' ? 'pre' : 'p'}>`;
     if (d.content.kind === 'task') {

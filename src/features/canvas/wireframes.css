@@ -107,9 +107,8 @@
 .sketch-library.searching .library-search input {
   opacity: 1;
 }
-.library-search:focus-within {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+.library-search:has(input:focus-visible) {
+  box-shadow: inset 0 -2px var(--accent);
 }
 .sketch-library .library-search input:focus-visible {
   outline: none;
@@ -243,19 +242,6 @@
 }
 .library-basic-preview svg path {
   stroke: #526171;
-  stroke-width: var(--preview-line);
-}
-.library-basic-preview .library-piece[style*='border-top-width:1px'] {
-  border-top-width: var(--preview-line) !important;
-}
-.library-basic-preview .library-piece[style*='border-right-width:1px'] {
-  border-right-width: var(--preview-line) !important;
-}
-.library-basic-preview .library-piece[style*='border-bottom-width:1px'] {
-  border-bottom-width: var(--preview-line) !important;
-}
-.library-basic-preview .library-piece[style*='border-left-width:1px'] {
-  border-left-width: var(--preview-line) !important;
 }
 .library-tile-name {
   min-height: 34px;
@@ -797,6 +783,9 @@
 .library-text-mode:hover {
   background: var(--hover);
 }
+.sketch-library .library-text-mode:active {
+  scale: 1 !important;
+}
 .library-switch-track {
   display: block;
   flex: 0 0 36px;
@@ -901,4 +890,16 @@ body[data-canvas-motion='reduced']
   height: var(--preview-text-line);
   top: 50%;
   transform: translateY(-50%);
+}
+
+.library-mask-symbol {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 40px;
+  height: 40px;
+  background: #526171;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
 }

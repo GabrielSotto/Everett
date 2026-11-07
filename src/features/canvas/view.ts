@@ -1040,7 +1040,7 @@ export class CanvasView implements View {
           if (!el) continue;
           this.applyRect(el, node);
           const art = el.querySelector('[data-library-piece]');
-          if (art) art.outerHTML = wireframeMarkup(node);
+          if (art) art.outerHTML = wireframeMarkup(node, this.ctx.world());
         }
         const frame = this.root.querySelector<HTMLElement>(
           `[data-component="${CSS.escape(group.id)}"]`,
@@ -1068,7 +1068,8 @@ export class CanvasView implements View {
         this.applyRect(element, d.rect);
         if (material?.data.kind === 'wireframe') {
           const preview = element.querySelector('.wireframe-content,[data-library-piece]');
-          if (preview) preview.outerHTML = wireframeMarkup({ ...material, ...d.rect });
+          if (preview)
+            preview.outerHTML = wireframeMarkup({ ...material, ...d.rect }, this.ctx.world());
         }
       }
       this.paintLinks([{ id: d.id, point: d.rect }]);
@@ -1141,6 +1142,14 @@ export class CanvasView implements View {
         if (element) {
           element.style.left = item.point.x + 'px';
           element.style.top = item.point.y + 'px';
+          if (d.kind === 'node') {
+            const node = this.ctx.world().nodes.find((n) => n.id === item.id);
+            if (node?.data.kind === 'wireframe' && node.data.content.piece?.autoInk) {
+              const preview = element.querySelector('.library-piece');
+              if (preview)
+                preview.outerHTML = wireframeMarkup({ ...node, ...item.point }, this.ctx.world());
+            }
+          }
         }
       }
       if (d.kind === 'node') {

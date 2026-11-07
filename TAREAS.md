@@ -146,6 +146,21 @@ Evidencia en `output/pruebas/unitarias/2026-11-07_14-32-09-353Z/` y
 `15123247e27e96fe88306893a2fb2cd4694a1e6a39ae78962594717dfcbfe5f9`.
 Vite sigue en 4173; pendiente de revisión del usuario, sin cerrar 0.8 ni integrar en `dev`.
 
+La revisión siguiente del 7 de noviembre corrige el parpadeo del switch y de la búsqueda:
+conserva las tarjetas preparadas en las tres categorías. Unifica los contornos de las miniaturas
+y usa el símbolo convencional de máscara de Phosphor (MIT). Las piezas nuevas de texto no llevan
+placa blanca y adaptan su tinta a fondos planos; el color elegido explícitamente se conserva.
+El foco de teclado permanece visible, el clic no deja halo en la lupa y el nombre del Mundo ocupa
+el ancho de sus glifos. C08-U52 y C08-B154–B156 cubren continuidad por fotogramas, grosores,
+texto sobre fondos claros/oscuros, teclado y cabeceras estrechas.
+Pasaron 118 pruebas unitarias, 32 del catálogo y 67 recorridos de regresión dirigida, sin fallos,
+omisiones ni reintentos, incluida la comparación de 568 representaciones y controles negativos.
+Tipado, formato, revisión visual y verificación independiente de fuentes y evidencias correctos.
+Evidencia en `output/pruebas/unitarias/2026-11-07_15-24-34-190Z/` y
+`output/pruebas/navegador/2026-11-07_15-24-34-261Z/`, SHA-256
+`bc0c250143783062349371503ae22ecf126174ff45f7a109eb2e6c6e1691efc9`.
+Continúa en revisión del usuario sobre Vite en 4173; no sustituye el gate completo de cierre.
+
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
 por arrastre y clic, distribución operable sobre solapamientos y guías con referencias visibles

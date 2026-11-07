@@ -1,5 +1,6 @@
 import type { LibraryComposition } from '../domain/sketch-library';
 import { libraryPieceMarkup } from '../features/canvas/library/piece-markup';
+import { librarySymbol } from '../features/canvas/library/symbols';
 
 /** Encuadrar la tinta, no el ancho vacío reservado por el catálogo de revisión. */
 export function paintLibraryPreview(
@@ -8,6 +9,16 @@ export function paintLibraryPreview(
   maximumHeight: number,
   basic: boolean,
 ): void {
+  // Máscara se reconoce por la convención de círculo parcialmente rayado.
+  // El símbolo identifica la entrada; no añade una pieza decorativa al Canvas.
+  if (host.dataset.thumbnail === 'mask') {
+    const glyph = document.createElement('span');
+    glyph.className = 'library-mask-symbol';
+    glyph.style.maskImage = `url("${librarySymbol('circle-half')}")`;
+    host.replaceChildren(glyph);
+    host.dataset.ready = 'true';
+    return;
+  }
   // Encuadrar la tinta sin que un fondo auxiliar altere su peso en la miniatura.
   const parts = composition.parts.filter(
     (part, index) => basic || index !== 0 || !part.name.startsWith('Fondo · '),
@@ -36,7 +47,6 @@ export function paintLibraryPreview(
   artwork.style.width = width + 'px';
   artwork.style.height = height + 'px';
   artwork.style.transform = `translate(-50%,-50%) scale(${scale})`;
-  artwork.style.setProperty('--preview-line', Math.max(1, 2 / scale) + 'px');
   artwork.style.setProperty('--preview-text-line', Math.max(5, 2 / scale) + 'px');
   artwork.setAttribute('aria-hidden', 'true');
   artwork.innerHTML = parts
@@ -82,12 +92,21 @@ export function paintLibraryPreview(
     });
   }
   if (basic) {
+    // Bordes CSS y trazos SVG deben pesar lo mismo en pantalla, cualquiera sea
+    // su tamaño original. Medir la transformación completa incluye el viewBox.
+    artwork.querySelectorAll<SVGPathElement>('svg path').forEach((path) => {
+      const matrix = path.getScreenCTM();
+      if (matrix && getComputedStyle(path).stroke !== 'none')
+        path.style.strokeWidth = 2 / Math.hypot(matrix.a, matrix.b) + 'px';
+    });
     // Los rellenos de tinta (puntos, pistas y separadores) también necesitan
     // contraste en miniatura. Los fondos claros y las transparencias se conservan.
     artwork.querySelectorAll<HTMLElement>('[data-library-piece]').forEach((piece) => {
-      const channels = getComputedStyle(piece)
-        .backgroundColor.match(/[\d.]+/g)
-        ?.map(Number);
+      const computed = getComputedStyle(piece);
+      for (const edge of ['top', 'right', 'bottom', 'left'])
+        if (parseFloat(computed.getPropertyValue(`border-${edge}-width`)) > 0)
+          piece.style.setProperty(`border-${edge}-width`, 2 / scale + 'px');
+      const channels = computed.backgroundColor.match(/[\d.]+/g)?.map(Number);
       const rect = piece.getBoundingClientRect();
       if (
         channels &&
@@ -97,8 +116,14 @@ export function paintLibraryPreview(
           (Math.max(...channels.slice(0, 3)) < 245 && rect.width / rect.height > 4))
       ) {
         piece.style.backgroundColor = '#526171';
-        if (rect.width < 2) piece.style.minWidth = 2 / scale + 'px';
-        if (rect.height < 2) piece.style.minHeight = 2 / scale + 'px';
+        if (rect.height / rect.width > 4 && rect.width / scale < 12) {
+          piece.style.width = piece.style.minWidth = 2 / scale + 'px';
+          piece.style.left = (rect.width - 2) / scale / 2 + 'px';
+        }
+        if (rect.width / rect.height > 4 && rect.height / scale < 12) {
+          piece.style.height = piece.style.minHeight = 2 / scale + 'px';
+          piece.style.top = (rect.height - 2) / scale / 2 + 'px';
+        }
       }
     });
   }

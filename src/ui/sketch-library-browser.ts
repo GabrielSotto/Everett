@@ -9,6 +9,7 @@ import { compileLibrary } from '../features/canvas/library/compile';
 import { paintLibraryPreview } from './sketch-library-preview';
 import { html } from './dom';
 import { icon } from './icons';
+import type { LibraryComposition } from '../domain/sketch-library';
 
 const choices = new Map<string, LibraryChoice>();
 let labels = false;
@@ -67,6 +68,23 @@ export function libraryBrowser(
   const family = root.querySelector<HTMLSelectElement>('select')!;
   const items = root.querySelector<HTMLElement>('.library-items')!;
   const renders = new WeakMap<HTMLElement, number>();
+  const compositions = new WeakMap<HTMLElement, LibraryComposition>();
+  const tiles = new Map<string, HTMLElement>();
+  const paint = (host: HTMLElement, composition: LibraryComposition, basic: boolean) => {
+    paintLibraryPreview(
+      host,
+      {
+        ...composition,
+        parts: composition.parts.map((part) =>
+          part.content.piece?.label
+            ? { ...part, content: { ...part.content, placeholder: !labels } }
+            : part,
+        ),
+      },
+      64,
+      basic,
+    );
+  };
   let tab = 'base',
     epoch = 0;
   const normalize = (text: string) =>
@@ -98,10 +116,11 @@ export function libraryBrowser(
               previews.observe(host);
               return;
             }
-            paintLibraryPreview(host, composition, 64, entry.family === 'base');
+            compositions.set(host, composition);
+            paint(host, composition, entry.family === 'base');
           })
           .catch(() => {
-            if (signal.aborted || current !== epoch) return;
+            if (signal.aborted || current !== epoch || renders.get(host) !== render) return;
             host.replaceChildren();
             host.textContent = 'Vista previa no disponible';
           });
@@ -112,8 +131,6 @@ export function libraryBrowser(
   signal.addEventListener('abort', () => previews.disconnect(), { once: true });
   const list = () => {
     root.dispatchEvent(new CustomEvent('library-browse', { bubbles: true }));
-    epoch++;
-    previews.disconnect();
     const query = normalize(search.value.trim());
     const matches = entries.filter((item) =>
       query
@@ -128,21 +145,42 @@ export function libraryBrowser(
     const results = root.querySelector<HTMLElement>('.library-results')!;
     results.hidden = !query;
     results.textContent = `${matches.length} ${matches.length === 1 ? 'resultado' : 'resultados'} en la biblioteca`;
-    items.innerHTML = matches.length
-      ? matches
-          .map(
-            (item) =>
-              `<div class="library-tile"><button type="button" class="library-tile-add" data-action="library-add" data-library-add="${item.id}" aria-label="Agregar ${html(item.name)}"><span class="library-thumbnail" data-thumbnail="${item.id}" aria-hidden="true"></span><span class="library-tile-name">${html(item.name)}</span></button>${hasLibraryOptions(item) ? `<button type="button" class="library-configure" data-action="library-configure" data-library-entry="${item.id}" aria-label="Opciones de ${html(item.name)}" title="Variantes y estados" aria-haspopup="dialog">${icon('more', 16)}</button>` : ''}</div>`,
-          )
-          .join('')
-      : '<p class="library-empty">No hay coincidencias. Probá con otro nombre.</p>';
+    const current = [...items.querySelectorAll<HTMLElement>('[data-library-add]')];
+    if (
+      matches.length &&
+      matches.length === current.length &&
+      matches.every((item, i) => item.id === current[i]!.dataset.libraryAdd)
+    )
+      return;
+    epoch++;
+    previews.disconnect();
+    if (matches.length)
+      items.replaceChildren(
+        ...matches.map((item) => {
+          let tile = tiles.get(item.id);
+          if (!tile) {
+            tile = document.createElement('div');
+            tile.className = 'library-tile';
+            tile.innerHTML = `<button type="button" class="library-tile-add" data-action="library-add" data-library-add="${item.id}" aria-label="Agregar ${html(item.name)}"><span class="library-thumbnail" data-thumbnail="${item.id}" aria-hidden="true"></span><span class="library-tile-name">${html(item.name)}</span></button>${hasLibraryOptions(item) ? `<button type="button" class="library-configure" data-action="library-configure" data-library-entry="${item.id}" aria-label="Opciones de ${html(item.name)}" title="Variantes y estados" aria-haspopup="dialog">${icon('more', 16)}</button>` : ''}`;
+            tiles.set(item.id, tile);
+          }
+          return tile;
+        }),
+      );
+    else
+      items.innerHTML = '<p class="library-empty">No hay coincidencias. Probá con otro nombre.</p>';
     items.scrollTop = 0;
-    items.querySelectorAll('[data-thumbnail]').forEach((host) => previews.observe(host));
+    items.querySelectorAll<HTMLElement>('[data-thumbnail]').forEach((host) => {
+      const composition = compositions.get(host);
+      if (composition) paint(host, composition, host.classList.contains('library-basic-preview'));
+      else previews.observe(host);
+    });
   };
   const update = (choice: LibraryChoice) => {
     choices.set(choice.entry.id, choice);
     const host = items.querySelector<HTMLElement>(`[data-thumbnail="${choice.entry.id}"]`);
     if (host) {
+      compositions.delete(host);
       host.removeAttribute('data-ready');
       previews.observe(host);
     }
@@ -154,9 +192,12 @@ export function libraryBrowser(
     () => {
       labels = !labels;
       textMode.setAttribute('aria-checked', String(labels));
-      const scroll = items.scrollTop;
-      list();
-      items.scrollTop = scroll;
+      // El layout no cambia entre barras y rótulos: conservar lista, foco y scroll.
+      // Las previews pendientes usan el valor vigente al terminar de prepararse.
+      items.querySelectorAll<HTMLElement>('[data-thumbnail]').forEach((host) => {
+        const composition = compositions.get(host);
+        if (composition) paint(host, composition, host.classList.contains('library-basic-preview'));
+      });
     },
     { signal },
   );

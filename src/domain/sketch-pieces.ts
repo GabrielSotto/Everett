@@ -25,6 +25,7 @@ export const pieceStyleKeys = [
   'textAlign',
   'textDecorationLine',
   'textTransform',
+  'textShadow',
   'opacity',
   'boxShadow',
   'outline',
@@ -38,6 +39,7 @@ export interface SketchPiece {
   viewBox?: string;
   rotation?: number;
   label?: boolean;
+  autoInk?: boolean;
   placeholderColor?: string;
   ink?: { width: number; height: number };
   clip?: readonly [number, number, number, number];
@@ -72,6 +74,7 @@ export function validSketchPiece(value: unknown): value is SketchPiece {
   )
     return false;
   if (piece.label !== undefined && typeof piece.label !== 'boolean') return false;
+  if (piece.autoInk !== undefined && typeof piece.autoInk !== 'boolean') return false;
   if (
     piece.placeholderColor !== undefined &&
     (typeof piece.placeholderColor !== 'string' || !color.test(piece.placeholderColor))
