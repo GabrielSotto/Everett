@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 import { start, snapshot, world, capture, moveMaterial, connect } from './canvas-utility-helpers';
 import { storedFixture } from './canvas-fixtures';
 import { wireframeKinds, wireframeMaterial, type WireframeKind } from '../../src/domain/wireframes';
-import { legacyWireframe, openLibrary } from './sketch-library-helpers';
+import { legacyWireframe, openLibrary, librarySearch } from './sketch-library-helpers';
 import { isWireframeComposition } from '../../src/domain/wireframe-compositions';
 
 async function add(page: Page, type: WireframeKind): Promise<string> {
@@ -356,10 +356,11 @@ test('C08-B130: biblioteca y editor funcionan por teclado a 320px y texto 200%, 
   const p = (await palette.boundingBox())!;
   expect(p.x).toBeGreaterThanOrEqual(0);
   expect(p.x + p.width).toBeLessThanOrEqual(320);
-  await palette.getByRole('searchbox').fill('Tabla de datos');
+  await (await librarySearch(page)).fill('Tabla de datos');
   await expect(
     palette.getByRole('button', { name: 'Agregar Tabla de datos', exact: true }),
   ).toBeInViewport();
+  await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   await openEditor(page, id);
   const camera = (await snapshot(page)).camera;

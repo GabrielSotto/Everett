@@ -31,7 +31,7 @@ export function openSketchLibrary(ctx: Context, parentSignal: AbortSignal): void
   panel.role = 'dialog';
   panel.setAttribute('aria-label', 'Biblioteca de bosquejos');
   panel.id = 'canvas-wireframes-menu';
-  panel.innerHTML = `<header><strong>Bosquejos</strong><button type="button" class="icon-button" data-close aria-label="Cerrar biblioteca">${icon('close', 16)}</button></header><div class="library-browser"></div><p class="library-status" role="status"></p>`;
+  panel.innerHTML = `<header><strong>Bosquejos</strong><div class="library-search"><input id="library-search-input" type="search" aria-label="Buscar piezas y composiciones" placeholder="Buscar en la biblioteca…" disabled aria-hidden="true"><button type="button" class="icon-button" data-action="library-search" aria-label="Buscar en la biblioteca" aria-expanded="false" aria-controls="library-search-input" title="Buscar en la biblioteca">${icon('search', 16)}</button></div><button type="button" class="icon-button" data-close aria-label="Cerrar biblioteca">${icon('close', 16)}</button></header><div class="library-browser"></div><p class="library-status" role="status"></p>`;
   document.body.append(panel);
   const trigger = () => document.querySelector<HTMLElement>('[data-action=canvas-wireframes]');
   trigger()?.setAttribute('aria-expanded', 'true');
@@ -131,8 +131,34 @@ export function openSketchLibrary(ctx: Context, parentSignal: AbortSignal): void
     }
   };
   const browserRoot = panel.querySelector<HTMLElement>('.library-browser')!;
+  const search = panel.querySelector<HTMLInputElement>('input[type=search]')!;
+  const searchToggle = panel.querySelector<HTMLButtonElement>('[data-action=library-search]')!;
+  let searching = false;
+  const setSearching = (open: boolean) => {
+    searching = open;
+    panel.classList.toggle('searching', open);
+    searchToggle.setAttribute('aria-expanded', String(open));
+    search.disabled = !open;
+    search.setAttribute('aria-hidden', String(!open));
+    if (open) search.focus({ preventScroll: true });
+    else {
+      // Una búsqueda colapsada nunca debe dejar un filtro invisible.
+      search.value = '';
+      search.dispatchEvent(new Event('input'));
+      searchToggle.focus({ preventScroll: true });
+    }
+  };
+  searchToggle.addEventListener('click', () => setSearching(!searching), { signal });
+  search.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key === 'Enter') event.preventDefault();
+    },
+    { signal },
+  );
   const browser = libraryBrowser(
     browserRoot,
+    search,
     signal,
     (choice, anchor) => {
       closeOptions?.();
@@ -154,7 +180,8 @@ export function openSketchLibrary(ctx: Context, parentSignal: AbortSignal): void
         return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      close();
+      if (searching) setSearching(false);
+      else close();
     },
     { signal, capture: true },
   );
@@ -190,5 +217,5 @@ export function openSketchLibrary(ctx: Context, parentSignal: AbortSignal): void
     (choice, point) => void quickAdd(choice, point),
   );
   position();
-  panel.querySelector<HTMLInputElement>('input[type=search]')?.focus();
+  panel.querySelector<HTMLButtonElement>('[aria-selected=true]')?.focus({ preventScroll: true });
 }

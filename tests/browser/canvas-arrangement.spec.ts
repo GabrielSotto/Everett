@@ -352,9 +352,7 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   await page.keyboard.press('Escape');
   const first = page.getByRole('button', { name: 'Bosquejos', exact: true });
   await first.click();
-  await expect(
-    page.getByRole('searchbox', { name: 'Buscar piezas y composiciones' }),
-  ).toBeFocused();
+  await expect(page.getByRole('tab', { name: 'Piezas', exact: true })).toBeFocused();
   const tile = page.getByRole('button', { name: 'Agregar Bloque rectangular', exact: true });
   await tile.focus();
   await page.keyboard.press('ArrowRight');

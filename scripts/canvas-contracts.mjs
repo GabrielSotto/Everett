@@ -1,7 +1,7 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
   { id: 'C08-U51', layer: 'unit', contracts: ['C08-LIBRARY-01', 'C08-ORG-01'] },
-  ...['C08-B150', 'C08-B151', 'C08-B152'].map((id) => ({
+  ...['C08-B150', 'C08-B151', 'C08-B152', 'C08-B153'].map((id) => ({
     id,
     layer: 'browser',
     contracts: ['C08-LIBRARY-01', 'C08-ORG-01', 'C08-ARRANGE-01'],
@@ -313,6 +313,7 @@ export const canvasControlRequirements = {
   'C08-B150': { 'canvas-wireframes': 1, 'library-add': 1 },
   'C08-B151': { 'library-add': 1, 'group-ungroup': 1 },
   'C08-B152': { 'canvas-organize': 3, 'library-add': 1 },
+  'C08-B153': { 'library-search': 6, 'library-labels': 4, 'library-add': 2 },
   'C08-B140': { 'library-add': 6, 'canvas-undo': 4, 'canvas-redo': 4 },
   'C08-B141': { 'canvas-wireframes': 3, 'canvas-undo': 2 },
   'C08-B142': { 'canvas-wireframes': 8, 'library-add': 1 },

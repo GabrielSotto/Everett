@@ -54,7 +54,7 @@ desplazada, palabra partida y chat fuera de contexto deben fallar. Conservar la 
 
 ### Trabajo continuo de Canvas
 
-La integración del catálogo añade C08-U50–U51 y C08-B143–B152. Recorrer la biblioteca desde Bosquejos,
+La integración del catálogo añade C08-U50–U51 y C08-B143–B153. Recorrer la biblioteca desde Bosquejos,
 crear por botón y arrastre, editar partes después de desagrupar explícitamente, duplicar y recargar. Comprobar
 cancelación, cámara conservada, historial atómico, recursos fallidos y recuperación. La conversión
 compara píxeles de muestras representativas con sus piezas de Canvas; retirar textos es un
@@ -87,6 +87,12 @@ C08-B152 comprueba que alineación y espaciado aparecen solo con dos o más unid
 desde la barra y el menú contextual, que dos componentes no se cuentan por sus piezas y que
 Escape descarta la edición del espaciado.
 Los valores numéricos forman parte de Alineación; la distribución automática requiere tres unidades.
+C08-B153 comprueba búsqueda lateral en la cabecera a 1440/550/320 px, posiciones intermedias,
+anclaje derecho estable y catálogo sin desplazamiento al abrir. Filtrar no requiere Enter y
+cerrar no conserva filtros invisibles. Escape recupera foco y categoría; el switch Mostrar rótulos
+funciona con ratón, Espacio y Enter, actualiza previews e inserciones y conserva su valor al reabrir.
+Comprobar movimiento reducido y texto al 200 %: pestañas sin solapamiento y miniaturas en una
+columna cuando su texto requiere más ancho, con navegación por teclado correspondiente.
 
 El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo
 con Vite. El gate cotidiano evalúa directamente las fuentes de la aplicación: tipado, pruebas

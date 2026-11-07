@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
-import { libraryTile, openLibrary } from './sketch-library-helpers';
+import { libraryTile, openLibrary, librarySearch } from './sketch-library-helpers';
 
 async function library(page: Page) {
   await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
@@ -81,10 +81,11 @@ test('C08-B148: Bosquejos despliega una biblioteca acotada al botón, sin ficha 
   await expect(panel).toHaveCount(0);
   await openLibrary(page);
   const before = await world(page);
-  await panel.getByRole('searchbox').fill('Notificación del seguimiento internacional');
+  await (await librarySearch(page)).fill('Notificación del seguimiento internacional');
   await expect(panel.getByText(/No hay coincidencias/)).toBeVisible();
   expect((await world(page)).nodes).toEqual(before.nodes);
-  await panel.getByRole('searchbox').fill('');
+  await (await librarySearch(page)).fill('');
+  await panel.getByRole('button', { name: 'Buscar en la biblioteca' }).click();
   for (const size of [
     { width: 1440, height: 900 },
     { width: 550, height: 668 },
@@ -107,10 +108,10 @@ test('C08-B148: Bosquejos despliega una biblioteca acotada al botón, sin ficha 
     .poll(() => panel.locator('.library-items').evaluate((el) => el.scrollTop))
     .toBeGreaterThan(0);
   await page.setViewportSize({ width: 550, height: 360 });
-  await panel.getByRole('searchbox').fill('');
+  await (await librarySearch(page)).fill('');
   const shortBox = (await panel.boundingBox())!;
   expect(shortBox.y + shortBox.height).toBeLessThanOrEqual(352);
-  await expect(panel.getByRole('group', { name: 'Texto de los bosquejos' })).toBeInViewport();
+  await expect(panel.getByRole('switch', { name: 'Mostrar rótulos' })).toBeInViewport();
   await panel.locator('.library-items').hover();
   await page.mouse.wheel(0, 2000);
   await expect
@@ -119,9 +120,11 @@ test('C08-B148: Bosquejos despliega una biblioteca acotada al botón, sin ficha 
   await capture(page, info, 'desplegable-altura-reducida');
   await page.setViewportSize({ width: 320, height: 720 });
   await page.keyboard.press('Escape');
+  await expect(panel.getByRole('button', { name: 'Buscar en la biblioteca' })).toBeFocused();
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Bosquejos', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Bosquejos', exact: true }).press('ArrowDown');
-  await expect(panel.getByRole('searchbox')).toBeFocused();
+  await expect(panel.getByRole('tab', { name: 'Piezas', exact: true })).toBeFocused();
   await page.mouse.click(300, 650);
   await expect(panel).toHaveCount(0);
 });
@@ -212,7 +215,7 @@ test('C08-B149: miniaturas de piezas centradas y distinguibles, sin depender de 
     body: JSON.stringify(results),
     contentType: 'application/json',
   });
-  await panel.getByRole('searchbox').fill('');
+  await (await librarySearch(page)).fill('');
   await capture(page, info, 'miniaturas-centradas');
 });
 
@@ -221,8 +224,8 @@ test('C08-B143: biblioteca crea chat compuesto editable, historial atómico y pe
 }, info) => {
   await start(page);
   const panel = await library(page);
-  await panel.getByRole('searchbox').fill('chat completo');
-  await panel.getByRole('button', { name: 'Mostrar rótulos de texto' }).click();
+  await (await librarySearch(page)).fill('chat completo');
+  await panel.getByRole('switch', { name: 'Mostrar rótulos' }).click();
   await expect(panel.locator('[data-thumbnail=chat]')).toHaveAttribute('data-ready', 'true');
   await capture(page, info, 'biblioteca-chat');
   await panel.locator('[data-library-add=chat]').click();
@@ -287,7 +290,7 @@ test('C08-B147: un símbolo que no carga bloquea la creación y permite reintent
     });
   });
   const panel = await library(page);
-  await panel.getByRole('searchbox').fill('Icono y símbolo');
+  await (await librarySearch(page)).fill('Icono y símbolo');
   await panel.locator('[data-library-add="symbol"]').click();
   await expect(panel.getByRole('status')).toContainText('No se pudo cargar un símbolo');
   expect((await world(page)).nodes).toHaveLength(0);
@@ -353,10 +356,10 @@ test('C08-B144: todas las entradas, variantes y estados se eligen sin formulario
     await expect(thumbnail.locator('input,button,textarea,select')).toHaveCount(0);
   }
   await page.setViewportSize({ width: 320, height: 720 });
-  await panel.getByRole('searchbox').fill('zzzz-sin-resultados');
+  await (await librarySearch(page)).fill('zzzz-sin-resultados');
   await expect(panel.getByText(/No hay coincidencias/)).toBeVisible();
   await libraryTile(page, 'composer');
-  await panel.getByRole('button', { name: 'Mostrar rótulos de texto' }).click();
+  await panel.getByRole('switch', { name: 'Mostrar rótulos' }).click();
   await expect(panel.locator('[data-thumbnail=composer]')).toHaveAttribute('data-ready', 'true');
   await capture(page, info, 'biblioteca-estrecha');
   const box = (await panel.boundingBox())!;
@@ -373,7 +376,7 @@ test('C08-B145: arrastrar respeta cámara, cancelar no crea piezas, duplicar con
   await start(page);
   const panel = await library(page);
   const camera = (await snapshot(page)).state.camera;
-  await panel.getByRole('searchbox').fill('botón');
+  await (await librarySearch(page)).fill('botón');
   const box = (await panel.locator('[data-library-add=button]').boundingBox())!;
   await page.mouse.move(box.x + box.width / 4, box.y + box.height / 4);
   await page.mouse.down();

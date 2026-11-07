@@ -121,15 +121,30 @@ La biblioteca usa un selector compacto Barras/Rótulos y un icono de hoja de bos
 de espaciado forman parte de alineación y aparecen con dos o más unidades seleccionadas.
 C08-U51 y C08-B150–B152 añaden desconexión de red, hora, arrastre, selección de componentes,
 resize por puntero/teclado, asignación, copia, persistencia y cancelación del espaciado.
-Verificación actual: 117 pruebas unitarias y 225 recorridos de navegador aprobados, sin fallos,
+Verificación de esa corrección: 117 pruebas unitarias y 225 recorridos de navegador aprobados, sin fallos,
 omisiones ni reintentos, incluidos los controles negativos y los 30 ciclos de uso sostenido.
 La comparación conserva 568 representaciones; se revisaron además las capturas de la biblioteca
 a 320 px, alineación contextual, hora y botón insertados sin red, y piezas después de desagrupar.
-Tipado, formato y verificadores independientes correctos. Evidencia vigente en
+Tipado, formato y verificadores independientes correctos. Evidencia de esa corrección en
 `output/pruebas/unitarias/2026-11-07_02-31-43-833Z/` y
 `output/pruebas/navegador/2026-11-07_02-31-54-022Z/`, SHA-256 de las fuentes servidas
 `8a307719f21687767b2ccf65533d2ac3d2ee112cec85a8e0c0b83138acf67ecb`.
 Vite continúa en 4173. Pendiente de revisión del usuario; 0.8 permanece abierta y sin integrar en `dev`.
+
+El ajuste del 7 de noviembre reemplaza Barras/Rótulos por el switch «Mostrar rótulos» y lleva
+la búsqueda a la cabecera: la lupa la despliega hacia la izquierda, filtra al escribir y al cerrar
+limpia el filtro y recupera la categoría. Escape cierra primero la búsqueda y después la biblioteca.
+Cambiar el texto actualiza las miniaturas sin perder el punto de desplazamiento de la lista.
+Con texto al 200 %, las pestañas se desplazan horizontalmente y las piezas pasan a una columna.
+C08-B153 comprueba geometría durante la transición, teclado, foco, movimiento reducido,
+conservación del scroll y correspondencia entre switch, miniaturas e inserción.
+Pasaron 117 pruebas unitarias y los 32 recorridos afectados, sin fallos, omisiones ni reintentos;
+tipado, formato, revisión visual y verificación independiente de fuentes/evidencias correctos.
+Es una regresión dirigida del desarrollo continuo; no sustituye el gate completo de cierre.
+Evidencia en `output/pruebas/unitarias/2026-11-07_14-32-09-353Z/` y
+`output/pruebas/navegador/2026-11-07_14-32-09-664Z/`, SHA-256 de las fuentes servidas
+`15123247e27e96fe88306893a2fb2cd4694a1e6a39ae78962594717dfcbfe5f9`.
+Vite sigue en 4173; pendiente de revisión del usuario, sin cerrar 0.8 ni integrar en `dev`.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación

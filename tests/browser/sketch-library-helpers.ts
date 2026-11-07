@@ -14,10 +14,16 @@ export async function openLibrary(page: Page) {
 }
 export async function libraryTile(page: Page, id: string) {
   const panel = await openLibrary(page);
-  await panel.getByRole('searchbox').fill(entries.find((item) => item.id === id)!.name);
+  await (await librarySearch(page)).fill(entries.find((item) => item.id === id)!.name);
   const tile = panel.locator(`[data-library-add="${id}"]`);
   await expect(tile).toBeVisible();
   return tile;
+}
+export async function librarySearch(page: Page) {
+  const panel = await openLibrary(page);
+  const toggle = panel.getByRole('button', { name: 'Buscar en la biblioteca', exact: true });
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click();
+  return panel.getByRole('searchbox', { name: 'Buscar piezas y composiciones' });
 }
 export async function addLibrary(page: Page, id: string) {
   const before = new Set((await world(page)).nodes.map((node) => node.id));
