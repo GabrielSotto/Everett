@@ -1,3 +1,4 @@
+import { screenEntries } from './screens.js';
 // Catálogo de diseño: clases de Chalk y símbolos de Phosphor, ambos MIT.
 import { stateNames, stateContract } from './state-contracts.js';
 export { stateNames };
@@ -25,12 +26,8 @@ import {
   chart,
   card,
   chat,
-  conversations,
   inspector,
-  screen,
   components,
-  calendar,
-  bottomNav,
 } from './components.js';
 export const families = [
   ['all', 'Todo', 'Biblioteca de bosquejos'],
@@ -663,154 +660,17 @@ work(
   components['accordion'],
   'acordeón disclosure',
 );
-const full = (id, name, parts, render, tags = '') =>
-  add('screens', id, name, parts, render, 'pantalla ' + tags, 'Interfaz', true);
-full(
-  'login',
-  'Inicio de sesión',
-  'Marco + rótulos + campos + opciones + acciones',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Acceso',
-      `<div class="login-layout"><div class="demo-heading">${t('Bienvenido')}</div>${t('Entrá a tu espacio de trabajo')}${field('Correo', c.d.email)}${field('Contraseña', '••••••••', 'eye')}<div class="demo-row">${mark(true)}${t('Recordarme')}</div>${btn('Entrar', 'primary')}${t('¿Olvidaste tu contraseña?')}</div>`,
-    ),
-  'login autenticar',
-);
-full(
-  'signup',
-  'Registro por pasos',
-  'Marco + progreso + campos + acciones',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Crear cuenta',
-      `${components.steps({ ...c, stepIndex: 0 })}${field('Nombre', c.d.person)}${field('Correo', c.d.email)}${field('Contraseña', '••••••••', 'eye')}${btn('Continuar', 'primary')}`,
-    ),
-  'onboarding formulario',
-);
-full(
-  'invitation',
-  'Invitación a un espacio',
-  'Marco + identidad + contexto + acciones',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Invitación',
-      `${avatar()}<div class="demo-heading">${t('Te invitaron a ' + c.d.title)}</div><p>${t(c.d.person + ' te invita a colaborar en este espacio.')}</p>${field('Tu acceso', 'Editor: podés crear y modificar materiales', '', 'readonly')}<div class="demo-row wrap">${btn('Ahora no')}${btn('Aceptar invitación', 'primary')}</div>`,
-    ),
-  'equipo',
-);
-full(
-  'dashboard',
-  'Dashboard de trabajo',
-  'Toolbar + navegación + métricas + gráfico + tabla',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Panel de trabajo',
-      `${toolbar(c)}<div class="workspace-layout">${sidebar(c, true)}<div class="grow stack"><div class="metric-grid">${['Referencias', 'Tareas', 'Decisiones'].map((v, i) => `<div class="metric">${t(v)}<strong>${[c.d.amount, '32', '18'][i]}</strong></div>`).join('')}</div>${chart()}${table(c)}</div></div>`,
-    ),
-  'dashboard panel estadísticas',
-);
-full(
-  'chat-app',
-  'Aplicación de mensajería',
-  'Navegación + conversaciones + chat + composer',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Mensajería',
-      `<div class="workspace-layout">${conversations(c)}<div class="grow">${chat(c)}</div></div>`,
-    ),
-  'chat conversaciones',
-);
-full(
-  'editor',
-  'Editor con inspector',
-  'Toolbar + árbol + área de trabajo + inspector',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Editor de interfaz',
-      `${toolbar(c)}<div class="editor-layout">${sidebar(c, true)}<div class="editor-artboard">${card(c, true)}</div>${inspector(c)}</div>`,
-    ),
-  'editor diseño inspector complejo',
-);
-full(
-  'search-results',
-  'Catálogo con filtros',
-  'Búsqueda + filtros + grilla + contenido + páginas',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Explorar referencias',
-      `${field('Buscar', c.d.row, 'magnifying-glass')}${tabs(['Todo', 'Imágenes', 'Documentos'])}<div class="demo-row wrap">${badge('Diseño')}${badge('Recientes')}${badge('Mi equipo')}</div><div class="gallery-grid">${card(c, true)}${card({ ...c, d: { ...c.d, title: 'Otra referencia' } }, true)}</div>${components.pagination({ ...c, state: 'default', states: [] })}`,
-    ),
-  'buscador catálogo ecommerce resultados',
-);
-full(
-  'settings',
-  'Preferencias y configuración',
-  'Navegación + secciones + campos + switches',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Preferencias',
-      `${tabs(['General', 'Apariencia', 'Accesibilidad'])}${field('Nombre del espacio', c.d.title)}${field('Idioma', 'Español', 'caret-down')}${['Mostrar cuadrícula', 'Reducir animaciones', 'Recibir notificaciones'].map((v, i) => `<div class="setting-row">${t(v)}${toggle(i !== 1)}</div>`).join('')}${btn('Guardar cambios', 'primary')}`,
-    ),
-  'ajustes settings',
-);
-full(
-  'kanban',
-  'Gestión por columnas',
-  'Toolbar + columnas + tarjetas + estados',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Proyecto',
-      `${toolbar(c)}<div class="kanban-grid">${['Pendiente', 'En curso', 'Hecho'].map((v, i) => `<div><div class="demo-row"><strong>${t(v)}</strong>${badge(String(i + 1))}</div>${card({ ...c, d: { ...c.d, title: i === 0 ? c.d.title : ['Preparar revisión', 'Compartir resultados'][i - 1] } })}${i === 0 ? btn('Agregar', '', 'plus') : ''}</div>`).join('')}</div>`,
-    ),
-  'kanban tablero tareas complejo',
-);
-full(
-  'calendar-app',
-  'Agenda y planificación',
-  'Toolbar + calendario + selección + lista',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Agenda',
-      `${toolbar(c, 'Agenda del equipo')}<div class="workspace-layout"><div class="grow">${calendar({ ...c, state: 'selected', states: ['selected'], variant: 'single' })}</div><div class="agenda-list"><strong>${t('10 de noviembre')}</strong><div class="demo-list">${(c.data === 'one' ? ['Revisión de ' + c.d.title] : ['Revisión de ' + c.d.title, 'Planificación del equipo']).map((title, i) => `<div class="agenda-event"><span class="event-time">${t(i === 0 ? '10:00' : '14:30')}</span><div class="grow"><strong>${t(title)}</strong><small>${t(i === 0 ? 'Con ' + c.d.person : '30 min · Sala de reuniones')}</small></div></div>`).join('')}</div></div></div>`,
-    ),
-  'calendario planner agenda',
-);
-full(
-  'booking-mobile',
-  'Reserva móvil',
-  'Marco + fecha + rango + hora + confirmación + navegación',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Reservar visita',
-      `<div class="booking-content stack"><strong class="demo-heading">${t(c.d.title)}</strong>${components.date({ ...c, variant: 'range', states: ['selected'], state: 'selected' })}${components.time({ ...c, variant: 'input', states: isScenario(c, 'error') ? ['error', 'focus'] : [], state: 'default' })}${btn('Confirmar reserva', 'primary', '', isScenario(c, 'loading') ? 'loading' : 'default')}</div>${bottomNav({ ...c, state: 'default', states: [] })}`,
-    ),
-  'reserva móvil fechas hora',
-);
-full(
-  'records-workspace',
-  'Gestión con selección múltiple',
-  'Cabecera + filtros + tabla + acciones de lote + aviso',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Gestión de materiales',
-      `${toolbar(c)}${components['filter-panel']({ ...c, state: 'default', states: [], variant: 'applied' })}${components['data-grid']({ ...c, embedded: true, variant: 'multiple', state: isScenario(c, 'loading') ? 'loading' : 'selected', states: isScenario(c, 'loading') ? ['loading'] : ['selected'] })}${components.toast({ ...c, state: 'default', states: [], variant: isScenario(c, 'error') ? 'error' : 'success', options: { action: isScenario(c, 'error') ? 'retry' : 'undo' } })}`,
-    ),
-  'datos tabla selección lote ordenar',
-);
-full(
-  'support-workspace',
-  'Conversación con panel',
-  'Historial + composer + datos laterales + estado del mensaje',
-  (c) =>
-    screen(
-      c.reviewTitle ?? 'Consulta del equipo',
-      `<div class="support-layout"><div class="grow">${chat(c)}</div><div class="support-details stack"><strong>${t('Detalle del caso')}</strong>${components.identity({ ...c, state: 'default', states: [] })}${field('Asunto', c.d.title, '', 'readonly')}<strong>${t('Participantes')}</strong>${components.list({ ...c, state: 'default', states: [], variant: 'one-line', options: { accessory: 'disclosure' } })}</div></div>`,
-    ),
-  'chat soporte panel errores',
-);
-function isScenario(c, state) {
-  return c.states.includes(state);
-}
+for (const entry of screenEntries)
+  add(
+    'screens',
+    entry.id,
+    entry.name,
+    entry.anatomy,
+    entry.render,
+    'pantalla ' + entry.tags,
+    'Interfaz',
+    true,
+  );
 export const entries = items;
 export function renderSample(
   item,

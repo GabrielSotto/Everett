@@ -112,6 +112,14 @@ fuente/tamaño compartidos entre tarjeta y editor, teclado, persistencia, texto 
 C08-U53 amplía la medición a tonos heredados y rechaza tamaños inválidos sin cambiar el estado.
 El cierre exterior de paneles incluye los controles desactivados de la cabecera en C08-B63.
 
+C08-B160 comprueba el filtro de familias compacto, sin quitar altura a las miniaturas,
+con teclado, cierre local y conservación de categoría a 550/320 px. C08-B161 conserva
+el nombre completo y la acción Separar de una interfaz seleccionada entre 17 y 100 %,
+comprueba que el botón reciba el puntero y que desagrupar/deshacer conserve las piezas.
+BLF-ANATOMY-14 distingue veinte recorridos completos y sus contextos; BLF-BROWSER-07
+captura las veinte interfaces con barras y rótulos, las variantes laterales y sus alineaciones.
+Los estilos de la página del catálogo no deben alterar los paneles de las composiciones.
+
 El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo
 con Vite. El gate cotidiano evalúa directamente las fuentes de la aplicación: tipado, pruebas
 unitarias y del arnés, recorridos reales de navegador, regresión pertinente, revisión visual

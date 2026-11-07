@@ -51,7 +51,8 @@ test('C08-B148: Bosquejos despliega una biblioteca acotada al botón, sin ficha 
     return route.abort();
   });
   await panel.getByRole('tab', { name: 'Componentes', exact: true }).click();
-  await panel.getByRole('combobox', { name: 'Familia de componentes' }).selectOption('navigation');
+  await panel.getByRole('button', { name: 'Filtrar componentes' }).click();
+  await panel.getByRole('menuitemradio', { name: 'Navegación', exact: true }).click();
 
   await panel.locator('[data-library-entry=toolbar]').click();
   await expect(page.locator('.library-choice-options')).toBeVisible();
@@ -64,8 +65,9 @@ test('C08-B148: Bosquejos despliega una biblioteca acotada al botón, sin ficha 
     .getByRole('button', { name: 'Cerrar opciones' })
     .click();
   await expect(panel.locator('[data-library-entry=toolbar]')).toBeFocused();
-  await expect(panel.getByRole('combobox', { name: 'Familia de componentes' })).toHaveValue(
-    'navigation',
+  await expect(panel.getByRole('button', { name: 'Filtrar componentes' })).toHaveAttribute(
+    'title',
+    'Filtrar: Navegación',
   );
   await panel.locator('[data-library-entry=toolbar]').click();
   await expect(page.locator('.library-choice-options select').first()).toBeFocused();

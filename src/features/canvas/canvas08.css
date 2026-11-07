@@ -1648,8 +1648,33 @@ body[data-canvas-motion='reduced']
   pointer-events: none;
 }
 .canvas-manual-group:is(.selected, :hover, :focus-within) .group-separate {
+  display: block;
   opacity: 1;
   pointer-events: auto;
+}
+.canvas-manual-group.selected .group-heading {
+  opacity: 1;
+  pointer-events: auto;
+  max-width: max(100%, calc(300px / var(--canvas-zoom)));
+  min-height: calc(28px / var(--canvas-zoom));
+  height: auto;
+  z-index: 16;
+}
+.canvas-manual-group.selected .group-heading .group-name {
+  max-width: calc(260px / var(--canvas-zoom));
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+  padding-block: calc(5px / var(--canvas-zoom));
+}
+.canvas-manual-group.selected .group-heading .group-separate {
+  display: block;
+  flex-shrink: 0;
+  align-self: stretch;
+  height: auto;
+}
+.canvas-manual-group:is(:hover, :focus-within) .group-heading .group-separate {
+  display: block;
 }
 .fragment-picker {
   width: min(480px, calc(100vw - 24px));

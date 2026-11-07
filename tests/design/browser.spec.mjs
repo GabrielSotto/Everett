@@ -93,7 +93,7 @@ async function geometry() {
       // completas dentro del propio control, también en composiciones anidadas.
       if (document.body.classList.contains('labels'))
         for (const label of sample.querySelectorAll(
-          '.wf-btn .label, .nav-row .label, .demo-tabs .label, .bottom-navigation .label, .choice-list .label, .menu-bar-scene .demo-toolbar .label, .steps .label, .chip-demo .label, .wf-badge .label, .segmented-demo .label, .demo-heading .label',
+          '.wf-btn .label, .nav-row .label, .demo-tabs .label, .bottom-navigation .label, .choice-list .label, .menu-bar-scene .demo-toolbar .label, .steps .label, .chip-demo .label, .wf-badge .label, .segmented-demo .label, .demo-heading .label, .app-facets .label, .app-summary .label',
         )) {
           const node = label.firstChild;
           if (!node || node.nodeType !== Node.TEXT_NODE || !label.getBoundingClientRect().height)
@@ -125,6 +125,49 @@ async function settledGeometry() {
   });
   assert.deepEqual(await geometry(), []);
 }
+
+test('BLF-BROWSER-07: interfaces completas en barras y rótulos, regiones alineadas y navegación legible', async () => {
+  await page.locator('[data-family="screens"]').click();
+  for (const mode of ['bars', 'labels']) {
+    await page.locator(`[data-text="${mode}"]`).click();
+    for (const item of entries.filter((entry) => entry.family === 'screens')) {
+      const specimen = card(item.id).locator('.specimen');
+      await specimen.scrollIntoViewIfNeeded();
+      await specimen.screenshot({ path: `${evidence}/screen-${item.id}-${mode}.png` });
+    }
+  }
+  for (const id of ['dashboard', 'editor', 'file-manager']) {
+    await variant(id, 'expanded');
+    await settledGeometry();
+    await card(id)
+      .locator('.specimen')
+      .screenshot({ path: `${evidence}/screen-${id}-expanded.png` });
+    await variant(id, 'collapsed');
+  }
+  const columns = await card('dashboard')
+    .locator('.app-metrics > div')
+    .evaluateAll((nodes) =>
+      nodes.map((el) => {
+        const label = el.firstElementChild.getBoundingClientRect();
+        const value = el.lastElementChild.getBoundingClientRect();
+        return { left: label.left, valueLeft: value.left, top: label.top, valueTop: value.top };
+      }),
+    );
+  assert.ok(columns.every((column) => Math.abs(column.left - column.valueLeft) < 1));
+  assert.ok(columns.every((column) => Math.abs(column.top - columns[0].top) < 1));
+  // Los estilos del catálogo no pueden introducir rellenos o sticky dentro de una plantilla.
+  for (const node of await page
+    .locator('.app-screen main, .app-facets, .app-index, .app-lessons')
+    .all()) {
+    const style = await node.evaluate((el) => ({
+      padding: getComputedStyle(el).padding,
+      position: getComputedStyle(el).position,
+    }));
+    assert.equal(style.padding, '0px');
+    assert.equal(style.position, 'static');
+  }
+  await page.locator('[data-family="controls"]').click();
+});
 
 test('BLF-BROWSER-01: estados independientes y variantes desde controles visibles', async () => {
   await page.locator('[data-family="controls"]').click();

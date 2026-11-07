@@ -87,8 +87,46 @@ test('BLF-ANATOMY-13: los escenarios utilizan controles correspondientes a su ta
   assert.equal(agenda.querySelectorAll('.agenda-event').length, 2);
   assert.match(agenda.querySelector('.agenda-event').textContent, /10:00.*Revisión/s);
   assert.equal(agenda.querySelector('.agenda-list .person-row'), null);
-  assert.match(sample('invitation').textContent, /invita a colaborar.*Tu acceso.*Editor/s);
+  assert.match(sample('invitation').textContent, /invita a colaborar.*Acceso.*Editor.*Permisos/s);
   assert.ok(sample('search-results').querySelector('.pagination [aria-current="page"]'));
+});
+
+test('BLF-ANATOMY-14: veinte recorridos diferenciados y navegación lateral en dos presentaciones', () => {
+  assert.equal(entries.filter((item) => item.family === 'screens').length, 20);
+  const booking = sample('booking-mobile');
+  assert.doesNotMatch(booking.textContent, /Proyecto Aurora|Explorar|Perfil/);
+  assert.equal(booking.querySelector('.bottom-navigation'), null);
+  for (const id of ['dashboard', 'editor', 'file-manager']) {
+    const compact = sample(id, 'default', 'collapsed');
+    const expanded = sample(id, 'default', 'expanded');
+    assert.equal(compact.querySelectorAll('.app-rail .nav-row .label').length, 0);
+    assert.equal(expanded.querySelectorAll('.app-rail .nav-row .label').length, 4);
+    assert.equal(expanded.querySelectorAll('.app-rail [aria-current="page"]').length, 1);
+    assert.equal(compact.querySelector('.app-rail').getAttribute('data-part'), 'navegación');
+  }
+  const contexts = {
+    'product-detail': /Acabado.*Cantidad.*Agregar al carrito/s,
+    checkout: /Contacto.*Entrega.*Pago.*Número de tarjeta.*Total/s,
+    'file-manager': /Subir archivo.*Buscar en esta carpeta.*Referencias.*Portada/s,
+    'article-reader': /6 min de lectura.*El punto de partida.*Probar el recorrido/s,
+    'team-profile': /Diseño de producto.*Enviar mensaje.*Actividad reciente/s,
+    'notification-center': /sin leer.*Marcar todas.*Hoy.*Ayer/s,
+    'video-course': /Jerarquía y composición.*Completar y continuar.*Contenido del curso/s,
+  };
+  for (const [id, context] of Object.entries(contexts)) {
+    const rendered = sample(id);
+    assert.match(rendered.textContent, context, id);
+    assert.ok(rendered.querySelectorAll('[data-part]').length > 15, id + ': piezas componibles');
+    assert.equal(rendered.querySelector('input, textarea, select, iframe'), null);
+  }
+  const checkSupport = (dom) =>
+    assert.match(dom.textContent, /Caso 1042.*Marcar resuelto.*Asignado a.*Prioridad/s);
+  checkSupport(sample('support-workspace'));
+  assert.throws(
+    () => checkSupport(sample('chat-app')),
+    assert.AssertionError,
+    'Un chat genérico no sustituye un caso de atención',
+  );
 });
 
 test('BLF-ANATOMY-01: marcar, enfocar y deshabilitar conserva el valor y rechaza focos imposibles', () => {
@@ -291,13 +329,25 @@ test('BLF-ANATOMY-09: escenarios compuestos reutilizan los patrones y conservan 
   const mobile = sample('booking-mobile', 'error');
   assert.ok(mobile.querySelector('.calendar-panel'));
   assert.ok(mobile.querySelector('.time-fields .is-focused[aria-invalid="true"]'));
-  assert.ok(mobile.querySelector('.bottom-navigation'));
+  assert.equal(
+    mobile.querySelector('.bottom-navigation'),
+    null,
+    'La reserva es un paso enfocado, sin destinos ajenos al proceso',
+  );
+  assert.match(
+    mobile.textContent,
+    /Visita al estudio.*Fecha.*Hora.*Estudio Central.*Confirmar reserva/s,
+  );
+  assert.ok(mobile.querySelector('[aria-label="Volver"]'));
   const records = sample('records-workspace', 'error');
   assert.ok(records.querySelector('[data-ui="bulk-actions"]'));
   assert.match(records.querySelector('[data-ui="notice-action"]').textContent, /Reintentar/);
   const support = sample('support-workspace', 'error');
   assert.ok(support.querySelector('.bubble.own [data-ui="retry"]'));
-  assert.ok(support.querySelector('.support-details [aria-readonly="true"]'));
+  assert.match(
+    support.querySelector('.support-details').textContent,
+    /Asignado a.*Prioridad.*Canal.*Creado/s,
+  );
   assert.ok(support.querySelector('.composer-draft'));
   const edited = sample('booking-mobile', 'default', undefined, {}, 'demo', {
     width: 280,

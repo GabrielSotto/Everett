@@ -185,7 +185,7 @@ const notice = (c, type) => {
 const tree = (c) =>
   `<div class="tree-demo"><div>${ico('caret-down')}${ico('folder')}${t(c.d.title)}</div><div class="indent tree-children">${is(c, 'loading') ? loading('Cargando carpeta…') : is(c, 'empty') ? empty(c, 'archivos') : `<div class="${is(c, 'selected') ? 'is-selected' : ''}" ${is(c, 'selected') ? 'aria-selected="true"' : ''}>${ico('file')}${t(c.d.file)}</div><div>${ico('folder')}${t('Referencias')}</div>`}</div></div>`;
 const steps = (c) =>
-  `<div class="steps">${['Cuenta', 'Perfil', 'Confirmar']
+  `<div class="steps">${(c.stepLabels ?? ['Cuenta', 'Perfil', 'Confirmar'])
     .map((v, i) => {
       const complete = is(c, 'success') || i < (c.stepIndex ?? 1);
       const current = !is(c, 'success') && i === (c.stepIndex ?? 1);

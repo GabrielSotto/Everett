@@ -175,7 +175,9 @@ export function openSketchLibrary(ctx: Context, parentSignal: AbortSignal): void
     (event) => {
       if (
         event.key !== 'Escape' ||
-        document.querySelector('.library-choice-options,.library-drag-preview')
+        document.querySelector(
+          '.library-choice-options,.library-drag-preview,.library-filter-menu:not([hidden])',
+        )
       )
         return;
       event.preventDefault();

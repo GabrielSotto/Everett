@@ -21,7 +21,9 @@ test('C08-B153: búsqueda lateral sin saltos ni filtros ocultos y switch de rót
   await expect(panel.locator('.library-items')).toHaveJSProperty('scrollTop', scrolled);
   await labels.click();
   await panel.getByRole('tab', { name: 'Componentes', exact: true }).click();
-  await panel.getByRole('combobox').selectOption('navigation');
+  const familyFilter = panel.getByRole('button', { name: 'Filtrar componentes' });
+  await familyFilter.click();
+  await panel.getByRole('menuitemradio', { name: 'Navegación', exact: true }).click();
   const category = await panel
     .locator('[data-library-add]')
     .evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-library-add')));
@@ -73,7 +75,7 @@ test('C08-B153: búsqueda lateral sin saltos ni filtros ocultos y switch de rót
     await toggle.click();
     await expect(toggle).toBeFocused();
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(panel.getByRole('combobox')).toHaveValue('navigation');
+    await expect(familyFilter).toHaveAttribute('title', 'Filtrar: Navegación');
     expect(
       await panel
         .locator('[data-library-add]')
@@ -88,7 +90,7 @@ test('C08-B153: búsqueda lateral sin saltos ni filtros ocultos y switch de rót
   await expect(panel.getByText(/No hay coincidencias/)).toBeVisible();
   await panel.getByRole('searchbox').press('Escape');
   await expect(toggle).toBeFocused();
-  await expect(panel.getByRole('combobox')).toHaveValue('navigation');
+  await expect(familyFilter).toHaveAttribute('title', 'Filtrar: Navegación');
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
 

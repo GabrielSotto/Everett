@@ -941,6 +941,23 @@ const combined = new Set([
   'chips-input',
   'chip',
 ]);
+for (const id of ['dashboard', 'editor', 'file-manager'])
+  define(
+    id,
+    [base('Interfaz compuesta')],
+    [
+      variant(
+        'collapsed',
+        'Navegación compacta',
+        'Barra lateral de iconos que deja más espacio al contenido.',
+      ),
+      variant(
+        'expanded',
+        'Navegación desplegada',
+        'Destinos con iconos y rótulos; el contenido conserva su jerarquía.',
+      ),
+    ],
+  );
 for (const id of ['booking-mobile', 'records-workspace', 'support-workspace'])
   define(id, [
     base('Interfaz compuesta'),

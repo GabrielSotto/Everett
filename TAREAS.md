@@ -42,8 +42,8 @@ en `output/pruebas/navegador/2026-11-01_23-30-22-957Z/`. Esto no acredita la reg
 completa actual ni cierra el rediseño solicitado.
 
 El [catálogo de diseño](design/wireframe-library/index.html), servido por el mismo Vite en
-`/design/wireframe-library/`, contiene 102 muestras: 24 piezas y variantes de base, 65 composiciones
-y 13 interfaces. Sus fuentes y arnés están versionados. CSS de Chalk y SVG
+`/design/wireframe-library/`, contiene 109 muestras: 24 piezas y variantes de base, 65 composiciones
+y 20 interfaces. Sus fuentes y arnés están versionados. CSS de Chalk y SVG
 de Phosphor fijados por commit, con sus licencias MIT. La investigación sigue siendo temporal;
 no se agrega un informe comparativo.
 
@@ -177,6 +177,26 @@ Evidencia en `output/pruebas/unitarias/2026-11-07_16-54-54-091Z/` y
 `output/pruebas/navegador/2026-11-07_16-54-52-953Z/`, SHA-256 de las fuentes servidas
 `5c18e0f4c44af2ef4a4326d7e9f2772881e87d223bbfcd3c3064d2049d348899`.
 Pendiente de revisión del usuario en Vite 4173. No cierra 0.8 ni integra en `dev`.
+
+La revisión de jerarquía del 7 de noviembre rediseña las trece interfaces existentes y añade
+siete recorridos: producto, compra, archivos, lectura, perfil, notificaciones y curso con video.
+Se separan navegación, contenido y acciones; se retiran fondos redundantes y se ajustan tamaños,
+espaciados y adaptación. Dashboard, editor y archivos tienen navegación lateral compacta o
+con rótulos. Reserva y atención de un caso usan contenido propio de su tarea. Se corrigió además
+la contaminación de las composiciones por estilos globales del catálogo.
+El filtro de familias se abre desde un icono compacto. Una interfaz seleccionada conserva su
+nombre completo y Separar al alejarse; los nombres sin seleccionar admiten un ancho menor.
+Las nuevas inserciones usan las plantillas revisadas; las composiciones guardadas y la comparación
+manual del usuario permanecen intactas. C08-B160–B161 y BLF-ANATOMY-14/BLF-BROWSER-07 amplían
+el arnés. Pasaron 119 pruebas unitarias/del arnés, 33 del catálogo, siete recorridos visuales
+con 2.207 representaciones y 50 recorridos de regresión dirigida, sin fallos, omisiones ni
+reintentos. Tipado, formato y revisión visual correctos; la comprobación independiente acredita
+las fuentes servidas y 184 adjuntos. Evidencia en
+`output/pruebas/unitarias/2026-11-07_18-41-26-253Z/`, `output/pruebas/diseno/` y
+`output/pruebas/navegador/2026-11-07_19-08-24-019Z/`, SHA-256
+`e1907311bff6c4dc547940ffe95af179688ef4f0bcf07992124476bed8c18e05`.
+Pendiente de revisión del usuario; esta regresión dirigida no sustituye el gate completo de
+cierre de 0.8. Sin integración en `dev`.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
