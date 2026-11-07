@@ -1,5 +1,9 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-U53', layer: 'unit', contracts: ['C08-MAT-03'] },
+  { id: 'C08-B157', layer: 'browser', contracts: ['C08-ARRANGE-01', 'C08-LAYER-01'] },
+  { id: 'C08-B158', layer: 'browser', contracts: ['C08-MAT-01'] },
+  { id: 'C08-B159', layer: 'browser', contracts: ['C08-MAT-03'] },
   { id: 'C08-U52', layer: 'unit', contracts: ['C08-LIBRARY-01'] },
   ...['C08-B154', 'C08-B155', 'C08-B156'].map((id) => ({
     id,
@@ -316,6 +320,9 @@ export const canvasControlRequirements = {
   'C08-B147': { 'canvas-wireframes': 1, 'library-add': 1 },
   // B126/B127/B137 conservan edición de datos del catálogo retirado mediante fixtures explícitos.
   'C08-B139': { 'selection-spacing': 2 },
+  'C08-B157': { 'canvas-organize': 7, 'selection-arrange': 3, 'selection-order': 1 },
+  'C08-B158': { 'note-return': 1 },
+  'C08-B159': { 'note-color': 9, 'note-return': 1 },
   'C08-B150': { 'canvas-wireframes': 1, 'library-add': 1 },
   'C08-B151': { 'library-add': 1, 'group-ungroup': 1 },
   'C08-B152': { 'canvas-organize': 3, 'library-add': 1 },

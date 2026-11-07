@@ -43,11 +43,10 @@ export function arrangeSelection(
 
 export function arrangementMarkup(ctx: Context): string {
   const units = arrangementUnits(ctx.world(), ctx.ui.canvas.selections);
-  if (units.length < 2)
-    return '<p class="arrangement-help">Seleccioná dos o más elementos para alinearlos y ajustar su espaciado.</p>';
   const control = (action: Arrangement) =>
-    `<button type="button" role="menuitem" data-action="selection-arrange" data-arrangement="${action}" aria-label="${arrangementNames[action]}" title="${arrangementNames[action]}" ${action.startsWith('space') && units.length < 3 ? 'disabled' : ''}>${icon('arrange-' + action, 18)}</button>`;
+    `<button type="button" role="menuitem" data-action="selection-arrange" data-arrangement="${action}" aria-label="${arrangementNames[action]}" title="${arrangementNames[action]}" ${units.length < (action.startsWith('space') ? 3 : 2) ? 'disabled' : ''}>${icon('arrange-' + action, 18)}</button>`;
   const gap = (axis: 'x' | 'y') => {
+    if (units.length < 2) return '';
     const size = axis === 'x' ? 'width' : 'height';
     const sorted = [...units].sort((a, b) => a[axis] - b[axis]);
     const gaps = sorted.slice(1).map((n, i) => n[axis] - sorted[i]![axis] - sorted[i]![size]);
@@ -55,12 +54,12 @@ export function arrangementMarkup(ctx: Context): string {
       ? Math.round(gaps[0]! * 100) / 100
       : '';
   };
-  return `<div class="arrangement-controls" role="group" aria-label="Alineación de la selección"><span class="arrangement-label">Alineación</span><div class="arrangement-icons">${arrangements
+  return `<div class="arrangement-controls" role="group" aria-label="Alineación de la selección"><div class="arrangement-caption"><span class="arrangement-label">Alineación</span><span>${units.length ? `${units.length} ${units.length === 1 ? 'elemento' : 'elementos'}` : 'Sin selección'}</span></div><div class="arrangement-icons">${arrangements
     .filter((a) => !a.startsWith('space'))
     .map(control)
     .join(
       '',
-    )}</div><div class="arrangement-distribution"><span>Distribuir</span>${control('space-x')}${control('space-y')}</div><div class="arrangement-spacing" role="group" aria-label="Espaciado de la selección">${(['x', 'y'] as const).map((axis) => `<label title="Espaciado ${axis === 'x' ? 'horizontal' : 'vertical'}">${icon('arrange-space-' + axis, 16)}<input type="number" data-spacing="space-${axis}" min="0" max="10000" step="any" value="${gap(axis)}" placeholder="Mixto" aria-label="Separación ${axis === 'x' ? 'horizontal' : 'vertical'}"><span aria-hidden="true">px</span></label>`).join('')}</div></div>`;
+    )}</div><span class="arrangement-label">Espaciado</span><div class="arrangement-spacing" role="group" aria-label="Espaciado de la selección">${(['x', 'y'] as const).map((axis) => `<div class="arrangement-axis"><span>${axis === 'x' ? 'Horizontal' : 'Vertical'}</span><div><label title="Espaciado ${axis === 'x' ? 'horizontal' : 'vertical'}"><input type="number" data-spacing="space-${axis}" min="0" max="10000" step="any" value="${gap(axis)}" placeholder="${units.length < 2 ? '—' : 'Mixto'}" ${units.length < 2 ? 'disabled' : ''} aria-label="Separación ${axis === 'x' ? 'horizontal' : 'vertical'}"><span aria-hidden="true">px</span></label>${control(`space-${axis}`)}</div></div>`).join('')}</div><p class="arrangement-hint">${units.length < 2 ? 'Seleccioná al menos dos elementos para alinear.' : units.length < 3 ? 'Con tres o más podés distribuir el espacio por igual.' : 'Distribuir mantiene los extremos de la selección.'}</p></div>`;
 }
 
 export function bindArrangementSpacing(

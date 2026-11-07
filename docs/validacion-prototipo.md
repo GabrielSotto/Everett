@@ -83,9 +83,9 @@ escala por puntero y teclado, duplica, borra, deshace y recarga antes de desagru
 se separa accidentalmente. Comprueba que un botón no incorpore el fondo de exhibición y que
 asignar un componente a una zona transfiera todas sus partes. C08-U51 cubre además composiciones
 guardadas antes de marcar su tipo.
-C08-B152 comprueba que alineación y espaciado aparecen solo con dos o más unidades seleccionadas,
-desde la barra y el menú contextual, que dos componentes no se cuentan por sus piezas y que
-Escape descarta la edición del espaciado.
+C08-B152 comprueba que los controles de alineación y espaciado permanecen visibles y se habilitan
+con dos o más unidades seleccionadas, desde la barra y el menú contextual, que dos componentes
+no se cuentan por sus piezas y que Escape descarta la edición del espaciado.
 Los valores numéricos forman parte de Alineación; la distribución automática requiere tres unidades.
 C08-B153 comprueba búsqueda lateral en la cabecera a 1440/550/320 px, posiciones intermedias,
 anclaje derecho estable y catálogo sin desplazamiento al abrir. Filtrar no requiere Enter y
@@ -102,6 +102,15 @@ sobre Canvas, bloque claro y sus límites, persistencia y símbolo convencional 
 C08-U52 conserva colores explícitos y descarta fondos distantes o delante del texto.
 C08-B156 distingue foco de mouse/teclado, comprueba nombres de glifos estrechos y largos y
 cabeceras de 1440/550/320 px.
+
+C08-B157 comprueba el panel Alinear sin selección, con una pieza y con selección múltiple,
+distancias reales, distribución, capas según superposición, historial y 320 px con texto ampliado.
+C08-B158 distingue flecha de selección, mano de paneo, cruz de creación, tiradores y campos de
+texto; panear desde un material debe mover la cámara, no la pieza. C08-B159 mide el contraste
+real del título, cuerpo y placeholders sobre cada papel, con un contraejemplo de tinta invisible,
+fuente/tamaño compartidos entre tarjeta y editor, teclado, persistencia, texto extenso y 320 px.
+C08-U53 amplía la medición a tonos heredados y rechaza tamaños inválidos sin cambiar el estado.
+El cierre exterior de paneles incluye los controles desactivados de la cabecera en C08-B63.
 
 El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo
 con Vite. El gate cotidiano evalúa directamente las fuentes de la aplicación: tipado, pruebas

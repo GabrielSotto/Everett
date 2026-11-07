@@ -187,7 +187,7 @@ test('C08-B139: separación numérica en dos ejes desde cabecera y contexto, err
   await storedFixture(page, input.state, input.ui);
   await page.reload();
   const before = (await world(page)).nodes;
-  await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
+  await page.getByRole('button', { name: 'Alinear selección', exact: true }).click();
   const horizontal = page.getByRole('spinbutton', { name: 'Separación horizontal', exact: true });
   await horizontal.fill('-1');
   await horizontal.press('Enter');

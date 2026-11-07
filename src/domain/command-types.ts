@@ -197,6 +197,8 @@ export type Command =
       title: string;
       text: string;
       color: string;
+      font?: 'sans' | 'serif' | 'mono';
+      fontSize?: number;
     }
   | {
       type: 'node.delete';

@@ -366,6 +366,13 @@ test('C08-B63: configuración agrupada, cierre desde cabecera y búsqueda sin re
   ).toBeVisible();
   await page.locator('#shell').click({ position: { x: 600, y: 25 } });
   await expect(page.locator('.profile-pop')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Perfil de Gabi', exact: true }).click();
+  const redo = page.getByRole('button', { name: 'Rehacer · Ctrl+Shift+Z', exact: true });
+  await expect(redo).toBeDisabled();
+  const redoBox = (await redo.boundingBox())!;
+  // Un clic real en un control desactivado también está fuera del panel.
+  await page.mouse.click(redoBox.x + redoBox.width / 2, redoBox.y + redoBox.height / 2);
+  await expect(page.locator('.profile-pop')).toHaveCount(0);
   const measurements = [];
   for (const width of [1440, 801, 390, 300]) {
     await page.setViewportSize({ width, height: 900 });

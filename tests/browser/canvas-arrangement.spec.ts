@@ -35,7 +35,7 @@ async function prepare(page: Page, grouped = false): Promise<void> {
   expect((await snapshot(page)).ui.canvas.selections).toHaveLength(4);
 }
 async function open(page: Page, kind: 'view' | 'arrange' = 'view'): Promise<void> {
-  const name = kind === 'view' ? 'Vista y ajustes de Canvas' : 'Organizar selección';
+  const name = kind === 'view' ? 'Vista y ajustes de Canvas' : 'Alinear selección';
   await page.getByRole('button', { name, exact: true }).click();
   await expect(page.getByRole('menu', { name, exact: true })).toBeVisible();
   await expect(page.locator('.canvas-actions-pop')).toHaveCSS('transform', 'none');
@@ -145,11 +145,11 @@ test('C08-B118: menú de Canvas se adapta a selección, teclado, 320 px y texto 
 }, info) => {
   await start(page);
   const trigger = page.getByRole('button', { name: 'Vista y ajustes de Canvas', exact: true });
-  await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
+  await page.getByRole('button', { name: 'Alinear selección', exact: true }).click();
   await expect(
     page.getByRole('menuitem', { name: 'Alinear a la izquierda', exact: true }),
-  ).toHaveCount(0);
-  await expect(page.getByText('Seleccioná dos o más elementos', { exact: false })).toBeVisible();
+  ).toBeDisabled();
+  await expect(page.getByText('Seleccioná al menos dos elementos', { exact: false })).toBeVisible();
   await page.keyboard.press('Escape');
   await trigger.focus();
   await page.keyboard.press('ArrowDown');
@@ -286,7 +286,7 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   await prepare(page);
   const original = await world(page);
   const selection = (await snapshot(page)).ui.canvas.selections;
-  const names = ['Bosquejos', 'Organizar selección', 'Vista y ajustes de Canvas'];
+  const names = ['Bosquejos', 'Alinear selección', 'Vista y ajustes de Canvas'];
   const sketchTrigger = page.getByRole('button', { name: 'Bosquejos', exact: true });
   await sketchTrigger.hover();
   await expect(page.locator('#tooltip')).toHaveClass(/visible/);
@@ -327,7 +327,7 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
         await expect(
           menu.getByRole('menuitem', { name: /Alinear|Ajustar|Preferencias/ }),
         ).toHaveCount(0);
-      } else if (name === 'Organizar selección') {
+      } else if (name === 'Alinear selección') {
         await expect(
           menu.getByRole('menuitem', { name: 'Alinear a la izquierda', exact: true }),
         ).toBeVisible();
@@ -346,9 +346,9 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   }
   await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
   await page.getByRole('button', { name: 'Bosquejos', exact: true }).click();
-  await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
+  await page.getByRole('button', { name: 'Alinear selección', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Biblioteca de bosquejos' })).toHaveCount(0);
-  await expect(page.getByRole('menu', { name: 'Organizar selección', exact: true })).toBeVisible();
+  await expect(page.getByRole('menu', { name: 'Alinear selección', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   const first = page.getByRole('button', { name: 'Bosquejos', exact: true });
   await first.click();
@@ -363,11 +363,9 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   await expect(page.getByRole('button', { name: 'Agregar Polígono', exact: true })).toBeFocused();
   await first.focus();
   await page.keyboard.press('ArrowRight');
-  await expect(
-    page.getByRole('button', { name: 'Organizar selección', exact: true }),
-  ).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Alinear selección', exact: true })).toBeFocused();
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('menu', { name: 'Organizar selección', exact: true })).toBeVisible();
+  await expect(page.getByRole('menu', { name: 'Alinear selección', exact: true })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Biblioteca de bosquejos' })).toHaveCount(0);
   await page.keyboard.press('Escape');
   expect(await world(page)).toEqual(original);

@@ -75,7 +75,25 @@
 .arrangement-controls {
   padding: 4px 8px 8px;
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+.arrangement-caption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.arrangement-caption > span:last-child,
+.arrangement-hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.arrangement-hint {
+  margin: 0;
+}
+.arrangement-menu {
+  width: min(280px, calc(100vw - 16px));
 }
 .arrangement-label {
   font-weight: 600;
@@ -86,24 +104,43 @@
   gap: 2px;
 }
 .arrangement-icons button,
-.arrangement-distribution button {
+.arrangement-axis button {
   min-width: 28px;
-  min-height: 30px;
+  min-height: 32px;
   padding: 5px;
   justify-content: center !important;
-}
-.arrangement-distribution {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.arrangement-distribution > span {
-  margin-right: auto;
 }
 .arrangement-spacing {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+.arrangement-axis {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+.arrangement-axis > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.arrangement-axis > div {
+  display: flex;
+  gap: 4px;
+}
+.arrangement-axis button {
+  width: 32px;
+  flex: 0 0 32px;
+}
+.arrangement-spacing label:has(input:disabled) {
+  opacity: 0.45;
+}
+.arrangement-layers {
+  padding: 4px 0;
+}
+.arrangement-layers > span {
+  display: block;
+  padding: 4px 8px;
 }
 .arrangement-spacing label {
   display: flex;

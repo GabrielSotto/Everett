@@ -223,6 +223,14 @@ export function validate(s: State): void {
         'MATERIAL',
         'Tipo de material desconocido',
       );
+      if (n.data.kind === 'note')
+        ensure(
+          (n.data.font === undefined || ['sans', 'serif', 'mono'].includes(n.data.font)) &&
+            (n.data.fontSize === undefined ||
+              (Number.isFinite(n.data.fontSize) && n.data.fontSize >= 12 && n.data.fontSize <= 32)),
+          'NOTE_FORMAT',
+          'Elegí una tipografía disponible y un tamaño de 12 a 32 px.',
+        );
       if (n.data.kind === 'wireframe')
         ensure(
           typeof n.data.title === 'string' && validWireframe(n.data.content),

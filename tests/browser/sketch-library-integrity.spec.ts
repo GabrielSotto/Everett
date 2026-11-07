@@ -132,17 +132,19 @@ test('C08-B151: tocar, mover, escalar, copiar y borrar un componente conserva su
   expect(assigned.canvasGroups).toHaveLength(1);
 });
 
-test('C08-B152: organización muestra alineación y espaciado solo para selección pertinente', async ({
+test('C08-B152: alineación conserva controles visibles y habilita según unidades seleccionadas', async ({
   page,
 }, info) => {
   await start(page);
-  await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
-  await expect(page.locator('.arrangement-spacing')).toHaveCount(0);
-  await expect(page.getByText('Seleccioná dos o más elementos', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Alinear selección', exact: true }).click();
+  await expect(page.locator('.arrangement-spacing')).toBeVisible();
+  await expect(page.getByRole('spinbutton', { name: 'Separación horizontal' })).toBeDisabled();
+  await expect(page.getByText('Seleccioná al menos dos elementos', { exact: false })).toBeVisible();
   await page.keyboard.press('Escape');
   await addLibrary(page, 'button');
-  await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
-  await expect(page.locator('.arrangement-spacing')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Alinear selección', exact: true }).click();
+  await expect(page.locator('.arrangement-spacing')).toBeVisible();
+  await expect(page.getByRole('spinbutton', { name: 'Separación horizontal' })).toBeDisabled();
   await page.keyboard.press('Escape');
   await page.keyboard.press('Control+d');
   const frames = await page.locator('[data-component]').evaluateAll((els) =>
@@ -167,7 +169,7 @@ test('C08-B152: organización muestra alineación y espaciado solo para selecci�
   await page.getByRole('menuitem', { name: 'Alinear y distribuir', exact: false }).click();
   await expect(page.locator('.arrangement-spacing')).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
+  await page.getByRole('button', { name: 'Alinear selección', exact: true }).click();
   await expect(page.locator('.arrangement-spacing')).toBeVisible();
   await expect(page.getByText('Separación exacta', { exact: false })).toHaveCount(0);
   await expect(
@@ -182,7 +184,5 @@ test('C08-B152: organización muestra alineación y espaciado solo para selecci�
   await page.keyboard.press('Escape');
   await expect(page.locator('.arrangement-spacing')).toHaveCount(0);
   expect((await world(page)).nodes).toEqual(before);
-  await expect(
-    page.getByRole('button', { name: 'Organizar selección', exact: true }),
-  ).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Alinear selección', exact: true })).toBeFocused();
 });

@@ -66,7 +66,7 @@ test('C08-B55: búsqueda dentro de cabecera, botones compactos y switch opcional
     for (const name of [
       'Everett',
       'Bosquejos',
-      'Organizar selección',
+      'Alinear selección',
       'Vista y ajustes de Canvas',
       'Buscar en Everett',
       'Superficies',

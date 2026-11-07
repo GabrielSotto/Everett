@@ -1,66 +1,17 @@
 .note-editor {
   height: 100%;
   overflow: auto;
-  padding: 40px 24px 60px;
+  padding: 24px 24px 60px;
   background: var(--surface);
 }
-
+.note-editor-status,
+.note-format,
 .note-paper {
   max-width: 680px;
-  min-height: 540px;
-  margin: 0 auto;
-  border: 1px solid #b5a69223;
-  border-radius: 13px;
-  padding: 28px 38px 40px;
-  box-shadow: 0 14px 40px #3c384509;
-}
-
-.note-colors {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 29px;
-}
-
-.note-colors button {
-  width: 20px;
-  height: 20px;
-  border: 1px solid #b5a5b033;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px #00000008;
-}
-
-.note-colors button:hover {
-  transform: scale(1.16);
-}
-
-#note-title {
-  font-size: 27px;
-  letter-spacing: -0.7px;
-  color: var(--note-ink);
-  display: block;
-  width: 100%;
-  padding: 7px 0;
-  margin-bottom: 25px;
-}
-
-#note-text {
-  font-size: 14px;
-  line-height: 1.95;
-  color: var(--note-ink);
-  width: 100%;
-  min-height: 370px;
-  display: block;
-  resize: none;
-}
-
-.note-paper :is(input, textarea)::placeholder {
-  color: var(--note-ink);
-  opacity: 0.65;
+  margin-inline: auto;
 }
 .note-editor-status {
-  max-width: 680px;
-  margin: 0 auto 16px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -69,12 +20,178 @@
   color: var(--muted);
 }
 .note-editor-status button {
-  padding: 8px 10px;
-  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
   color: var(--text);
 }
+.note-editor-status button:hover {
+  background: var(--hover);
+}
+.note-format {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-bottom: 16px;
+}
+.note-type,
+.note-palette {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.note-type > label,
+.note-palette > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.note-type > div {
+  display: flex;
+  gap: 6px;
+}
+.note-type select,
+.note-size {
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+}
+.note-type select {
+  width: 152px;
+  padding: 4px 8px;
+}
+.note-size {
+  display: flex;
+  align-items: center;
+  padding-right: 6px;
+  gap: 4px;
+}
+.note-size input {
+  width: 44px;
+  padding: 4px 6px;
+  color: var(--text);
+  appearance: textfield;
+}
+.note-size input::-webkit-inner-spin-button {
+  appearance: none;
+}
+.note-size > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.note-colors {
+  display: flex;
+  gap: 2px;
+}
+.note-colors button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+.note-colors button > span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ffffff40;
+  border-radius: 5px;
+}
+.note-colors button svg {
+  visibility: hidden;
+}
 .note-colors button[aria-pressed='true'] {
-  outline: 2px solid var(--note-ink);
-  outline-offset: 3px;
+  border-color: var(--text);
+}
+.note-colors button[aria-pressed='true'] svg {
+  visibility: visible;
+}
+.note-colors button:hover {
+  background: var(--hover);
+}
+.note-paper {
+  min-height: 460px;
+  border: 1px solid #ffffff22;
+  border-radius: 8px;
+  padding: 28px 32px 36px;
+  color: var(--note-ink);
+}
+.note-paper :is(input, textarea) {
+  font-family: var(--note-font);
+  color: var(--note-ink);
+  caret-color: var(--note-ink);
+  border-radius: 2px;
+}
+.note-paper :is(input, textarea):focus-visible {
+  outline: 1px solid var(--note-ink);
+  outline-offset: 5px;
+}
+.note-paper :is(input, textarea)::selection {
+  background: var(--note-ink);
+  color: var(--note-fill);
+}
+#note-title {
+  font-size: max(24px, calc(var(--note-size) * 1.25));
+  font-weight: 600;
+  line-height: 1.35;
+  display: block;
+  width: 100%;
+  padding: 4px 0;
+  margin-bottom: 20px;
+  resize: none;
+  overflow: hidden;
+}
+#note-text {
+  font-size: var(--note-size);
+  line-height: 1.6;
+  width: 100%;
+  min-height: 310px;
+  display: block;
+  resize: none;
+  overflow: hidden;
+}
+.note-paper :is(input, textarea)::placeholder {
+  color: var(--note-ink);
+  opacity: 1;
+}
+.material.note {
+  display: flex;
+  flex-direction: column;
+  border-color: #ffffff33;
+}
+.material.note > :is(h3, p) {
+  font-family: var(--note-font);
+  color: var(--note-ink);
+  overflow-wrap: anywhere;
+}
+.material.note > h3 {
+  font-size: calc(var(--note-size) * 1.125);
+  line-height: 1.35;
+  max-height: 2.7em;
+  flex-shrink: 0;
+}
+.material.note > h3:empty {
+  display: none;
+}
+.material.note > p {
+  font-size: var(--note-size);
+  line-height: 1.6;
+  max-height: none;
+  min-height: 0;
+  flex: 1;
+}
+@media (max-width: 700px) {
+  .note-editor {
+    padding: 16px 16px 40px;
+  }
+  .note-paper {
+    padding: 24px 20px;
+  }
 }

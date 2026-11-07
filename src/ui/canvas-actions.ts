@@ -1,5 +1,6 @@
 import type { Context } from '../app/context';
 import { arrangementUnits } from '../domain/arrangement';
+import { canOrderMaterials, type MaterialOrder } from '../domain/material-order';
 import { arrangeSelection, arrangementMarkup, bindArrangementSpacing } from './canvas-arrangement';
 import { frameCanvas } from './canvas-frame';
 import { target } from './dom';
@@ -72,6 +73,18 @@ export class CanvasActions {
             arrangeSelection(ctx, button.dataset.arrangement);
             this.trigger()?.focus({ preventScroll: true });
             break;
+          case 'selection-order': {
+            const order = button.dataset.order as MaterialOrder;
+            if (!['front', 'forward', 'backward', 'back'].includes(order)) return;
+            const nodes = [...ctx.ui.canvas.selections];
+            this.close();
+            ctx.act(
+              { type: 'nodes.order', world: ctx.world().id, nodes, order },
+              'ordenar materiales',
+              'C08-LAYER-01',
+            );
+            break;
+          }
           case 'actions-fit':
             this.close();
             frameCanvas(ctx, button.dataset.selection === 'true');
@@ -235,8 +248,8 @@ export class CanvasActions {
       {
         page: 'arrange',
         action: 'canvas-organize',
-        label: 'Organizar',
-        name: 'Organizar selección',
+        label: 'Alinear',
+        name: 'Alinear selección',
         glyph: 'arrange-left',
       },
       {
@@ -250,8 +263,8 @@ export class CanvasActions {
     const current = menus.find((menu) => menu.page === this.page)!;
     const content =
       this.page === 'arrange'
-        ? arrangementMarkup(this.ctx)
+        ? `${arrangementMarkup(this.ctx)}<hr><div class="arrangement-layers" role="group" aria-label="Orden de capas"><span class="arrangement-label">Capas</span>${(['front', 'forward', 'backward', 'back'] as const).map((order) => `<button type="button" role="menuitem" data-action="selection-order" data-order="${order}" ${canOrderMaterials(this.ctx.world().nodes, this.ctx.ui.canvas.selections, order) ? '' : 'disabled'}>${{ front: 'Traer al frente', forward: 'Avanzar una capa', backward: 'Retroceder una capa', back: 'Enviar al fondo' }[order]}</button>`).join('')}</div>`
         : `<button type="button" role="menuitem" data-action="actions-fit" data-selection="true" ${units.length ? '' : 'disabled'}>Ajustar a la selección</button><button type="button" role="menuitem" data-action="actions-fit" ${this.ctx.world().nodes.some((node) => !node.owner) || this.ctx.world().zones.length ? '' : 'disabled'}>Ajustar al contenido</button><hr>${check('canvas-guides-toggle', 'Guías y ajuste automático', shell.canvasAlignmentGuides)}${check('canvas-grid-toggle', 'Fondo cuadriculado', shell.canvasBackground === 'grid')}${check('canvas-dock-toggle', 'Dock vertical', shell.canvasDockOrientation === 'vertical')}<hr><button type="button" role="menuitem" data-action="actions-preferences">Preferencias de Canvas</button><button type="button" role="menuitem" data-action="actions-shortcuts">Atajos de Canvas</button>`;
-    return `<div class="canvas-actions" role="toolbar" aria-label="Creación, organización y vista de Canvas">${menus.map((menu) => `<button type="button" class="canvas-actions-trigger" data-action="${menu.action}" aria-label="${menu.name}" data-tip="${menu.name}" aria-haspopup="${menu.page === 'wireframes' ? 'dialog' : 'menu'}" aria-expanded="${menu.page === 'wireframes' ? sketchLibraryOpen() : this.open && this.page === menu.page}" aria-controls="canvas-${menu.page}-menu">${icon(menu.glyph, 16)}<span>${menu.label}</span>${icon('down', 10)}</button>`).join('')}${this.open ? `<div class="canvas-actions-pop ${this.page === 'arrange' ? 'arrangement-menu' : ''}" id="canvas-${this.page}-menu" role="menu" aria-label="${current.name}"><strong class="canvas-menu-title">${current.label}</strong>${content}</div>` : ''}</div>`;
+    return `<div class="canvas-actions" role="toolbar" aria-label="Creación, organización y vista de Canvas">${menus.map((menu) => `<button type="button" class="canvas-actions-trigger" data-action="${menu.action}" aria-label="${menu.name}" data-tip="${menu.name}" aria-haspopup="${menu.page === 'wireframes' ? 'dialog' : 'menu'}" aria-expanded="${menu.page === 'wireframes' ? sketchLibraryOpen() : this.open && this.page === menu.page}" aria-controls="canvas-${menu.page}-menu">${icon(menu.glyph, 16)}<span>${menu.label}</span>${icon('down', 10)}</button>`).join('')}${this.open ? `<div class="canvas-actions-pop ${this.page === 'arrange' ? 'arrangement-menu' : ''}" id="canvas-${this.page}-menu" role="menu" aria-label="${current.name}">${this.page === 'arrange' ? '' : `<strong class="canvas-menu-title">${current.label}</strong>`}${content}</div>` : ''}</div>`;
   }
 }

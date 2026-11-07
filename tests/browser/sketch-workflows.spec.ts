@@ -270,7 +270,7 @@ test('C08-B134: espaciar selecciones inicialmente solapadas opera en ambos ejes 
       await page.locator(`[data-node="${n.id}"]`).click({ modifiers: i ? ['Shift'] : [] });
     const action = axis === 'x' ? 'Espaciar horizontalmente' : 'Espaciar verticalmente';
     const organize = async () => {
-      await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
+      await page.getByRole('button', { name: 'Alinear selección', exact: true }).click();
       await expect(page.getByRole('menuitem', { name: action, exact: true })).toBeEnabled();
       await page.getByRole('menuitem', { name: action, exact: true }).click();
     };

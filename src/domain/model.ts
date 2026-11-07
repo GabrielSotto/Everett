@@ -119,6 +119,8 @@ export type NodeData =
       title: string;
       text: string;
       color: string;
+      font?: 'sans' | 'serif' | 'mono';
+      fontSize?: number;
     }
   | {
       kind: 'shape';

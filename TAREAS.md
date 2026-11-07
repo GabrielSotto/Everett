@@ -161,6 +161,23 @@ Evidencia en `output/pruebas/unitarias/2026-11-07_15-24-34-190Z/` y
 `bc0c250143783062349371503ae22ecf126174ff45f7a109eb2e6c6e1691efc9`.
 Continúa en revisión del usuario sobre Vite en 4173; no sustituye el gate completo de cierre.
 
+La revisión de alineación y notas del 7 de noviembre mantiene el acceso de cabecera, ahora Alinear.
+Conserva visibles bordes, centros, espaciado por eje y capas; habilita cada acción según la
+selección y la superposición real. Los valores y la distribución comparten el mismo bloque.
+Seleccionar usa flecha sobre materiales y zonas; Mano, creación, tiradores y texto conservan sus
+cursores. Las notas comparten formato y tinta entre tarjeta y editor: ocho colores, contraste
+mínimo 4,5:1, tres familias de letra y tamaño de 12 a 32 px, guardados por nota. Los títulos y
+cuerpos extensos crecen sin scroll interno. Se corrigió además el cierre exterior de paneles
+al pulsar un control desactivado de la cabecera.
+C08-U53 y C08-B157–B159 amplían el arnés; B118/B152 siguen el comportamiento autorizado de
+controles visibles y B63 conserva el caso de cierre. Pasaron 119 pruebas unitarias/del arnés y
+64 recorridos de regresión dirigida, sin fallos, omisiones ni reintentos. Tipado, formato,
+revisión visual a 1440/320 px y verificación independiente de fuentes y 187 adjuntos correctos.
+Evidencia en `output/pruebas/unitarias/2026-11-07_16-54-54-091Z/` y
+`output/pruebas/navegador/2026-11-07_16-54-52-953Z/`, SHA-256 de las fuentes servidas
+`5c18e0f4c44af2ef4a4326d7e9f2772881e87d223bbfcd3c3064d2049d348899`.
+Pendiente de revisión del usuario en Vite 4173. No cierra 0.8 ni integra en `dev`.
+
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
 por arrastre y clic, distribución operable sobre solapamientos y guías con referencias visibles

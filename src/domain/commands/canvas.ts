@@ -413,7 +413,15 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
     case 'node.edit': {
       const x = node(command.id);
       ensure(!x.owner && x.data.kind === 'note', 'EDIT', 'Nota no disponible');
-      x.data = { kind: 'note', title: command.title, text: command.text, color: command.color };
+      x.data = {
+        ...x.data,
+        kind: 'note',
+        title: command.title,
+        text: command.text,
+        color: command.color,
+        ...(command.font !== undefined ? { font: command.font } : {}),
+        ...(command.fontSize !== undefined ? { fontSize: command.fontSize } : {}),
+      };
       break;
     }
     case 'node.delete': {

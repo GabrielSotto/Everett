@@ -30,22 +30,6 @@
     right: 15px;
     top: 13px;
   }
-
-  .note-paper {
-    padding: 20px 24px;
-  }
-
-  .note-editor {
-    padding: 23px 18px;
-  }
-
-  .note-paper #note-title {
-    font-size: 23px;
-  }
-
-  .note-colors {
-    margin-bottom: 20px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
