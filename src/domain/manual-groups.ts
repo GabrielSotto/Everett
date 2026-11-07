@@ -1,6 +1,34 @@
 import type { CanvasGroup, Material, Rect, WorldSnapshot, Point } from './model';
 import type { DeepReadonly } from './readonly';
 
+/** Compatibilidad con las composiciones de biblioteca guardadas antes de marcar su tipo. */
+export function isComponent(world: WorldSnapshot, group: DeepReadonly<CanvasGroup>): boolean {
+  const prefix = group.id.slice(0, -'-group'.length);
+  return (
+    group.component ??
+    (group.id.endsWith('-group') &&
+      group.nodes.length > 0 &&
+      group.nodes.every(
+        (id) =>
+          (id === prefix || id.startsWith(prefix + '-')) &&
+          world.nodes.some(
+            (n) => n.id === id && n.data.kind === 'wireframe' && !!n.data.content.piece,
+          ),
+      ))
+  );
+}
+export function componentFor(
+  world: WorldSnapshot,
+  id: string,
+): DeepReadonly<CanvasGroup> | undefined {
+  return world.canvasGroups?.find((g) => g.nodes.includes(id) && isComponent(world, g));
+}
+export function componentSelection(world: WorldSnapshot, ids: readonly string[]): string[] {
+  return [...new Set(ids.flatMap((id) => componentFor(world, id)?.nodes ?? [id]))].filter((id) =>
+    world.nodes.some((n) => n.id === id && !n.owner),
+  );
+}
+
 export function groupBounds(
   world: WorldSnapshot,
   group: DeepReadonly<CanvasGroup>,
@@ -12,13 +40,14 @@ export function groupBounds(
     const returned = node.owner ? world.assignments.find((a) => a.node === id)?.returnTo : null;
     return [{ ...node, ...(returned ?? {}) }];
   });
-  const x = Math.min(...nodes.map((n) => n.x)) - 16;
-  const y = Math.min(...nodes.map((n) => n.y)) - 16;
+  const padding = isComponent(world, group) ? 0 : 16;
+  const x = Math.min(...nodes.map((n) => n.x)) - padding;
+  const y = Math.min(...nodes.map((n) => n.y)) - padding;
   return {
     x,
     y,
-    width: Math.max(...nodes.map((n) => n.x + n.width)) - x + 16,
-    height: Math.max(...nodes.map((n) => n.y + n.height)) - y + 16,
+    width: Math.max(...nodes.map((n) => n.x + n.width)) - x + padding,
+    height: Math.max(...nodes.map((n) => n.y + n.height)) - y + padding,
   };
 }
 
@@ -64,6 +93,7 @@ export function groupDropTarget(
   });
   if (nodes.some((n) => n === null)) return null;
   const targets = groups.filter((g) => {
+    if (isComponent(world, g)) return false;
     if (g.nodes.some((id) => ids.includes(id))) return false;
     const bounds = groupBounds(world, g);
     return nodes.every(

@@ -1,5 +1,6 @@
 import type { WireframeContent } from '../../../domain/wireframes';
 import { html } from '../../../ui/dom';
+import { librarySymbol } from './symbols';
 
 export function libraryPieceMarkup(content: WireframeContent): string {
   const piece = content.piece!;
@@ -22,7 +23,7 @@ export function libraryPieceMarkup(content: WireframeContent): string {
     .join(';');
   const text = content.type === 'table' ? '' : content.text;
   const body = piece.symbol
-    ? `<span class="library-symbol" style="mask-image:url('/design/wireframe-library/vendor/${html(piece.symbol)}.svg')"></span>`
+    ? `<span class="library-symbol" style="mask-image:url('${html(librarySymbol(piece.symbol))}')"></span>`
     : piece.paths
       ? `<svg viewBox="${html(piece.viewBox ?? '0 0 220 100')}" preserveAspectRatio="none">${piece.paths.map((path) => `<path d="${html(path.d)}" fill="${html(content.appearance?.fill ?? path.fill)}" stroke="${html(content.appearance?.stroke ?? path.stroke)}" stroke-width="${path.width}"/>`).join('')}</svg>`
       : text

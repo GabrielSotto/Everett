@@ -13,6 +13,7 @@ import { referenceExcerpt } from './reference-anchors';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
 import { validLinkPreview, linkUrl } from './link-previews';
+import { isComponent } from './manual-groups';
 
 export const canvasClipboardMime = 'application/x-everett-canvas';
 const record = (v: unknown): v is Record<string, unknown> =>
@@ -153,6 +154,7 @@ export function parseCanvasClipboard(text: string): CanvasClipboard {
         record(g) &&
         typeof g.id === 'string' &&
         typeof g.name === 'string' &&
+        (g.component === undefined || typeof g.component === 'boolean') &&
         Array.isArray(g.nodes) &&
         g.nodes.length > 0 &&
         g.nodes.every((id) => {
@@ -250,7 +252,12 @@ export function captureCanvasCopies(
     links: structuredClone(world.links.filter((link) => ids.has(link.from) && ids.has(link.to))),
     groups: (world.canvasGroups ?? [])
       .filter((group) => group.nodes.length > 0 && group.nodes.every((id) => ids.has(id)))
-      .map((group) => ({ id: group.id, name: group.name, nodes: [...group.nodes] })),
+      .map((group) => ({
+        id: group.id,
+        name: group.name,
+        nodes: [...group.nodes],
+        component: isComponent(world, group),
+      })),
   };
 }
 

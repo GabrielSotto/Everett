@@ -25,7 +25,11 @@ import { previewMarkup } from './proposals';
 import { inlineCompletion } from '../../ui/inline-completion';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { arrangementUnits } from '../../domain/arrangement';
-import { arrangementMarkup, arrangeSelection, spacingValue } from '../../ui/canvas-arrangement';
+import {
+  arrangementMarkup,
+  arrangeSelection,
+  bindArrangementSpacing,
+} from '../../ui/canvas-arrangement';
 import {
   captureCanvasCopies,
   parseCanvasClipboard,
@@ -34,6 +38,7 @@ import {
 import { materialText } from '../../domain/material-content';
 import { publishLocalMaterial } from './local-publish';
 import { bindWireframeEditor, wireframeEditorMarkup } from './wireframe-editor';
+import { componentFor, componentSelection, isComponent } from '../../domain/manual-groups';
 
 function clipboardOrigin(plain: string, uriList = '', markup = ''): string | undefined {
   const address = uriList.split(/\r?\n/).find((line) => line.trim() && !line.startsWith('#'));
@@ -71,6 +76,7 @@ export class CanvasInteractions {
     this.overlay = document.createElement('div');
     this.overlay.className = 'canvas-context-layer';
     root.append(this.overlay);
+    bindArrangementSpacing(this.overlay, ctx, () => this.close(), signal);
     const unsubscribe = ctx.store.subscribe((change) => {
       if (change.command.type === 'node.link-preview' && change.command.world === ctx.world().id) {
         this.paintLinkCards(change.command.id);
@@ -433,14 +439,6 @@ export class CanvasInteractions {
               )
               ?.focus({ preventScroll: true });
             break;
-          case 'selection-spacing': {
-            if (!button) break;
-            const spacing = spacingValue(button);
-            if (spacing === undefined) break;
-            this.close();
-            arrangeSelection(ctx, button.dataset.arrangement, spacing);
-            break;
-          }
           case 'context-group':
             this.overlay.replaceChildren();
             ctx.act(
@@ -454,7 +452,12 @@ export class CanvasInteractions {
               'C08-ORG-01',
             );
             break;
-          case 'group-ungroup':
+          case 'group-ungroup': {
+            const group = ctx.world().canvasGroups?.find((g) => g.id === id);
+            if (group && isComponent(ctx.world(), group)) {
+              ctx.ui.canvas.selections = [];
+              ctx.ui.canvas.selection = null;
+            }
             this.overlay.replaceChildren();
             ctx.act(
               { type: 'group.ungroup', world: ctx.world().id, id },
@@ -462,6 +465,7 @@ export class CanvasInteractions {
               'C08-ORG-01',
             );
             break;
+          }
           case 'group-rename':
             this.groupRename(id);
             break;
@@ -548,14 +552,17 @@ export class CanvasInteractions {
             this.overlay.replaceChildren();
             publishLocalMaterial(this.root, ctx, id, this.previewAbort.signal);
             break;
-          case 'context-remove':
+          case 'context-remove': {
+            const removed = componentFor(ctx.world(), id)?.nodes ?? [id];
             confirmRemoval(
               this.root,
-              'Se retirará este material.',
+              removed.length > 1
+                ? 'Se retirará el componente con todas sus partes.'
+                : 'Se retirará este material.',
               () => {
                 this.overlay.replaceChildren();
                 ctx.act(
-                  { type: 'node.delete', world: ctx.world().id, id },
+                  { type: 'nodes.delete', world: ctx.world().id, nodes: [...removed] },
                   'quitar material',
                   'C08-MAT-08',
                 );
@@ -564,30 +571,44 @@ export class CanvasInteractions {
               this.previewAbort.signal,
             );
             break;
+          }
           case 'context-zones':
             this.zoneMenu(id);
             break;
           case 'context-zone': {
             const node = this.menuMaterial,
-              zone = ctx.world().zones.find((z) => z.id === id);
+              zone = ctx.world().zones.find((z) => z.id === id),
+              component = node ? componentFor(ctx.world(), node) : undefined,
+              previousJobs = new Set(ctx.world().assignments.map((job) => job.id));
             this.overlay.replaceChildren();
             if (
               node &&
               zone?.agent &&
               ctx.act(
-                {
-                  type: 'assign',
-                  world: ctx.world().id,
-                  node,
-                  agent: zone.agent,
-                  instruction: button.dataset.instruction ?? zone.instruction ?? '',
-                },
+                component
+                  ? {
+                      type: 'nodes.assign',
+                      world: ctx.world().id,
+                      nodes: ctx
+                        .world()
+                        .nodes.filter((part) => component.nodes.includes(part.id))
+                        .map((part) => ({ id: part.id, returnTo: { x: part.x, y: part.y } })),
+                      agent: zone.agent,
+                      instruction: button.dataset.instruction ?? zone.instruction ?? '',
+                    }
+                  : {
+                      type: 'assign',
+                      world: ctx.world().id,
+                      node,
+                      agent: zone.agent,
+                      instruction: button.dataset.instruction ?? zone.instruction ?? '',
+                    },
                 'asignar material a zona',
                 'OWNER-01',
               )
             ) {
-              const job = ctx.world().assignments.at(-1);
-              if (job) ctx.service.process(ctx.world().id, job.id);
+              for (const job of ctx.world().assignments)
+                if (!previousJobs.has(job.id)) ctx.service.process(ctx.world().id, job.id);
             }
             break;
           }
@@ -871,17 +892,7 @@ export class CanvasInteractions {
           return;
         }
         // El editor conserva Undo/Redo y las teclas de texto del navegador.
-        if (editable(event.target)) {
-          if (
-            event.key === 'Enter' &&
-            event.target instanceof HTMLInputElement &&
-            event.target.closest('.arrangement-spacing')
-          ) {
-            event.preventDefault();
-            event.target.closest('label')?.querySelector<HTMLButtonElement>('button')?.click();
-          }
-          return;
-        }
+        if (editable(event.target)) return;
         const buttons = [
           ...this.overlay.querySelectorAll<HTMLButtonElement>('[role=menuitem]:not(:disabled)'),
         ];
@@ -1011,6 +1022,10 @@ export class CanvasInteractions {
   private groupMenu(id: string, point: Point): void {
     const group = this.ctx.world().canvasGroups?.find((group) => group.id === id);
     if (!group) return;
+    if (isComponent(this.ctx.world(), group) && group.nodes[0]) {
+      this.menu(group.nodes[0], point);
+      return;
+    }
     this.ctx.ui.canvas.selections = group.nodes.filter((id) =>
       this.ctx.world().nodes.some((node) => node.id === id && !node.owner),
     );
@@ -1066,6 +1081,11 @@ export class CanvasInteractions {
       : { x: innerWidth / 2 - 130, y: innerHeight / 2 };
   }
   rename(id = this.ctx.ui.canvas.selection ?? ''): void {
+    const component = componentFor(this.ctx.world(), id);
+    if (component) {
+      this.groupRename(component.id);
+      return;
+    }
     const node = this.ctx.world().nodes.find((n) => n.id === id && !n.owner);
     if (!node) return;
     this.ctx.ui.canvas.selection = id;
@@ -1091,6 +1111,10 @@ export class CanvasInteractions {
     this.menuMaterial = id;
     this.ctx.ui.canvas.selection = id;
     if (!this.ctx.ui.canvas.selections.includes(id)) this.ctx.ui.canvas.selections = [id];
+    this.ctx.ui.canvas.selections = componentSelection(
+      this.ctx.world(),
+      this.ctx.ui.canvas.selections,
+    );
     this.ctx.ui.canvas.zoneSelection = null;
     this.ctx.ui.canvas.linkSelection = null;
     this.ctx.render();
@@ -1100,6 +1124,17 @@ export class CanvasInteractions {
           `<button type="button" role="menuitem" data-action="context-order" data-order="${order}" ${canOrderMaterials(this.ctx.world().nodes, this.ctx.ui.canvas.selections, order) ? '' : 'disabled'}>${{ front: 'Traer al frente', forward: 'Avanzar una capa', backward: 'Retroceder una capa', back: 'Enviar al fondo' }[order]}</button>`,
       )
       .join('');
+    const component = componentFor(this.ctx.world(), id),
+      arrangement =
+        arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1
+          ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>'
+          : '';
+    if (component) {
+      this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del componente" style="${this.position(point)}"><button role="menuitem" data-action="group-rename" data-id="${component.id}">Renombrar componente</button><button role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button><button role="menuitem" data-action="group-ungroup" data-id="${component.id}">Desagrupar componente</button><button role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangement}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button role="menuitem" data-action="context-remove" data-id="${id}">Eliminar componente</button></div>`;
+      this.fitOverlay();
+      this.overlay.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
+      return;
+    }
     this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}"><button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'wireframe' ? `<button type="button" role="menuitem" data-action="wireframe-edit" data-id="${id}">Editar contenido</button>` : ''}${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
@@ -1443,6 +1478,10 @@ export class CanvasInteractions {
     return id;
   }
   private editWireframe(id: string): void {
+    if (componentFor(this.ctx.world(), id)) {
+      this.ctx.notice('Desagrupá el componente para editar sus piezas por separado.');
+      return;
+    }
     const node = this.ctx.world().nodes.find((node) => node.id === id);
     if (node?.data.kind !== 'wireframe' || node.owner) return;
     this.close();

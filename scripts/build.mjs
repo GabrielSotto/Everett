@@ -3,6 +3,7 @@ import { glob, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { rawResources } from './raw-resources.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const hash = (data) => createHash('sha256').update(data).digest('hex');
@@ -19,6 +20,7 @@ const result = await build({
   platform: 'browser',
   loader: { '.webp': 'dataurl', '.png': 'dataurl' },
   plugins: [
+    rawResources,
     {
       name: 'pdf-worker-inline',
       setup(builder) {
@@ -57,7 +59,8 @@ for await (const path of glob('scripts/link-preview/**/*.mjs', { cwd: root }))
   serverInputs.push(path);
 const inputs = [
   ...new Set([
-    ...Object.keys(result.metafile.inputs),
+    ...Object.keys(result.metafile.inputs).map((path) => path.replace(/\?raw$/, '')),
+    'scripts/raw-resources.mjs',
     'index.html',
     'package.json',
     'package-lock.json',

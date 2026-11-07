@@ -1,6 +1,9 @@
 import type { Context } from '../app/context';
 import type { Point } from '../domain/model';
-import { renderLibrary, type LibraryChoice } from '../features/canvas/library/render';
+import type { LibraryChoice } from '../features/canvas/library/render';
+import { compileLibrary } from '../features/canvas/library/compile';
+import { libraryBounds } from '../domain/sketch-library';
+import { libraryPieceMarkup } from '../features/canvas/library/piece-markup';
 
 export interface LibraryDrop {
   point: Point;
@@ -67,8 +70,18 @@ export function bindLibraryDrag(
         ghost.textContent = current.choice.entry.name;
         document.body.append(ghost);
         current.ghost = ghost;
-        void renderLibrary(ghost, current.choice)
-          .then(() => {
+        void compileLibrary(current.choice)
+          .then((composition) => {
+            if (current !== pending || signal.aborted) return;
+            const bounds = libraryBounds(composition);
+            ghost.style.width = bounds.width + 'px';
+            ghost.style.height = bounds.height + 'px';
+            ghost.innerHTML = composition.parts
+              .map(
+                (part) =>
+                  `<div style="position:absolute;left:${part.x - bounds.x}px;top:${part.y - bounds.y}px;width:${part.width}px;height:${part.height}px">${libraryPieceMarkup(part.content)}</div>`,
+              )
+              .join('');
             ghost.dataset.ready = 'true';
           })
           .catch(() => {

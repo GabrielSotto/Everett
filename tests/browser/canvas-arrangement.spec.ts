@@ -148,7 +148,8 @@ test('C08-B118: menú de Canvas se adapta a selección, teclado, 320 px y texto 
   await page.getByRole('button', { name: 'Organizar selección', exact: true }).click();
   await expect(
     page.getByRole('menuitem', { name: 'Alinear a la izquierda', exact: true }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
+  await expect(page.getByText('Seleccioná dos o más elementos', { exact: false })).toBeVisible();
   await page.keyboard.press('Escape');
   await trigger.focus();
   await page.keyboard.press('ArrowDown');

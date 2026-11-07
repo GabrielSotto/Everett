@@ -3,6 +3,7 @@ import { glob, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { rawResources } from './raw-resources.mjs';
 import { tmpdir } from 'node:os';
 import { withTestRun } from './output-runs.mjs';
 import { parseTapSummary } from './test-evidence.mjs';
@@ -34,13 +35,15 @@ await withTestRun(root, 'unitarias', async ({ runId, directory: destination }) =
       outExtension: { '.js': '.mjs' },
       define: { __EVERETT_VERSION__: JSON.stringify(packageInfo.version) },
       metafile: true,
+      plugins: [rawResources],
     });
     const testFiles = Object.keys(compiled.metafile.outputs).map((path) => resolve(root, path));
     const sourceHashes = [];
     const assets = JSON.parse(await readFile(resolve(root, 'docs/asset-manifest.json'), 'utf8'));
     for (const path of [
       ...new Set([
-        ...Object.keys(compiled.metafile.inputs),
+        ...Object.keys(compiled.metafile.inputs).map((path) => path.replace(/\?raw$/, '')),
+        'scripts/raw-resources.mjs',
         ...assets.map((asset) => asset.path),
         'docs/asset-manifest.json',
         'Everett-0.7.5.html',

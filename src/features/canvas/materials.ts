@@ -37,7 +37,7 @@ function drawingMarkup(material: Material): string {
   const point = d.points[0]!;
   return `<svg class="drawing-art" style="--drawing-thickness:${d.thickness}px" viewBox="0 0 ${material.width} ${material.height}" aria-hidden="true">${d.points.length === 1 ? `<circle cx="${point.x}" cy="${point.y}" r="${d.thickness / 2}" fill="${d.color}"/>` : `<polyline points="${d.points.map((p) => `${p.x},${p.y}`).join(' ')}" fill="none" stroke="${d.color}" stroke-width="${d.thickness}" stroke-linecap="round" stroke-linejoin="round"/>`}</svg>`;
 }
-export function resizeHandles(kind: 'node' | 'zone', id: string): string {
+export function resizeHandles(kind: 'node' | 'zone' | 'group', id: string): string {
   return ['nw', 'ne', 'se', 'sw']
     .map(
       (corner) =>

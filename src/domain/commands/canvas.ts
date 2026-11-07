@@ -12,12 +12,15 @@ import { resolveMedia } from '../resolved-media';
 import { validWireframe } from '../wireframes';
 import { compositionKinds, wireframeComposition } from '../wireframe-compositions';
 import { instantiateLibrary, validLibraryComposition } from '../sketch-library';
+import { isComponent } from '../manual-groups';
+import { resizedComponent } from '../component-resize';
 
 type CanvasCommand = Extract<
   Command,
   {
     type:
       | 'node.create'
+      | 'group.resize'
       | 'wireframe.edit'
       | 'wireframe.compose'
       | 'wireframe.library'
@@ -450,6 +453,27 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       );
       world.links = world.links.filter((l) => l.id !== command.id);
       break;
+    case 'group.resize': {
+      const group = need(
+        world.canvasGroups?.find((g) => g.id === command.id),
+        'Componente inexistente',
+      );
+      ensure(isComponent(world, group), 'GROUP', 'Elegí un componente');
+      const nodes = resizedComponent(world, group, command.rect);
+      ensure(
+        nodes.every(
+          (n) =>
+            !n.owner &&
+            [n.x, n.y, n.width, n.height].every(Number.isFinite) &&
+            n.width >= 4 &&
+            n.height >= 4,
+        ),
+        'GEOMETRY',
+        'El componente no puede reducirse más',
+      );
+      for (const resized of nodes) Object.assign(node(resized.id), resized);
+      break;
+    }
     case 'node.resize': {
       const material = node(command.id);
       ensure(!material.owner, 'LOCKED', 'El agente está usando el material');

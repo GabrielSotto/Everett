@@ -22,6 +22,11 @@ async function add(page: Page, name: string) {
   return addLibrary(page, ids[name]!);
 }
 async function edit(page: Page, id: string) {
+  const group = (await world(page)).canvasGroups?.find((g) => g.component && g.nodes.includes(id));
+  if (group) {
+    await page.locator(`[data-node="${id}"]`).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Desagrupar componente', exact: true }).click();
+  }
   await page.locator(`[data-node="${id}"]`).dblclick();
   await expect(page.locator('.wireframe-editor')).toBeVisible();
 }
@@ -189,7 +194,7 @@ test('C08-B139: separación numérica en dos ejes desde cabecera y contexto, err
   expect((await world(page)).nodes).toEqual(before);
   await expect(horizontal).toBeFocused();
   await horizontal.fill('24.5');
-  await page.getByRole('button', { name: 'Aplicar separación horizontal', exact: true }).click();
+  await horizontal.press('Enter');
   let nodes = (await world(page)).nodes.toSorted((a, b) => a.x - b.x);
   nodes
     .slice(1)
@@ -198,7 +203,7 @@ test('C08-B139: separación numérica en dos ejes desde cabecera y contexto, err
   await page.locator('[data-node=a]').click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Alinear y distribuir', exact: false }).click();
   await page.getByRole('spinbutton', { name: 'Separación vertical', exact: true }).fill('32');
-  await page.getByRole('button', { name: 'Aplicar separación vertical', exact: true }).click();
+  await page.getByRole('spinbutton', { name: 'Separación vertical', exact: true }).press('Enter');
   nodes = (await world(page)).nodes.toSorted((a, b) => a.y - b.y);
   nodes
     .slice(1)
@@ -277,7 +282,7 @@ test('C08-B141: arrastrar una composición conserva cámara y disposición de su
     const root = page.locator(`[data-node="${group.nodes[0]}"]`);
     await expect(root.locator('.material-identification')).toBeHidden();
     await expect(root.locator('.resize-handle:visible')).toHaveCount(0);
-    // Una parte se elige y edita directamente; el resto conserva sus coordenadas.
+    // Desagrupar es explícito; después se edita una parte sin cambiar las demás.
     const text = nodes.find((n) => n.data.kind === 'wireframe' && n.data.content.type === 'text')!;
     const bar = (await page
       .locator(`[data-node="${text.id}"] .library-text-bar`)
@@ -287,6 +292,7 @@ test('C08-B141: arrastrar una composición conserva cámara y disposición de su
     await edit(page, text.id);
     await expect(page.locator('.wireframe-editor textarea')).toHaveCSS('resize', 'none');
     await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
     await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
     expect((await world(page)).nodes).toEqual(before.nodes);
   }

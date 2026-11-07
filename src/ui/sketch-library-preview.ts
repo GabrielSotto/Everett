@@ -8,8 +8,7 @@ export function paintLibraryPreview(
   maximumHeight: number,
   basic: boolean,
 ): void {
-  // El fondo de conversión conserva la superficie del catálogo al insertar.
-  // En una miniatura no debe reducir un botón o icono a un punto en una hoja vacía.
+  // Encuadrar la tinta sin que un fondo auxiliar altere su peso en la miniatura.
   const parts = composition.parts.filter(
     (part, index) => basic || index !== 0 || !part.name.startsWith('Fondo · '),
   );

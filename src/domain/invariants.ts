@@ -66,6 +66,11 @@ export function validate(s: State): void {
     ensure(w.conversations.length > 0, 'CONVERSATION', 'El Mundo necesita una conversación');
     const grouped = new Set<string>();
     for (const group of w.canvasGroups ?? []) {
+      ensure(
+        group.component === undefined || typeof group.component === 'boolean',
+        'GROUP',
+        'Tipo de conjunto inválido',
+      );
       ensure(!!group.name.trim() && group.nodes.length > 0, 'GROUP', 'Conjunto vacío o sin nombre');
       for (const id of group.nodes) {
         ensure(

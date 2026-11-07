@@ -1,5 +1,11 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-U51', layer: 'unit', contracts: ['C08-LIBRARY-01', 'C08-ORG-01'] },
+  ...['C08-B150', 'C08-B151', 'C08-B152'].map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-LIBRARY-01', 'C08-ORG-01', 'C08-ARRANGE-01'],
+  })),
   { id: 'C08-U50', layer: 'unit', contracts: ['C08-LIBRARY-01'] },
   ...['C08-B143', 'C08-B144', 'C08-B145', 'C08-B146', 'C08-B147', 'C08-B148', 'C08-B149'].map(
     (id) => ({
@@ -304,6 +310,9 @@ export const canvasControlRequirements = {
   'C08-B147': { 'canvas-wireframes': 1, 'library-add': 1 },
   // B126/B127/B137 conservan edición de datos del catálogo retirado mediante fixtures explícitos.
   'C08-B139': { 'selection-spacing': 2 },
+  'C08-B150': { 'canvas-wireframes': 1, 'library-add': 1 },
+  'C08-B151': { 'library-add': 1, 'group-ungroup': 1 },
+  'C08-B152': { 'canvas-organize': 3, 'library-add': 1 },
   'C08-B140': { 'library-add': 6, 'canvas-undo': 4, 'canvas-redo': 4 },
   'C08-B141': { 'canvas-wireframes': 3, 'canvas-undo': 2 },
   'C08-B142': { 'canvas-wireframes': 8, 'library-add': 1 },

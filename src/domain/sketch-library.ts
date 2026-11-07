@@ -1,4 +1,4 @@
-import type { CanvasGroup, Material, Point } from './model';
+import type { CanvasGroup, Material, Point, Rect } from './model';
 import { validWireframe, type WireframeContent } from './wireframes';
 
 export interface LibraryPart {
@@ -14,11 +14,13 @@ export interface LibraryComposition {
   width: number;
   height: number;
   parts: LibraryPart[];
+  component?: boolean;
 }
 export function validLibraryComposition(value: LibraryComposition): boolean {
   return (
     !!value &&
     typeof value.name === 'string' &&
+    (value.component === undefined || typeof value.component === 'boolean') &&
     value.name.length > 0 &&
     value.name.length <= 200 &&
     [value.width, value.height].every((n) => Number.isFinite(n) && n > 0 && n <= 10000) &&
@@ -42,16 +44,29 @@ export function validLibraryComposition(value: LibraryComposition): boolean {
     )
   );
 }
+/** El espacio reservado por el catálogo no forma parte del material insertado. */
+export function libraryBounds(composition: LibraryComposition): Rect {
+  const x = Math.min(...composition.parts.map((p) => p.x));
+  const y = Math.min(...composition.parts.map((p) => p.y));
+  return {
+    x,
+    y,
+    width: Math.max(...composition.parts.map((p) => p.x + p.width)) - x,
+    height: Math.max(...composition.parts.map((p) => p.y + p.height)) - y,
+  };
+}
+
 /** La receta se materializa una vez; editar una copia nunca modifica el catálogo. */
 export function instantiateLibrary(
   composition: LibraryComposition,
   id: string,
   center: Point,
 ): { nodes: Material[]; group?: CanvasGroup } {
+  const bounds = libraryBounds(composition);
   const nodes = composition.parts.map((p, index): Material => ({
     id: index ? `${id}-${index}` : id,
-    x: center.x - composition.width / 2 + p.x,
-    y: center.y - composition.height / 2 + p.y,
+    x: center.x - bounds.width / 2 + p.x - bounds.x,
+    y: center.y - bounds.height / 2 + p.y - bounds.y,
     width: p.width,
     height: p.height,
     owner: null,
@@ -60,7 +75,14 @@ export function instantiateLibrary(
   return {
     nodes,
     ...(nodes.length > 1
-      ? { group: { id: `${id}-group`, name: composition.name, nodes: nodes.map((n) => n.id) } }
+      ? {
+          group: {
+            id: `${id}-group`,
+            name: composition.name,
+            nodes: nodes.map((n) => n.id),
+            component: composition.component ?? true,
+          },
+        }
       : {}),
   };
 }

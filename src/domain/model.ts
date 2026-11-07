@@ -64,6 +64,8 @@ export interface CanvasGroup {
   id: string;
   name: string;
   nodes: string[];
+  /** Las partes de un componente se manipulan juntas hasta desagruparlo. */
+  component?: boolean;
 }
 export interface ReferenceAnchor {
   id: string;

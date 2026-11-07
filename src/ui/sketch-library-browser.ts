@@ -53,9 +53,11 @@ export function libraryBrowser(
     .filter(([id]) => !['all', 'base', 'screens'].includes(id))
     .map(([id, name]) => `<option value="${id}">${name}</option>`)
     .join('')}</select></label><div class="library-items" aria-label="Componentes"></div></div>`;
-  const textMode = document.createElement('label');
+  const textMode = document.createElement('div');
   textMode.className = 'library-text-mode';
-  textMode.innerHTML = `Texto<select aria-label="Texto de los bosquejos"><option value="bars" ${!labels ? 'selected' : ''}>Simulado</option><option value="labels" ${labels ? 'selected' : ''}>Rótulos</option></select>`;
+  textMode.setAttribute('role', 'group');
+  textMode.setAttribute('aria-label', 'Texto de los bosquejos');
+  textMode.innerHTML = `<span>Texto</span><div class="library-text-segments"><button type="button" data-text-mode="bars" aria-pressed="${!labels}" aria-label="Mostrar texto como barras" title="Representar el texto con barras">${icon('text-bars', 16)}Barras</button><button type="button" data-text-mode="labels" aria-pressed="${labels}" aria-label="Mostrar rótulos de texto" title="Mostrar los rótulos de ejemplo">${icon('text', 16)}Rótulos</button></div>`;
   root.append(textMode);
   const search = root.querySelector<HTMLInputElement>('input')!;
   const family = root.querySelector<HTMLSelectElement>('select')!;
@@ -143,10 +145,15 @@ export function libraryBrowser(
   };
   search.addEventListener('input', list, { signal });
   family.addEventListener('change', list, { signal });
-  textMode.querySelector('select')!.addEventListener(
-    'change',
+  textMode.addEventListener(
+    'click',
     (event) => {
-      labels = (event.target as HTMLSelectElement).value === 'labels';
+      const button = (event.target as Element).closest<HTMLButtonElement>('[data-text-mode]');
+      if (!button) return;
+      labels = button.dataset.textMode === 'labels';
+      textMode
+        .querySelectorAll<HTMLButtonElement>('button')
+        .forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
       list();
     },
     { signal },

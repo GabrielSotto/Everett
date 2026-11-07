@@ -222,6 +222,7 @@ export type Command =
       id: string;
       rect: Rect;
     }
+  | { type: 'group.resize'; world: string; id: string; rect: Rect }
   | {
       type: 'zone.edit';
       world: string;

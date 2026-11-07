@@ -72,38 +72,74 @@
   font-size: 0.9231rem;
   line-height: 1.45;
 }
-.arrangement-spacing {
-  border: 0;
-  border-top: 1px solid var(--line);
-  margin: 6px 0 0;
-  padding: 8px;
-  min-width: 0;
+.arrangement-controls {
+  padding: 4px 8px 8px;
+  display: grid;
+  gap: 10px;
 }
-.arrangement-spacing legend {
-  color: var(--muted);
-  padding: 0 4px;
+.arrangement-label {
+  font-weight: 600;
+}
+.arrangement-icons {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+}
+.arrangement-icons button,
+.arrangement-distribution button {
+  min-width: 28px;
+  min-height: 30px;
+  padding: 5px;
+  justify-content: center !important;
+}
+.arrangement-distribution {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.arrangement-distribution > span {
+  margin-right: auto;
+}
+.arrangement-spacing {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 .arrangement-spacing label {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 70px 26px;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  margin: 6px 0;
-}
-.arrangement-spacing input {
+  gap: 5px;
+  padding: 5px 6px;
   min-width: 0;
-  width: 100%;
-  padding: 5px;
-  color: var(--text);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 4px;
-  font: inherit;
+  border-radius: 5px;
 }
-.arrangement-spacing button {
-  padding: 4px;
-  min-width: 26px;
-  justify-content: center;
+.arrangement-spacing label:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.arrangement-spacing svg {
+  flex: 0 0 16px;
+}
+.arrangement-spacing input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+}
+.arrangement-spacing input::-webkit-inner-spin-button {
+  appearance: none;
+}
+.arrangement-spacing label > span {
+  color: var(--muted);
+  font-size: 11px;
 }
 .canvas-actions-pop hr {
   border: 0;

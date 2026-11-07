@@ -34,6 +34,7 @@ const reversible = new Set<Command['type']>([
   'group.remove',
   'group.rename',
   'group.ungroup',
+  'group.resize',
   'reference.fragment',
   'node.create',
   'node.rename',

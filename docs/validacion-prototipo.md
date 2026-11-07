@@ -54,8 +54,8 @@ desplazada, palabra partida y chat fuera de contexto deben fallar. Conservar la 
 
 ### Trabajo continuo de Canvas
 
-La integración del catálogo añade C08-U50 y C08-B143–B149. Recorrer la biblioteca desde Bosquejos,
-crear por botón y arrastre, editar partes después de agrupar, duplicar y recargar. Comprobar
+La integración del catálogo añade C08-U50–U51 y C08-B143–B152. Recorrer la biblioteca desde Bosquejos,
+crear por botón y arrastre, editar partes después de desagrupar explícitamente, duplicar y recargar. Comprobar
 cancelación, cámara conservada, historial atómico, recursos fallidos y recuperación. La conversión
 compara píxeles de muestras representativas con sus piezas de Canvas; retirar textos es un
 contraejemplo que debe empeorar esa comparación. Preparar todas las entradas con sus variantes
@@ -76,6 +76,17 @@ no se sustituyen por un aviso genérico. Un escaneo limpio tampoco acredita cali
 Los recorridos
 del catálogo retirado cargan explícitamente materiales guardados para comprobar su edición;
 los recorridos de creación y composición usan la paleta nueva y sus dimensiones reales.
+
+C08-B150 corta la red después de cargar la aplicación: miniaturas, selector de hora, inserción
+y arrastre deben seguir disponibles. C08-B151 selecciona un componente por su texto, lo mueve,
+escala por puntero y teclado, duplica, borra, deshace y recarga antes de desagruparlo; ninguna parte
+se separa accidentalmente. Comprueba que un botón no incorpore el fondo de exhibición y que
+asignar un componente a una zona transfiera todas sus partes. C08-U51 cubre además composiciones
+guardadas antes de marcar su tipo.
+C08-B152 comprueba que alineación y espaciado aparecen solo con dos o más unidades seleccionadas,
+desde la barra y el menú contextual, que dos componentes no se cuentan por sus piezas y que
+Escape descarta la edición del espaciado.
+Los valores numéricos forman parte de Alineación; la distribución automática requiere tres unidades.
 
 El 27 de octubre de 2026 el usuario sustituyó las entregas puntuales por desarrollo continuo
 con Vite. El gate cotidiano evalúa directamente las fuentes de la aplicación: tipado, pruebas

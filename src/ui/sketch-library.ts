@@ -2,7 +2,11 @@ import type { Context } from '../app/context';
 import { entries } from '../../design/wireframe-library/samples.js';
 import type { LibraryChoice } from '../features/canvas/library/render';
 import { compileLibrary } from '../features/canvas/library/compile';
-import { instantiateLibrary, type LibraryComposition } from '../domain/sketch-library';
+import {
+  instantiateLibrary,
+  libraryBounds,
+  type LibraryComposition,
+} from '../domain/sketch-library';
 import { toWorld } from '../spatial/math';
 import { frameCanvas } from './canvas-frame';
 import { icon } from './icons';
@@ -79,8 +83,9 @@ export function openSketchLibrary(ctx: Context, parentSignal: AbortSignal): void
       viewport,
     );
     if (drop) {
-      center.x += (0.5 - drop.grab.x) * result.width;
-      center.y += (0.5 - drop.grab.y) * result.height;
+      const bounds = libraryBounds(result);
+      center.x += (0.5 - drop.grab.x) * bounds.width;
+      center.y += (0.5 - drop.grab.y) * bounds.height;
     }
     const id = 'material-' + crypto.randomUUID();
     const created = instantiateLibrary(result, id, center);

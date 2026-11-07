@@ -105,10 +105,31 @@ contraste insuficiente. La corrección supera 116 pruebas unitarias y 222 recorr
 sin fallos, omisiones ni reintentos, incluidos los controles negativos y 30 ciclos sostenidos entre
 superficies. Se revisaron las capturas del desplegable, miniaturas y opciones a 550 y 1440 px;
 el arnés cubre también 320 px, ventanas bajas y texto al 200 %. Tipado y formato correctos.
-Evidencia vigente en `output/pruebas/unitarias/2026-11-05_01-45-49-678Z/` y
+Evidencia de esa corrección en `output/pruebas/unitarias/2026-11-05_01-45-49-678Z/` y
 `output/pruebas/navegador/2026-11-05_01-52-31-003Z/`, verificada contra las fuentes servidas por
 Vite en 4173, SHA-256 `ab5bde0374269f0fff79f635a6d35379c3bebce3f05c610b348ec416e10325da`.
 Pendiente de revisión del usuario; 0.8 permanece abierta y sin integrar en `dev`.
+
+La revisión del 6 de noviembre detectó miniaturas e inserciones fallidas, componentes que se
+desarmaban al mover una parte y espaciado numérico fuera de contexto. Los recursos de la biblioteca
+se incorporan a la aplicación: no dependen de nuevas peticiones para crear miniaturas ni piezas.
+Los componentes se seleccionan, mueven, escalan, duplican y asignan como unidad; desagrupar es
+explícito. Las piezas básicas y los conjuntos manuales conservan su comportamiento. Los botones
+ya no incorporan la superficie blanca de exhibición; las composiciones que necesitan un fondo
+de lectura lo conservan ajustado a sus partes. Los materiales guardados no se modifican.
+La biblioteca usa un selector compacto Barras/Rótulos y un icono de hoja de bosquejo. Los campos
+de espaciado forman parte de alineación y aparecen con dos o más unidades seleccionadas.
+C08-U51 y C08-B150–B152 añaden desconexión de red, hora, arrastre, selección de componentes,
+resize por puntero/teclado, asignación, copia, persistencia y cancelación del espaciado.
+Verificación actual: 117 pruebas unitarias y 225 recorridos de navegador aprobados, sin fallos,
+omisiones ni reintentos, incluidos los controles negativos y los 30 ciclos de uso sostenido.
+La comparación conserva 568 representaciones; se revisaron además las capturas de la biblioteca
+a 320 px, alineación contextual, hora y botón insertados sin red, y piezas después de desagrupar.
+Tipado, formato y verificadores independientes correctos. Evidencia vigente en
+`output/pruebas/unitarias/2026-11-07_02-31-43-833Z/` y
+`output/pruebas/navegador/2026-11-07_02-31-54-022Z/`, SHA-256 de las fuentes servidas
+`8a307719f21687767b2ccf65533d2ac3d2ee112cec85a8e0c0b83138acf67ecb`.
+Vite continúa en 4173. Pendiente de revisión del usuario; 0.8 permanece abierta y sin integrar en `dev`.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación

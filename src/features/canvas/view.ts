@@ -37,9 +37,17 @@ import { materialsInRect } from '../../domain/material-selection';
 import { motion, reducedMotion } from '../../ui/motion';
 import { strokePicker } from './stroke-picker';
 import { rgb } from './color';
-import { groupBounds, groupDropTarget, groupHeadingSide } from '../../domain/manual-groups';
+import {
+  groupBounds,
+  groupDropTarget,
+  groupHeadingSide,
+  componentFor,
+  componentSelection,
+  isComponent,
+} from '../../domain/manual-groups';
 import { labelPosition, labeledPath, overlaps } from '../../domain/cable-labels';
 import { alignRect, selectionBounds } from '../../domain/alignment';
+import { resizedComponent } from '../../domain/component-resize';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
@@ -59,7 +67,7 @@ type Drag =
     }
   | {
       kind: 'resize';
-      entity: 'node' | 'zone';
+      entity: 'node' | 'zone' | 'group';
       id: string;
       start: Point;
       origin: Rect;
@@ -468,6 +476,51 @@ export class CanvasView implements View {
       return;
     }
     if (
+      element.dataset.resize === 'group' &&
+      ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
+    ) {
+      const world = this.ctx.world();
+      const group = world.canvasGroups?.find((g) => g.id === element.dataset.id);
+      if (!group || group.nodes.some((id) => world.nodes.find((n) => n.id === id)?.owner)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const bounds = groupBounds(world, group);
+      const corner = element.dataset.corner as Corner;
+      const step = event.shiftKey ? 10 : 2;
+      const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+      const sign = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+      const side = horizontal ? bounds.width : bounds.height;
+      const reverse = horizontal ? corner.includes('w') : corner.includes('n');
+      const minimum = Math.max(
+        ...world.nodes
+          .filter((n) => group.nodes.includes(n.id))
+          .flatMap((n) => [4 / n.width, 4 / n.height]),
+      );
+      const scale = Math.max(minimum, (side + step * sign * (reverse ? -1 : 1)) / side);
+      this.ctx.act(
+        {
+          type: 'group.resize',
+          world: world.id,
+          id: group.id,
+          rect: {
+            x: bounds.x + (corner.includes('w') ? bounds.width * (1 - scale) : 0),
+            y: bounds.y + (corner.includes('n') ? bounds.height * (1 - scale) : 0),
+            width: bounds.width * scale,
+            height: bounds.height * scale,
+          },
+        },
+        'redimensionar componente con teclado',
+        'C08-MAT-05',
+        'keyboard',
+      );
+      this.root
+        .querySelector<HTMLElement>(
+          `[data-resize="group"][data-id="${CSS.escape(group.id)}"][data-corner="${corner}"]`,
+        )
+        ?.focus({ preventScroll: true });
+      return;
+    }
+    if (
       element.dataset.resize !== 'node' ||
       !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
     )
@@ -509,6 +562,7 @@ export class CanvasView implements View {
       ?.focus({ preventScroll: true });
   }
   private open(id: string): void {
+    if (componentFor(this.ctx.world(), id)) return;
     const destination = materialRoute(this.ctx.store.get(), this.ctx.world().id, id);
     if (destination)
       this.ctx.go(
@@ -578,13 +632,14 @@ export class CanvasView implements View {
   }
   private select(kind: 'node' | 'zone' | 'link' | null, id: string | null, additive = false): void {
     const ui = this.ctx.ui.canvas;
+    const members = kind === 'node' && id ? componentSelection(this.ctx.world(), [id]) : [];
     ui.selections =
       kind === 'node' && id
         ? additive
           ? ui.selections.includes(id)
-            ? ui.selections.filter((existing) => existing !== id)
-            : [...ui.selections, id]
-          : [id]
+            ? ui.selections.filter((existing) => !members.includes(existing))
+            : [...new Set([...ui.selections, ...members])]
+          : members
         : [];
     this.ctx.ui.canvas.selection =
       kind === 'node'
@@ -741,15 +796,20 @@ export class CanvasView implements View {
     const handle = target.closest<HTMLElement>('[data-resize]');
     if (
       handle &&
-      (handle.dataset.resize === 'node' || handle.dataset.resize === 'zone') &&
+      ['node', 'zone', 'group'].includes(handle.dataset.resize ?? '') &&
       handle.dataset.id
     ) {
-      const entity = handle.dataset.resize,
+      const entity = handle.dataset.resize as 'node' | 'zone' | 'group',
         id = handle.dataset.id;
       const original =
-        entity === 'node'
-          ? this.ctx.world().nodes.find((n) => n.id === id)
-          : this.ctx.world().zones.find((z) => z.id === id);
+        entity === 'group'
+          ? this.ctx
+              .world()
+              .canvasGroups?.filter((g) => g.id === id)
+              .map((g) => groupBounds(this.ctx.world(), g))[0]
+          : entity === 'node'
+            ? this.ctx.world().nodes.find((n) => n.id === id)
+            : this.ctx.world().zones.find((z) => z.id === id);
       if (!original) return;
       e.preventDefault();
       const rect = { x: original.x, y: original.y, width: original.width, height: original.height };
@@ -898,7 +958,10 @@ export class CanvasView implements View {
         this.root.querySelector('#canvas-plane')?.append(box);
       }
       this.applyRect(box, rect);
-      const selected = materialsInRect(this.ctx.world().nodes, rect);
+      const selected = componentSelection(
+        this.ctx.world(),
+        materialsInRect(this.ctx.world().nodes, rect),
+      );
       const ui = this.ctx.ui.canvas;
       ui.selections = [...new Set([...(d.additive ? d.before : []), ...selected])];
       ui.selection = ui.selections.at(-1) ?? null;
@@ -957,6 +1020,35 @@ export class CanvasView implements View {
         y: d.corner.includes('n') ? d.origin.y + dy : d.origin.y + d.origin.height + dy,
       };
       d.rect = drawRect(fixed, moving);
+      if (d.entity === 'group') {
+        const world = this.ctx.world();
+        const group = world.canvasGroups!.find((g) => g.id === d.id)!;
+        const members = world.nodes.filter((n) => group.nodes.includes(n.id));
+        const sx = d.rect.width / d.origin.width,
+          sy = d.rect.height / d.origin.height;
+        const minimum = Math.max(...members.flatMap((n) => [4 / n.width, 4 / n.height]));
+        const scale = Math.max(minimum, Math.abs(sx - 1) >= Math.abs(sy - 1) ? sx : sy);
+        d.rect = {
+          x: d.corner.includes('w') ? fixed.x - d.origin.width * scale : fixed.x,
+          y: d.corner.includes('n') ? fixed.y - d.origin.height * scale : fixed.y,
+          width: d.origin.width * scale,
+          height: d.origin.height * scale,
+        };
+        const nodes = resizedComponent(world, group, d.rect);
+        for (const node of nodes) {
+          const el = this.root.querySelector<HTMLElement>(`[data-node="${CSS.escape(node.id)}"]`);
+          if (!el) continue;
+          this.applyRect(el, node);
+          const art = el.querySelector('[data-library-piece]');
+          if (art) art.outerHTML = wireframeMarkup(node);
+        }
+        const frame = this.root.querySelector<HTMLElement>(
+          `[data-component="${CSS.escape(group.id)}"]`,
+        );
+        if (frame) this.applyRect(frame, d.rect);
+        this.paintLinks(nodes.map((n) => ({ id: n.id, point: n })));
+        return;
+      }
       const material = this.ctx.world().nodes.find((n) => n.id === d.id);
       if (material?.data.kind === 'image' || material?.data.kind === 'video') {
         const sx = d.rect.width / d.origin.width,
@@ -1188,7 +1280,12 @@ export class CanvasView implements View {
     if (d.kind === 'resize') {
       this.ctx.act(
         {
-          type: d.entity === 'node' ? 'node.resize' : 'zone.edit',
+          type:
+            d.entity === 'node'
+              ? 'node.resize'
+              : d.entity === 'group'
+                ? 'group.resize'
+                : 'zone.edit',
           world: w.id,
           id: d.id,
           rect: d.rect,
@@ -1715,7 +1812,7 @@ export class CanvasView implements View {
           bounds.width * zoom >= 240 ? 'full' : bounds.width * zoom >= 100 ? 'compact' : 'hidden';
         const headingSide = groupHeadingSide({ ...world, nodes }, group);
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
+        return `<div ${isComponent(world, group) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${selected && isComponent(world, group) && this.ctx.ui.canvas.tool === 'select' ? resizeHandles('group', group.id) : ''}${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
       })
       .join('');
     if (markup !== this.groupMarkup || !layer.childElementCount) {
@@ -1942,9 +2039,10 @@ export class CanvasView implements View {
       if (!node) return;
       const selected = ui.canvas.selections.includes(node.id);
       element.classList.toggle('selected', selected);
+      element.classList.toggle('component-part', !!componentFor(w, node.id));
       element.classList.toggle('primary-selection', node.id === ui.canvas.selection);
       const handles = element.querySelectorAll('.resize-handle');
-      if (selected && ui.canvas.tool === 'select' && !connect) {
+      if (selected && ui.canvas.tool === 'select' && !connect && !componentFor(w, node.id)) {
         if (!handles.length)
           element.insertAdjacentHTML('beforeend', resizeHandles('node', node.id));
       } else handles.forEach((handle) => handle.remove());

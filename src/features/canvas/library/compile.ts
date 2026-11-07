@@ -1,6 +1,6 @@
 import { pieceStyleKeys, type SketchPiece } from '../../../domain/sketch-pieces';
 import type { LibraryComposition, LibraryPart } from '../../../domain/sketch-library';
-import { validLibraryComposition } from '../../../domain/sketch-library';
+import { libraryBounds, validLibraryComposition } from '../../../domain/sketch-library';
 import { renderLibrary, type LibraryChoice } from './render';
 
 const visibleColor = (s: string) => s !== 'transparent' && s !== 'rgba(0, 0, 0, 0)';
@@ -86,11 +86,6 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
         },
       });
     };
-    if (choice.entry.family !== 'base') {
-      add(origin, 'Fondo · ' + choice.entry.name, {
-        style: { backgroundColor: '#ffffff', borderRadius: '6px' },
-      });
-    }
     const walk = (
       element: Element,
       inheritedOpacity: number,
@@ -151,11 +146,9 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
       )
         return;
       if (element instanceof HTMLImageElement) {
-        const match = new URL(element.src).pathname.match(
-          /^\/design\/wireframe-library\/vendor\/([a-z0-9-]+)\.svg$/,
-        );
-        if (!match) throw new Error('Símbolo de biblioteca no reconocido.');
-        piece.symbol = match[1]!;
+        const symbol = element.dataset.librarySymbol;
+        if (!symbol) throw new Error('Símbolo de biblioteca no reconocido.');
+        piece.symbol = symbol;
         // Los SVG externos de Phosphor usan tinta negra; no heredan color del img.
         style.color = css.filter.includes('invert(1)') ? '#ffffff' : '#000000';
         add(paintRect, 'Símbolo · ' + piece.symbol, clipped(paintRect, piece));
@@ -240,7 +233,47 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
       }
     };
     walk(root, 1);
-    const result = { name: choice.entry.name, width: origin.width, height: origin.height, parts };
+    // Conservar una superficie de lectura solo donde la tinta carece de fondo propio.
+    // Un botón ya tiene su fondo: no arrastrar la hoja vacía de exhibición del catálogo.
+    const needsBackdrop = parts.some(
+      (part, index) =>
+        (part.content.type === 'text' || part.content.piece?.symbol) &&
+        !parts
+          .slice(0, index)
+          .some(
+            (behind) =>
+              visibleColor(behind.content.piece?.style.backgroundColor ?? 'transparent') &&
+              behind.content.piece?.style.opacity !== '0' &&
+              behind.x <= part.x &&
+              behind.y <= part.y &&
+              behind.x + behind.width >= part.x + part.width - 0.5 &&
+              behind.y + behind.height >= part.y + part.height - 0.5,
+          ),
+    );
+    if (choice.entry.family !== 'base' && needsBackdrop) {
+      const bounds = libraryBounds({
+        name: choice.entry.name,
+        width: origin.width,
+        height: origin.height,
+        parts,
+      });
+      parts.unshift({
+        ...bounds,
+        name: 'Fondo · ' + choice.entry.name,
+        content: {
+          type: 'block',
+          text: '',
+          piece: { style: { backgroundColor: '#ffffff', borderRadius: '6px' } },
+        },
+      });
+    }
+    const result = {
+      name: choice.entry.name,
+      width: origin.width,
+      height: origin.height,
+      parts,
+      component: choice.entry.family !== 'base',
+    };
     if (!validLibraryComposition(result))
       throw new Error('No se pudo preparar esta composición. No se agregó ninguna pieza.');
     return result;

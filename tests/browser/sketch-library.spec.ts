@@ -3,6 +3,7 @@ import { start, world, capture, snapshot } from './canvas-utility-helpers';
 import { entries, availableStates } from '../../design/wireframe-library/samples.js';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
 import { libraryTile, openLibrary } from './sketch-library-helpers';
 
@@ -44,22 +45,20 @@ test('C08-B148: Bosquejos despliega una biblioteca acotada al botón, sin ficha 
   await tab.evaluate((el) => (el.style.color = ''));
   await expect(panel.locator('[data-thumbnail=block]')).toHaveAttribute('data-ready', 'true');
   await capture(page, info, 'desplegable-piezas');
-  let releaseSymbols!: () => void;
-  const symbols = new Promise<void>((resolve) => (releaseSymbols = resolve));
   let requestedSymbols = 0;
-  await page.route('**/design/wireframe-library/vendor/*.svg', async (route) => {
+  await page.route('**/design/wireframe-library/vendor/*.svg', (route) => {
     requestedSymbols++;
-    await symbols;
-    await route.continue();
+    return route.abort();
   });
   await panel.getByRole('tab', { name: 'Componentes', exact: true }).click();
   await panel.getByRole('combobox', { name: 'Familia de componentes' }).selectOption('navigation');
-  await expect.poll(() => requestedSymbols).toBeGreaterThan(0);
+
   await panel.locator('[data-library-entry=toolbar]').click();
   await expect(page.locator('.library-choice-options')).toBeVisible();
   await expect(panel.locator('.library-browse')).toBeVisible();
-  releaseSymbols();
+
   await expect(panel.locator('[data-thumbnail=toolbar]')).toHaveAttribute('data-ready', 'true');
+  expect(requestedSymbols, 'sin peticiones tardías de símbolos').toBe(0);
   await page
     .locator('.library-choice-options')
     .getByRole('button', { name: 'Cerrar opciones' })
@@ -111,7 +110,7 @@ test('C08-B148: Bosquejos despliega una biblioteca acotada al botón, sin ficha 
   await panel.getByRole('searchbox').fill('');
   const shortBox = (await panel.boundingBox())!;
   expect(shortBox.y + shortBox.height).toBeLessThanOrEqual(352);
-  await expect(panel.getByRole('combobox', { name: 'Texto de los bosquejos' })).toBeInViewport();
+  await expect(panel.getByRole('group', { name: 'Texto de los bosquejos' })).toBeInViewport();
   await panel.locator('.library-items').hover();
   await page.mouse.wheel(0, 2000);
   await expect
@@ -223,7 +222,7 @@ test('C08-B143: biblioteca crea chat compuesto editable, historial atómico y pe
   await start(page);
   const panel = await library(page);
   await panel.getByRole('searchbox').fill('chat completo');
-  await panel.getByRole('combobox', { name: 'Texto de los bosquejos' }).selectOption('labels');
+  await panel.getByRole('button', { name: 'Mostrar rótulos de texto' }).click();
   await expect(panel.locator('[data-thumbnail=chat]')).toHaveAttribute('data-ready', 'true');
   await capture(page, info, 'biblioteca-chat');
   await panel.locator('[data-library-add=chat]').click();
@@ -248,6 +247,8 @@ test('C08-B143: biblioteca crea chat compuesto editable, historial atómico y pe
       n.data.content.text === 'Ana García',
   )!;
   expect(text).toBeTruthy();
+  await page.locator(`[data-node="${text.id}"]`).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Desagrupar componente', exact: true }).click();
   await page.locator(`[data-node="${text.id}"]`).dblclick();
   await page.getByRole('textbox', { name: 'Contenido del bosquejo', exact: true }).fill('Gabriela');
   await expect(page.locator(`[data-node="${text.id}"] .library-piece`)).toHaveText('Gabriela');
@@ -272,19 +273,29 @@ test('C08-B147: un símbolo que no carga bloquea la creación y permite reintent
   page,
 }, info) => {
   await start(page);
-  let broken = true;
-  await page.route('**/design/wireframe-library/vendor/*.svg', (route) =>
-    broken
-      ? route.fulfill({ status: 200, contentType: 'image/svg+xml', body: 'recurso incompleto' })
-      : route.continue(),
-  );
+  await page.evaluate(() => {
+    const decode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = function () {
+      return this.dataset.librarySymbol
+        ? Promise.reject(new DOMException('Invalid image', 'EncodingError'))
+        : decode.call(this);
+    };
+    Object.assign(window, {
+      restoreLibraryDecode: () => {
+        HTMLImageElement.prototype.decode = decode;
+      },
+    });
+  });
   const panel = await library(page);
   await panel.getByRole('searchbox').fill('Icono y símbolo');
   await panel.locator('[data-library-add="symbol"]').click();
   await expect(panel.getByRole('status')).toContainText('No se pudo cargar un símbolo');
   expect((await world(page)).nodes).toHaveLength(0);
   await capture(page, info, 'biblioteca-error-recuperable');
-  broken = false;
+  await page.evaluate(() => {
+    Reflect.get(window, 'restoreLibraryDecode')();
+    Reflect.deleteProperty(window, 'restoreLibraryDecode');
+  });
   await panel.getByRole('button', { name: 'Reintentar', exact: true }).click();
   await expect(panel).toHaveCount(0);
   const part = (await world(page)).nodes.find(
@@ -293,16 +304,18 @@ test('C08-B147: un símbolo que no carga bloquea la creación y permite reintent
   expect(part).toBeTruthy();
   await page.locator(`[data-node="${part.id}"]`).dblclick();
   await page.getByRole('combobox', { name: 'Símbolo de la pieza' }).selectOption('play');
-  await expect(page.locator(`[data-node="${part.id}"] .library-symbol`)).toHaveCSS(
-    'mask-image',
-    /play\.svg/,
-  );
+  const expected = await readFile('design/wireframe-library/vendor/play.svg', 'utf8');
+  const symbol = page.locator(`[data-node="${part.id}"] .library-symbol`);
+  const paintedSymbol = () =>
+    symbol.evaluate((el) => {
+      const mask = getComputedStyle(el).maskImage;
+      const url = mask.match(/url\(["']?(.*?)["']?\)$/)?.[1] ?? '';
+      return decodeURIComponent(url.slice('data:image/svg+xml,'.length));
+    });
+  await expect.poll(paintedSymbol).toBe(expected);
   await page.keyboard.press('Escape');
   await page.reload();
-  await expect(page.locator(`[data-node="${part.id}"] .library-symbol`)).toHaveCSS(
-    'mask-image',
-    /play\.svg/,
-  );
+  await expect.poll(paintedSymbol).toBe(expected);
 });
 
 test('C08-B144: todas las entradas, variantes y estados se eligen sin formulario previo ni perder el desplegable', async ({
@@ -343,7 +356,7 @@ test('C08-B144: todas las entradas, variantes y estados se eligen sin formulario
   await panel.getByRole('searchbox').fill('zzzz-sin-resultados');
   await expect(panel.getByText(/No hay coincidencias/)).toBeVisible();
   await libraryTile(page, 'composer');
-  await panel.getByRole('combobox', { name: 'Texto de los bosquejos' }).selectOption('labels');
+  await panel.getByRole('button', { name: 'Mostrar rótulos de texto' }).click();
   await expect(panel.locator('[data-thumbnail=composer]')).toHaveAttribute('data-ready', 'true');
   await capture(page, info, 'biblioteca-estrecha');
   const box = (await panel.boundingBox())!;
@@ -397,6 +410,8 @@ test('C08-B145: arrastrar respeta cámara, cancelar no crea piezas, duplicar con
       n.data.kind === 'wireframe' &&
       n.data.content.type === 'text',
   )!;
+  await page.locator(`[data-node="${copyText.id}"]`).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Desagrupar componente', exact: true }).click();
   await page.locator(`[data-node="${copyText.id}"]`).dblclick();
   await page.getByRole('textbox', { name: 'Contenido del bosquejo', exact: true }).fill('Entrar');
   await page.keyboard.press('Escape');
@@ -435,7 +450,7 @@ test('C08-B146: conversión conserva la representación del catálogo, con contr
       const { compileLibrary } = (await import(
         String('/src/features/canvas/library/compile.ts')
       )) as typeof import('../../src/features/canvas/library/compile');
-      const { instantiateLibrary } = (await import(
+      const { instantiateLibrary, libraryBounds } = (await import(
         String('/src/domain/sketch-library.ts')
       )) as typeof import('../../src/domain/sketch-library');
       const { wireframeMarkup } = (await import(
@@ -480,9 +495,11 @@ test('C08-B146: conversión conserva la representación del catálogo, con contr
         height: composition.height + 'px',
         flexShrink: '0',
       });
+      const bounds = libraryBounds(composition);
+      // Comparar en las coordenadas del catálogo, incluido su espacio de exhibición.
       const result = instantiateLibrary(composition, 'proof', {
-        x: composition.width / 2,
-        y: composition.height / 2,
+        x: bounds.x + bounds.width / 2,
+        y: bounds.y + bounds.height / 2,
       });
       target.innerHTML = result.nodes
         .map(

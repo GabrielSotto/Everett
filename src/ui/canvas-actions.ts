@@ -1,6 +1,6 @@
 import type { Context } from '../app/context';
 import { arrangementUnits } from '../domain/arrangement';
-import { arrangeSelection, arrangementMarkup, spacingValue } from './canvas-arrangement';
+import { arrangeSelection, arrangementMarkup, bindArrangementSpacing } from './canvas-arrangement';
 import { frameCanvas } from './canvas-frame';
 import { target } from './dom';
 import { icon } from './icons';
@@ -19,6 +19,7 @@ export class CanvasActions {
     settings: (page: 'preferences' | 'shortcuts') => void,
     signal: AbortSignal,
   ) {
+    bindArrangementSpacing(root, ctx, () => this.close(), signal);
     bindDismiss(
       signal,
       () => this.open,
@@ -71,13 +72,6 @@ export class CanvasActions {
             arrangeSelection(ctx, button.dataset.arrangement);
             this.trigger()?.focus({ preventScroll: true });
             break;
-          case 'selection-spacing': {
-            const spacing = spacingValue(button);
-            if (spacing === undefined) break;
-            this.close();
-            arrangeSelection(ctx, button.dataset.arrangement, spacing);
-            break;
-          }
           case 'actions-fit':
             this.close();
             frameCanvas(ctx, button.dataset.selection === 'true');
@@ -105,10 +99,6 @@ export class CanvasActions {
           return;
         if (event.target instanceof HTMLInputElement) {
           event.stopPropagation();
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            event.target.closest('label')?.querySelector<HTMLButtonElement>('button')?.click();
-          }
           return;
         }
         if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
@@ -240,7 +230,7 @@ export class CanvasActions {
         action: 'canvas-wireframes',
         label: 'Bosquejos',
         name: 'Bosquejos',
-        glyph: 'draw',
+        glyph: 'sketch',
       },
       {
         page: 'arrange',

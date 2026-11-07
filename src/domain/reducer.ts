@@ -53,6 +53,7 @@ export function reduce(state: State, command: Command): State {
       applyBoardCommand(next, command);
       break;
     case 'node.create':
+    case 'group.resize':
     case 'assignment.interrupt':
     case 'assignment.retry':
     case 'node.rename':
