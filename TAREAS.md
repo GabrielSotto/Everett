@@ -233,9 +233,12 @@ real sin respuestas sustituidas. Evidencia vigente en
 `output/pruebas/unitarias/2026-11-08_02-52-15-563Z/` y
 `output/pruebas/navegador/2026-11-08_02-52-15-748Z/`, SHA-256
 `9045eb8f8888cdb323fa08372f31a100ff079f34377420bd81178b828262c32e`.
-Pendiente: el usuario está configurando la clave en Google Cloud; falta comprobar el catálogo
-real con esa credencial. Sus errores y respuestas están cubiertos con pruebas controladas,
-que no sustituyen esa comprobación. No se acredita un gate completo de cierre de 0.8.
+El 8 de noviembre quedó verificada la credencial configurada por el usuario: catálogo real
+HTTP 200 con 1.968 familias, búsqueda y muestra de Lora, aplicación y persistencia tras recarga.
+CSS y fuente respondieron HTTP 200 desde Google; la clave permaneció en el servicio local.
+Comprobación en navegador aislado, sin sustituir respuestas ni tocar el Canvas del usuario.
+Evidencia adicional: `google-fonts-catalogue-live.json` y sus dos capturas en la misma ejecución,
+con identidad de fuentes y hashes verificados. No se acredita un gate completo de cierre de 0.8.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación
