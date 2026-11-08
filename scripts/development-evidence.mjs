@@ -10,6 +10,7 @@ export async function developmentIdentity(root) {
     'tsconfig.json',
     'vite.config.mjs',
     'scripts/development.mjs',
+    'scripts/google-fonts.mjs',
     'scripts/development-evidence.mjs',
     'scripts/artifact-evidence.mjs',
   ];

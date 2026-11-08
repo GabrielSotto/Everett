@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { colors, noteInk, noteStyle } from '../../src/features/canvas/note-colors';
 import { setup, project, intent } from './fixtures';
+import type { NodeData } from '../../src/domain/model';
+import { googleFontUrl, validNoteFont, type NoteFont } from '../../src/domain/note-fonts';
 
 function luminance(hex: string): number {
   const rgb = hex
@@ -50,4 +52,53 @@ test('C08-U53: tinta accesible en paleta y tonos heredados; formato durable, val
     text: 'Contenido original\nSegunda línea',
     color: '#ddd',
   });
+});
+
+test('C08-U56: fuentes remotas validan nombre, conservan notas anteriores y se guardan como referencia', () => {
+  const { store } = setup();
+  const edit = {
+    type: 'node.edit',
+    world: 'project',
+    id: 'note-a',
+    title: 'Idea',
+    text: 'Texto privado',
+    color: '#ddd',
+  } as const;
+  for (const font of [
+    'google:',
+    'google: Lora',
+    'google:Lora;display:none',
+    'google:A" onclick="x',
+    'google:../x',
+    'google:Lora&text=privado',
+    'otro',
+  ]) {
+    assert.equal(validNoteFont(font), false);
+    const before = store.snapshot();
+    assert.throws(() => store.dispatch({ ...edit, font: font as NoteFont }, intent), /tipografía/);
+    assert.deepEqual(store.snapshot(), before);
+  }
+  store.dispatch({ ...edit, font: 'google:Roboto Mono' }, intent);
+  store.dispatch({ ...edit, text: 'Conservar fuente' }, intent);
+  assert.equal((project(store).nodes[0]!.data as { font: string }).font, 'google:Roboto Mono');
+  assert.match(
+    noteStyle(project(store).nodes[0]!.data as Extract<NodeData, { kind: 'note' }>),
+    /'Roboto Mono'/,
+  );
+  const persisted = JSON.stringify(store.snapshot());
+  assert.ok(persisted.includes('google:Roboto Mono'));
+  assert.ok(!persisted.includes('fonts.gstatic.com'));
+  assert.equal(
+    googleFontUrl('Roboto Mono'),
+    'https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap',
+  );
+  assert.throws(() => googleFontUrl('Lora&text=privado'));
+  assert.equal(validNoteFont('google:42dot Sans'), true);
+  store.dispatch({ ...edit, font: 'serif' }, intent);
+  assert.equal((project(store).nodes[0]!.data as { font: string }).font, 'serif');
+  store.dispatch({ type: 'canvas.undo', world: 'project' }, intent);
+  assert.equal((project(store).nodes[0]!.data as { font: string }).font, 'google:Roboto Mono');
+  store.dispatch({ type: 'canvas.redo', world: 'project' }, intent);
+  assert.equal((project(store).nodes[0]!.data as { font: string }).font, 'serif');
+  assert.equal((project(store).nodes[1]!.data as { font?: string }).font, undefined);
 });

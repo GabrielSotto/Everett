@@ -6,3 +6,4 @@
 /test-results/
 *.tsbuildinfo
 /entregas/
+/.env.local

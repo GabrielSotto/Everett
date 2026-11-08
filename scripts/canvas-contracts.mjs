@@ -1,5 +1,11 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-U56', layer: 'unit', contracts: ['C08-FONT-01'] },
+  ...['C08-B166', 'C08-B167', 'C08-B168', 'C08-B169'].map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-FONT-01'],
+  })),
   { id: 'C08-B160', layer: 'browser', contracts: ['C08-LIBRARY-01'] },
   { id: 'C08-B161', layer: 'browser', contracts: ['C08-LIBRARY-01', 'C08-ORG-01', 'C08-ZOOM-01'] },
   { id: 'C08-U53', layer: 'unit', contracts: ['C08-MAT-03'] },
@@ -309,6 +315,9 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B166': { 'font-preview': 1, 'font-apply': 1 },
+  'C08-B168': { 'font-preview': 1 },
+  'C08-B169': { 'font-apply': 1 },
   'C08-B148': { 'canvas-wireframes': 2, 'library-add': 2, 'library-configure': 1 },
   'C08-B149': { 'canvas-wireframes': 1 },
   'C08-B143': {

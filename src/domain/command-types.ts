@@ -21,6 +21,7 @@ import type {
 } from './model';
 import type { AgentRun } from './operations';
 import type { MaterialOrder } from './material-order';
+import type { NoteFont } from './note-fonts';
 
 export type Command =
   | { type: 'group.create'; world: string; nodes: string[]; name: string }
@@ -197,7 +198,7 @@ export type Command =
       title: string;
       text: string;
       color: string;
-      font?: 'sans' | 'serif' | 'mono';
+      font?: NoteFont;
       fontSize?: number;
     }
   | {

@@ -4,6 +4,7 @@ import { relative, resolve } from 'node:path';
 import { previewEndpoint } from './link-preview/http.mjs';
 import { developmentIdentity } from './development-evidence.mjs';
 import { transform } from 'esbuild';
+import { googleFontsEndpoint } from './google-fonts.mjs';
 
 /** Adaptación de la plantilla autónoma y del servicio local al servidor de Vite. */
 export function developmentPlugin(root, options = {}) {
@@ -56,7 +57,16 @@ export function developmentPlugin(root, options = {}) {
     },
     configureServer(server) {
       const previews = previewEndpoint(options);
-      server.httpServer.once('close', () => previews.close());
+      const fonts = googleFontsEndpoint({
+        getKey: async () => {
+          const { loadEnv } = await import('vite');
+          return loadEnv('development', root, '').GOOGLE_FONTS_API_KEY;
+        },
+      });
+      server.httpServer.once('close', () => {
+        previews.close();
+        fonts.close();
+      });
       server.middlewares.use((request, response, next) => {
         const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
         if (pathname === '/__everett/development') {
@@ -77,10 +87,15 @@ export function developmentPlugin(root, options = {}) {
           response.writeHead(204).end();
           return;
         }
-        if (pathname !== '/api/link-preview') return next();
+        if (!['/api/link-preview', '/api/google-fonts'].includes(pathname)) return next();
         const address = server.httpServer.address();
         if (!address || typeof address === 'string') response.writeHead(503).end();
-        else void previews.handle(request, response, address.port);
+        else
+          void (pathname === '/api/google-fonts' ? fonts : previews).handle(
+            request,
+            response,
+            address.port,
+          );
       });
     },
     config() {

@@ -77,6 +77,19 @@ Las fuentes mantenidas son los módulos de `src/`; `dist/` nunca fue la fuente d
 Los scripts del flujo anterior se conservan para reproducir sus entregas históricas, fuera del
 trabajo cotidiano. El servidor `preview.mjs` queda retirado del uso diario.
 
+### Google Fonts en notas
+
+La consulta de familias usa Google Fonts Developer API, habilitada en un proyecto de Google Cloud.
+Crear una clave restringida a esa API y configurar `GOOGLE_FONTS_API_KEY` en `.env.local`
+(excluido de Git). No usar el prefijo `VITE_`: la clave se lee en el servicio local y no se
+incluye en el cliente. `/api/google-fonts` acepta únicamente solicitudes del origen local;
+conserva los nombres y categorías en memoria durante una hora, nunca archivos de fuentes.
+La carga de la familia elegida usa `https://fonts.googleapis.com/css2` y `fonts.gstatic.com`
+directamente desde el navegador, sin enviar el texto de la nota. No se implementa descarga
+ni almacenamiento de fuentes para uso sin conexión. La elección por nombre también funciona
+sin clave de catálogo. Documentación: [Developer API](https://developers.google.com/fonts/docs/developer_api)
+y [CSS API](https://developers.google.com/fonts/docs/css2).
+
 ### Catálogo de diseño de bosquejos
 
 Vite sirve el catálogo en `/design/wireframe-library/`. Sus definiciones y recursos se comparten

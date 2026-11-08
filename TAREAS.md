@@ -208,8 +208,8 @@ Se ajustaron los márgenes de los campos y las acciones del curso. Región recor
 carrusel y lista; Capa superpuesta muestra atenuación y panel flotante. Se suman mensajes y
 tienda en móvil, cuaderno y agenda en tablet. Las 24 interfaces siguen compuestas por las
 piezas y componentes compartidos, como bosquejos estáticos editables.
-La consulta sobre Google Fonts sigue como ampliación por definir del selector de notas;
-esta corrección no añade un servicio de tipografías ni cambia las fuentes de notas guardadas.
+En ese bloque, Google Fonts todavía era una ampliación por definir del selector de notas;
+la corrección de biblioteca no añadió un servicio de tipografías.
 Pasaron 120 pruebas unitarias/del arnés, 34 del catálogo, ocho recorridos de diseño y 54
 recorridos dirigidos de Canvas, con 590 comparaciones de representación y controles negativos.
 Se revisaron capturas de filtros, símbolos, campos, recortes y las interfaces nuevas. Tipado,
@@ -219,6 +219,23 @@ en `output/pruebas/unitarias/2026-11-08_01-46-31-988Z/`, `output/pruebas/diseno/
 `1b674f5caff34df1cdb5e7bc3ca6990e35e6236d3f40026f646735466f9a94c2`.
 Regresión dirigida del desarrollo continuo; no sustituye el gate de cierre ni la revisión del
 usuario. 0.8 sigue abierta, sin integrar en `dev`.
+
+Google Fonts para notas, autorizado después de esa revisión: selector con catálogo buscable,
+muestra antes de aplicar y carga remota mediante las APIs oficiales. La elección se conserva
+en editor, tarjeta, copia, historial y recarga. No se alojan ni almacenan archivos de fuentes
+para uso sin conexión. La clave de Developer API permanece en `GOOGLE_FONTS_API_KEY`, en
+`.env.local` excluido de Git; no se envía al cliente. Sin catálogo se puede consultar una
+familia por nombre exacto. Los fallos conservan la elección y permiten reintentar.
+Pasaron 122 pruebas unitarias/del arnés y siete recorridos de navegador, incluidos cuatro
+nuevos (C08-B166–169); tipado, formato, revisión visual a 320 px y escritorio y verificación
+independiente de 28 adjuntos correctos. Lora se cargó y aplicó desde Google en una prueba
+real sin respuestas sustituidas. Evidencia vigente en
+`output/pruebas/unitarias/2026-11-08_02-52-15-563Z/` y
+`output/pruebas/navegador/2026-11-08_02-52-15-748Z/`, SHA-256
+`9045eb8f8888cdb323fa08372f31a100ff079f34377420bd81178b828262c32e`.
+Pendiente: el usuario está configurando la clave en Google Cloud; falta comprobar el catálogo
+real con esa credencial. Sus errores y respuestas están cubiertos con pruebas controladas,
+que no sustituyen esa comprobación. No se acredita un gate completo de cierre de 0.8.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación

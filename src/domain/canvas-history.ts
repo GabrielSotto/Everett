@@ -159,6 +159,18 @@ export class CanvasHistory {
       command.type === 'node.edit' ||
       command.type === 'node.local-edit' ||
       command.type === 'wireframe.edit';
+    if (command.type === 'node.edit') {
+      const old = a.nodes.find((node) => node.id === command.id)?.data;
+      const current = b.nodes.find((node) => node.id === command.id)?.data;
+      if (
+        old?.kind === 'note' &&
+        current?.kind === 'note' &&
+        (old.font ?? 'sans') !== (current.font ?? 'sans')
+      ) {
+        action += ':font';
+        typing = false;
+      }
+    }
     if (command.type === 'wireframe.edit') {
       const old = a.nodes.find((node) => node.id === command.id)?.data;
       if (old?.kind === 'wireframe') {

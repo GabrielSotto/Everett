@@ -29,6 +29,7 @@ import { canvasCameraTuning } from '../../spatial/tuning';
 import { bindDismiss } from '../../ui/popover';
 import { trace, type Intent } from '../../app/diagnostics/trace';
 import { colors } from './note-colors';
+import { restoreNoteFonts } from './note-font-loading';
 import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 import { CanvasInteractions } from './interactions';
 import { proposalMarkup } from './proposals';
@@ -2661,6 +2662,7 @@ export class CanvasView implements View {
           );
         }
       });
+    restoreNoteFonts(this.root);
     restoreFocus();
   }
   dispose(): void {

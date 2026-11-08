@@ -1,4 +1,5 @@
 import type { NodeData } from '../../domain/model';
+import { googleFamily } from '../../domain/note-fonts';
 
 export const colors = [
   '#f3ebcf',
@@ -55,5 +56,9 @@ export function noteInk(color: string): string {
 }
 export function noteStyle(data: Extract<NodeData, { kind: 'note' }>): string {
   const color = noteColor(data.color);
-  return `background:${color};--note-fill:${color};--note-ink:${noteInk(color)};--note-font:${noteFonts[data.font ?? 'sans'].css};--note-size:${data.fontSize ?? 16}px`;
+  const family = googleFamily(data.font);
+  const font = family
+    ? `'${family}', ${noteFonts.sans.css}`
+    : noteFonts[(data.font ?? 'sans') as keyof typeof noteFonts].css;
+  return `background:${color};--note-fill:${color};--note-ink:${noteInk(color)};--note-font:${font};--note-size:${data.fontSize ?? 16}px`;
 }
