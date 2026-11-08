@@ -488,30 +488,39 @@ test('C08-B27: configuración de atajos permite regresar, quitar y restaurar sin
   const renameKey = page.getByLabel('Atajo de Renombrar', { exact: true });
   await renameKey.press('Control+Shift+R');
   await expect(renameKey).toHaveValue('Ctrl+Shift+R');
-  const keySpace = await renameKey.evaluate((el) => {
-    const input = el as HTMLInputElement;
-    const style = getComputedStyle(input);
-    const measure = document.createElement('canvas').getContext('2d')!;
-    measure.font = style.font;
-    return {
-      available: input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
-      text: measure.measureText(input.value).width,
-    };
-  });
-  expect(keySpace.available).toBeGreaterThanOrEqual(keySpace.text);
-  await page.getByRole('button', { name: 'Quitar atajo de Renombrar', exact: true }).click();
-  expect(
-    await renameKey.evaluate((el) => {
+  const measureKey = () =>
+    renameKey.evaluate((el) => {
       const input = el as HTMLInputElement;
       const style = getComputedStyle(input);
       const measure = document.createElement('canvas').getContext('2d')!;
       measure.font = style.font;
-      return (
-        input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) >=
-        measure.measureText(input.placeholder).width
-      );
-    }),
-  ).toBe(true);
+      return {
+        // clientWidth de input excluye ahora el padding inline en Chromium/Firefox.
+        // Partir del borde evita descontarlo dos veces y conserva las unidades CSS.
+        available:
+          input.offsetWidth -
+          parseFloat(style.borderLeftWidth) -
+          parseFloat(style.borderRightWidth) -
+          parseFloat(style.paddingLeft) -
+          parseFloat(style.paddingRight),
+        text: measure.measureText(input.value || input.placeholder).width,
+      };
+    });
+  const keySpace = await measureKey();
+  expect(keySpace.available).toBeGreaterThanOrEqual(keySpace.text);
+  // Contraejemplo: el mismo criterio debe detectar un campo realmente recortado.
+  await renameKey.evaluate((el) => {
+    el.style.width = '50px';
+  });
+  const clippedKey = await measureKey();
+  expect(clippedKey.available).toBeLessThan(clippedKey.text);
+  await renameKey.evaluate((el) => {
+    el.style.removeProperty('width');
+  });
+  expect((await measureKey()).available).toBeGreaterThanOrEqual(keySpace.text);
+  await page.getByRole('button', { name: 'Quitar atajo de Renombrar', exact: true }).click();
+  const placeholderSpace = await measureKey();
+  expect(placeholderSpace.available).toBeGreaterThanOrEqual(placeholderSpace.text);
   await page.getByRole('button', { name: 'Quitar atajo de Crear nota', exact: true }).click();
   await expect(key).toHaveValue('');
   await page.getByRole('button', { name: 'Restaurar atajo de Crear nota', exact: true }).click();

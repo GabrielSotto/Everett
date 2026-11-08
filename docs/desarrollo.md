@@ -162,6 +162,17 @@ En el gate histórico de HTML autónomo, el arnés obtiene los bytes del documen
 
 Esa sesión CDP se desconecta al terminar la comprobación, incluso si falla la carga o el hash. Su buffer no se mantiene durante el recorrido. Una ejecución que falla al cargar el documento no certifica el caso; reducir workers permite repetir el gate completo con menos consumo simultáneo, sin reintentos ni omisiones.
 
+Playwright 1.65.0 incorpora la [corrección de conexiones locales en Windows](https://github.com/microsoft/playwright/pull/43605):
+desactiva `TcpPortRandomizationWin` dentro de sus opciones predeterminadas de Chromium. Evita los
+fallos intermitentes `ERR_NO_BUFFER_SPACE` observados al cargar módulos de Vite, incluso con un
+solo worker. Se usa la corrección mantenida por Playwright, sin flags propios ni filtros de errores.
+La actualización afecta al navegador del arnés, conserva la licencia Apache-2.0 y requiere instalar
+su Chromium con `bun x playwright install chromium`; no añade código a la aplicación.
+La legibilidad de los atajos se mide desde la caja exterior menos borde y padding: el
+[área cliente de los campos de texto](https://github.com/web-platform-tests/wpt/pull/63069)
+excluye ahora el padding horizontal. C08-B27 conserva la exigencia de texto completo y comprueba
+que estrechar deliberadamente el campo provoque un recorte detectable antes de restaurarlo.
+
 ## Evidencias unitarias
 
 Cada ejecución crea `output/pruebas/unitarias/<fecha UTC>/` con:
