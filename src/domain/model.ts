@@ -1,5 +1,5 @@
 import type { AgentRun } from './operations';
-import type { NoteFont } from './note-fonts';
+import type { NoteFont, NoteTypography } from './note-fonts';
 import type { DeepReadonly } from './readonly';
 export const surfaces = ['session', 'canvas', 'docs', 'code', 'board', 'agents'] as const;
 export type Surface = (typeof surfaces)[number];
@@ -127,6 +127,7 @@ export type NodeData =
       fontSize?: number;
       fontWeight?: number;
       fontItalic?: boolean;
+      typography?: NoteTypography;
     }
   | {
       kind: 'shape';

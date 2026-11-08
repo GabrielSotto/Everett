@@ -12,6 +12,7 @@ import { ensure } from './invariants';
 import { referenceExcerpt } from './reference-anchors';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
+import { validNoteFont, validFontWeight, validNoteTypography } from './note-fonts';
 import { validLinkPreview, linkUrl } from './link-previews';
 import { isComponent } from './manual-groups';
 import { validLayoutGuides } from './layout-guides';
@@ -30,7 +31,14 @@ function validData(v: unknown): v is NodeData {
     case 'wireframe':
       return validWireframe(v.content);
     case 'note':
-      return typeof v.text === 'string' && color(v.color);
+      return (
+        typeof v.text === 'string' &&
+        color(v.color) &&
+        (v.font === undefined || validNoteFont(v.font)) &&
+        (v.fontWeight === undefined || validFontWeight(v.fontWeight)) &&
+        (v.fontItalic === undefined || typeof v.fontItalic === 'boolean') &&
+        (v.typography === undefined || validNoteTypography(v.typography))
+      );
     case 'local':
       return validLocalContent(v.content);
     case 'shape':

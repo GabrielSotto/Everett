@@ -20,6 +20,23 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
+### Tipografía independiente de título y cuerpo — 8 de noviembre
+
+Implementados familia y peso separados en notas, con selector Título / Cuerpo y destino
+automático al enfocar el texto. El aspecto de las notas anteriores se conserva; tarjeta,
+editor, copia, historial y guardado comparten los mismos estilos. Las fuentes siguen cargándose
+por la API de Google, con recuperación independiente de los fallos.
+
+Tipado, formato, 139 pruebas unitarias y 262 recorridos de navegador aprobados y verificados.
+C08-U72/U73 y C08-B187/B188 cubren independencia, compatibilidad, teclado, 320 px y respuestas
+tardías. El reintento conserva el foco cuando termina la otra fuente. Revisadas las capturas
+del editor y comprobada la carga real de Lora 700 y Roboto Mono 400 desde Google.
+
+Evidencia vigente en `output/pruebas/unitarias/2026-11-08_19-12-39-036Z` y
+`output/pruebas/navegador/2026-11-08_19-13-38-737Z`; comprobación pública en
+`output/pruebas/notas-fuentes-reales`. SHA-256 de fuentes:
+`8fddc4ab51294bf30e57029bbd0a6bebeb1764859b9a85db559d71afbb21f406`.
+
 ### Ampliación acordada el 8 de noviembre — composición y retículas
 
 Implementados los bloques acordados de [wireframes de baja y media fidelidad](docs/alcance-prototipo.md#composición-y-wireframes-de-baja-y-media-fidelidad), pendientes de revisión del usuario.

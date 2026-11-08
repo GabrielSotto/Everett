@@ -1,3 +1,4 @@
+import { noteTypography } from './note-fonts';
 import { getWorld, type State, type World } from './model';
 import type { Command } from './command-types';
 import { rebaseAnchor, referenceSource } from './reference-anchors';
@@ -175,9 +176,7 @@ export class CanvasHistory {
       if (
         old?.kind === 'note' &&
         current?.kind === 'note' &&
-        ((old.font ?? 'sans') !== (current.font ?? 'sans') ||
-          (old.fontWeight ?? 400) !== (current.fontWeight ?? 400) ||
-          !!old.fontItalic !== !!current.fontItalic)
+        JSON.stringify(noteTypography(old)) !== JSON.stringify(noteTypography(current))
       ) {
         action += ':font';
         typing = false;

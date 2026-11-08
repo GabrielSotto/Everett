@@ -21,7 +21,7 @@ import type {
 } from './model';
 import type { AgentRun } from './operations';
 import type { MaterialOrder } from './material-order';
-import type { NoteFont } from './note-fonts';
+import type { NoteFont, NoteTypographyEdit } from './note-fonts';
 
 export type Command =
   | {
@@ -225,6 +225,7 @@ export type Command =
       fontSize?: number;
       fontWeight?: number;
       fontItalic?: boolean;
+      typography?: NoteTypographyEdit;
     }
   | {
       type: 'node.delete';

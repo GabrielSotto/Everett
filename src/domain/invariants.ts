@@ -3,7 +3,7 @@ import { humanParticipants } from './conversations';
 import { validLinkPreview, linkUrl } from './link-previews';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
-import { validNoteFont, validFontWeight } from './note-fonts';
+import { validNoteFont, validFontWeight, validNoteTypography } from './note-fonts';
 import { validLayoutGuides } from './layout-guides';
 import { validComponentTree, elementAt } from './component-tree';
 import { validLibraryComposition } from './sketch-library';
@@ -304,6 +304,7 @@ export function validate(s: State): void {
           (n.data.font === undefined || validNoteFont(n.data.font)) &&
             (n.data.fontWeight === undefined || validFontWeight(n.data.fontWeight)) &&
             (n.data.fontItalic === undefined || typeof n.data.fontItalic === 'boolean') &&
+            (n.data.typography === undefined || validNoteTypography(n.data.typography)) &&
             (n.data.fontSize === undefined ||
               (Number.isFinite(n.data.fontSize) && n.data.fontSize >= 12 && n.data.fontSize <= 32)),
           'NOTE_FORMAT',

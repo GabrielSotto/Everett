@@ -3,7 +3,14 @@ import test from 'node:test';
 import { colors, noteInk, noteStyle } from '../../src/features/canvas/note-colors';
 import { setup, project, intent } from './fixtures';
 import type { NodeData } from '../../src/domain/model';
-import { googleFontUrl, validNoteFont, type NoteFont } from '../../src/domain/note-fonts';
+import {
+  googleFontUrl,
+  validNoteFont,
+  noteTypography,
+  type NoteFont,
+  type NoteTypographyEdit,
+} from '../../src/domain/note-fonts';
+import { captureCanvasCopies, parseCanvasClipboard } from '../../src/domain/canvas-copies';
 
 function luminance(hex: string): number {
   const rgb = hex
@@ -124,4 +131,109 @@ test('C08-U56: fuentes remotas validan nombre, conservan notas anteriores y se g
   store.dispatch({ type: 'canvas.redo', world: 'project' }, intent);
   assert.equal((project(store).nodes[0]!.data as { font: string }).font, 'serif');
   assert.equal((project(store).nodes[1]!.data as { font?: string }).font, undefined);
+});
+
+test('C08-U72: título y cuerpo independientes, notas anteriores, historial y copias', () => {
+  assert.deepEqual(noteTypography({}), {
+    title: { font: 'sans', weight: 600, italic: false },
+    body: { font: 'sans', weight: 400, italic: false },
+  });
+  assert.equal(noteTypography({ font: 'google:Lora' }).title.weight, 400);
+  for (const first of ['title', 'body'] as const) {
+    const { store } = setup();
+    const edit = {
+      type: 'node.edit',
+      world: 'project',
+      id: 'note-a',
+      title: 'Idea',
+      text: 'Contexto',
+      color: '#ddd',
+    } as const;
+    store.dispatch({ ...edit, font: 'google:Lora', fontWeight: 300, fontItalic: true }, intent);
+    const legacy = structuredClone(project(store).nodes[0]!.data);
+    const other = first === 'title' ? 'body' : 'title';
+    store.dispatch(
+      {
+        ...edit,
+        typography: {
+          part: first,
+          style: { font: 'google:Roboto Mono', weight: 700, italic: false },
+        },
+      },
+      intent,
+    );
+    const data = () => project(store).nodes[0]!.data as Extract<NodeData, { kind: 'note' }>;
+    assert.deepEqual(data().typography?.[other], {
+      font: 'google:Lora',
+      weight: 300,
+      italic: true,
+    });
+    assert.deepEqual(data().typography?.[first], {
+      font: 'google:Roboto Mono',
+      weight: 700,
+      italic: false,
+    });
+    const separate = structuredClone(data());
+    store.dispatch({ type: 'canvas.undo', world: 'project' }, intent);
+    assert.deepEqual(data(), legacy);
+    store.dispatch({ type: 'canvas.redo', world: 'project' }, intent);
+    assert.deepEqual(data(), separate);
+    const copy = captureCanvasCopies(project(store), ['note-a']);
+    const restored = parseCanvasClipboard(JSON.stringify(copy));
+    assert.deepEqual(restored.nodes[0]!.data, separate);
+    store.dispatch(
+      {
+        ...edit,
+        typography: { part: other, style: { font: 'serif', weight: 400, italic: false } },
+      },
+      intent,
+    );
+    assert.deepEqual(restored.nodes[0]!.data, separate);
+    const styled = structuredClone(data());
+    store.dispatch(
+      { ...edit, title: 'Actualizada', text: 'Otra línea', color: '#334155', fontSize: 22 },
+      intent,
+    );
+    assert.deepEqual(data().typography, styled.typography);
+    assert.deepEqual(JSON.parse(JSON.stringify(data())).typography, styled.typography);
+  }
+});
+
+test('C08-U73: formato por parte inválido se rechaza atómicamente, también al pegar', () => {
+  const { store } = setup();
+  const edit = {
+    type: 'node.edit',
+    world: 'project',
+    id: 'note-a',
+    title: 'Idea',
+    text: 'Texto',
+    color: '#ddd',
+  } as const;
+  const valid = { font: 'serif', weight: 700, italic: false };
+  for (const typography of [
+    null,
+    { part: 'other', style: valid },
+    { part: 'title', style: null },
+    { part: 'body', style: { ...valid, font: 'google:Lora;display:none' } },
+    { part: 'title', style: { ...valid, weight: 1001 } },
+    { part: 'body', style: { ...valid, weight: 400.5 } },
+    { part: 'title', style: { ...valid, italic: 'false' } },
+  ]) {
+    const before = store.snapshot();
+    assert.throws(
+      () => store.dispatch({ ...edit, typography: typography as NoteTypographyEdit }, intent),
+      /tipografía/,
+    );
+    assert.deepEqual(store.snapshot(), before);
+  }
+  for (const typography of [
+    null,
+    {},
+    { title: valid },
+    { title: valid, body: { ...valid, font: 'unknown' } },
+  ]) {
+    const copy = captureCanvasCopies(project(store), ['note-a']);
+    Object.assign(copy.nodes[0]!.data, { typography });
+    assert.throws(() => parseCanvasClipboard(JSON.stringify(copy)), /inválido/);
+  }
 });

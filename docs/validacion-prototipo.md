@@ -427,6 +427,11 @@ decodificado, tarjeta/copia/recarga y navegación por teclado entre familia y es
 anclaje y los límites a 320 px; distinguir fallos de catálogo y de archivo, recuperación y respuestas
 tardías. Comprobar que ninguna petición incluya la clave o el contenido de la nota. C08-U56 valida
 pesos y su historial; FONT-01 filtra las variantes oficiales sin exponer credenciales ni archivos.
+C08-U72/U73 y C08-B187/B188 comprueban formato independiente por título y cuerpo: conservación
+del aspecto heredado, cambio de destino mediante foco o teclado, pesos y cursivas distintos,
+duplicación y portapapeles independientes, historial, recarga y geometría a 320 px. Un fallo o una
+respuesta tardía de una fuente no debe alterar la otra parte ni restaurar un aviso obsoleto.
+El reintento debe conservar el foco de teclado cuando termine la carga de la otra fuente.
 
 C08-U57–U61 y C08-B170–B173 verifican retículas por marco: cantidad, márgenes, huecos,
 filas/columnas, errores atómicos y recuperación al encoger; copias independientes, historial y

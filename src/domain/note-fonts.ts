@@ -1,4 +1,44 @@
 export type NoteFont = 'sans' | 'serif' | 'mono' | `google:${string}`;
+export type NotePart = 'title' | 'body';
+export interface NoteTextStyle {
+  font: NoteFont;
+  weight: number;
+  italic: boolean;
+}
+export type NoteTypography = Record<NotePart, NoteTextStyle>;
+export interface NoteTypographyEdit {
+  part: NotePart;
+  style: NoteTextStyle;
+}
+
+export function noteTypography(data: {
+  font?: NoteFont;
+  fontWeight?: number;
+  fontItalic?: boolean;
+  typography?: NoteTypography;
+}): NoteTypography {
+  if (data.typography) return data.typography;
+  const shared = { font: data.font ?? 'sans', italic: !!data.fontItalic };
+  // Conserva la jerarquía de las notas anteriores, incluidas las fuentes remotas.
+  return {
+    title: { ...shared, weight: data.fontWeight ?? (googleFamily(data.font) ? 400 : 600) },
+    body: { ...shared, weight: data.fontWeight ?? 400 },
+  };
+}
+
+export function validNoteTextStyle(value: unknown): value is NoteTextStyle {
+  if (!value || typeof value !== 'object') return false;
+  const style = value as NoteTextStyle;
+  return (
+    validNoteFont(style.font) && validFontWeight(style.weight) && typeof style.italic === 'boolean'
+  );
+}
+
+export function validNoteTypography(value: unknown): value is NoteTypography {
+  if (!value || typeof value !== 'object') return false;
+  const typography = value as NoteTypography;
+  return validNoteTextStyle(typography.title) && validNoteTextStyle(typography.body);
+}
 
 export function validGoogleFamily(value: unknown): value is string {
   return (

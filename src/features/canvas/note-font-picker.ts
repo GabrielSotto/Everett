@@ -408,6 +408,14 @@ export class NoteFontPicker {
     this.reset();
     if (focus) this.input.focus();
   }
+  setValue(font: NoteFont, weight: number, italic: boolean): void {
+    this.close(false);
+    this.current = font;
+    this.weight = weight;
+    this.italic = italic;
+    this.updateWeights();
+    this.reset();
+  }
   dispose(): void {
     cancelAnimationFrame(this.frame);
     this.abort.abort();

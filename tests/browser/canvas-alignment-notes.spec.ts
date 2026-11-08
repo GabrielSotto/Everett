@@ -249,7 +249,7 @@ test('C08-B159: notas contrastadas, formato compartido, teclado, persistencia y 
       expect(await noteContrast(page, selector, '.note-paper', true)).toBeGreaterThanOrEqual(4.5);
     }
   }
-  await page.getByLabel('Tipografía de la nota', { exact: true }).fill('Serif');
+  await page.getByLabel('Tipografía del cuerpo', { exact: true }).fill('Serif');
   await page.getByRole('button', { name: 'Serif', exact: true }).click();
   await page.getByLabel('Tamaño del texto', { exact: true }).fill('20');
   await page.getByLabel('Tamaño del texto', { exact: true }).press('Enter');
@@ -267,7 +267,7 @@ test('C08-B159: notas contrastadas, formato compartido, teclado, persistencia y 
   expect(await noteContrast(page, '[data-node=format-0] p', '.note')).toBeGreaterThanOrEqual(4.5);
   await page.reload();
   await page.locator('[data-node=format-0]').dblclick();
-  await expect(page.getByLabel('Tipografía de la nota', { exact: true })).toHaveValue('Serif');
+  await expect(page.getByLabel('Tipografía del cuerpo', { exact: true })).toHaveValue('Serif');
   await expect(page.getByLabel('Tamaño del texto', { exact: true })).toHaveValue('20');
   await page.getByRole('button', { name: 'Color Verde', exact: true }).focus();
   await page.keyboard.press('Enter');
@@ -275,7 +275,7 @@ test('C08-B159: notas contrastadas, formato compartido, teclado, persistencia y 
     'aria-pressed',
     'true',
   );
-  await page.getByLabel('Tipografía de la nota', { exact: true }).fill('Monoespaciada');
+  await page.getByLabel('Tipografía del cuerpo', { exact: true }).fill('Monoespaciada');
   await page.getByRole('button', { name: 'Monoespaciada', exact: true }).click();
   await page.setViewportSize({ width: 320, height: 700 });
   await page
@@ -290,6 +290,8 @@ test('C08-B159: notas contrastadas, formato compartido, teclado, persistencia y 
   await page.locator('.note-format').scrollIntoViewIfNeeded();
   await capture(page, info, 'nota-320');
   const data = (await world(page)).nodes[0]!.data;
-  expect(data.kind === 'note' && data.font === 'mono' && data.fontSize === 20).toBe(true);
+  expect(
+    data.kind === 'note' && data.typography?.body.font === 'mono' && data.fontSize === 20,
+  ).toBe(true);
   expect((await world(page)).nodes[1]!.data).toMatchObject({ color: '#334155', title: 'Pregunta' });
 });

@@ -180,6 +180,26 @@
   display: flex;
   gap: 6px;
 }
+.note-font-parts {
+  width: fit-content;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.note-font-parts button {
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.note-font-parts button:hover {
+  background: var(--hover);
+}
+.note-font-parts button[aria-pressed='true'] {
+  background: var(--hover);
+  color: var(--text);
+}
 .note-type select,
 .note-size {
   min-height: 32px;
@@ -268,6 +288,8 @@
   color: var(--note-fill);
 }
 #note-title {
+  font-family: var(--note-title-font);
+  font-style: var(--note-title-style);
   font-size: max(24px, calc(var(--note-size) * 1.25));
   font-weight: var(--note-title-weight);
   line-height: 1.35;
@@ -304,6 +326,8 @@
   overflow-wrap: anywhere;
 }
 .material.note > h3 {
+  font-family: var(--note-title-font);
+  font-style: var(--note-title-style);
   font-weight: var(--note-title-weight);
   font-size: calc(var(--note-size) * 1.125);
   line-height: 1.35;

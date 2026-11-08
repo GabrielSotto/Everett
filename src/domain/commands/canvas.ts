@@ -1,3 +1,4 @@
+import { noteTypography, validNoteTextStyle } from '../note-fonts';
 import { type State, getWorld, type Material, need } from '../model';
 import type { Command } from '../command-types';
 import { ensure } from '../invariants';
@@ -414,6 +415,14 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
     case 'node.edit': {
       const x = node(command.id);
       ensure(!x.owner && x.data.kind === 'note', 'EDIT', 'Nota no disponible');
+      if (command.typography !== undefined)
+        ensure(
+          !!command.typography &&
+            ['title', 'body'].includes(command.typography.part) &&
+            validNoteTextStyle(command.typography.style),
+          'NOTE_FORMAT',
+          'Elegí una tipografía y un peso válidos para el título o el cuerpo.',
+        );
       x.data = {
         ...x.data,
         kind: 'note',
@@ -424,6 +433,14 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         ...(command.fontSize !== undefined ? { fontSize: command.fontSize } : {}),
         ...(command.fontWeight !== undefined ? { fontWeight: command.fontWeight } : {}),
         ...(command.fontItalic !== undefined ? { fontItalic: command.fontItalic } : {}),
+        ...(command.typography && x.data.kind === 'note'
+          ? {
+              typography: {
+                ...noteTypography(x.data),
+                [command.typography.part]: { ...command.typography.style },
+              },
+            }
+          : {}),
       };
       break;
     }

@@ -1,5 +1,6 @@
 import type { NodeData } from '../../domain/model';
-import { googleFamily } from '../../domain/note-fonts';
+import { googleFamily, noteTypography, type NoteFont } from '../../domain/note-fonts';
+import { html } from '../../ui/dom';
 
 export const colors = [
   '#f3ebcf',
@@ -56,9 +57,32 @@ export function noteInk(color: string): string {
 }
 export function noteStyle(data: Extract<NodeData, { kind: 'note' }>): string {
   const color = noteColor(data.color);
-  const family = googleFamily(data.font);
-  const font = family
-    ? `'${family}', ${noteFonts.sans.css}`
-    : noteFonts[(data.font ?? 'sans') as keyof typeof noteFonts].css;
-  return `background:${color};--note-fill:${color};--note-ink:${noteInk(color)};--note-font:${font};--note-size:${data.fontSize ?? 16}px;--note-style:${data.fontItalic ? 'italic' : 'normal'};--note-weight:${data.fontWeight ?? 400};--note-title-weight:${data.fontWeight ?? (family ? 400 : 600)}`;
+  const { title, body } = noteTypography(data);
+  const font = (value: NoteFont) => {
+    const family = googleFamily(value);
+    return family
+      ? `'${family}', ${noteFonts.sans.css}`
+      : noteFonts[value as keyof typeof noteFonts].css;
+  };
+  return `background:${color};--note-fill:${color};--note-ink:${noteInk(color)};--note-font:${font(body.font)};--note-size:${data.fontSize ?? 16}px;--note-style:${body.italic ? 'italic' : 'normal'};--note-weight:${body.weight};--note-title-font:${font(title.font)};--note-title-style:${title.italic ? 'italic' : 'normal'};--note-title-weight:${title.weight}`;
+}
+
+export function noteFontMetadata(
+  data: Extract<NodeData, { kind: 'note' }>,
+): Record<string, string> {
+  const { title, body } = noteTypography(data);
+  return {
+    'data-note-font': googleFamily(body.font) ?? '',
+    'data-note-weight': String(body.weight),
+    'data-note-italic': String(body.italic),
+    'data-note-title-font': googleFamily(title.font) ?? '',
+    'data-note-title-weight': String(title.weight),
+    'data-note-title-italic': String(title.italic),
+  };
+}
+
+export function noteFontAttributes(data: Extract<NodeData, { kind: 'note' }>): string {
+  return Object.entries(noteFontMetadata(data))
+    .map(([key, value]) => `${key}="${html(value)}"`)
+    .join(' ');
 }
