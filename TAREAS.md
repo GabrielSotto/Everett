@@ -22,20 +22,29 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ### Tipografía independiente de título y cuerpo — 8 de noviembre
 
-Implementados familia y peso separados en notas, con selector Título / Cuerpo y destino
-automático al enfocar el texto. El aspecto de las notas anteriores se conserva; tarjeta,
+Implementados familia y peso separados en notas. El destino sigue el último campo enfocado,
+incluso vacío, sin botones adicionales de Título / Cuerpo. Las muestras de color están centradas,
+con marca de selección y foco por teclado; se retiró el cartel fijo de guardado automático.
+El aspecto de las notas anteriores se conserva; tarjeta,
 editor, copia, historial y guardado comparten los mismos estilos. Las fuentes siguen cargándose
 por la API de Google, con recuperación independiente de los fallos.
 
-Tipado, formato, 139 pruebas unitarias y 262 recorridos de navegador aprobados y verificados.
+Tipado, formato, 139 pruebas unitarias y 263 recorridos de navegador aprobados y verificados.
 C08-U72/U73 y C08-B187/B188 cubren independencia, compatibilidad, teclado, 320 px y respuestas
-tardías. El reintento conserva el foco cuando termina la otra fuente. Revisadas las capturas
-del editor y comprobada la carga real de Lora 700 y Roboto Mono 400 desde Google.
+tardías. C08-B189 cubre el desplazamiento de 3 px reproducido en las muestras y comprueba su centrado,
+selección por teclado, formato del título vacío y ausencia de controles redundantes a 900/320 px.
+Revisadas las capturas del editor. El reintento conserva el foco cuando termina la otra fuente.
 
-Evidencia vigente en `output/pruebas/unitarias/2026-11-08_19-12-39-036Z` y
-`output/pruebas/navegador/2026-11-08_19-13-38-737Z`; comprobación pública en
-`output/pruebas/notas-fuentes-reales`. SHA-256 de fuentes:
-`8fddc4ab51294bf30e57029bbd0a6bebeb1764859b9a85db559d71afbb21f406`.
+El gate detectó fallos de conexión de Chromium en Windows: Playwright 1.65.0 incorpora su
+corrección oficial. C08-B27 mide el espacio del campo de atajos desde el borde, sin descontar
+dos veces el padding con la nueva medición de Chromium; un contraejemplo estrecho verifica
+que siga detectando recortes reales. Detalle en [Desarrollo](docs/desarrollo.md).
+
+Evidencia vigente en `output/pruebas/unitarias/2026-11-08_21-11-24-437Z` y
+`output/pruebas/navegador/2026-11-08_21-14-18-139Z`. SHA-256 de fuentes:
+`dacc6ab24787b3a1aa0b5e33050788d75c7039f78a8808c6db788765dfc2ed50`.
+La carga pública de Lora 700 y Roboto Mono 400 se comprobó en la implementación anterior;
+su evidencia permanece en `output/pruebas/notas-fuentes-reales`.
 
 ### Ampliación acordada el 8 de noviembre — composición y retículas
 

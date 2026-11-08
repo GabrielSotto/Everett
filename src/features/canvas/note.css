@@ -4,7 +4,7 @@
   padding: 24px 24px 60px;
   background: var(--surface);
 }
-.note-editor-status,
+.note-editor-nav,
 .note-format,
 .note-paper {
   position: relative;
@@ -137,16 +137,12 @@
 .note-font-field:has([aria-expanded='true']) button svg {
   transform: rotate(-90deg);
 }
-.note-editor-status {
+.note-editor-nav {
   margin-bottom: 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--muted);
 }
-.note-editor-status button {
+.note-editor-nav button {
   display: grid;
   place-items: center;
   width: 32px;
@@ -154,7 +150,7 @@
   border-radius: 6px;
   color: var(--text);
 }
-.note-editor-status button:hover {
+.note-editor-nav button:hover {
   background: var(--hover);
 }
 .note-format {
@@ -179,26 +175,6 @@
 .note-type > div {
   display: flex;
   gap: 6px;
-}
-.note-font-parts {
-  width: fit-content;
-  padding: 2px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-.note-font-parts button {
-  min-height: 28px;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.note-font-parts button:hover {
-  background: var(--hover);
-}
-.note-font-parts button[aria-pressed='true'] {
-  background: var(--hover);
-  color: var(--text);
 }
 .note-type select,
 .note-size {
@@ -241,7 +217,7 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border: 1px solid transparent;
+  padding: 0;
   border-radius: 7px;
 }
 .note-colors button > span {
@@ -254,9 +230,6 @@
 }
 .note-colors button svg {
   visibility: hidden;
-}
-.note-colors button[aria-pressed='true'] {
-  border-color: var(--text);
 }
 .note-colors button[aria-pressed='true'] svg {
   visibility: visible;

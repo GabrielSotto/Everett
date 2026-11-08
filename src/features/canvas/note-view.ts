@@ -78,11 +78,6 @@ export class NoteView implements View {
       'click',
       (e) => {
         const t = target(e);
-        if (
-          t?.dataset.action === 'note-font-part' &&
-          (t.dataset.part === 'title' || t.dataset.part === 'body')
-        )
-          this.selectPart(t.dataset.part);
         if (t?.dataset.action === 'note-return') this.ctx.back();
         if (t?.dataset.action === 'note-color' && t.dataset.color) {
           const paper = root.querySelector<HTMLElement>('.note-paper');
@@ -122,9 +117,6 @@ export class NoteView implements View {
     if (note?.data.kind !== 'note') return;
     const changed = this.part !== part;
     this.part = part;
-    this.root.querySelectorAll<HTMLElement>('[data-action=note-font-part]').forEach((button) => {
-      button.setAttribute('aria-pressed', String(button.dataset.part === part));
-    });
     const label = part === 'title' ? 'título' : 'cuerpo';
     this.root.querySelector('#note-font')?.setAttribute('aria-label', `Tipografía del ${label}`);
     this.root.querySelector('#note-weight')?.setAttribute('aria-label', `Peso del ${label}`);
@@ -169,7 +161,7 @@ export class NoteView implements View {
     if (n?.data.kind !== 'note') return;
     const data = n.data;
     this.fonts?.dispose();
-    this.root.innerHTML = `<div class="note-editor"><div class="note-editor-status"><button type="button" data-action="note-return" aria-label="Volver al Canvas" data-tip="Volver al Canvas">${icon('chevron-left', 18)}</button><span>Guardado automático</span></div><div class="note-format" role="group" aria-label="Formato de la nota"><div class="note-type"><div class="note-font-parts" role="group" aria-label="Aplicar tipografía a"><button type="button" data-action="note-font-part" data-part="title" aria-pressed="${this.part === 'title'}">Título</button><button type="button" data-action="note-font-part" data-part="body" aria-pressed="${this.part === 'body'}">Cuerpo</button></div><div><div class="note-font-field"><input id="note-font" role="combobox" aria-label="Tipografía del cuerpo" aria-haspopup="grid" aria-controls="note-font-list" aria-expanded="false" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Buscar fuente…" maxlength="100"><button type="button" tabindex="-1" aria-label="Mostrar fuentes">${icon('chevron', 14)}</button></div><select id="note-weight" aria-label="Peso del cuerpo"></select><label class="note-size"><input id="note-size" aria-label="Tamaño del texto" type="number" min="12" max="32" required value="${data.fontSize ?? 16}"><span>px</span></label></div></div><div class="note-palette"><span>Color</span><div class="note-colors" role="group" aria-label="Color de la nota">${colors.map((c, i) => `<button type="button" data-action="note-color" data-color="${c}" aria-label="Color ${colorNames[i]}" data-tip="${colorNames[i]}" aria-pressed="${data.color === c}"><span style="background:${c};color:${noteInk(c)}">${icon('check', 14)}</span></button>`).join('')}</div></div></div><article class="note-paper" ${noteFontAttributes(data)} data-color="${data.color}" style="${noteStyle(data)}"><textarea id="note-title" rows="1" aria-label="Título de la nota" placeholder="Sin nombre">${html(data.title)}</textarea><textarea id="note-text" aria-label="Contenido de la nota" placeholder="Escribí una nota…">${html(data.text)}</textarea></article></div>`;
+    this.root.innerHTML = `<div class="note-editor"><div class="note-editor-nav"><button type="button" data-action="note-return" aria-label="Volver al Canvas" data-tip="Volver al Canvas">${icon('chevron-left', 18)}</button></div><div class="note-format" role="group" aria-label="Formato de la nota"><div class="note-type"><label for="note-font">Tipografía</label><div><div class="note-font-field"><input id="note-font" role="combobox" aria-label="Tipografía del cuerpo" aria-haspopup="grid" aria-controls="note-font-list" aria-expanded="false" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Buscar fuente…" maxlength="100"><button type="button" tabindex="-1" aria-label="Mostrar fuentes">${icon('chevron', 14)}</button></div><select id="note-weight" aria-label="Peso del cuerpo"></select><label class="note-size"><input id="note-size" aria-label="Tamaño del texto" type="number" min="12" max="32" required value="${data.fontSize ?? 16}"><span>px</span></label></div></div><div class="note-palette"><span>Color</span><div class="note-colors" role="group" aria-label="Color de la nota">${colors.map((c, i) => `<button type="button" data-action="note-color" data-color="${c}" aria-label="Color ${colorNames[i]}" data-tip="${colorNames[i]}" aria-pressed="${data.color === c}"><span style="background:${c};color:${noteInk(c)}">${icon('check', 14)}</span></button>`).join('')}</div></div></div><article class="note-paper" ${noteFontAttributes(data)} data-color="${data.color}" style="${noteStyle(data)}"><textarea id="note-title" rows="1" aria-label="Título de la nota" placeholder="Sin nombre">${html(data.title)}</textarea><textarea id="note-text" aria-label="Contenido de la nota" placeholder="Escribí una nota…">${html(data.text)}</textarea></article></div>`;
     this.fonts = new NoteFontPicker(
       this.root.querySelector<HTMLElement>('.note-font-field')!,
       noteTypography(data)[this.part].font,

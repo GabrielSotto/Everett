@@ -432,6 +432,10 @@ del aspecto heredado, cambio de destino mediante foco o teclado, pesos y cursiva
 duplicación y portapapeles independientes, historial, recarga y geometría a 320 px. Un fallo o una
 respuesta tardía de una fuente no debe alterar la otra parte ni restaurar un aviso obsoleto.
 El reintento debe conservar el foco de teclado cuando termine la carga de la otra fuente.
+C08-B189 comprueba el centrado de todas las muestras de color y la selección por teclado a
+900 y 320 px, sin doble marco ni controles redundantes de título/cuerpo. Incluye formato de un
+título vacío antes de escribir y conservación del destino al pasar desde el texto a sus controles.
+El cambio de destino automático se recorre también mediante Enter y Tab en C08-B187/B188.
 
 C08-U57–U61 y C08-B170–B173 verifican retículas por marco: cantidad, márgenes, huecos,
 filas/columnas, errores atómicos y recuperación al encoger; copias independientes, historial y

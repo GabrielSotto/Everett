@@ -44,6 +44,7 @@ export const canvasCases = [
   { id: 'C08-B157', layer: 'browser', contracts: ['C08-ARRANGE-01', 'C08-LAYER-01'] },
   { id: 'C08-B158', layer: 'browser', contracts: ['C08-MAT-01'] },
   { id: 'C08-B159', layer: 'browser', contracts: ['C08-MAT-03'] },
+  { id: 'C08-B189', layer: 'browser', contracts: ['C08-MAT-03', 'C08-FONT-01'] },
   { id: 'C08-U52', layer: 'unit', contracts: ['C08-LIBRARY-01'] },
   ...['C08-B154', 'C08-B155', 'C08-B156'].map((id) => ({
     id,
@@ -353,8 +354,9 @@ export const canvasControlRequirements = {
   'C08-B166': { 'font-select': 1, 'font-favorite': 1 },
   'C08-B168': { 'font-select': 1 },
   'C08-B169': { 'font-select': 1 },
-  'C08-B187': { 'font-select': 3, 'note-font-part': 3 },
-  'C08-B188': { 'font-select': 3, 'note-font-part': 2 },
+  'C08-B187': { 'font-select': 3, 'note-return': 1 },
+  'C08-B188': { 'font-select': 3 },
+  'C08-B189': { 'note-color': 4, 'font-select': 1 },
   'C08-B148': { 'canvas-wireframes': 2, 'library-add': 2, 'library-configure': 1 },
   'C08-B149': { 'canvas-wireframes': 1 },
   'C08-B143': {

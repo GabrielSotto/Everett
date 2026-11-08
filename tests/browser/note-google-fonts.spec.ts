@@ -87,6 +87,48 @@ async function setup(page: Page, missingKey = false) {
 const picker = (page: Page) => page.locator('.note-font-picker');
 const input = (page: Page) =>
   page.getByRole('combobox', { name: /Tipografía del (título|cuerpo)/ });
+
+test('C08-B189: colores centrados, selección sin doble marco y formato automático sin controles redundantes', async ({
+  page,
+}, info) => {
+  await setup(page);
+  for (const width of [900, 320]) {
+    await page.setViewportSize({ width, height: 740 });
+    const swatches = page.locator('.note-colors button');
+    await swatches.first().click();
+    await capture(page, info, `nota-colores-${width}`);
+    for (const button of await swatches.all()) {
+      const outer = (await button.boundingBox())!;
+      const inner = (await button.locator('span').boundingBox())!;
+      expect(Math.abs(inner.x + inner.width / 2 - outer.x - outer.width / 2)).toBeLessThan(0.5);
+      expect(Math.abs(inner.y + inner.height / 2 - outer.y - outer.height / 2)).toBeLessThan(0.5);
+      await expect(button).toHaveCSS('border-width', '0px');
+    }
+    await swatches.last().focus();
+    await page.keyboard.press('Enter');
+    await expect(swatches.last()).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.note-colors [aria-pressed=true]')).toHaveCount(1);
+    await expect(swatches.last().locator('svg')).toBeVisible();
+    await expect(swatches.last()).toBeFocused();
+    await expect(swatches.last()).toHaveCSS('outline-style', 'solid');
+    await capture(page, info, `nota-color-teclado-${width}`);
+  }
+  await expect(page.getByRole('button', { name: /^(Título|Cuerpo)$/ })).toHaveCount(0);
+  await expect(page.getByText('Guardado automático', { exact: true })).toHaveCount(0);
+  const title = page.getByRole('textbox', { name: 'Título de la nota' });
+  await title.fill('');
+  await expect(input(page)).toHaveAccessibleName('Tipografía del título');
+  await choose(page, 'Serif');
+  await page.getByLabel('Peso del título', { exact: true }).selectOption('700');
+  await title.fill('Título después del formato');
+  await expect(title).toHaveCSS('font-weight', '700');
+  await expect(title).toHaveCSS('font-family', 'Georgia, Cambria, serif');
+  await expect(page.locator('#note-text')).not.toHaveCSS('font-family', 'Georgia, Cambria, serif');
+  await page.reload();
+  await expect(title).toHaveValue('Título después del formato');
+  await expect(page.locator('.note-colors button').last()).toHaveAttribute('aria-pressed', 'true');
+});
+
 async function choose(page: Page, family: string) {
   await input(page).fill(family);
   await picker(page).getByRole('button', { name: family, exact: true }).click();
@@ -338,9 +380,9 @@ test('C08-B187: tipografía y peso por título/cuerpo, foco, copia, persistencia
   page,
 }, info) => {
   await setup(page);
-  const title = page.getByRole('button', { name: 'Título', exact: true });
-  const body = page.getByRole('button', { name: 'Cuerpo', exact: true });
-  await expect(body).toHaveAttribute('aria-pressed', 'true');
+  const title = page.getByRole('textbox', { name: 'Título de la nota', exact: true });
+  const body = page.getByRole('textbox', { name: 'Contenido de la nota', exact: true });
+  await expect(input(page)).toHaveAccessibleName('Tipografía del cuerpo');
   await expect(page.locator('#note-title')).toHaveCSS('font-weight', '600');
   await title.click();
   await expect(input(page)).toHaveAccessibleName('Tipografía del título');
@@ -352,7 +394,7 @@ test('C08-B187: tipografía y peso por título/cuerpo, foco, copia, persistencia
   await expect(page.locator('#note-text')).toHaveCSS('font-weight', '400');
   await expect(page.locator('#note-text')).not.toHaveCSS('font-family', /Lora/);
   await page.locator('#note-text').click();
-  await expect(body).toHaveAttribute('aria-pressed', 'true');
+  await expect(input(page)).toHaveAccessibleName('Tipografía del cuerpo');
   await expect(input(page)).toHaveValue('Sans serif');
   await choose(page, 'Roboto Mono');
   await page.getByLabel('Peso del cuerpo', { exact: true }).selectOption('300');
@@ -365,7 +407,7 @@ test('C08-B187: tipografía y peso por título/cuerpo, foco, copia, persistencia
     body: { font: 'google:Roboto Mono', weight: 300, italic: false },
   };
   await page.locator('#note-title').fill('Decisiones de diseño');
-  await expect(title).toHaveAttribute('aria-pressed', 'true');
+  await expect(input(page)).toHaveAccessibleName('Tipografía del título');
   await expect(input(page)).toHaveValue('Lora');
   await expect(page.getByLabel('Peso del título', { exact: true })).toHaveValue('700');
   await page.locator('#note-title').press('Enter');
@@ -397,12 +439,14 @@ test('C08-B187: tipografía y peso por título/cuerpo, foco, copia, persistencia
   await choose(page, 'Serif');
   expect((await world(page)).nodes[1]!.data).toMatchObject({ typography });
   await page.setViewportSize({ width: 320, height: 640 });
-  await body.focus();
-  await page.keyboard.press('Enter');
+  await title.click();
+  await title.press('Tab');
+  await expect(body).toBeFocused();
   await expect(input(page)).toHaveValue('Roboto Mono');
   await expect(page.getByLabel('Peso del cuerpo', { exact: true })).toHaveValue('300');
-  await body.press('Tab');
-  await expect(input(page)).toBeFocused();
+  await input(page).click();
+  await input(page).press('Tab');
+  await expect(page.getByLabel('Peso del cuerpo', { exact: true })).toBeFocused();
   expect(
     await page.locator('.note-editor').evaluate((el) => el.scrollWidth <= el.clientWidth),
   ).toBe(true);
@@ -432,7 +476,7 @@ test('C08-B188: fallo de una fuente no altera la otra y una respuesta tardía no
       },
     });
   });
-  await page.getByRole('button', { name: 'Título', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Título de la nota', exact: true }).click();
   await choose(page, 'Lora');
   await expect(page.locator('.note-paper')).toHaveAttribute('data-title-font-state', 'error');
   await expect(page.locator('.note-paper')).toHaveAttribute('data-body-font-state', 'ready');
@@ -447,7 +491,7 @@ test('C08-B188: fallo de una fuente no altera la otra y una respuesta tardía no
     await bodyPending;
     await route.fallback();
   });
-  await page.getByRole('button', { name: 'Cuerpo', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Contenido de la nota', exact: true }).click();
   await page.getByLabel('Peso del cuerpo', { exact: true }).selectOption('700');
   await expect(page.locator('.note-paper')).toHaveAttribute('data-body-font-state', 'loading');
   const retryTitle = page.getByRole('button', { name: 'Reintentar fuente Lora' });
@@ -471,11 +515,11 @@ test('C08-B188: fallo de una fuente no altera la otra y una respuesta tardía no
   const request = page.waitForRequest(
     (req) => new URL(req.url()).searchParams.get('family') === 'Lora:wght@700',
   );
-  await page.getByRole('button', { name: 'Título', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Título de la nota', exact: true }).click();
   await page.getByLabel('Peso del título', { exact: true }).selectOption('700');
   await request;
   await choose(page, 'Serif');
-  await page.getByRole('button', { name: 'Cuerpo', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Contenido de la nota', exact: true }).click();
   await choose(page, 'Molle');
   const response = page.waitForResponse(
     (res) => new URL(res.url()).searchParams.get('family') === 'Lora:wght@700',
