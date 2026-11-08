@@ -54,6 +54,65 @@ desplazada, palabra partida y chat fuera de contexto deben fallar. Conservar la 
 
 ### Trabajo continuo de Canvas
 
+#### Evaluación de la ampliación de composición
+
+Plan requerido para la ampliación de baja/media fidelidad del 8 de noviembre; aún no ejecutado.
+Un único formulario no demuestra suficiencia. Componer desde piezas y componentes, además de
+editar interfaces prearmadas; evaluar al menos estas familias de trabajo:
+
+| Recorrido                                                | Propiedad que debe demostrar                                                               |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Acceso/registro móvil con ayuda y error                  | Contenido real, estados, campos y acciones con jerarquía legible.                          |
+| Dashboard de escritorio con navegación, métricas y tabla | Anidación, columnas, densidad, jerarquía y edición de una parte sin desarmar la pantalla.  |
+| Catálogo con filtros y tarjetas repetidas                | Reutilización, contenidos diferentes, incorporación/retirada y separación conservada.      |
+| Mensajería con lista, conversación y composer            | Paneles, contenido largo, vacíos y cambio de dimensiones sin confundir rótulos o acciones. |
+| Agenda o reserva en móvil y tablet                       | Filas/columnas, estados de selección y adaptación deliberada entre formatos.               |
+| Detalle con diálogo o panel superpuesto                  | Orden, selección, recorte, entrada/salida de edición y regreso al contexto anterior.       |
+
+Cruzar esos recorridos con los siguientes contratos y casos adversos:
+
+- **Composición:** insertar, entrar en varios niveles, editar, reordenar, mover entre
+  contenedores, duplicar, separar y cancelar. Comprobar pertenencia única, ausencia de ciclos,
+  selección de la parte prevista y original intacto después de editar una copia.
+- **Layout:** variar ancho, alto y contenido; comprobar márgenes, separación, tamaños fijos y
+  ajustables, límites mínimos y contenido excedente. Cambiar barras/rótulos y refinar contenido
+  sin perder identidad ni estructura. Distinguir resize de escala en las aserciones.
+- **Retículas:** 4/8/12 columnas y cantidad personalizada, márgenes/separaciones válidos e
+  inválidos, varias pantallas con configuraciones diferentes, resize, duplicación y recarga.
+  Mostrar/ocultar desde Vista y atajo deben compartir estado sin mover contenido ni borrar
+  guías. Probar ajuste magnético por separado, foco en editores y conflictos de atajos.
+- **Referencias de ajuste:** dos objetos cercanos con un tercero lejano, coincidencias de
+  bordes/centros, varios candidatos casi empatados, marcos anidados, selección múltiple y
+  retícula contra objetos. Comprobar referencia elegida, corrección y guía dibujada juntas.
+  Recorrer el gesto en ambos sentidos y alrededor del umbral para detectar oscilación.
+  Incluir el caso reproducido en Tareas y la alineación distante deliberada.
+- **Coordenadas y gestos:** arrastre continuo, inversión, resize, zoom/pan, suspensión del
+  ajuste, Escape, pérdida de captura y retorno. Cubrir 1/3/17/38/60/100/431/600 % y estados
+  intermedios relevantes sin exigir todas las combinaciones cartesianas. Medir tolerancias
+  en píxeles de pantalla y conservar geometría del documento al cambiar solo la cámara.
+- **Contenido y acceso:** vacío/uno/muchos, rótulos cortos y largos plausibles, palabras sin
+  separación, distintas escrituras, medios ausentes y proporciones extremas. Revisar
+  ventanas estrechas, texto al 200 %, teclado, foco, contraste y movimiento reducido.
+- **Conservación:** Undo/Redo de gestos completos, recarga intermedia, copias e importación
+  de proyectos anteriores. La migración debe conservar apariencia, contenido, identidad y
+  relaciones existentes; la información de jerarquía ausente requiere tratamiento explícito.
+- **Carga sostenida:** escenas pequeñas y densas dentro de los límites admitidos, repetición
+  de edición y navegación; medir latencia y recursos con los presupuestos del arnés vigente.
+
+Agregar pruebas de dominio para invariantes y geometría, recorridos de navegador sobre el
+Canvas real y revisión de capturas/fotogramas para jerarquía, legibilidad y continuidad. Los
+contraejemplos deben hacer fallar el arnés al elegir la referencia incorrecta, perder un hijo,
+desplazar guías, escalar texto en lugar de redistribuir o romper la recuperación. Una captura
+final correcta no acredita el trayecto ni el comportamiento con otros contenidos.
+
+Aplicar Impeccable y emil-design-eng al diseño y la revisión, break-ui a datos extremos
+realistas y review-animations a continuidad/interrupción. Sus recomendaciones deben quedar
+traducidas a comprobaciones del resultado; un detector limpio no acredita usabilidad. Antes
+de aceptar la ampliación, verificar que los recorridos se completan sin desagrupar de forma
+destructiva, recolocar cada pieza manualmente ni reconstruir componentes para cambios ordinarios.
+
+#### Regresiones de la integración existente
+
 La integración del catálogo añade C08-U50–U51 y C08-B143–B153. Recorrer la biblioteca desde Bosquejos,
 crear por botón y arrastre, editar partes después de desagrupar explícitamente, duplicar y recargar. Comprobar
 cancelación, cámara conservada, historial atómico, recursos fallidos y recuperación. La conversión

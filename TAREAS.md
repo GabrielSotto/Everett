@@ -20,6 +20,25 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
+### Ampliación acordada el 8 de noviembre — composición y retículas
+
+Pendiente de diseño detallado e implementación: [wireframes de baja y media fidelidad](docs/alcance-prototipo.md#composición-y-wireframes-de-baja-y-media-fidelidad),
+edición dentro de componentes, jerarquía, distribución, reutilización y recorridos entre pantallas.
+Alta fidelidad permanece fuera. Las guías de layout se controlan desde Vista y mediante un atajo
+configurable; cantidad, márgenes y separación pertenecen a cada marco. Concretar las decisiones
+de arquitectura y migración antes de reemplazar la materialización plana actual.
+
+Fallo de ajuste automático reproducido en el cálculo de dominio: a zoom 1, mover un rectángulo
+`(0,0,100,100)` junto a `(4,120,100,100)` corrige X en 4; añadir `(1,250,100,100)` cambia X a 1 y
+elige la referencia más lejana. La puntuación combina coincidencia y distancia sin contexto de
+contenedor ni continuidad del gesto. Convertirlo en regresión junto con casos de coincidencia
+intencional distante; no resolverlo priorizando siempre el objeto más cercano sin contexto.
+
+La [evaluación ampliada](docs/validacion-prototipo.md#evaluación-de-la-ampliación-de-composición)
+debe comprobar variedad de tareas, operaciones combinadas, proyectos existentes y el propio
+arnés. Este registro y el diagnóstico no acreditan implementación ni pruebas de aceptación.
+La aplicación permanece disponible sin cambios mientras el usuario revisa notas y tipografías.
+
 ### Revisión del 1 de noviembre — biblioteca por rediseñar
 
 El usuario fijó el alcance en bosquejos y wireframes de baja fidelidad, modernos o tradicionales,
