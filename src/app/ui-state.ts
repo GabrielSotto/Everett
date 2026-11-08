@@ -12,6 +12,7 @@ import { canvasDefaults } from '../domain/shortcuts';
 
 export interface Ui {
   userId: string;
+  favoriteFonts?: string[];
   readerPositions?: Record<string, number>;
   readerPaths?: Record<string, string[]>;
   readerPages?: Record<string, LinkPreview>;

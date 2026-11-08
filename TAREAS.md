@@ -220,25 +220,22 @@ en `output/pruebas/unitarias/2026-11-08_01-46-31-988Z/`, `output/pruebas/diseno/
 Regresión dirigida del desarrollo continuo; no sustituye el gate de cierre ni la revisión del
 usuario. 0.8 sigue abierta, sin integrar en `dev`.
 
-Google Fonts para notas, autorizado después de esa revisión: selector con catálogo buscable,
-muestra antes de aplicar y carga remota mediante las APIs oficiales. La elección se conserva
-en editor, tarjeta, copia, historial y recarga. No se alojan ni almacenan archivos de fuentes
-para uso sin conexión. La clave de Developer API permanece en `GOOGLE_FONTS_API_KEY`, en
-`.env.local` excluido de Git; no se envía al cliente. Sin catálogo se puede consultar una
-familia por nombre exacto. Los fallos conservan la elección y permiten reintentar.
-Pasaron 122 pruebas unitarias/del arnés y siete recorridos de navegador, incluidos cuatro
-nuevos (C08-B166–169); tipado, formato, revisión visual a 320 px y escritorio y verificación
-independiente de 28 adjuntos correctos. Lora se cargó y aplicó desde Google en una prueba
-real sin respuestas sustituidas. Evidencia vigente en
-`output/pruebas/unitarias/2026-11-08_02-52-15-563Z/` y
-`output/pruebas/navegador/2026-11-08_02-52-15-748Z/`, SHA-256
-`9045eb8f8888cdb323fa08372f31a100ff079f34377420bd81178b828262c32e`.
-El 8 de noviembre quedó verificada la credencial configurada por el usuario: catálogo real
-HTTP 200 con 1.968 familias, búsqueda y muestra de Lora, aplicación y persistencia tras recarga.
-CSS y fuente respondieron HTTP 200 desde Google; la clave permaneció en el servicio local.
-Comprobación en navegador aislado, sin sustituir respuestas ni tocar el Canvas del usuario.
-Evidencia adicional: `google-fonts-catalogue-live.json` y sus dos capturas en la misma ejecución,
-con identidad de fuentes y hashes verificados. No se acredita un gate completo de cierre de 0.8.
+Google Fonts para notas: selector único con búsqueda, lista completa y aplicación directa sobre
+la nota. Estrellas personales persistentes, favoritas primero y pesos disponibles por familia.
+Retirados el panel de muestra y «Usar fuente» tras la revisión del usuario. Una familia ofrecida
+solo en cursiva conserva su variante real; no se omite del catálogo. Se conservan editor, tarjeta,
+copia, historial y recarga. La clave permanece en `.env.local`, excluido de Git; los archivos de
+fuentes se cargan desde Google, sin alojamiento local para uso sin conexión.
+
+Pasaron 122 pruebas unitarias/del arnés y siete recorridos de navegador (C08-B157–159 y
+C08-B166–169), tipado, formato y verificación independiente. Revisión visual de lista, favoritas,
+nota y ancho de 320 px. La comprobación real devolvió 1.968 familias (HTTP 200), cargó Montserrat
+700 y Molle desde Google y conservó fuente, peso y favoritas al recargar. Navegador aislado sin
+modificar los datos del usuario. Evidencia en `output/pruebas/unitarias/2026-11-08_04-08-18-514Z/`
+y `output/pruebas/navegador/2026-11-08_04-08-18-664Z/`, con `fonts-live.json`, capturas y
+`verification-directed.json`. SHA-256 de las fuentes:
+`481f111362efdc4eab725a6d14ccb2631bd9b75a7e3631bd299b9e5f4ac88f3f`.
+Regresión dirigida de desarrollo continuo; 0.8 sigue abierta, sin integrar en `dev`.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación

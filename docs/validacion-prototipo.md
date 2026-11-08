@@ -356,3 +356,10 @@ de los campos insertados y ubicación de acciones del curso a varios anchos.
 BLF-ANATOMY-15 y BLF-BROWSER-08 comprueban símbolos individuales, contenido contextual de
 interfaces táctiles y uso concreto de recorte y superposición. Evitar buscadores duplicados y
 rótulos heredados de otro contexto. Revisar también las capturas: dimensiones válidas no bastan.
+
+C08-B166–B169 verifican el selector de fuentes en notas: catálogo completo sin truncar resultados,
+búsqueda y aplicación directa, favoritas persistentes sin cambiar la nota, peso remoto realmente
+decodificado, tarjeta/copia/recarga y navegación por teclado entre familia y estrella. Medir el
+anclaje y los límites a 320 px; distinguir fallos de catálogo y de archivo, recuperación y respuestas
+tardías. Comprobar que ninguna petición incluya la clave o el contenido de la nota. C08-U56 valida
+pesos y su historial; FONT-01 filtra las variantes oficiales sin exponer credenciales ni archivos.

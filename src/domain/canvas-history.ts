@@ -165,7 +165,9 @@ export class CanvasHistory {
       if (
         old?.kind === 'note' &&
         current?.kind === 'note' &&
-        (old.font ?? 'sans') !== (current.font ?? 'sans')
+        ((old.font ?? 'sans') !== (current.font ?? 'sans') ||
+          (old.fontWeight ?? 400) !== (current.fontWeight ?? 400) ||
+          !!old.fontItalic !== !!current.fontItalic)
       ) {
         action += ':font';
         typing = false;

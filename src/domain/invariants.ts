@@ -3,7 +3,7 @@ import { humanParticipants } from './conversations';
 import { validLinkPreview, linkUrl } from './link-previews';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
-import { validNoteFont } from './note-fonts';
+import { validNoteFont, validFontWeight } from './note-fonts';
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -227,6 +227,8 @@ export function validate(s: State): void {
       if (n.data.kind === 'note')
         ensure(
           (n.data.font === undefined || validNoteFont(n.data.font)) &&
+            (n.data.fontWeight === undefined || validFontWeight(n.data.fontWeight)) &&
+            (n.data.fontItalic === undefined || typeof n.data.fontItalic === 'boolean') &&
             (n.data.fontSize === undefined ||
               (Number.isFinite(n.data.fontSize) && n.data.fontSize >= 12 && n.data.fontSize <= 32)),
           'NOTE_FORMAT',

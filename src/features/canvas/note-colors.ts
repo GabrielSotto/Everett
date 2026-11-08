@@ -60,5 +60,5 @@ export function noteStyle(data: Extract<NodeData, { kind: 'note' }>): string {
   const font = family
     ? `'${family}', ${noteFonts.sans.css}`
     : noteFonts[(data.font ?? 'sans') as keyof typeof noteFonts].css;
-  return `background:${color};--note-fill:${color};--note-ink:${noteInk(color)};--note-font:${font};--note-size:${data.fontSize ?? 16}px`;
+  return `background:${color};--note-fill:${color};--note-ink:${noteInk(color)};--note-font:${font};--note-size:${data.fontSize ?? 16}px;--note-style:${data.fontItalic ? 'italic' : 'normal'};--note-weight:${data.fontWeight ?? 400};--note-title-weight:${data.fontWeight ?? (family ? 400 : 600)}`;
 }

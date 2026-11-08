@@ -90,10 +90,33 @@ test('C08-U56: fuentes remotas validan nombre, conservan notas anteriores y se g
   assert.ok(!persisted.includes('fonts.gstatic.com'));
   assert.equal(
     googleFontUrl('Roboto Mono'),
-    'https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap',
+    'https://fonts.googleapis.com/css2?family=Roboto+Mono%3Awght%40400&display=swap',
   );
   assert.throws(() => googleFontUrl('Lora&text=privado'));
   assert.equal(validNoteFont('google:42dot Sans'), true);
+  for (const fontWeight of [0, -1, 1001, 400.5, Infinity, NaN]) {
+    const before = store.snapshot();
+    assert.throws(() => store.dispatch({ ...edit, fontWeight }, intent), /tipografía/);
+    assert.deepEqual(store.snapshot(), before);
+    assert.throws(() => googleFontUrl('Lora', fontWeight));
+  }
+  store.dispatch({ ...edit, fontWeight: 700 }, intent);
+  store.dispatch({ ...edit, text: 'Mantener peso' }, intent);
+  assert.equal((project(store).nodes[0]!.data as { fontWeight: number }).fontWeight, 700);
+  assert.match(googleFontUrl('Lora', 700), /wght%40700/);
+  assert.match(googleFontUrl('Molle', 400, true), /ital%2Cwght%401%2C400/);
+  store.dispatch({ ...edit, font: 'google:Molle', fontItalic: true, fontWeight: 400 }, intent);
+  assert.match(
+    noteStyle(project(store).nodes[0]!.data as Extract<NodeData, { kind: 'note' }>),
+    /--note-style:italic/,
+  );
+  store.dispatch(
+    { ...edit, font: 'google:Roboto Mono', fontItalic: false, fontWeight: 700 },
+    intent,
+  );
+  store.dispatch({ ...edit, fontWeight: 300 }, intent);
+  store.dispatch({ type: 'canvas.undo', world: 'project' }, intent);
+  assert.equal((project(store).nodes[0]!.data as { fontWeight: number }).fontWeight, 700);
   store.dispatch({ ...edit, font: 'serif' }, intent);
   assert.equal((project(store).nodes[0]!.data as { font: string }).font, 'serif');
   store.dispatch({ type: 'canvas.undo', world: 'project' }, intent);

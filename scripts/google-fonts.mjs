@@ -1,3 +1,16 @@
+function weightsOf(variants, italic = false) {
+  const weights = variants.flatMap((variant) => {
+    if (typeof variant !== 'string') return [];
+    if (italic) {
+      if (!variant.endsWith('italic')) return [];
+      variant = variant.slice(0, -6) || 'regular';
+    }
+    if (variant === 'regular') return [400];
+    const weight = Number(variant);
+    return /^\d{1,4}$/.test(variant) && weight >= 1 && weight <= 1000 ? [weight] : [];
+  });
+  return [...new Set(weights)].sort((a, b) => a - b);
+}
 /** Catálogo remoto: no descarga ni conserva archivos de tipografías. */
 export function googleFontsEndpoint({ getKey, request = fetch }) {
   let cached, pending;
@@ -37,13 +50,29 @@ export function googleFontsEndpoint({ getKey, request = fetch }) {
         return { status: 502, error: 'invalid-response' };
       const families = data.items.filter(
         (item) =>
+          item !== null &&
+          typeof item === 'object' &&
           typeof item.family === 'string' &&
           /^[A-Za-z0-9][A-Za-z0-9 -]{0,99}$/.test(item.family) &&
           typeof item.category === 'string' &&
           Array.isArray(item.variants),
       );
       if (!families.length) return { status: 502, error: 'invalid-response' };
-      const value = { families: families.map(({ family, category }) => ({ family, category })) };
+      const value = {
+        families: families
+          .map(({ family, category, variants }) => {
+            const upright = weightsOf(variants);
+            const italic = upright.length === 0;
+            return {
+              family,
+              category,
+              weights: italic ? weightsOf(variants, true) : upright,
+              italic,
+            };
+          })
+          .filter((family) => family.weights.length),
+      };
+      if (!value.families.length) return { status: 502, error: 'invalid-response' };
       cached = { value, until: Date.now() + 3600_000 };
       return { status: 200, ...value };
     } catch {

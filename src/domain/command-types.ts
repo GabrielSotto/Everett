@@ -200,6 +200,8 @@ export type Command =
       color: string;
       font?: NoteFont;
       fontSize?: number;
+      fontWeight?: number;
+      fontItalic?: boolean;
     }
   | {
       type: 'node.delete';

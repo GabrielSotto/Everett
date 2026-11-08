@@ -4,8 +4,16 @@ import { test, expect } from './fixtures';
 import { start, snapshot, world, capture } from './canvas-utility-helpers';
 import { storedFixture } from './canvas-fixtures';
 
-async function setup(page: Page) {
-  // El navegador decodifica un archivo real del sistema; el fixture solo vive en memoria.
+const families = [
+  'Lora',
+  'Roboto Mono',
+  'Bodoni Moda SC',
+  'Noto Sans Egyptian Hieroglyphs',
+  'Molle',
+  ...Array.from({ length: 70 }, (_, i) => `Familia ${i}`),
+];
+async function setup(page: Page, missingKey = false) {
+  // El archivo del fixture se decodifica de verdad, solo en memoria; no simula una fuente cargada.
   const path =
     process.platform === 'win32'
       ? 'C:/Windows/Fonts/arial.ttf'
@@ -21,22 +29,38 @@ async function setup(page: Page) {
     }),
   );
   await page.route('https://fonts.googleapis.com/css2?*', (route) => {
-    const family = new URL(route.request().url()).searchParams.get('family');
+    const requested = new URL(route.request().url()).searchParams.get('family')!;
+    const family = requested.split(':')[0]!;
+    const weight = requested.split('@')[1]!.split(',').at(-1)!;
+    const style = requested.includes(':ital,') ? 'italic' : 'normal';
     return route.fulfill({
       contentType: 'text/css',
       headers: { 'access-control-allow-origin': '*' },
-      body: `@font-face { font-family: '${family}'; font-style: normal; font-weight: 400; src: url(https://fonts.gstatic.com/fixture.ttf) format('truetype'); }`,
+      body: `@font-face { font-family: '${family}'; font-style: ${style}; font-weight: ${weight}; src: url(https://fonts.gstatic.com/fixture-${weight}.ttf) format('truetype'); }`,
     });
   });
   await page.route('**/api/google-fonts', (route) =>
     route.fulfill({
       json: {
-        families: ['Lora', 'Roboto Mono', 'Bodoni Moda SC', 'Noto Sans Egyptian Hieroglyphs'].map(
-          (family) => ({ family, category: 'sans-serif' }),
-        ),
+        families: families.map((family) => ({
+          family,
+          category: 'sans-serif',
+          weights: ['Bodoni Moda SC', 'Molle'].includes(family) ? [400] : [300, 400, 700],
+          italic: family === 'Molle',
+        })),
       },
     }),
   );
+  if (missingKey)
+    await page.addInitScript(() => {
+      const original = window.fetch;
+      Object.assign(window, { catalogueAvailable: false });
+      window.fetch = async (...args) =>
+        String(args[0]) === '/api/google-fonts' &&
+        !(window as unknown as { catalogueAvailable: boolean }).catalogueAvailable
+          ? Response.json({ error: 'not-configured' }, { status: 503 })
+          : original(...args);
+    });
   await start(page);
   const fixture = await snapshot(page),
     w = fixture.state.worlds.find((item) => item.id === 'scout')!;
@@ -60,13 +84,15 @@ async function setup(page: Page) {
   await page.reload();
   await page.locator('[data-node=font-note]').dblclick({ position: { x: 10, y: 10 } });
 }
-const picker = (page: Page) => page.getByRole('dialog', { name: 'Google Fonts', exact: true });
-async function open(page: Page) {
-  await page.getByLabel('Tipografía de la nota', { exact: true }).selectOption('google-fonts');
-  await expect(picker(page)).toBeVisible();
+const picker = (page: Page) => page.locator('.note-font-picker');
+const input = (page: Page) => page.getByRole('combobox', { name: 'Tipografía de la nota' });
+async function choose(page: Page, family: string) {
+  await input(page).fill(family);
+  await picker(page).getByRole('button', { name: family, exact: true }).click();
+  await expect(picker(page)).toBeHidden();
 }
 
-test('C08-B166: catálogo, muestra real, nota, tarjeta, copia y persistencia sin archivos locales', async ({
+test('C08-B166: catálogo completo, favoritas, pesos reales, tarjeta, copia y persistencia', async ({
   page,
 }, info) => {
   await setup(page);
@@ -74,141 +100,196 @@ test('C08-B166: catálogo, muestra real, nota, tarjeta, copia y persistencia sin
   page.on('request', (request) => {
     if (/fonts\.(googleapis|gstatic)\.com/.test(request.url())) requests.push(request.url());
   });
-  await open(page);
-  await expect(picker(page).locator('.font-catalog-status')).toHaveText(
-    '4 familias · filtrá por nombre',
-  );
+  await input(page).click();
+  await expect(picker(page).getByRole('row')).toHaveCount(families.length + 3);
   expect(requests).toHaveLength(0);
-  await page.getByLabel('Nombre de la fuente', { exact: true }).fill('Lora');
-  await expect(picker(page).locator('.font-results button')).toHaveCount(1);
-  await picker(page).getByRole('button', { name: 'Lora', exact: true }).click();
-  await expect(picker(page).getByRole('button', { name: 'Usar fuente' })).toBeEnabled();
+  const anchor = (await page.locator('.note-font-field').boundingBox())!,
+    box = (await picker(page).boundingBox())!;
+  expect(Math.abs(box.x - anchor.x)).toBeLessThan(1);
+  expect(Math.abs(box.y - anchor.y - anchor.height - 6)).toBeLessThan(1);
+  expect(box.height).toBeLessThanOrEqual(330);
+  await input(page).press('Control+End');
+  await expect(picker(page).locator('[data-active]')).toHaveText('Familia 69');
+  expect(await picker(page).evaluate((el) => el.scrollTop)).toBeGreaterThan(1000);
+  await input(page).fill('Lora');
+  await picker(page).getByRole('button', { name: 'Favorita: Lora', exact: true }).click();
+  expect((await world(page)).nodes[0]!.data).not.toHaveProperty('font');
+  await expect(picker(page).getByRole('button', { name: 'Favorita: Lora' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await input(page).fill('');
+  await expect(picker(page).getByRole('row').first()).toContainText('Lora');
+  await capture(page, info, 'fuentes-lista-favoritas');
+  await choose(page, 'Lora');
+  await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
+  await page.getByLabel('Peso de la fuente').selectOption('700');
+  await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
+  await expect(page.locator('#note-text')).toHaveCSS('font-weight', '700');
   expect(
     await page.evaluate(() =>
-      [...document.fonts].some((font) => font.family === 'Lora' && font.status === 'loaded'),
+      [...document.fonts].some(
+        (font) => font.family === 'Lora' && font.weight === '700' && font.status === 'loaded',
+      ),
     ),
   ).toBe(true);
-  expect((await world(page)).nodes[0]!.data).not.toHaveProperty('font');
-  await capture(page, info, 'fuentes-muestra');
-  const anchor = (await page.getByLabel('Tipografía de la nota', { exact: true }).boundingBox())!;
-  const popup = (await picker(page).boundingBox())!;
-  expect(Math.abs(popup.x - anchor.x)).toBeLessThan(1);
-  expect(Math.abs(popup.y - (anchor.y + anchor.height + 6))).toBeLessThan(1);
-  await picker(page).getByRole('button', { name: 'Usar fuente' }).click();
-  await expect(page.locator('#note-text')).toHaveCSS('font-family', /Lora/);
+  expect(requests.some((url) => new URL(url).searchParams.get('family') === 'Lora:wght@700')).toBe(
+    true,
+  );
   await page
     .getByLabel('Contenido de la nota', { exact: true })
     .fill('Un texto privado que nunca se envía a Google.');
   expect(requests.every((url) => !url.includes('text=') && !url.includes('key='))).toBe(true);
   await page.getByRole('button', { name: 'Volver al Canvas', exact: true }).click();
-  await expect(page.locator('[data-node=font-note]')).toHaveAttribute('data-font-state', 'ready');
   await expect(page.locator('[data-node=font-note] p')).toHaveCSS('font-family', /Lora/);
+  await expect(page.locator('[data-node=font-note] p')).toHaveCSS('font-weight', '700');
   await page.locator('[data-node=font-note]').click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Duplicar', exact: true }).click();
-  const notes = (await world(page)).nodes;
-  expect(notes).toHaveLength(2);
-  expect(notes[1]!.data).toMatchObject({ font: 'google:Lora' });
+  expect((await world(page)).nodes[1]!.data).toMatchObject({
+    font: 'google:Lora',
+    fontWeight: 700,
+  });
   await page.reload();
-  await expect(page.locator('[data-node=font-note]')).toHaveAttribute('data-font-state', 'ready');
   await page.locator('[data-node=font-note]').dblclick({ position: { x: 10, y: 10 } });
-  await expect(page.getByLabel('Tipografía de la nota', { exact: true })).toHaveValue(
-    'google:Lora',
+  await expect(input(page)).toHaveValue('Lora');
+  await expect(page.getByLabel('Peso de la fuente')).toHaveValue('700');
+  await input(page).click();
+  await expect(picker(page).getByRole('row').first()).toContainText('Lora');
+  await expect(picker(page).getByRole('button', { name: 'Favorita: Lora' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
   );
-  await page.getByLabel('Tipografía de la nota', { exact: true }).selectOption('serif');
-  expect((await world(page)).nodes[1]!.data).toMatchObject({ font: 'google:Lora' });
+  await picker(page).getByRole('button', { name: 'Favorita: Lora' }).click();
+  await expect(picker(page).getByRole('row').first()).not.toContainText('Lora');
+  await choose(page, 'Serif');
+  expect((await world(page)).nodes[1]!.data).toMatchObject({
+    font: 'google:Lora',
+    fontWeight: 700,
+  });
   await capture(page, info, 'fuentes-nota-independiente');
 });
 
-test('C08-B167: error de fuente, cancelación, respuesta tardía y recuperación sin cambiar el original', async ({
+test('C08-B167: fallos diferenciados, cierre sin aplicar, respuestas tardías y recuperación', async ({
   page,
 }, info) => {
   await setup(page);
-  // Fallos de transporte en el límite fetch, sin convertirlos en errores de ejecución del navegador.
   await page.evaluate(() => {
     const original = window.fetch;
     window.fetch = async (...args) => {
       const url = String(args[0]);
-      if (url.includes('family=No+Existe')) return new Response('', { status: 400 });
-      if (url.includes('family=Sin+Red')) throw new TypeError('Failed to fetch');
+      if (url.includes('family=Lora')) return new Response('', { status: 400 });
+      if (url.includes('family=Roboto+Mono')) throw new TypeError('Failed to fetch');
       return original(...args);
     };
+    Object.assign(window, {
+      restoreFontFetch: () => {
+        window.fetch = original;
+      },
+    });
   });
-  await open(page);
-  const input = page.getByLabel('Nombre de la fuente', { exact: true });
-  await input.fill('No Existe');
-  await input.press('Enter');
-  await expect(picker(page).locator('[data-font-message]')).toContainText('no encontró');
-  await expect(picker(page).getByRole('button', { name: 'Usar fuente' })).toBeDisabled();
-  await input.fill('Sin Red');
-  await input.press('Enter');
-  await expect(picker(page).locator('[data-font-message]')).toContainText('conexión');
-  await capture(page, info, 'fuentes-error');
-  await input.fill('Lora');
-  await input.press('Enter');
-  await expect(picker(page).getByRole('button', { name: 'Usar fuente' })).toBeEnabled();
-  await input.press('Escape');
-  await expect(picker(page)).toBeHidden();
-  await expect(page.getByLabel('Tipografía de la nota', { exact: true })).toBeFocused();
+  await input(page).fill('Lora');
+  await input(page).press('Escape');
+  await expect(input(page)).toHaveValue('Sans serif');
   expect((await world(page)).nodes[0]!.data).not.toHaveProperty('font');
-  await open(page);
+  await choose(page, 'Lora');
+  await expect(page.getByRole('button', { name: 'Reintentar fuente Lora' })).toHaveAttribute(
+    'title',
+    /no encontró/,
+  );
+  await choose(page, 'Roboto Mono');
+  await expect(page.getByRole('button', { name: 'Reintentar fuente Roboto Mono' })).toHaveAttribute(
+    'title',
+    /conexión/,
+  );
+  await capture(page, info, 'fuentes-error');
+  await page.evaluate(() => (window as unknown as { restoreFontFetch(): void }).restoreFontFetch());
+  await page.getByRole('button', { name: 'Reintentar fuente Roboto Mono' }).click();
+  await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
   await page.route('https://fonts.googleapis.com/css2?family=Roboto+Mono*', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     await route.fallback();
   });
-  await input.fill('Roboto Mono');
-  await input.press('Enter');
-  await input.fill('Lora');
-  await input.press('Enter');
-  await expect(picker(page).locator('[data-font-message]')).toHaveText('Lora');
-  await page.waitForResponse((response) => response.url().includes('family=Roboto+Mono'));
-  await expect(picker(page).locator('[data-font-message]')).toHaveText('Lora');
-  await picker(page).getByRole('button', { name: 'Usar fuente' }).click();
-  await expect(page.locator('#note-text')).toHaveCSS('font-family', /Lora/);
+  const delayed = page.waitForResponse(
+    (response) => new URL(response.url()).searchParams.get('family') === 'Roboto Mono:wght@700',
+  );
+  await page.getByLabel('Peso de la fuente').selectOption('700');
+  await choose(page, 'Bodoni Moda SC');
+  await delayed;
+  await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
+  await expect(page.locator('#note-text')).toHaveCSS('font-family', /Bodoni Moda SC/);
+  await expect(page.getByLabel('Peso de la fuente')).toHaveValue('400');
+  await expect(page.getByLabel('Peso de la fuente')).toBeDisabled();
+  await choose(page, 'Molle');
+  await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
+  await expect(page.locator('#note-text')).toHaveCSS('font-style', 'italic');
+  expect(
+    await page.evaluate(() =>
+      [...document.fonts].some(
+        (f) => f.family === 'Molle' && f.style === 'italic' && f.status === 'loaded',
+      ),
+    ),
+  ).toBe(true);
+  await page.reload();
+  await expect(page.locator('#note-text')).toHaveCSS('font-style', 'italic');
+  await choose(page, 'Serif');
+  await expect(page.locator('#note-text')).toHaveCSS('font-style', 'normal');
   await capture(page, info, 'fuentes-recuperadas');
 });
 
-test('C08-B168: catálogo vacío, nombre largo, teclado y panel contenido a 320 px', async ({
+test('C08-B168: teclado, favoritas sin ratón, nombres largos y geometría a 320 px', async ({
   page,
 }, info) => {
   await setup(page);
   await page.setViewportSize({ width: 320, height: 640 });
-  await open(page);
-  const input = page.getByLabel('Nombre de la fuente', { exact: true });
-  await input.fill('Noto Sans Egyptian');
-  await expect(picker(page).locator('.font-results button')).toHaveCount(1);
-  await picker(page).getByRole('button', { name: 'Noto Sans Egyptian Hieroglyphs' }).click();
-  await expect(picker(page).getByRole('button', { name: 'Usar fuente' })).toBeEnabled();
+  await input(page).fill('Noto Sans Egyptian');
+  await expect(picker(page).getByRole('row')).toHaveCount(1);
+  await input(page).press('ArrowDown');
+  await input(page).press('ArrowRight');
+  await input(page).press('Enter');
+  await expect(
+    picker(page).getByRole('button', { name: 'Favorita: Noto Sans Egyptian Hieroglyphs' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect((await world(page)).nodes[0]!.data).not.toHaveProperty('font');
   const box = (await picker(page).boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.y).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(320);
   expect(box.y + box.height).toBeLessThanOrEqual(640);
   expect(await picker(page).evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
-  await capture(page, info, 'fuentes-320-nombre-largo');
-  await input.fill('Sin coincidencia');
-  await expect(picker(page).locator('.font-results')).toContainText('Sin coincidencias');
-  await input.press('Escape');
-  await expect(page.locator('.note-editor')).toBeVisible();
+  await capture(page, info, 'fuentes-320-lista');
+  await input(page).press('ArrowLeft');
+  await input(page).press('Enter');
+  await expect(input(page)).toHaveValue('Noto Sans Egyptian Hieroglyphs');
+  await expect(picker(page)).toBeHidden();
+  await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
+  await input(page).fill('Sin coincidencia');
+  await expect(picker(page).locator('.font-empty')).toHaveText('No hay fuentes con ese nombre.');
+  await input(page).press('Enter');
+  await expect(picker(page)).toBeVisible();
+  await input(page).press('Tab');
+  await expect(picker(page)).toBeHidden();
+  await expect(page.getByLabel('Peso de la fuente')).toBeFocused();
+  await expect(input(page)).toHaveValue('Noto Sans Egyptian Hieroglyphs');
+  await choose(page, 'Lora');
+  await page.getByRole('button', { name: 'Mostrar fuentes' }).click();
+  await expect(picker(page)).toBeVisible();
+  await page.getByRole('button', { name: 'Mostrar fuentes' }).click();
+  await expect(picker(page)).toBeHidden();
+  expect(
+    await page.locator('.note-editor').evaluate((el) => el.scrollWidth <= el.clientWidth),
+  ).toBe(true);
   await capture(page, info, 'fuentes-320-nota');
 });
 
-test('C08-B169: sin clave y sin conexión se conserva la elección y se puede reintentar', async ({
+test('C08-B169: catálogo fallido, nombre exacto, fallback al recargar y reintento', async ({
   page,
 }, info) => {
-  await setup(page);
-  await page.evaluate(() => {
-    const original = window.fetch;
-    window.fetch = async (...args) =>
-      String(args[0]) === '/api/google-fonts'
-        ? Response.json({ error: 'not-configured' }, { status: 503 })
-        : original(...args);
-  });
-  await open(page);
+  await setup(page, true);
+  await input(page).click();
   await expect(picker(page).locator('.font-catalog-status')).toContainText('necesita una clave');
-  await page.getByLabel('Nombre de la fuente', { exact: true }).fill('Lora');
-  await page.getByLabel('Nombre de la fuente', { exact: true }).press('Enter');
-  await expect(picker(page).getByRole('button', { name: 'Usar fuente' })).toBeEnabled();
-  await picker(page).getByRole('button', { name: 'Usar fuente' }).click();
+  await input(page).fill('Lora');
+  await input(page).press('Enter');
+  await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
   await page.addInitScript(() => {
     const original = window.fetch;
     Object.assign(window, { fontNetworkAvailable: false });
@@ -222,20 +303,32 @@ test('C08-B169: sin clave y sin conexión se conserva la elección y se puede re
     };
   });
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Reintentar fuente Lora' })).toBeVisible();
-  expect((await world(page)).nodes[0]!.data).toMatchObject({ font: 'google:Lora' });
   await expect(page.getByRole('button', { name: 'Reintentar fuente Lora' })).toHaveAttribute(
     'title',
     /fuente de reemplazo/,
   );
-  await page.getByLabel('Tipografía de la nota', { exact: true }).selectOption('serif');
-  await expect(page.getByRole('button', { name: 'Reintentar fuente Lora' })).toHaveCount(0);
-  await page.getByLabel('Tipografía de la nota', { exact: true }).selectOption('google:Lora');
+  expect((await world(page)).nodes[0]!.data).toMatchObject({ font: 'google:Lora' });
+  await choose(page, 'Serif');
+  await expect(page.locator('.note-font-warning')).toHaveCount(0);
+  await input(page).fill('Lora');
+  await expect(picker(page).locator('.font-catalog-status')).toContainText('necesita una clave');
+  await input(page).press('Enter');
   await expect(page.getByRole('button', { name: 'Reintentar fuente Lora' })).toBeVisible();
   await capture(page, info, 'fuentes-sin-conexion');
   await page.evaluate(() => Object.assign(window, { fontNetworkAvailable: true }));
   await page.getByRole('button', { name: 'Reintentar fuente Lora' }).click();
   await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
-  await expect(page.getByRole('button', { name: 'Reintentar fuente Lora' })).toHaveCount(0);
+  await expect(page.locator('.note-font-warning')).toHaveCount(0);
+  await page.route('**/api/google-fonts', (route) =>
+    route.fulfill({
+      json: { families: [{ family: 'Lora', category: 'serif', weights: [400, 700] }] },
+    }),
+  );
+  await page.evaluate(() => Object.assign(window, { catalogueAvailable: true }));
+  await input(page).click();
+  await picker(page).getByRole('button', { name: 'Reintentar catálogo' }).click();
+  await expect(picker(page).locator('.font-catalog-status')).toBeHidden();
+  await expect(page.getByLabel('Peso de la fuente')).toBeEnabled();
+  await input(page).press('Escape');
   await capture(page, info, 'fuentes-reintento');
 });

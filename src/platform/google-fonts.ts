@@ -1,4 +1,4 @@
-import { googleFontUrl, validGoogleFamily } from '../domain/note-fonts';
+import { googleFontUrl, validGoogleFamily, validFontWeight } from '../domain/note-fonts';
 
 export type GoogleFontFailure =
   'invalid-name' | 'not-found' | 'network' | 'timeout' | 'unavailable' | 'invalid-response';
@@ -22,25 +22,32 @@ export class GoogleFontError extends Error {
 const requests = new Map<string, Promise<void>>();
 const failures = new Set<string>();
 
-export function loadGoogleFont(family: string, retry = false): Promise<void> {
-  if (!validGoogleFamily(family)) return Promise.reject(new GoogleFontError('invalid-name'));
-  if (retry && failures.delete(family)) requests.delete(family);
-  const existing = requests.get(family);
+export function loadGoogleFont(
+  family: string,
+  retry = false,
+  weight = 400,
+  italic = false,
+): Promise<void> {
+  if (!validGoogleFamily(family) || !validFontWeight(weight))
+    return Promise.reject(new GoogleFontError('invalid-name'));
+  const key = `${family}:${weight}:${italic}`;
+  if (retry && failures.delete(key)) requests.delete(key);
+  const existing = requests.get(key);
   if (existing) return existing;
-  const request = fetchFont(family).catch((error: unknown) => {
-    failures.add(family);
+  const request = fetchFont(family, weight, italic).catch((error: unknown) => {
+    failures.add(key);
     throw error;
   });
-  requests.set(family, request);
+  requests.set(key, request);
   return request;
 }
 
-async function fetchFont(family: string): Promise<void> {
+async function fetchFont(family: string, weight: number, italic: boolean): Promise<void> {
   const controller = new AbortController(),
     faces: FontFace[] = [];
   const timer = setTimeout(() => controller.abort(), 12_000);
   try {
-    const response = await fetch(googleFontUrl(family), {
+    const response = await fetch(googleFontUrl(family, weight, italic), {
       signal: controller.signal,
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
@@ -84,7 +91,10 @@ async function fetchFont(family: string): Promise<void> {
     // Una muestra fija comprueba los archivos reales sin enviar el contenido privado de la nota.
     const loaded = await Promise.race([
       document.fonts
-        .load(`16px "${family}"`, 'Una idea, un árbol. 0123456789')
+        .load(
+          `${italic ? 'italic ' : ''}${weight} 16px "${family}"`,
+          'Una idea, un árbol. 0123456789',
+        )
         .then(async (loaded) => (loaded.length ? loaded : [await faces[0]!.load()])),
       new Promise<never>((_, reject) => {
         if (controller.signal.aborted) reject(new GoogleFontError('timeout'));

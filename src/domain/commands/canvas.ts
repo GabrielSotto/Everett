@@ -421,6 +421,8 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         color: command.color,
         ...(command.font !== undefined ? { font: command.font } : {}),
         ...(command.fontSize !== undefined ? { fontSize: command.fontSize } : {}),
+        ...(command.fontWeight !== undefined ? { fontWeight: command.fontWeight } : {}),
+        ...(command.fontItalic !== undefined ? { fontItalic: command.fontItalic } : {}),
       };
       break;
     }

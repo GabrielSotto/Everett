@@ -122,6 +122,8 @@ export type NodeData =
       color: string;
       font?: NoteFont;
       fontSize?: number;
+      fontWeight?: number;
+      fontItalic?: boolean;
     }
   | {
       kind: 'shape';

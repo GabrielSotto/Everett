@@ -22,7 +22,18 @@ export function googleFamily(font: NoteFont | undefined): string | null {
   return font?.startsWith('google:') && validNoteFont(font) ? font.slice(7) : null;
 }
 
-export function googleFontUrl(family: string): string {
+export function validFontWeight(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 1000;
+}
+
+export function googleFontUrl(family: string, weight = 400, italic = false): string {
   if (!validGoogleFamily(family)) throw new Error('Nombre de fuente inválido');
-  return 'https://fonts.googleapis.com/css2?' + new URLSearchParams({ family, display: 'swap' });
+  if (!validFontWeight(weight)) throw new Error('Peso de fuente inválido');
+  return (
+    'https://fonts.googleapis.com/css2?' +
+    new URLSearchParams({
+      family: italic ? `${family}:ital,wght@1,${weight}` : `${family}:wght@${weight}`,
+      display: 'swap',
+    })
+  );
 }

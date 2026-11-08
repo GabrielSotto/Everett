@@ -315,9 +315,9 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
-  'C08-B166': { 'font-preview': 1, 'font-apply': 1 },
-  'C08-B168': { 'font-preview': 1 },
-  'C08-B169': { 'font-apply': 1 },
+  'C08-B166': { 'font-select': 1, 'font-favorite': 1 },
+  'C08-B168': { 'font-select': 1 },
+  'C08-B169': { 'font-select': 1 },
   'C08-B148': { 'canvas-wireframes': 2, 'library-add': 2, 'library-configure': 1 },
   'C08-B149': { 'canvas-wireframes': 1 },
   'C08-B143': {

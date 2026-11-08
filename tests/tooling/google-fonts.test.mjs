@@ -19,10 +19,11 @@ test('FONT-01: catálogo oficial, clave privada, concurrencia y fallos diferenci
       await new Promise((r) => setTimeout(r, 15));
       return Response.json({
         items: [
+          { family: 'Molle', category: 'handwriting', variants: ['italic'] },
           {
             family: 'Lora',
             category: 'serif',
-            variants: ['regular'],
+            variants: ['regular', '700', '300', '700', 'italic', '700italic', '0', '1001', 'bad'],
             files: { regular: 'https://fonts.gstatic.com/private.ttf' },
           },
         ],
@@ -78,7 +79,12 @@ test('FONT-01: catálogo oficial, clave privada, concurrencia y fallos diferenci
     const results = await Promise.all([send(), send(), send()]);
     for (const result of results) {
       assert.equal(result.headers.get('cache-control'), 'no-store');
-      assert.deepEqual(await result.json(), { families: [{ family: 'Lora', category: 'serif' }] });
+      assert.deepEqual(await result.json(), {
+        families: [
+          { family: 'Molle', category: 'handwriting', weights: [400], italic: true },
+          { family: 'Lora', category: 'serif', weights: [300, 400, 700], italic: false },
+        ],
+      });
     }
     assert.equal(calls, before + 1);
     assert.equal((await send()).status, 200);

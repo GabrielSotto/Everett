@@ -4,18 +4,26 @@ import { icon } from '../../ui/icons';
 export function restoreNoteFonts(root: HTMLElement, onReady: () => void = () => {}): void {
   for (const paper of root.querySelectorAll<HTMLElement>('[data-note-font]')) {
     const family = paper.dataset.noteFont!;
+    const weight = Number(paper.dataset.noteWeight ?? 400);
+    const italic = paper.dataset.noteItalic === 'true';
+    const current = () =>
+      paper.isConnected &&
+      paper.dataset.noteFont === family &&
+      Number(paper.dataset.noteWeight ?? 400) === weight &&
+      (paper.dataset.noteItalic === 'true') === italic;
     const load = (retry = false) => {
       paper.dataset.fontState = 'loading';
       paper.querySelector('.note-font-warning')?.remove();
-      void loadGoogleFont(family, retry).then(
+      void loadGoogleFont(family, retry, weight, italic).then(
         () => {
-          if (!paper.isConnected || paper.dataset.noteFont !== family) return;
+          if (!current()) return;
           paper.dataset.fontState = 'ready';
           onReady();
         },
         (error: unknown) => {
-          if (!paper.isConnected || paper.dataset.noteFont !== family) return;
+          if (!current()) return;
           paper.dataset.fontState = 'error';
+          paper.querySelector('.note-font-warning')?.remove();
           const button = document.createElement('button');
           button.type = 'button';
           button.className = 'note-font-warning';
