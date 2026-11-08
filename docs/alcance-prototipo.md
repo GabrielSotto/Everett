@@ -492,7 +492,7 @@ integrado corresponde a baja fidelidad; la ampliación siguiente se define a con
 
 ### Composición y wireframes de baja y media fidelidad
 
-Dirección confirmada el 8 de noviembre de 2026, pendiente de implementación. Amplía el límite
+Dirección confirmada el 8 de noviembre de 2026, en implementación. Amplía el límite
 anterior de baja fidelidad; alta fidelidad queda fuera del trabajo actual. Refinar una composición
 debe permitir introducir contenido representativo, proporciones, jerarquía y estados más precisos
 conservando sus piezas y relaciones. La fidelidad visual, de contenido y de interacción se evalúa
@@ -505,8 +505,8 @@ por separado; cambiar barras por rótulos no acredita por sí solo toda esta amp
   contenedor de escalar proporcionalmente su contenido.
 - **Guías de layout:** retículas por pantalla/marco con columnas, filas, cantidad configurable
   —incluidos 4, 8 y 12—, márgenes y separación. Vista ofrece mostrar/ocultar con atajo visible y
-  configurable en Atajos. `Shift+G` es el candidato por defecto, pendiente de comprobar en el
-  recorrido real y con las asignaciones personales. La configuración pertenece al marco;
+  configurable en Atajos. `Shift+G` es el valor por defecto y respeta las asignaciones personales
+  existentes; en caso de conflicto queda sin asignar hasta elegir otro. La configuración pertenece al marco;
   visibilidad y ajuste magnético son controles distintos. Ocultar no borra la configuración.
 - **Ajuste automático:** mejorar la elección de referencias según proximidad, contexto de
   edición y continuidad del gesto, incluyendo conflictos entre objetos y retículas. La guía

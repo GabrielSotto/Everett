@@ -12,6 +12,8 @@ export interface ShellUi {
   canvasBackground: 'dots' | 'grid';
   canvasReducedMotion: boolean;
   canvasAlignmentGuides: boolean;
+  canvasLayoutGuides: boolean;
+  canvasLayoutSnap: boolean;
   profileTab: 'identity' | 'preferences' | 'tools' | 'settings';
 }
 
@@ -30,6 +32,8 @@ export function createShellUi(): ShellUi {
     canvasBackground: 'dots',
     canvasReducedMotion: false,
     canvasAlignmentGuides: true,
+    canvasLayoutGuides: true,
+    canvasLayoutSnap: true,
     profileTab: 'identity',
   };
 }

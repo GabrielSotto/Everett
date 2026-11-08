@@ -7,6 +7,9 @@ import { target } from './dom';
 import { icon } from './icons';
 import { bindDismiss } from './popover';
 import { openSketchLibrary, closeSketchLibrary, sketchLibraryOpen } from './sketch-library';
+import { selectedLayoutTarget } from '../domain/layout-guides';
+import { openLayoutGuideEditor } from './layout-guide-editor';
+import { html } from './dom';
 
 /** Creación, organización y vista tienen entradas propias en la cabecera. */
 export class CanvasActions {
@@ -96,6 +99,25 @@ export class CanvasActions {
             ctx.render();
             root.querySelector<HTMLElement>('[data-action=canvas-guides-toggle]')?.focus();
             break;
+          case 'layout-guides-toggle':
+          case 'layout-snap-toggle': {
+            const key =
+              button.dataset.action === 'layout-guides-toggle'
+                ? 'canvasLayoutGuides'
+                : 'canvasLayoutSnap';
+            ctx.ui.shell[key] = !ctx.ui.shell[key];
+            ctx.persist();
+            this.render();
+            ctx.render();
+            root.querySelector<HTMLElement>(`[data-action=${button.dataset.action}]`)?.focus();
+            break;
+          }
+          case 'layout-guides-edit': {
+            const target = selectedLayoutTarget(ctx.world(), ctx.ui.canvas.selections);
+            this.close(false);
+            if (target) openLayoutGuideEditor(ctx, target, this.trigger()!, signal);
+            break;
+          }
           case 'actions-preferences':
           case 'actions-shortcuts':
             this.open = false;
@@ -264,7 +286,7 @@ export class CanvasActions {
     const content =
       this.page === 'arrange'
         ? `${arrangementMarkup(this.ctx)}<hr><div class="arrangement-layers" role="group" aria-label="Orden de capas"><span class="arrangement-label">Capas</span>${(['front', 'forward', 'backward', 'back'] as const).map((order) => `<button type="button" role="menuitem" data-action="selection-order" data-order="${order}" ${canOrderMaterials(this.ctx.world().nodes, this.ctx.ui.canvas.selections, order) ? '' : 'disabled'}>${{ front: 'Traer al frente', forward: 'Avanzar una capa', backward: 'Retroceder una capa', back: 'Enviar al fondo' }[order]}</button>`).join('')}</div>`
-        : `<button type="button" role="menuitem" data-action="actions-fit" data-selection="true" ${units.length ? '' : 'disabled'}>Ajustar a la selección</button><button type="button" role="menuitem" data-action="actions-fit" ${this.ctx.world().nodes.some((node) => !node.owner) || this.ctx.world().zones.length ? '' : 'disabled'}>Ajustar al contenido</button><hr>${check('canvas-guides-toggle', 'Guías y ajuste automático', shell.canvasAlignmentGuides)}${check('canvas-grid-toggle', 'Fondo cuadriculado', shell.canvasBackground === 'grid')}${check('canvas-dock-toggle', 'Dock vertical', shell.canvasDockOrientation === 'vertical')}<hr><button type="button" role="menuitem" data-action="actions-preferences">Preferencias de Canvas</button><button type="button" role="menuitem" data-action="actions-shortcuts">Atajos de Canvas</button>`;
+        : `<button type="button" role="menuitem" data-action="actions-fit" data-selection="true" ${units.length ? '' : 'disabled'}>Ajustar a la selección</button><button type="button" role="menuitem" data-action="actions-fit" ${this.ctx.world().nodes.some((node) => !node.owner) || this.ctx.world().zones.length ? '' : 'disabled'}>Ajustar al contenido</button><hr>${check('canvas-guides-toggle', 'Guías y ajuste automático', shell.canvasAlignmentGuides)}<hr><strong class="canvas-menu-title">Retículas de layout</strong>${check('layout-guides-toggle', 'Mostrar retículas' + (this.ctx.ui.shortcuts.layoutGuides ? `<kbd>${html(this.ctx.ui.shortcuts.layoutGuides)}</kbd>` : ''), shell.canvasLayoutGuides)}${check('layout-snap-toggle', 'Ajustar a las retículas', shell.canvasLayoutSnap)}<button type="button" role="menuitem" data-action="layout-guides-edit" ${selectedLayoutTarget(this.ctx.world(), this.ctx.ui.canvas.selections) ? '' : 'disabled'}>Configurar retícula de selección…</button><hr>${check('canvas-grid-toggle', 'Fondo cuadriculado', shell.canvasBackground === 'grid')}${check('canvas-dock-toggle', 'Dock vertical', shell.canvasDockOrientation === 'vertical')}<hr><button type="button" role="menuitem" data-action="actions-preferences">Preferencias de Canvas</button><button type="button" role="menuitem" data-action="actions-shortcuts">Atajos de Canvas</button>`;
     return `<div class="canvas-actions" role="toolbar" aria-label="Creación, organización y vista de Canvas">${menus.map((menu) => `<button type="button" class="canvas-actions-trigger" data-action="${menu.action}" aria-label="${menu.name}" data-tip="${menu.name}" aria-haspopup="${menu.page === 'wireframes' ? 'dialog' : 'menu'}" aria-expanded="${menu.page === 'wireframes' ? sketchLibraryOpen() : this.open && this.page === menu.page}" aria-controls="canvas-${menu.page}-menu">${icon(menu.glyph, 16)}<span>${menu.label}</span>${icon('down', 10)}</button>`).join('')}${this.open ? `<div class="canvas-actions-pop ${this.page === 'arrange' ? 'arrangement-menu' : ''}" id="canvas-${this.page}-menu" role="menu" aria-label="${current.name}">${this.page === 'arrange' ? '' : `<strong class="canvas-menu-title">${current.label}</strong>`}${content}</div>` : ''}</div>`;
   }
 }

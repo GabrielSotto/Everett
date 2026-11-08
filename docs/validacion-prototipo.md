@@ -194,6 +194,10 @@ arnés, los recorridos de aplicación y sus contraejemplos. Los casos C08-B13 y 
 del antiguo archivo autónomo, permanecen en el gate histórico de ese formato y no se acreditan
 como ejecutados contra fuentes.
 
+Los adjuntos `development-events` registran navegación y mensajes de recarga de Vite para
+distinguir una interrupción del entorno de un fallo del gesto. No esperan la recuperación ni
+repiten la acción fallida: la ejecución interrumpida sigue sin certificar el recorrido.
+
 ### Antecedente de entregas puntuales
 
 Las comprobaciones de HTML, empaquetado y hashes de un artefacto distribuible que siguen
@@ -422,3 +426,15 @@ decodificado, tarjeta/copia/recarga y navegación por teclado entre familia y es
 anclaje y los límites a 320 px; distinguir fallos de catálogo y de archivo, recuperación y respuestas
 tardías. Comprobar que ninguna petición incluya la clave o el contenido de la nota. C08-U56 valida
 pesos y su historial; FONT-01 filtra las variantes oficiales sin exponer credenciales ni archivos.
+
+C08-U57–U61 y C08-B170–B173 verifican retículas por marco: cantidad, márgenes, huecos,
+filas/columnas, errores atómicos y recuperación al encoger; copias independientes, historial y
+persistencia. La representación debe seguir la geometría al mover, redimensionar y cambiar zoom
+entre 1/3/17/38/60/100/431/600 %. El ajuste se prueba también con retícula invisible y ajuste
+entre objetos desactivado; el atajo se reasigna y respeta conflictos personales anteriores.
+Comprobar el panel a 320 px y texto al 200 %, sin desbordes ni atajos al escribir. La regresión
+de alineación exige que una coincidencia distante no robe la referencia cercana, comprueba
+el objetivo de la guía dibujada y encadena retención, Ctrl, cancelación, confirmación y Undo.
+Estos casos acreditan este bloque; no sustituyen la evaluación completa de la expansión de composición.
+La consulta de 50 marcos y 4.000 piezas debe conservar geometría e identidad sin recorrer todas
+las piezas por cada miembro; se miden accesos para detectar la regresión independientemente del hardware.

@@ -1,0 +1,136 @@
+.canvas-layout-guides {
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+.canvas-layout-guides rect {
+  fill: rgb(180 110 245 / 12%);
+  stroke: rgb(147 86 205 / 60%);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+.layout-guide-editor {
+  position: fixed;
+  z-index: 110;
+  width: min(280px, calc(100vw - 16px));
+  overflow: auto;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 1rem;
+}
+.layout-guide-editor header,
+.layout-track-heading,
+.layout-guide-editor footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.layout-guide-editor header button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.layout-guide-editor button {
+  border-radius: 6px;
+}
+.layout-guide-editor button:hover:not(:disabled, .settings-switch) {
+  background: var(--hover);
+}
+.layout-guide-editor button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+.layout-guide-editor .settings-switch {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 20px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--hover);
+}
+.layout-guide-editor .settings-switch span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+}
+.layout-guide-editor .settings-switch[aria-checked='true'] {
+  background: var(--accent);
+}
+.layout-guide-editor .settings-switch[aria-checked='true'] span {
+  transform: translateX(12px);
+  background: #293946;
+}
+.layout-guide-editor > small {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.layout-guide-editor section {
+  margin-top: 18px;
+}
+.layout-guide-editor fieldset {
+  border: 0;
+  padding: 0;
+  margin: 10px 0 0;
+  min-width: 0;
+}
+.layout-guide-editor fieldset:disabled {
+  opacity: 0.5;
+}
+.layout-track-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 5em), 1fr));
+  gap: 8px;
+}
+.layout-track-fields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.layout-track-fields input {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.4em;
+  padding: 4px 6px;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.layout-track-presets {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.layout-track-presets button {
+  flex: 1;
+  min-height: 28px;
+  background: var(--raised);
+}
+.layout-guide-editor footer {
+  margin-top: 20px;
+}
+.layout-guide-editor footer button {
+  min-height: 32px;
+  padding: 4px 12px;
+}
+.layout-guide-editor footer button[type='submit'] {
+  background: var(--accent);
+  color: var(--accent-ink, #24222c);
+}
+.layout-guide-error {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 12px 0 0;
+}

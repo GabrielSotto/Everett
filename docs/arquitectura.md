@@ -53,6 +53,19 @@ con estilo permitido, texto y símbolos locales. `src/domain/sketch-library.ts` 
 partes y las materializa como bosquejos independientes dentro de un conjunto. El dominio no
 depende del DOM ni guarda HTML; reutiliza edición, capas, historial y persistencia de materiales.
 
+Las retículas guardan únicamente cantidad, margen y separación en el material o componente.
+`domain/layout-guides.ts` valida y deriva sus bandas; `features/canvas/layout-guides.ts` las dibuja
+en el plano del Mundo, sin participar del hit-testing ni crear materiales. La cámara transforma
+ese plano; mover o redimensionar recalcula desde los límites del marco. Visibilidad y ajuste son
+preferencias personales independientes. `layout-guides.set` confirma cambios atómicos mediante
+el mismo historial de Canvas. La consulta de marcos indexa las piezas una vez por escena.
+
+`domain/alignment-targets.ts` expone contornos de componentes intactos y materiales libres.
+`domain/alignment.ts` puntúa contexto, proximidad y coincidencia usando el cálculo MIT ya
+incorporado de Moveable. La memoria de referencia pertenece al gesto en `CanvasView`; no se
+persiste. El resultado incluye corrección y referencia exacta para que representación y movimiento
+no discrepen. La edición jerárquica y el motor de distribución interno siguen pendientes.
+
 El dominio conserva ruta y contextos de regreso con sus cámaras. La cámara espacial interpreta los gestos usando los parámetros de `src/spatial/tuning.ts`. Las transiciones animan el cambio ya confirmado y conservan el contexto visual de salida.
 
 Canvas usa límites de cámara propios (1–600 %) sin alterar Universo. `CanvasZoom`, en la cabecera, confirma escalas explícitas y encuadres inmediatamente para persistir el destino exacto; la rueda del Canvas confirma directamente su destino sin cola de interpolación. La lectura del porcentaje se actualiza sin reconstruir el shell por fotograma. El selector de color DOM reúne saturación/brillo, tono, alfa y HEX; sus eventos de teclado no alcanzan los comandos del Canvas. El tamaño flotante del chat pertenece al contexto personal, no al contenido del Mundo. Desacoplar recupera las dimensiones compactas; la altura del panel anclado no las modifica. La lectura limita los tamaños excesivos de guardados anteriores.

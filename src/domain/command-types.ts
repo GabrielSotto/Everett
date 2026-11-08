@@ -24,6 +24,12 @@ import type { MaterialOrder } from './material-order';
 import type { NoteFont } from './note-fonts';
 
 export type Command =
+  | {
+      type: 'layout-guides.set';
+      world: string;
+      target: import('./layout-guides').LayoutTarget;
+      guides: import('./layout-guides').LayoutGuides | null;
+    }
   | { type: 'group.create'; world: string; nodes: string[]; name: string }
   | { type: 'group.rename'; world: string; id: string; name: string }
   | { type: 'group.ungroup'; world: string; id: string }

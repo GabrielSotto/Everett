@@ -645,6 +645,12 @@ export class EverettApp implements Context {
       );
       if (action && !e.repeat) {
         e.preventDefault();
+        if (action === 'layoutGuides') {
+          this.ui.shell.canvasLayoutGuides = !this.ui.shell.canvasLayoutGuides;
+          this.persist();
+          this.render();
+          return;
+        }
         if (this.view instanceof CanvasView && action === 'duplicate') {
           this.view.duplicate();
           return;

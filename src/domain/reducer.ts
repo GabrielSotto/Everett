@@ -26,6 +26,7 @@ export function reduce(state: State, command: Command): State {
       applyCopyCommand(next, command);
       break;
     case 'group.create':
+    case 'layout-guides.set':
     case 'group.rename':
     case 'group.ungroup':
     case 'group.remove':

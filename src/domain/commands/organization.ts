@@ -2,15 +2,35 @@ import type { Command } from '../command-types';
 import { getWorld, need, type State } from '../model';
 import { ensure } from '../invariants';
 import { referenceSource } from '../reference-anchors';
+import { layoutFrame, layoutGuideError } from '../layout-guides';
 
 type OrganizationCommand = Extract<
   Command,
   {
-    type: 'group.create' | 'group.rename' | 'group.ungroup' | 'group.remove' | 'reference.fragment';
+    type:
+      | 'group.create'
+      | 'group.rename'
+      | 'group.ungroup'
+      | 'group.remove'
+      | 'reference.fragment'
+      | 'layout-guides.set';
   }
 >;
 export function applyOrganizationCommand(state: State, c: OrganizationCommand): void {
   const world = getWorld(state, c.world);
+  if (c.type === 'layout-guides.set') {
+    const frame = layoutFrame(world, c.target);
+    ensure(!!frame, 'LAYOUT_TARGET', 'Elegí un marco o componente disponible.');
+    const error = c.guides === null ? null : layoutGuideError(frame!, c.guides);
+    ensure(!error, 'LAYOUT_GUIDES', error ?? 'Retícula inválida.');
+    const item =
+      c.target.kind === 'group'
+        ? world.canvasGroups!.find((g) => g.id === c.target.id)!
+        : world.nodes.find((n) => n.id === c.target.id)!;
+    if (c.guides === null) delete item.layoutGuides;
+    else item.layoutGuides = structuredClone(c.guides);
+    return;
+  }
   if (c.type === 'group.create') {
     ensure(
       c.nodes.length >= 2 &&

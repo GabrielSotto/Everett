@@ -2,7 +2,11 @@ import type { CanvasGroup, Material, Rect, WorldSnapshot, Point } from './model'
 import type { DeepReadonly } from './readonly';
 
 /** Compatibilidad con las composiciones de biblioteca guardadas antes de marcar su tipo. */
-export function isComponent(world: WorldSnapshot, group: DeepReadonly<CanvasGroup>): boolean {
+export function isComponent(
+  world: WorldSnapshot,
+  group: DeepReadonly<CanvasGroup>,
+  indexedNodes?: ReadonlyMap<string, WorldSnapshot['nodes'][number]>,
+): boolean {
   const prefix = group.id.slice(0, -'-group'.length);
   return (
     group.component ??
@@ -11,9 +15,10 @@ export function isComponent(world: WorldSnapshot, group: DeepReadonly<CanvasGrou
       group.nodes.every(
         (id) =>
           (id === prefix || id.startsWith(prefix + '-')) &&
-          world.nodes.some(
-            (n) => n.id === id && n.data.kind === 'wireframe' && !!n.data.content.piece,
-          ),
+          (() => {
+            const node = indexedNodes ? indexedNodes.get(id) : world.nodes.find((n) => n.id === id);
+            return node?.data.kind === 'wireframe' && !!node.data.content.piece;
+          })(),
       ))
   );
 }

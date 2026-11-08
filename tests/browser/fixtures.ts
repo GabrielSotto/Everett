@@ -61,6 +61,33 @@ export const test = base.extend<{
     async ({ page, controls, confirmations }, use, testInfo) => {
       void confirmations;
       const errors: string[] = [];
+      const developmentEvents: { at: number; event: string; path?: string }[] = [];
+      // Una recarga de Vite durante un gesto debe poder distinguirse de un fallo
+      // de producto; registrar el origen sin esperar ni repetir la acción fallida.
+      if (testInfo.config.metadata.targetKind === 'development') {
+        page.on('framenavigated', (frame) => {
+          if (frame === page.mainFrame())
+            developmentEvents.push({ at: Date.now(), event: 'navigation' });
+        });
+        page.on('websocket', (socket) => {
+          if (new URL(socket.url()).host !== new URL(testInfo.project.use.baseURL!).host) return;
+          socket.on('framereceived', ({ payload }) => {
+            let message: { type?: unknown; path?: unknown };
+            try {
+              message = JSON.parse(String(payload)) as typeof message;
+            } catch {
+              return;
+            }
+            if (!message || !['full-reload', 'update', 'error'].includes(String(message.type)))
+              return;
+            developmentEvents.push({
+              at: Date.now(),
+              event: String(message.type),
+              ...(typeof message.path === 'string' ? { path: message.path } : {}),
+            });
+          });
+        });
+      }
       let completed = false;
       page.on('pageerror', (error) => errors.push(error.stack ?? error.message));
       page.on('console', (message) => {
@@ -147,6 +174,11 @@ export const test = base.extend<{
         }
         completed = true;
       } finally {
+        if (developmentEvents.length)
+          await testInfo.attach('development-events', {
+            body: JSON.stringify(developmentEvents),
+            contentType: 'application/json',
+          });
         if (!page.isClosed()) {
           const logs = await page.evaluate(() => window.EverettDebug?.logs() ?? []);
           await testInfo.attach('everett-trace', {

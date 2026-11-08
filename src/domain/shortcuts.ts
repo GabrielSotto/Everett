@@ -6,6 +6,7 @@ export const canvasDefaults: Record<string, string> = {
   connect: 'L',
   rename: '',
   duplicate: 'Ctrl+D',
+  layoutGuides: 'Shift+G',
 };
 export const shortcutNames: Record<string, string> = {
   select: 'Seleccionar',
@@ -15,6 +16,7 @@ export const shortcutNames: Record<string, string> = {
   connect: 'Conectar',
   rename: 'Renombrar',
   duplicate: 'Duplicar selección',
+  layoutGuides: 'Mostrar u ocultar retículas',
 };
 export const reservedShortcuts = new Set([
   'Ctrl+K',

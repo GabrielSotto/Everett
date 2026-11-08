@@ -47,7 +47,10 @@ import {
   isComponent,
 } from '../../domain/manual-groups';
 import { labelPosition, labeledPath, overlaps } from '../../domain/cable-labels';
-import { alignRect, selectionBounds } from '../../domain/alignment';
+import { alignRect, selectionBounds, type SnapMemory } from '../../domain/alignment';
+import { alignmentTargets } from '../../domain/alignment-targets';
+import { layoutFrames } from '../../domain/layout-guides';
+import { paintLayoutGuides } from './layout-guides';
 import { resizedComponent } from '../../domain/component-resize';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
@@ -65,6 +68,7 @@ type Drag =
       intent: Intent;
       origins?: { id: string; point: Point }[];
       additive?: boolean;
+      snap?: SnapMemory;
     }
   | {
       kind: 'resize';
@@ -1084,7 +1088,13 @@ export class CanvasView implements View {
         point: { x: item.point.x + point.x - d.start.x, y: item.point.y + point.y - d.start.y },
       })) ?? [{ id: d.id, point: { ...d.point } }];
       this.root.querySelector('.alignment-guides')?.remove();
-      if (d.distance > 3 && this.ctx.ui.shell.canvasAlignmentGuides && !e.ctrlKey && !e.metaKey) {
+      const shell = this.ctx.ui.shell;
+      if (
+        d.distance > 3 &&
+        (shell.canvasAlignmentGuides || shell.canvasLayoutSnap) &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
         const items =
           d.kind === 'node'
             ? this.ctx.world().nodes.filter((n) => !n.owner)
@@ -1100,16 +1110,31 @@ export class CanvasView implements View {
           const b = toWorld({ x: viewport.right, y: viewport.bottom }, this.cam.current, viewport);
           const snap = alignRect(
             selectionBounds(moving),
-            items.filter(
+            (shell.canvasAlignmentGuides
+              ? d.kind === 'node'
+                ? alignmentTargets(this.ctx.world(), selected)
+                : items
+              : []
+            ).filter(
               (item) =>
-                !selected.has(item.id) &&
+                (!item.id || !selected.has(item.id)) &&
                 item.x + item.width >= a.x &&
                 item.x <= b.x &&
                 item.y + item.height >= a.y &&
                 item.y <= b.y,
             ),
             this.cam.current.z,
+            {
+              ...(d.snap ? { previous: d.snap } : {}),
+              frames:
+                d.kind === 'node' && shell.canvasLayoutSnap
+                  ? layoutFrames(this.ctx.world()).filter(
+                      (f) => !f.members.some((id) => selected.has(id)),
+                    )
+                  : [],
+            },
           );
+          d.snap = snap.memory;
           for (const item of positions) {
             item.point.x += snap.correction.x;
             item.point.y += snap.correction.y;
@@ -1122,7 +1147,7 @@ export class CanvasView implements View {
             layer.innerHTML = snap.guides
               .map(
                 (guide) =>
-                  `<line x1="${guide.axis === 'x' ? guide.position : guide.from}" y1="${guide.axis === 'y' ? guide.position : guide.from}" x2="${guide.axis === 'x' ? guide.position : guide.to}" y2="${guide.axis === 'y' ? guide.position : guide.to}"/>${guide.markers
+                  `<line data-snap-target="${html(guide.target ?? '')}" data-snap-source="${guide.source}" x1="${guide.axis === 'x' ? guide.position : guide.from}" y1="${guide.axis === 'y' ? guide.position : guide.from}" x2="${guide.axis === 'x' ? guide.position : guide.to}" y2="${guide.axis === 'y' ? guide.position : guide.to}"/>${guide.markers
                     .map((p) => {
                       const x = guide.axis === 'x' ? guide.position : p,
                         y = guide.axis === 'y' ? guide.position : p,
@@ -1135,7 +1160,7 @@ export class CanvasView implements View {
             this.root.querySelector('#canvas-plane')?.append(layer);
           }
         }
-      }
+      } else delete d.snap;
       for (const item of positions) {
         const element = this.root.querySelector<HTMLElement>(
           `[data-${d.kind}="${CSS.escape(item.id)}"]`,
@@ -1802,6 +1827,7 @@ export class CanvasView implements View {
     this.paintGroups(preview);
   }
   private paintGroups(preview: readonly { id: string; point: Point }[] = []): void {
+    paintLayoutGuides(this.root, this.ctx.world(), this.ctx.ui.shell.canvasLayoutGuides, preview);
     const layer = this.root.querySelector('.canvas-groups');
     if (!layer) return;
     const world = this.ctx.world();

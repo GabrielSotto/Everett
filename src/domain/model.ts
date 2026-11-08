@@ -67,6 +67,7 @@ export interface CanvasGroup {
   nodes: string[];
   /** Las partes de un componente se manipulan juntas hasta desagruparlo. */
   component?: boolean;
+  layoutGuides?: import('./layout-guides').LayoutGuides;
 }
 export interface ReferenceAnchor {
   id: string;
@@ -161,6 +162,7 @@ export interface Material extends Rect {
   id: string;
   data: NodeData;
   owner: string | null;
+  layoutGuides?: import('./layout-guides').LayoutGuides;
 }
 export interface Link {
   id: string;

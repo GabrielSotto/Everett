@@ -22,22 +22,30 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ### Ampliación acordada el 8 de noviembre — composición y retículas
 
-Pendiente de diseño detallado e implementación: [wireframes de baja y media fidelidad](docs/alcance-prototipo.md#composición-y-wireframes-de-baja-y-media-fidelidad),
-edición dentro de componentes, jerarquía, distribución, reutilización y recorridos entre pantallas.
-Alta fidelidad permanece fuera. Las guías de layout se controlan desde Vista y mediante un atajo
-configurable; cantidad, márgenes y separación pertenecen a cada marco. Concretar las decisiones
-de arquitectura y migración antes de reemplazar la materialización plana actual.
+En implementación: [wireframes de baja y media fidelidad](docs/alcance-prototipo.md#composición-y-wireframes-de-baja-y-media-fidelidad).
+El primer bloque incorpora retículas por marco/componente desde Vista: columnas, filas,
+cantidad, márgenes y separación; Shift+G configurable para mostrarlas, ajuste independiente
+de la visibilidad, historial y copias. El cálculo conserva coordenadas del Mundo durante zoom
+y resize. C08-U57–U61 y C08-B170–B173 cubren este bloque y el fallo de referencias lejanas.
 
-Fallo de ajuste automático reproducido en el cálculo de dominio: a zoom 1, mover un rectángulo
-`(0,0,100,100)` junto a `(4,120,100,100)` corrige X en 4; añadir `(1,250,100,100)` cambia X a 1 y
-elige la referencia más lejana. La puntuación combina coincidencia y distancia sin contexto de
-contenedor ni continuidad del gesto. Convertirlo en regresión junto con casos de coincidencia
-intencional distante; no resolverlo priorizando siempre el objeto más cercano sin contexto.
+El ajuste prioriza contexto y cercanía, conserva la referencia durante el gesto y trata los
+componentes intactos como una unidad. La regresión incluye el caso reproducido de `(4,120)`
+frente a `(1,250)`, alineación distante intencional y suspensión con Ctrl/Meta. Una escena de
+50 componentes/4.000 piezas detectó búsquedas repetidas; el cálculo usa un índice compartido
+y el arnés limita los accesos al documento, sin depender de la velocidad de la máquina.
 
-La [evaluación ampliada](docs/validacion-prototipo.md#evaluación-de-la-ampliación-de-composición)
-debe comprobar variedad de tareas, operaciones combinadas, proyectos existentes y el propio
-arnés. Este registro y el diagnóstico no acreditan implementación ni pruebas de aceptación.
-La aplicación permanece disponible sin cambios mientras el usuario revisa notas y tipografías.
+Siguen pendientes la edición dentro de componentes, jerarquía, distribución interna,
+reutilización y recorridos entre pantallas. Alta fidelidad permanece fuera. Concretar modelo
+y migración antes de reemplazar la materialización plana; no inferir agrupaciones perdidas
+ni modificar las composiciones guardadas por su aspecto. La [evaluación ampliada](docs/validacion-prototipo.md#evaluación-de-la-ampliación-de-composición)
+debe comprobar esos recorridos completos; las pruebas de retículas no acreditan toda la expansión.
+Primer bloque verificado: [127 pruebas unitarias](output/pruebas/unitarias/2026-11-08_14-41-34-676Z/result.json)
+y [246 recorridos de navegador](output/pruebas/navegador/2026-11-08_14-43-23-763Z/results.json),
+sin fallos, omisiones ni reintentos. Incluye 30 ciclos sostenidos durante 548.191 ms, tipado,
+formato y revisión visual de retículas, referencia elegida, panel a 320 px y texto al 200 %.
+Los verificadores confirman fuentes y arnés vigentes; [identidad de desarrollo](output/pruebas/navegador/2026-11-08_14-43-23-763Z/target.json)
+SHA-256 `24860b24ee35e29ac85a85371e89d8848f6ad2d2a72e1e7739ea5c699048385e`.
+Vite continúa en 4173. 0.8 permanece abierta, sin integrar en `dev`.
 
 ### Revisión del 1 de noviembre — biblioteca por rediseñar
 
@@ -291,8 +299,8 @@ durante 541.449 ms. Pasaron los verificadores independientes de resultados, iden
 inventario de casos y adjuntos, además de tipado, formato y revisión en el navegador interno.
 El tipo de objetivo es `development`; no se acredita un HTML ni una entrega empaquetada.
 
-- [Resultado unitario](output/pruebas/unitarias/2026-10-28_08-42-51-536Z/result.json).
-- [Resultado de navegador](output/pruebas/navegador/2026-10-28_09-01-59-915Z/results.json) e [identidad de fuentes](output/pruebas/navegador/2026-10-28_09-01-59-915Z/target.json): SHA-256 `2aacd3e6637e66fdc7088295435edf0bcec4de95b426df2dadb95fc079562fce`.
+- Ejecución unitaria histórica: `2026-10-28_08-42-51-536Z`; sus archivos fueron reemplazados según la conservación de resultados.
+- Ejecución de navegador histórica: `2026-10-28_09-01-59-915Z`, también reemplazada; identidad de fuentes SHA-256 `2aacd3e6637e66fdc7088295435edf0bcec4de95b426df2dadb95fc079562fce`.
 - Revisión visual: [pantalla compuesta mediante arrastres](output/revision/0.8.22/bosquejo-compuesto.png), [referencia de las guías](output/revision/0.8.22/guias-referencia-visible.png) y [texto conectado y agrupado](output/revision/0.8.22/texto-conectado.png).
 - [Verificación inicial de Vite en la pestaña del usuario](output/revision/0.8.22/vite-iab.png). La conexión HMR está activa y se conserva el mismo origen de almacenamiento.
 

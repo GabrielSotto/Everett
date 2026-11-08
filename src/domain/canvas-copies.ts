@@ -14,6 +14,7 @@ import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
 import { validLinkPreview, linkUrl } from './link-previews';
 import { isComponent } from './manual-groups';
+import { validLayoutGuides } from './layout-guides';
 
 export const canvasClipboardMime = 'application/x-everett-canvas';
 const record = (v: unknown): v is Record<string, unknown> =>
@@ -118,6 +119,7 @@ export function parseCanvasClipboard(text: string): CanvasClipboard {
         Number.isFinite(n.height) &&
         n.height >= 4 &&
         n.owner === null &&
+        (n.layoutGuides === undefined || validLayoutGuides(n.layoutGuides)) &&
         validData(n.data),
     ),
     'CLIPBOARD_MATERIAL',
@@ -154,6 +156,7 @@ export function parseCanvasClipboard(text: string): CanvasClipboard {
         record(g) &&
         typeof g.id === 'string' &&
         typeof g.name === 'string' &&
+        (g.layoutGuides === undefined || validLayoutGuides(g.layoutGuides)) &&
         (g.component === undefined || typeof g.component === 'boolean') &&
         Array.isArray(g.nodes) &&
         g.nodes.length > 0 &&
@@ -257,6 +260,7 @@ export function captureCanvasCopies(
         name: group.name,
         nodes: [...group.nodes],
         component: isComponent(world, group),
+        ...(group.layoutGuides ? { layoutGuides: structuredClone(group.layoutGuides) } : {}),
       })),
   };
 }

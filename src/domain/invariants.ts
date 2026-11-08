@@ -4,6 +4,7 @@ import { validLinkPreview, linkUrl } from './link-previews';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
 import { validNoteFont, validFontWeight } from './note-fonts';
+import { validLayoutGuides } from './layout-guides';
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -66,6 +67,12 @@ export function validate(s: State): void {
       );
     ensure(w.conversations.length > 0, 'CONVERSATION', 'El Mundo necesita una conversación');
     const grouped = new Set<string>();
+    for (const item of [...w.nodes, ...(w.canvasGroups ?? [])])
+      ensure(
+        item.layoutGuides === undefined || validLayoutGuides(item.layoutGuides),
+        'LAYOUT_GUIDES',
+        'Retícula inválida.',
+      );
     for (const group of w.canvasGroups ?? []) {
       ensure(
         group.component === undefined || typeof group.component === 'boolean',

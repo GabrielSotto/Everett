@@ -58,6 +58,8 @@ export class LocalStorage {
     const ui = personal.ui;
     if (ui.shortcuts.duplicate === undefined)
       ui.shortcuts.duplicate = Object.values(ui.shortcuts).includes('Ctrl+D') ? '' : 'Ctrl+D';
+    if (ui.shortcuts.layoutGuides === undefined)
+      ui.shortcuts.layoutGuides = Object.values(ui.shortcuts).includes('Shift+G') ? '' : 'Shift+G';
     ui.spatialModifier = spatialModifier(ui.spatialModifier);
     ui.shell.showSurfaceMenu = ui.shell.showSurfaceMenu === true;
     ui.shell.canvasDockOrientation =
@@ -65,6 +67,8 @@ export class LocalStorage {
     ui.shell.canvasBackground = ui.shell.canvasBackground === 'grid' ? 'grid' : 'dots';
     ui.shell.canvasReducedMotion = ui.shell.canvasReducedMotion === true;
     ui.shell.canvasAlignmentGuides = ui.shell.canvasAlignmentGuides !== false;
+    ui.shell.canvasLayoutGuides = ui.shell.canvasLayoutGuides !== false;
+    ui.shell.canvasLayoutSnap = ui.shell.canvasLayoutSnap !== false;
     if (!ui.shell.showSurfaceMenu) ui.shell.surfaceMenu = false;
     ui.canvas.tool = 'select';
     ui.canvas.linkStart = null;
