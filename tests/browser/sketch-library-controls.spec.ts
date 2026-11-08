@@ -68,7 +68,9 @@ test('C08-B153: búsqueda lateral sin saltos ni filtros ocultos y switch de rót
     expect(field.y + field.height).toBeLessThan(items.y);
     await panel.getByRole('searchbox').pressSequentially('carrusel');
     await expect(panel.locator('[data-library-add=carousel]')).toBeVisible();
-    await expect(panel.locator('[data-library-add]')).toHaveCount(1);
+    // La región recortada ahora ofrece también una variante de carrusel.
+    await expect(panel.locator('[data-library-add=clip]')).toBeVisible();
+    await expect(panel.locator('[data-library-add]')).toHaveCount(2);
     await panel.getByRole('searchbox').press('Enter');
     expect((await world(page)).nodes).toHaveLength(0);
     await capture(page, info, 'busqueda-' + width);

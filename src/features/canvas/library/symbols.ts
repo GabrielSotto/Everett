@@ -1,72 +1,182 @@
-import maskSymbol from '../../../../design/wireframe-library/vendor/circle-half.svg?raw';
 import svg0 from '../../../../design/wireframe-library/vendor/arrow-left.svg?raw';
 import svg1 from '../../../../design/wireframe-library/vendor/arrow-right.svg?raw';
 import svg2 from '../../../../design/wireframe-library/vendor/arrow-up.svg?raw';
 import svg3 from '../../../../design/wireframe-library/vendor/bell.svg?raw';
 import svg4 from '../../../../design/wireframe-library/vendor/calendar-blank.svg?raw';
 import svg5 from '../../../../design/wireframe-library/vendor/caret-down.svg?raw';
-import svg6 from '../../../../design/wireframe-library/vendor/check.svg?raw';
-import svg7 from '../../../../design/wireframe-library/vendor/check-circle.svg?raw';
-import svg8 from '../../../../design/wireframe-library/vendor/copy.svg?raw';
-import svg9 from '../../../../design/wireframe-library/vendor/dots-three.svg?raw';
-import svg10 from '../../../../design/wireframe-library/vendor/eye.svg?raw';
-import svg11 from '../../../../design/wireframe-library/vendor/file.svg?raw';
-import svg12 from '../../../../design/wireframe-library/vendor/folder.svg?raw';
-import svg13 from '../../../../design/wireframe-library/vendor/gear-six.svg?raw';
-import svg14 from '../../../../design/wireframe-library/vendor/image.svg?raw';
-import svg15 from '../../../../design/wireframe-library/vendor/info.svg?raw';
-import svg16 from '../../../../design/wireframe-library/vendor/link.svg?raw';
-import svg17 from '../../../../design/wireframe-library/vendor/magnifying-glass.svg?raw';
-import svg18 from '../../../../design/wireframe-library/vendor/minus.svg?raw';
-import svg19 from '../../../../design/wireframe-library/vendor/paper-plane-tilt.svg?raw';
-import svg20 from '../../../../design/wireframe-library/vendor/paperclip.svg?raw';
-import svg21 from '../../../../design/wireframe-library/vendor/pencil-simple.svg?raw';
-import svg22 from '../../../../design/wireframe-library/vendor/play.svg?raw';
-import svg23 from '../../../../design/wireframe-library/vendor/plus.svg?raw';
-import svg24 from '../../../../design/wireframe-library/vendor/rows.svg?raw';
-import svg25 from '../../../../design/wireframe-library/vendor/sidebar-simple.svg?raw';
-import svg26 from '../../../../design/wireframe-library/vendor/sliders-horizontal.svg?raw';
-import svg27 from '../../../../design/wireframe-library/vendor/squares-four.svg?raw';
-import svg28 from '../../../../design/wireframe-library/vendor/trash.svg?raw';
-import svg29 from '../../../../design/wireframe-library/vendor/user.svg?raw';
-import svg30 from '../../../../design/wireframe-library/vendor/warning-circle.svg?raw';
-import svg31 from '../../../../design/wireframe-library/vendor/x.svg?raw';
+import svg6 from '../../../../design/wireframe-library/vendor/check-circle.svg?raw';
+import svg7 from '../../../../design/wireframe-library/vendor/check.svg?raw';
+import svg8 from '../../../../design/wireframe-library/vendor/circle-half.svg?raw';
+import svg9 from '../../../../design/wireframe-library/vendor/copy.svg?raw';
+import svg10 from '../../../../design/wireframe-library/vendor/dots-three.svg?raw';
+import svg11 from '../../../../design/wireframe-library/vendor/eye.svg?raw';
+import svg12 from '../../../../design/wireframe-library/vendor/file.svg?raw';
+import svg13 from '../../../../design/wireframe-library/vendor/folder.svg?raw';
+import svg14 from '../../../../design/wireframe-library/vendor/gear-six.svg?raw';
+import svg15 from '../../../../design/wireframe-library/vendor/image.svg?raw';
+import svg16 from '../../../../design/wireframe-library/vendor/info.svg?raw';
+import svg17 from '../../../../design/wireframe-library/vendor/link.svg?raw';
+import svg18 from '../../../../design/wireframe-library/vendor/magnifying-glass.svg?raw';
+import svg19 from '../../../../design/wireframe-library/vendor/minus.svg?raw';
+import svg20 from '../../../../design/wireframe-library/vendor/paper-plane-tilt.svg?raw';
+import svg21 from '../../../../design/wireframe-library/vendor/paperclip.svg?raw';
+import svg22 from '../../../../design/wireframe-library/vendor/pencil-simple.svg?raw';
+import svg23 from '../../../../design/wireframe-library/vendor/play.svg?raw';
+import svg24 from '../../../../design/wireframe-library/vendor/plus.svg?raw';
+import svg25 from '../../../../design/wireframe-library/vendor/rows.svg?raw';
+import svg26 from '../../../../design/wireframe-library/vendor/sidebar-simple.svg?raw';
+import svg27 from '../../../../design/wireframe-library/vendor/sliders-horizontal.svg?raw';
+import svg28 from '../../../../design/wireframe-library/vendor/squares-four.svg?raw';
+import svg29 from '../../../../design/wireframe-library/vendor/trash.svg?raw';
+import svg30 from '../../../../design/wireframe-library/vendor/user.svg?raw';
+import svg31 from '../../../../design/wireframe-library/vendor/warning-circle.svg?raw';
+import svg32 from '../../../../design/wireframe-library/vendor/x.svg?raw';
+import svg33 from '../../../../design/wireframe-library/vendor/house.svg?raw';
+import svg34 from '../../../../design/wireframe-library/vendor/list.svg?raw';
+import svg35 from '../../../../design/wireframe-library/vendor/heart.svg?raw';
+import svg36 from '../../../../design/wireframe-library/vendor/star.svg?raw';
+import svg37 from '../../../../design/wireframe-library/vendor/bookmark-simple.svg?raw';
+import svg38 from '../../../../design/wireframe-library/vendor/shopping-cart.svg?raw';
+import svg39 from '../../../../design/wireframe-library/vendor/credit-card.svg?raw';
+import svg40 from '../../../../design/wireframe-library/vendor/receipt.svg?raw';
+import svg41 from '../../../../design/wireframe-library/vendor/wallet.svg?raw';
+import svg42 from '../../../../design/wireframe-library/vendor/envelope.svg?raw';
+import svg43 from '../../../../design/wireframe-library/vendor/chat-circle.svg?raw';
+import svg44 from '../../../../design/wireframe-library/vendor/phone.svg?raw';
+import svg45 from '../../../../design/wireframe-library/vendor/video-camera.svg?raw';
+import svg46 from '../../../../design/wireframe-library/vendor/microphone.svg?raw';
+import svg47 from '../../../../design/wireframe-library/vendor/speaker-high.svg?raw';
+import svg48 from '../../../../design/wireframe-library/vendor/pause.svg?raw';
+import svg49 from '../../../../design/wireframe-library/vendor/stop.svg?raw';
+import svg50 from '../../../../design/wireframe-library/vendor/skip-forward.svg?raw';
+import svg51 from '../../../../design/wireframe-library/vendor/download-simple.svg?raw';
+import svg52 from '../../../../design/wireframe-library/vendor/upload-simple.svg?raw';
+import svg53 from '../../../../design/wireframe-library/vendor/share-network.svg?raw';
+import svg54 from '../../../../design/wireframe-library/vendor/lock.svg?raw';
+import svg55 from '../../../../design/wireframe-library/vendor/lock-open.svg?raw';
+import svg56 from '../../../../design/wireframe-library/vendor/shield-check.svg?raw';
+import svg57 from '../../../../design/wireframe-library/vendor/key.svg?raw';
+import svg58 from '../../../../design/wireframe-library/vendor/sign-out.svg?raw';
+import svg59 from '../../../../design/wireframe-library/vendor/users.svg?raw';
+import svg60 from '../../../../design/wireframe-library/vendor/user-plus.svg?raw';
+import svg61 from '../../../../design/wireframe-library/vendor/map-pin.svg?raw';
+import svg62 from '../../../../design/wireframe-library/vendor/globe.svg?raw';
+import svg63 from '../../../../design/wireframe-library/vendor/clock.svg?raw';
+import svg64 from '../../../../design/wireframe-library/vendor/timer.svg?raw';
+import svg65 from '../../../../design/wireframe-library/vendor/funnel.svg?raw';
+import svg66 from '../../../../design/wireframe-library/vendor/sort-ascending.svg?raw';
+import svg67 from '../../../../design/wireframe-library/vendor/arrows-clockwise.svg?raw';
+import svg68 from '../../../../design/wireframe-library/vendor/arrow-down.svg?raw';
+import svg69 from '../../../../design/wireframe-library/vendor/caret-left.svg?raw';
+import svg70 from '../../../../design/wireframe-library/vendor/caret-right.svg?raw';
+import svg71 from '../../../../design/wireframe-library/vendor/caret-up.svg?raw';
+import svg72 from '../../../../design/wireframe-library/vendor/dots-six-vertical.svg?raw';
+import svg73 from '../../../../design/wireframe-library/vendor/device-mobile.svg?raw';
+import svg74 from '../../../../design/wireframe-library/vendor/device-tablet.svg?raw';
+import svg75 from '../../../../design/wireframe-library/vendor/desktop.svg?raw';
+import svg76 from '../../../../design/wireframe-library/vendor/camera.svg?raw';
+import svg77 from '../../../../design/wireframe-library/vendor/chart-bar.svg?raw';
+import svg78 from '../../../../design/wireframe-library/vendor/check-square.svg?raw';
+import svg79 from '../../../../design/wireframe-library/vendor/radio-button.svg?raw';
+import svg80 from '../../../../design/wireframe-library/vendor/toggle-right.svg?raw';
+import svg81 from '../../../../design/wireframe-library/vendor/cloud.svg?raw';
+import svg82 from '../../../../design/wireframe-library/vendor/code.svg?raw';
+import svg83 from '../../../../design/wireframe-library/vendor/text-t.svg?raw';
+import svg84 from '../../../../design/wireframe-library/vendor/lightning.svg?raw';
+import svg85 from '../../../../design/wireframe-library/vendor/question.svg?raw';
+import svg86 from '../../../../design/wireframe-library/vendor/sun.svg?raw';
+import svg87 from '../../../../design/wireframe-library/vendor/moon.svg?raw';
 
-/** Recursos locales incluidos al cargar Everett; la biblioteca no depende de peticiones tardías. */
+/** Recursos locales; disponibles también sin red. */
 const symbols: Record<string, string> = {
-  'circle-half': 'data:image/svg+xml,' + encodeURIComponent(maskSymbol),
   'arrow-left': 'data:image/svg+xml,' + encodeURIComponent(svg0),
   'arrow-right': 'data:image/svg+xml,' + encodeURIComponent(svg1),
   'arrow-up': 'data:image/svg+xml,' + encodeURIComponent(svg2),
   bell: 'data:image/svg+xml,' + encodeURIComponent(svg3),
   'calendar-blank': 'data:image/svg+xml,' + encodeURIComponent(svg4),
   'caret-down': 'data:image/svg+xml,' + encodeURIComponent(svg5),
-  check: 'data:image/svg+xml,' + encodeURIComponent(svg6),
-  'check-circle': 'data:image/svg+xml,' + encodeURIComponent(svg7),
-  copy: 'data:image/svg+xml,' + encodeURIComponent(svg8),
-  'dots-three': 'data:image/svg+xml,' + encodeURIComponent(svg9),
-  eye: 'data:image/svg+xml,' + encodeURIComponent(svg10),
-  file: 'data:image/svg+xml,' + encodeURIComponent(svg11),
-  folder: 'data:image/svg+xml,' + encodeURIComponent(svg12),
-  'gear-six': 'data:image/svg+xml,' + encodeURIComponent(svg13),
-  image: 'data:image/svg+xml,' + encodeURIComponent(svg14),
-  info: 'data:image/svg+xml,' + encodeURIComponent(svg15),
-  link: 'data:image/svg+xml,' + encodeURIComponent(svg16),
-  'magnifying-glass': 'data:image/svg+xml,' + encodeURIComponent(svg17),
-  minus: 'data:image/svg+xml,' + encodeURIComponent(svg18),
-  'paper-plane-tilt': 'data:image/svg+xml,' + encodeURIComponent(svg19),
-  paperclip: 'data:image/svg+xml,' + encodeURIComponent(svg20),
-  'pencil-simple': 'data:image/svg+xml,' + encodeURIComponent(svg21),
-  play: 'data:image/svg+xml,' + encodeURIComponent(svg22),
-  plus: 'data:image/svg+xml,' + encodeURIComponent(svg23),
-  rows: 'data:image/svg+xml,' + encodeURIComponent(svg24),
-  'sidebar-simple': 'data:image/svg+xml,' + encodeURIComponent(svg25),
-  'sliders-horizontal': 'data:image/svg+xml,' + encodeURIComponent(svg26),
-  'squares-four': 'data:image/svg+xml,' + encodeURIComponent(svg27),
-  trash: 'data:image/svg+xml,' + encodeURIComponent(svg28),
-  user: 'data:image/svg+xml,' + encodeURIComponent(svg29),
-  'warning-circle': 'data:image/svg+xml,' + encodeURIComponent(svg30),
-  x: 'data:image/svg+xml,' + encodeURIComponent(svg31),
+  'check-circle': 'data:image/svg+xml,' + encodeURIComponent(svg6),
+  check: 'data:image/svg+xml,' + encodeURIComponent(svg7),
+  'circle-half': 'data:image/svg+xml,' + encodeURIComponent(svg8),
+  copy: 'data:image/svg+xml,' + encodeURIComponent(svg9),
+  'dots-three': 'data:image/svg+xml,' + encodeURIComponent(svg10),
+  eye: 'data:image/svg+xml,' + encodeURIComponent(svg11),
+  file: 'data:image/svg+xml,' + encodeURIComponent(svg12),
+  folder: 'data:image/svg+xml,' + encodeURIComponent(svg13),
+  'gear-six': 'data:image/svg+xml,' + encodeURIComponent(svg14),
+  image: 'data:image/svg+xml,' + encodeURIComponent(svg15),
+  info: 'data:image/svg+xml,' + encodeURIComponent(svg16),
+  link: 'data:image/svg+xml,' + encodeURIComponent(svg17),
+  'magnifying-glass': 'data:image/svg+xml,' + encodeURIComponent(svg18),
+  minus: 'data:image/svg+xml,' + encodeURIComponent(svg19),
+  'paper-plane-tilt': 'data:image/svg+xml,' + encodeURIComponent(svg20),
+  paperclip: 'data:image/svg+xml,' + encodeURIComponent(svg21),
+  'pencil-simple': 'data:image/svg+xml,' + encodeURIComponent(svg22),
+  play: 'data:image/svg+xml,' + encodeURIComponent(svg23),
+  plus: 'data:image/svg+xml,' + encodeURIComponent(svg24),
+  rows: 'data:image/svg+xml,' + encodeURIComponent(svg25),
+  'sidebar-simple': 'data:image/svg+xml,' + encodeURIComponent(svg26),
+  'sliders-horizontal': 'data:image/svg+xml,' + encodeURIComponent(svg27),
+  'squares-four': 'data:image/svg+xml,' + encodeURIComponent(svg28),
+  trash: 'data:image/svg+xml,' + encodeURIComponent(svg29),
+  user: 'data:image/svg+xml,' + encodeURIComponent(svg30),
+  'warning-circle': 'data:image/svg+xml,' + encodeURIComponent(svg31),
+  x: 'data:image/svg+xml,' + encodeURIComponent(svg32),
+  house: 'data:image/svg+xml,' + encodeURIComponent(svg33),
+  list: 'data:image/svg+xml,' + encodeURIComponent(svg34),
+  heart: 'data:image/svg+xml,' + encodeURIComponent(svg35),
+  star: 'data:image/svg+xml,' + encodeURIComponent(svg36),
+  'bookmark-simple': 'data:image/svg+xml,' + encodeURIComponent(svg37),
+  'shopping-cart': 'data:image/svg+xml,' + encodeURIComponent(svg38),
+  'credit-card': 'data:image/svg+xml,' + encodeURIComponent(svg39),
+  receipt: 'data:image/svg+xml,' + encodeURIComponent(svg40),
+  wallet: 'data:image/svg+xml,' + encodeURIComponent(svg41),
+  envelope: 'data:image/svg+xml,' + encodeURIComponent(svg42),
+  'chat-circle': 'data:image/svg+xml,' + encodeURIComponent(svg43),
+  phone: 'data:image/svg+xml,' + encodeURIComponent(svg44),
+  'video-camera': 'data:image/svg+xml,' + encodeURIComponent(svg45),
+  microphone: 'data:image/svg+xml,' + encodeURIComponent(svg46),
+  'speaker-high': 'data:image/svg+xml,' + encodeURIComponent(svg47),
+  pause: 'data:image/svg+xml,' + encodeURIComponent(svg48),
+  stop: 'data:image/svg+xml,' + encodeURIComponent(svg49),
+  'skip-forward': 'data:image/svg+xml,' + encodeURIComponent(svg50),
+  'download-simple': 'data:image/svg+xml,' + encodeURIComponent(svg51),
+  'upload-simple': 'data:image/svg+xml,' + encodeURIComponent(svg52),
+  'share-network': 'data:image/svg+xml,' + encodeURIComponent(svg53),
+  lock: 'data:image/svg+xml,' + encodeURIComponent(svg54),
+  'lock-open': 'data:image/svg+xml,' + encodeURIComponent(svg55),
+  'shield-check': 'data:image/svg+xml,' + encodeURIComponent(svg56),
+  key: 'data:image/svg+xml,' + encodeURIComponent(svg57),
+  'sign-out': 'data:image/svg+xml,' + encodeURIComponent(svg58),
+  users: 'data:image/svg+xml,' + encodeURIComponent(svg59),
+  'user-plus': 'data:image/svg+xml,' + encodeURIComponent(svg60),
+  'map-pin': 'data:image/svg+xml,' + encodeURIComponent(svg61),
+  globe: 'data:image/svg+xml,' + encodeURIComponent(svg62),
+  clock: 'data:image/svg+xml,' + encodeURIComponent(svg63),
+  timer: 'data:image/svg+xml,' + encodeURIComponent(svg64),
+  funnel: 'data:image/svg+xml,' + encodeURIComponent(svg65),
+  'sort-ascending': 'data:image/svg+xml,' + encodeURIComponent(svg66),
+  'arrows-clockwise': 'data:image/svg+xml,' + encodeURIComponent(svg67),
+  'arrow-down': 'data:image/svg+xml,' + encodeURIComponent(svg68),
+  'caret-left': 'data:image/svg+xml,' + encodeURIComponent(svg69),
+  'caret-right': 'data:image/svg+xml,' + encodeURIComponent(svg70),
+  'caret-up': 'data:image/svg+xml,' + encodeURIComponent(svg71),
+  'dots-six-vertical': 'data:image/svg+xml,' + encodeURIComponent(svg72),
+  'device-mobile': 'data:image/svg+xml,' + encodeURIComponent(svg73),
+  'device-tablet': 'data:image/svg+xml,' + encodeURIComponent(svg74),
+  desktop: 'data:image/svg+xml,' + encodeURIComponent(svg75),
+  camera: 'data:image/svg+xml,' + encodeURIComponent(svg76),
+  'chart-bar': 'data:image/svg+xml,' + encodeURIComponent(svg77),
+  'check-square': 'data:image/svg+xml,' + encodeURIComponent(svg78),
+  'radio-button': 'data:image/svg+xml,' + encodeURIComponent(svg79),
+  'toggle-right': 'data:image/svg+xml,' + encodeURIComponent(svg80),
+  cloud: 'data:image/svg+xml,' + encodeURIComponent(svg81),
+  code: 'data:image/svg+xml,' + encodeURIComponent(svg82),
+  'text-t': 'data:image/svg+xml,' + encodeURIComponent(svg83),
+  lightning: 'data:image/svg+xml,' + encodeURIComponent(svg84),
+  question: 'data:image/svg+xml,' + encodeURIComponent(svg85),
+  sun: 'data:image/svg+xml,' + encodeURIComponent(svg86),
+  moon: 'data:image/svg+xml,' + encodeURIComponent(svg87),
 };
 export function librarySymbol(name: string): string {
   const source = symbols[name];

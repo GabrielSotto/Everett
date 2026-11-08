@@ -42,8 +42,8 @@ en `output/pruebas/navegador/2026-11-01_23-30-22-957Z/`. Esto no acredita la reg
 completa actual ni cierra el rediseño solicitado.
 
 El [catálogo de diseño](design/wireframe-library/index.html), servido por el mismo Vite en
-`/design/wireframe-library/`, contiene 109 muestras: 24 piezas y variantes de base, 65 composiciones
-y 20 interfaces. Sus fuentes y arnés están versionados. CSS de Chalk y SVG
+`/design/wireframe-library/`, contiene 113 muestras: 24 piezas y variantes de base, 65 composiciones
+y 24 interfaces. Sus fuentes y arnés están versionados. CSS de Chalk y SVG
 de Phosphor fijados por commit, con sus licencias MIT. La investigación sigue siendo temporal;
 no se agrega un informe comparativo.
 
@@ -197,6 +197,28 @@ las fuentes servidas y 184 adjuntos. Evidencia en
 `e1907311bff6c4dc547940ffe95af179688ef4f0bcf07992124476bed8c18e05`.
 Pendiente de revisión del usuario; esta regresión dirigida no sustituye el gate completo de
 cierre de 0.8. Sin integración en `dev`.
+
+La revisión de filtros y composición del 7 de noviembre mantiene el filtro en Piezas,
+Componentes e Interfaces, con categorías propias y selección conservada por pestaña. La
+biblioteca comparte 88 símbolos Phosphor MIT buscables e insertables individualmente;
+sus nombres, recursos y edición usan el mismo catálogo. Las recetas de varias partes,
+incluidas las de Piezas, se insertan como componente hasta Separar. Se conservan los
+conjuntos manuales y las composiciones ya guardadas.
+Se ajustaron los márgenes de los campos y las acciones del curso. Región recortada ofrece
+carrusel y lista; Capa superpuesta muestra atenuación y panel flotante. Se suman mensajes y
+tienda en móvil, cuaderno y agenda en tablet. Las 24 interfaces siguen compuestas por las
+piezas y componentes compartidos, como bosquejos estáticos editables.
+La consulta sobre Google Fonts sigue como ampliación por definir del selector de notas;
+esta corrección no añade un servicio de tipografías ni cambia las fuentes de notas guardadas.
+Pasaron 120 pruebas unitarias/del arnés, 34 del catálogo, ocho recorridos de diseño y 54
+recorridos dirigidos de Canvas, con 590 comparaciones de representación y controles negativos.
+Se revisaron capturas de filtros, símbolos, campos, recortes y las interfaces nuevas. Tipado,
+formato y verificadores independientes correctos; 201 adjuntos acreditados. Evidencia vigente
+en `output/pruebas/unitarias/2026-11-08_01-46-31-988Z/`, `output/pruebas/diseno/` y
+`output/pruebas/navegador/2026-11-08_01-55-20-166Z/`, SHA-256 de las fuentes servidas
+`1b674f5caff34df1cdb5e7bc3ca6990e35e6236d3f40026f646735466f9a94c2`.
+Regresión dirigida del desarrollo continuo; no sustituye el gate de cierre ni la revisión del
+usuario. 0.8 sigue abierta, sin integrar en `dev`.
 
 La revisión de bosquejos y organización del 28 de octubre está implementada en `0cfc2e4` y
 `d86750d`: pantalla libre con formatos de dispositivo, texto editado sobre su pieza, incorporación

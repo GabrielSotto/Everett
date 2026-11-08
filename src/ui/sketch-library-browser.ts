@@ -1,6 +1,5 @@
 import {
   entries,
-  families,
   availableStates,
   type LibraryEntry,
 } from '../../design/wireframe-library/samples.js';
@@ -10,6 +9,7 @@ import { paintLibraryPreview } from './sketch-library-preview';
 import { html } from './dom';
 import { icon } from './icons';
 import type { LibraryComposition } from '../domain/sketch-library';
+import { libraryFilters } from './sketch-library-filters';
 
 const choices = new Map<string, LibraryChoice>();
 let labels = false;
@@ -52,14 +52,9 @@ export function libraryBrowser(
     .join(
       '',
     )}</div></div><p class="library-results" hidden></p><div class="library-items" aria-label="Componentes"></div></div>`;
-  const filters = [
-    ['all', 'Todos los componentes'],
-    ...families.filter(([id]) => !['all', 'base', 'screens'].includes(id)),
-  ];
   const filter = document.createElement('button');
   filter.type = 'button';
   filter.className = 'library-filter';
-  filter.hidden = true;
   filter.setAttribute('aria-label', 'Filtrar componentes');
   filter.setAttribute('aria-haspopup', 'menu');
   filter.setAttribute('aria-expanded', 'false');
@@ -71,14 +66,8 @@ export function libraryBrowser(
   filterMenu.setAttribute('role', 'menu');
   filterMenu.setAttribute('aria-label', 'Familia de componentes');
   filterMenu.hidden = true;
-  filterMenu.innerHTML = filters
-    .map(
-      ([id, name]) =>
-        `<button type="button" role="menuitemradio" aria-checked="${id === 'all'}" data-library-family="${id}">${name}</button>`,
-    )
-    .join('');
   root.append(filterMenu);
-  let family = 'all';
+  const selectedFilters: Record<string, string> = {};
   const closeFilter = () => {
     filterMenu.hidden = true;
     filter.setAttribute('aria-expanded', 'false');
@@ -159,16 +148,37 @@ export function libraryBrowser(
   const list = () => {
     root.dispatchEvent(new CustomEvent('library-browse', { bubbles: true }));
     const query = normalize(search.value.trim());
+    const filters = libraryFilters(tab);
+    const family = selectedFilters[tab] ?? 'all';
+    const active = filters.find((item) => item.id === family)!;
+    filter.setAttribute(
+      'aria-label',
+      tab === 'base'
+        ? 'Filtrar piezas'
+        : tab === 'screens'
+          ? 'Filtrar interfaces'
+          : 'Filtrar componentes',
+    );
+    filter.title = `Filtrar: ${active.label}`;
+    filter.classList.toggle('is-filtered', family !== 'all');
+    filterMenu.setAttribute(
+      'aria-label',
+      tab === 'components' ? 'Familia de componentes' : 'Filtros de biblioteca',
+    );
+    filterMenu.innerHTML = filters
+      .map(
+        ({ id, label }) =>
+          `<button type="button" role="menuitemradio" aria-checked="${id === family}" data-library-family="${id}">${label}</button>`,
+      )
+      .join('');
     const matches = entries.filter((item) =>
       query
         ? normalize(item.name + ' ' + item.tags + ' ' + item.anatomy).includes(query)
         : tab === 'components'
-          ? !['base', 'screens'].includes(item.family) &&
-            (family === 'all' || item.family === family)
-          : item.family === tab,
+          ? !['base', 'screens'].includes(item.family) && active.includes(item)
+          : item.family === tab && active.includes(item),
     );
     closeFilter();
-    filter.hidden = tab !== 'components' || !!query;
     root.querySelector<HTMLElement>('.library-navigation')!.hidden = !!query;
     const results = root.querySelector<HTMLElement>('.library-results')!;
     results.hidden = !query;
@@ -229,12 +239,10 @@ export function libraryBrowser(
     (event) => {
       const choice = (event.target as Element).closest<HTMLElement>('[data-library-family]');
       if (!choice) return;
-      family = choice.dataset.libraryFamily!;
+      selectedFilters[tab] = choice.dataset.libraryFamily!;
       filterMenu
         .querySelectorAll('[data-library-family]')
         .forEach((el) => el.setAttribute('aria-checked', String(el === choice)));
-      filter.classList.toggle('is-filtered', family !== 'all');
-      filter.title = `Filtrar: ${choice.textContent}`;
       list();
       filter.focus();
     },

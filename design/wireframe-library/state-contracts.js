@@ -1,4 +1,5 @@
 // Estados por componente: intención y alcance se declaran antes de representarlos.
+import { symbolNames } from './symbols.js';
 export const stateNames = {
   default: 'Base',
   hover: 'Hover',
@@ -982,6 +983,30 @@ for (const id of ['booking-mobile', 'records-workspace', 'support-workspace'])
       'El dato o mensaje se conserva junto con la corrección o reintento.',
     ),
   ]);
+
+define('symbol', [base('Símbolo individual')], Object.entries(symbolNames).map(([id, label]) =>
+  variant(id, label, 'Símbolo vectorial editable de Phosphor.'),
+));
+define('clip', [base('Ventana de contenido')], [
+  variant(
+    'horizontal',
+    'Carrusel recortado',
+    'La siguiente tarjeta asoma dentro de una ventana horizontal.',
+  ),
+  variant('vertical', 'Lista recortada', 'El contenido continúa fuera del límite inferior.'),
+]);
+define('overlay', [base('Capa sobre contenido')], [
+  variant(
+    'scrim',
+    'Fondo atenuado',
+    'Una capa translúcida reduce el énfasis del contenido inferior.',
+  ),
+  variant(
+    'floating',
+    'Panel flotante',
+    'Un panel independiente se superpone a una zona del contenido.',
+  ),
+]);
 
 export function stateContract(id) {
   const def = defs[id] ?? { states: [base('Pieza visual')] };

@@ -390,7 +390,7 @@ export const screenEntries = [
       frame(
         c,
         'Fundamentos de diseño',
-        `<div class="app-course"><main class="app-main">${components['video-player'](clean(c))}${heading('2. Jerarquía y composición', 'Lección 2 de 4 · 12 minutos')}${tabs(['Descripción', 'Mis notas'])}${t('Aprendé a agrupar el contenido y a construir un recorrido visual claro.')}${actions(btn('Anterior', '', 'arrow-left'), btn('Completar y continuar', 'primary', 'arrow-right'))}</main><aside class="app-lessons">${heading('Contenido del curso', '1 de 4 lecciones completadas')}${[
+        `<div class="app-course-navigation">${btn('Anterior', '', 'arrow-left')}${btn('Completar y continuar', 'primary', 'arrow-right')}</div><div class="app-course"><main class="app-main">${components['video-player'](clean(c))}${heading('2. Jerarquía y composición', 'Lección 2 de 4 · 12 minutos')}${tabs(['Descripción', 'Mis notas'])}${t('Aprendé a agrupar el contenido y a construir un recorrido visual claro.')}</main><aside class="app-lessons">${heading('Contenido del curso', '1 de 4 lecciones completadas')}${[
           ['Introducción', '5 min'],
           ['Jerarquía y composición', '12 min'],
           ['Espaciado', '8 min'],
@@ -403,5 +403,87 @@ export const screenEntries = [
           .join('')}</aside></div>`,
       ),
     'video curso aprendizaje lecciones multimedia',
+  ),
+  entry(
+    'mobile-inbox',
+    'Mensajes en móvil',
+    'Cabecera + conversaciones + navegación inferior',
+    (c) =>
+      frame(
+        c,
+        'Mensajes',
+        `<div class="mobile-layout">${actions(heading('Conversaciones', 'Tus mensajes recientes'), act('pencil-simple', false, 'default', false, 'Nuevo mensaje'))}${field('Buscar conversación', 'Buscar por nombre', 'magnifying-glass')}${conversations(c, false)}<nav class="mobile-bottom" data-part="Navegación inferior">${[
+          ['chat-circle', 'Chats'],
+          ['users', 'Contactos'],
+          ['gear-six', 'Ajustes'],
+        ]
+          .map(
+            ([glyph, name], i) =>
+              `<div role="link" ${i === 0 ? 'aria-current="page"' : ''}>${ico(glyph)}${t(name)}</div>`,
+          )
+          .join('')}</nav></div>`,
+      ),
+    'móvil teléfono mensajes chat conversaciones',
+  ),
+  entry(
+    'mobile-catalog',
+    'Tienda en móvil',
+    'Búsqueda + categorías + productos + carrito',
+    (c) =>
+      frame(
+        c,
+        'Estudio / Objetos',
+        `<div class="mobile-layout">${actions(heading('Objetos para tu espacio'), act('shopping-cart', false, 'default', false, 'Carrito'))}${field('Buscar productos', 'Lámparas y accesorios', 'magnifying-glass')}${tabs(['Todo', 'Lámparas', 'Accesorios'])}<div class="mobile-products">${['Lámpara de mesa', 'Organizador', 'Reloj de pared', 'Bandeja'].map((name, i) => `<div class="mobile-product">${media()}<strong>${t(name)}</strong><small>${t('$ ' + [48, 24, 35, 18][i])}</small></div>`).join('')}</div><nav class="mobile-bottom" data-part="Navegación inferior">${[
+          ['house', 'Tienda'],
+          ['heart', 'Guardados'],
+          ['user', 'Cuenta'],
+        ]
+          .map(
+            ([glyph, name], i) =>
+              `<div role="link" ${i === 0 ? 'aria-current="page"' : ''}>${ico(glyph)}${t(name)}</div>`,
+          )
+          .join('')}</nav></div>`,
+      ),
+    'móvil teléfono tienda productos catálogo compra',
+  ),
+  entry(
+    'tablet-workspace',
+    'Cuaderno en tablet',
+    'Cuadernos + documento + herramientas de edición',
+    (c) =>
+      frame(
+        c,
+        'Cuaderno de proyecto',
+        `<div class="tablet-workspace"><nav class="tablet-master" data-part="Lista de documentos">${actions(heading('Notas'), act('plus', false, 'default', false, 'Nueva nota'))}${['Reunión de diseño', 'Referencias', 'Ideas pendientes', 'Próximos pasos'].map((name, i) => `<div class="tablet-document ${i === 0 ? 'is-active' : ''}" role="link" ${i === 0 ? 'aria-current="page"' : ''}>${ico('file')}${t(name)}</div>`).join('')}</nav><main class="tablet-detail"><div class="demo-toolbar" data-part="Herramientas de edición">${act('text-t')}${act('pencil-simple')}${act('image')}${act('paperclip')}<span class="grow"></span>${act('share-network')}</div>${heading('Reunión de diseño', 'Hoy · 10:30')}${section('Decisiones', t('Agrupar las referencias por tema y conservar las preguntas abiertas.'))}${section('Próximos pasos', `${t('Revisar los primeros bocetos con el equipo.')}<div class="demo-row">${mark(true)}${t('Compartir los primeros bocetos')}</div>`)}</main></div>`,
+      ),
+    'tablet cuaderno notas documento escritura',
+  ),
+  entry(
+    'tablet-planner',
+    'Agenda en tablet',
+    'Días + horario + detalle de actividad',
+    (c) =>
+      frame(
+        c,
+        'Agenda del equipo',
+        `<div class="tablet-planning">${actions(heading('Lunes, 9 de noviembre', 'Semana del 9 al 15'), btn('Nueva actividad', 'primary', 'plus'))}${tabs(['Lun 9', 'Mar 10', 'Mié 11', 'Jue 12', 'Vie 13'])}<div class="tablet-schedule"><main class="tablet-hours">${[
+          ['09:00', 'Revisión de bocetos', 'Diseño · 30 min'],
+          ['10:30', 'Planificación', 'Equipo · 1 h'],
+          ['14:00', 'Trabajo de proyecto', 'Bloque reservado · 2 h'],
+        ]
+          .map(
+            ([time, name, detail], i) =>
+              `<div class="tablet-slot"><small>${t(time)}</small><div class="tablet-event ${i === 0 ? 'is-active' : ''}" data-part="Actividad">${heading(name, detail)}</div></div>`,
+          )
+          .join(
+            '',
+          )}</main><aside class="tablet-event-detail">${heading('Revisión de bocetos', '09:00–09:30')}${summary(
+          [
+            ['Lugar', 'Sala de diseño'],
+            ['Participantes', 'Ana, Luis y vos'],
+          ],
+        )}${t('Revisar la navegación y acordar las siguientes pruebas.')}${btn('Editar actividad', '', 'pencil-simple')}</aside></div></div>`,
+      ),
+    'tablet agenda horario planificación calendario',
   ),
 ];

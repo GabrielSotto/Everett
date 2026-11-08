@@ -342,7 +342,11 @@ test('C08-B144: todas las entradas, variantes y estados se eligen sin formulario
         options.locator('input[type=number],.library-preview,.library-insert'),
       ).toHaveCount(0);
       for (const variant of entry.variants) {
-        if (entry.variants.length > 1)
+        if (entry.id === 'symbol') {
+          const symbol = options.getByRole('button', { name: variant.label, exact: true });
+          await symbol.click();
+          await expect(symbol).toHaveAttribute('aria-pressed', 'true');
+        } else if (entry.variants.length > 1)
           await options.locator('[data-variant]').selectOption(variant.id);
         await expect(thumbnail, entry.id + '/' + variant.id).toHaveAttribute('data-ready', 'true');
       }

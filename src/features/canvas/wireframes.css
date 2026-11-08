@@ -945,3 +945,55 @@ body[data-canvas-motion='reduced']
   mask-repeat: no-repeat;
   mask-position: center;
 }
+.library-symbol-browser {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.library-symbol-browser input {
+  min-width: 0;
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: inherit;
+}
+.library-symbol-options {
+  max-height: min(360px, calc(100dvh - 16px));
+}
+.library-symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  align-content: start;
+}
+.library-symbol-grid button {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+}
+.library-symbol-grid button[hidden] {
+  display: none;
+}
+.library-symbol-grid button:is(:hover, [aria-pressed='true']) {
+  background: var(--chip);
+}
+.library-symbol-grid img {
+  width: 22px;
+  height: 22px;
+  filter: invert(1);
+}
+.library-symbol-empty {
+  font-size: 13px;
+  margin: 0;
+}

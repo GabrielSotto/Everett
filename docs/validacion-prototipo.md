@@ -343,3 +343,16 @@ Las correcciones posteriores a 0.8.16 añaden C08-B100–B107: entrar con rueda 
 Los diálogos propios de eliminación se recorren aceptando y cancelando, con foco inicial en Cancelar, Tab retenido en ambos sentidos, Escape, restauración del foco, Undo y límites a 300 px. El fixture registra y acepta mediante botones visibles las eliminaciones que no son objeto del caso; C08-B99/B103 desactivan esa ayuda para comprobar las decisiones. Un diálogo nativo inesperado es un fallo. Cerrar formularios no pide confirmación. Denegar la lectura del portapapeles debe ofrecer un campo propio para pegar mediante Ctrl+V sin solicitar permisos en bucle. Los controles negativos de geometría y saneamiento complementan las acciones visibles.
 
 La revisión de diseño aplica emil-design-eng, review-animations, break-ui y apple-design a los controles, gestos y estados de Canvas. C08-B105 alterna fixtures por la frontera HTTP mediante un selector exclusivo del contexto de pruebas, ausente del HTML distribuido. Comprueba títulos ausentes/extensos, texto multilingüe, direcciones largas, 320/2560 px y texto al 200 %. C08-B106 verifica archivos de proporción 20:1 y 1:20; admite el redondeo subpíxel del navegador sin tolerar deformaciones visibles. C08-B107 comprueba respuesta inmediata a teclado, origen geométrico del desborde, feedback al presionar y comentarios alcanzables al alejar, con resumen contenido en una ventana estrecha y sin tapar su burbuja. Contrastar además las capturas de tarjetas, relaciones, conjuntos, zonas, propuestas, chat, dock y configuración del gate, con atención a jerarquía, legibilidad, foco y continuidad de gestos; la existencia de controles no acredita esas propiedades.
+
+### Regresiones de biblioteca por categoría y dispositivo
+
+C08-U55 verifica cobertura de clasificación sin entradas huérfanas ni filtros vacíos.
+C08-B162 conserva posición del filtro al cambiar de pestaña a 1440/550/320 px, filtros por
+categoría y creación real de las cuatro interfaces táctiles. C08-B163 recorre búsqueda sin
+resultados, teclado, selección, recursos sin red, inserción individual, contraste y recarga.
+C08-B164 protege las recetas de Piezas durante arrastre y permite editar cada parte después de
+Separar; mantener además los recorridos de conjuntos manuales. C08-B165 mide márgenes reales
+de los campos insertados y ubicación de acciones del curso a varios anchos.
+BLF-ANATOMY-15 y BLF-BROWSER-08 comprueban símbolos individuales, contenido contextual de
+interfaces táctiles y uso concreto de recorte y superposición. Evitar buscadores duplicados y
+rótulos heredados de otro contexto. Revisar también las capturas: dimensiones válidas no bastan.

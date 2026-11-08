@@ -28,8 +28,8 @@ test('C08-B160: filtro compacto conserva categoría, selección, teclado y altur
   await expect(panel).toBeVisible();
   await expect(filter).toBeFocused();
   await panel.getByRole('tab', { name: 'Interfaces', exact: true }).click();
-  await expect(filter).toBeHidden();
-  await expect(panel.locator('[data-library-add]')).toHaveCount(20);
+  await expect(panel.getByRole('button', { name: 'Filtrar interfaces' })).toBeVisible();
+  await expect(panel.locator('[data-library-add]')).toHaveCount(24);
   await panel.getByRole('tab', { name: 'Componentes', exact: true }).click();
   await expect(filter).toHaveAttribute('title', 'Filtrar: Controles');
   for (const width of [550, 320]) {

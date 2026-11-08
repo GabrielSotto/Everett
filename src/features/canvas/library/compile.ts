@@ -2,6 +2,7 @@ import { pieceStyleKeys, type SketchPiece } from '../../../domain/sketch-pieces'
 import type { LibraryComposition, LibraryPart } from '../../../domain/sketch-library';
 import { libraryBounds, validLibraryComposition } from '../../../domain/sketch-library';
 import { renderLibrary, type LibraryChoice } from './render';
+import { sketchSymbols } from '../../../domain/sketch-symbols';
 
 const visibleColor = (s: string) => s !== 'transparent' && s !== 'rgba(0, 0, 0, 0)';
 /** Materializar pseudo-elementos permite que el navegador resuelva también su alineación. */
@@ -149,9 +150,10 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
         const symbol = element.dataset.librarySymbol;
         if (!symbol) throw new Error('Símbolo de biblioteca no reconocido.');
         piece.symbol = symbol;
+        if (choice.entry.family === 'base') piece.autoInk = true;
         // Los SVG externos de Phosphor usan tinta negra; no heredan color del img.
         style.color = css.filter.includes('invert(1)') ? '#ffffff' : '#000000';
-        add(paintRect, 'Símbolo · ' + piece.symbol, clipped(paintRect, piece));
+        add(paintRect, 'Símbolo · ' + sketchSymbols[symbol], clipped(paintRect, piece));
         return;
       }
       if (element instanceof SVGSVGElement) {
@@ -258,7 +260,10 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
         parts,
       });
       parts.unshift({
-        ...bounds,
+        x: bounds.x - 12,
+        y: bounds.y - 12,
+        width: bounds.width + 24,
+        height: bounds.height + 24,
         name: 'Fondo · ' + choice.entry.name,
         content: {
           type: 'block',
@@ -268,11 +273,16 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
       });
     }
     const result = {
-      name: choice.entry.name,
+      name:
+        choice.entry.id === 'symbol'
+          ? `Símbolo · ${sketchSymbols[choice.variant]}`
+          : choice.entry.name,
       width: origin.width,
       height: origin.height,
       parts,
-      component: choice.entry.family !== 'base',
+      // Una receta con varias partes es una unidad hasta separarla explícitamente.
+      // Los conjuntos manuales conservan su comportamiento libre de arrastre.
+      component: true,
     };
     if (!validLibraryComposition(result))
       throw new Error('No se pudo preparar esta composición. No se agregó ninguna pieza.');

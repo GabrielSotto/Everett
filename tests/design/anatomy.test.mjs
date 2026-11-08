@@ -91,8 +91,8 @@ test('BLF-ANATOMY-13: los escenarios utilizan controles correspondientes a su ta
   assert.ok(sample('search-results').querySelector('.pagination [aria-current="page"]'));
 });
 
-test('BLF-ANATOMY-14: veinte recorridos diferenciados y navegación lateral en dos presentaciones', () => {
-  assert.equal(entries.filter((item) => item.family === 'screens').length, 20);
+test('BLF-ANATOMY-14: veinticuatro recorridos diferenciados y navegación lateral en dos presentaciones', () => {
+  assert.equal(entries.filter((item) => item.family === 'screens').length, 24);
   const booking = sample('booking-mobile');
   assert.doesNotMatch(booking.textContent, /Proyecto Aurora|Explorar|Perfil/);
   assert.equal(booking.querySelector('.bottom-navigation'), null);
@@ -111,7 +111,7 @@ test('BLF-ANATOMY-14: veinte recorridos diferenciados y navegación lateral en d
     'article-reader': /6 min de lectura.*El punto de partida.*Probar el recorrido/s,
     'team-profile': /Diseño de producto.*Enviar mensaje.*Actividad reciente/s,
     'notification-center': /sin leer.*Marcar todas.*Hoy.*Ayer/s,
-    'video-course': /Jerarquía y composición.*Completar y continuar.*Contenido del curso/s,
+    'video-course': /Completar y continuar.*Jerarquía y composición.*Contenido del curso/s,
   };
   for (const [id, context] of Object.entries(contexts)) {
     const rendered = sample(id);
@@ -406,4 +406,36 @@ test('BLF-ANATOMY-11: todas las variantes de función admiten solo estados combi
   context.diagnostic(
     count + ' combinaciones compatibles de valor, interacción, disponibilidad y contenido',
   );
+});
+
+test('BLF-ANATOMY-15: símbolos individuales, recortes concretos y composiciones táctiles', () => {
+  const icons = entries.find((entry) => entry.id === 'symbol');
+  assert.ok(icons.variants.length > 80);
+  for (const variant of icons.variants) {
+    const view = sample('symbol', 'default', variant.id);
+    assert.equal(view.querySelectorAll('img').length, 1);
+    assert.ok(
+      view
+        .querySelector('img')
+        .getAttribute('src')
+        .endsWith('/' + variant.id + '.svg'),
+    );
+  }
+  for (const type of ['horizontal', 'vertical'])
+    assert.equal(sample('clip', 'default', type).querySelectorAll('.clip-card').length, 3);
+  assert.equal(
+    sample('overlay', 'default', 'scrim').querySelector('.overlay-layer').textContent,
+    '',
+  );
+  assert.match(
+    sample('overlay', 'default', 'floating').querySelector('.overlay-layer').textContent,
+    /Opciones/,
+  );
+  for (const id of ['mobile-inbox', 'mobile-catalog']) {
+    const view = sample(id);
+    assert.equal(view.querySelectorAll('.mobile-bottom [aria-current="page"]').length, 1);
+    assert.equal(view.querySelectorAll('.mobile-bottom [role="link"]').length, 3);
+  }
+  assert.ok(sample('tablet-workspace').querySelector('.tablet-master + .tablet-detail'));
+  assert.ok(sample('tablet-planner').querySelector('.tablet-hours + .tablet-event-detail'));
 });

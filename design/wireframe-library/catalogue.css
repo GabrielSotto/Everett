@@ -1601,15 +1601,40 @@ body:not(.labels) .sample .dark .label:after {
 }
 .clip-example {
   display: flex;
-  gap: 15px;
+  gap: 12px;
   overflow: hidden;
-  width: 160px;
-  height: 75px;
-  border: 1px dashed #a5afba;
-  padding: 10px;
+  width: 100%;
+  height: 120px;
+  border: 1px solid #8997a6;
+  padding: 12px;
+  background: white;
 }
-.clip-example > div {
-  flex-shrink: 0;
+.clip-card {
+  flex: 0 0 128px;
+  display: grid;
+  gap: 8px;
+}
+.clip-card .media-box {
+  min-height: 64px;
+}
+.clip-example.vertical {
+  flex-direction: column;
+}
+.clip-example.vertical .clip-card {
+  flex-basis: 54px;
+  grid-template-columns: 60px minmax(0, 1fr);
+  align-items: center;
+}
+.clip-example.vertical .media-box {
+  min-height: 54px;
+}
+.symbol-example {
+  display: flex;
+  justify-content: center;
+}
+.specimen .symbol-example .icon {
+  width: 32px;
+  height: 32px;
 }
 .mask-example {
   width: 110px;
@@ -1622,15 +1647,27 @@ body:not(.labels) .sample .dark .label:after {
   min-height: 110px;
 }
 .overlay-example {
-  width: 190px;
-  height: 100px;
+  width: 100%;
+  min-height: 160px;
   position: relative;
+  border: 1px solid #8997a6;
+  background: white;
+  padding: 16px;
 }
-.overlay-example > div:last-child {
+.overlay-example .overlay-layer {
   position: absolute;
-  inset: 20px 0 0 45px;
-  background: #71809366;
-  border: 1px solid #9eabba;
+  inset: 0;
+  background: #17202c66;
+}
+.overlay-example.floating .overlay-layer {
+  inset: 40px 12px 12px auto;
+  width: 120px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #8997a6;
 }
 .scroll-example {
   width: 100%;
@@ -3097,6 +3134,17 @@ html.large-text {
   grid-template-columns: minmax(0, 1fr) 180px;
   gap: 28px;
 }
+.app-course-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.app-course-navigation > .wf-btn {
+  min-width: 0;
+  max-width: 100%;
+}
 .app-lessons {
   display: grid;
   align-content: start;
@@ -3203,4 +3251,125 @@ html.large-text {
     margin: 0;
     padding: 0;
   }
+}
+/* Recorridos táctiles: acciones compactas, contenido con aire y regiones identificables. */
+.mobile-layout {
+  display: grid;
+  gap: 24px;
+}
+.mobile-products {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 16px;
+}
+.mobile-product {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+.mobile-product .media-box {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+}
+.mobile-bottom {
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #d8dfe6;
+  padding-top: 16px;
+  gap: 8px;
+}
+.mobile-bottom > div {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: #596675;
+}
+.mobile-bottom > [aria-current] {
+  color: #182532;
+  font-weight: 600;
+}
+.tablet-workspace {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 28px;
+  min-height: 420px;
+}
+.tablet-master {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  border-right: 1px solid #d8dfe6;
+  padding-right: 20px;
+  min-width: 0;
+}
+.tablet-document {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 4px;
+  min-width: 0;
+}
+.tablet-detail {
+  display: grid;
+  align-content: start;
+  gap: 32px;
+  min-width: 0;
+}
+.tablet-planning {
+  display: grid;
+  gap: 24px;
+}
+.tablet-schedule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 28px;
+}
+.tablet-hours {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-width: 0;
+}
+.tablet-slot {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.tablet-event {
+  background: #f1f3f5;
+  padding: 16px;
+  border-radius: 4px;
+}
+.tablet-event-detail {
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  border-left: 1px solid #d8dfe6;
+  padding-left: 20px;
+  min-width: 0;
+}
+@container (max-width: 42rem) {
+  .tablet-workspace {
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 20px;
+  }
+  .tablet-schedule {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tablet-event-detail {
+    border-left: 0;
+    border-top: 1px solid #d8dfe6;
+    padding: 20px 0 0;
+  }
+}
+
+.app-course-navigation > .wf-btn:last-child {
+  margin-left: auto;
 }

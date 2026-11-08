@@ -165,9 +165,8 @@ base(
 base(
   'symbol',
   'Icono y símbolo',
-  'SVG · tamaño · color',
-  () =>
-    `<div class="demo-row">${['user', 'bell', 'folder', 'magnifying-glass', 'gear-six', 'pencil-simple'].map(ico).join('')}</div>`,
+  'Símbolo individual de Phosphor · buscá y elegí otra variante',
+  (c) => `<div class="symbol-example">${ico(c.variant)}</div>`,
 );
 base(
   'check-mark',
@@ -210,9 +209,9 @@ base(
 base(
   'clip',
   'Región recortada',
-  'Estructura · límites de contenido',
-  () =>
-    '<div class="clip-example" data-part="recorte"><div class="primitive-box rounded" data-part="forma"></div><div class="primitive-box circle" data-part="forma"></div></div>',
+  'Ventana que muestra parte de un carrusel o una lista; el contenido continúa fuera del marco',
+  (c) =>
+    `<div class="clip-example ${c.variant}" data-part="Ventana recortada">${Array.from({ length: 3 }, (_, i) => `<div class="clip-card" data-part="Tarjeta ${i + 1}">${media()}${t('Elemento ' + (i + 1))}</div>`).join('')}</div>`,
 );
 base(
   'mask',
@@ -223,9 +222,9 @@ base(
 base(
   'overlay',
   'Capa superpuesta',
-  'Estructura · opacidad · cobertura',
-  () =>
-    '<div class="overlay-example"><div class="primitive-box" data-part="base"></div><div data-part="overlay"></div></div>',
+  'Contenido de fondo y capa independiente; atenuación o panel flotante',
+  (c) =>
+    `<div class="overlay-example ${c.variant}" data-part="Contenido inferior">${paragraph(c)}<div class="overlay-layer" data-part="Capa superpuesta">${c.variant === 'floating' ? `${t('Opciones')}${t('Copiar')}${t('Compartir')}` : ''}</div></div>`,
 );
 base(
   'scroll-region',

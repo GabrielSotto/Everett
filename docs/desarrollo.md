@@ -115,7 +115,9 @@ cambia y qué información debe conservarse. Este gate evalúa la propuesta; la 
 gate de Canvas y sus recorridos reales.
 
 `vendor/sources.json` fija los orígenes y commits de Chalk y Phosphor. Se conservan el CSS de Chalk
-y los SVG de Phosphor junto con sus avisos MIT en `CHALK-LICENSE` y `PHOSPHOR-LICENSE`.
+y los 88 SVG de Phosphor junto con sus avisos MIT en `CHALK-LICENSE` y `PHOSPHOR-LICENSE`.
+`symbols.js` comparte nombres entre catálogo, selector y dominio; los recursos se incorporan al
+cargar la aplicación para permitir búsqueda e inserción sin red. No se añadió otra dependencia.
 
 ## Antecedente: build autónomo
 

@@ -67,7 +67,10 @@ export const compositionRules = {
   },
 };
 export function ruleFor(item) {
-  if (item.id === 'booking-mobile') return compositionRules.mobile;
+  if (['booking-mobile', 'mobile-inbox', 'mobile-catalog'].includes(item.id))
+    return compositionRules.mobile;
+  if (['tablet-workspace', 'tablet-planner'].includes(item.id))
+    return { ...compositionRules.screen, width: 800, minWidth: 600, maxWidth: 1120 };
   if (item.family === 'screens') return compositionRules.screen;
   if (['image', 'video', 'media-card', 'carousel', 'gallery', 'video-player'].includes(item.id))
     return compositionRules.media;

@@ -429,3 +429,46 @@ test('BLF-BROWSER-06: rótulos íntegros durante resize y chats con envío por i
   await capture('chat-app', 'messaging-bars');
   await page.locator('[data-text="labels"]').click();
 });
+
+test('BLF-BROWSER-08: patrones táctiles y piezas estructurales tienen contexto visible', async () => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.locator('[data-family="all"]').click();
+  await page.locator('#state-filter').selectOption('default');
+  await page.locator('#data-filter').selectOption('demo');
+  await page.locator('[data-text="labels"]').click();
+  assert.equal(
+    await card('mobile-inbox').locator('.wf-input').count(),
+    1,
+    'Una única búsqueda de conversaciones',
+  );
+  assert.doesNotMatch(
+    await card('tablet-workspace').locator('.sample').innerText(),
+    /Recordar mi elección/,
+  );
+  for (const id of ['mobile-inbox', 'mobile-catalog', 'tablet-workspace', 'tablet-planner']) {
+    const details = card(id).locator('.composition-review');
+    if (!(await details.evaluate((el) => el.open))) await details.locator('summary').click();
+    const entry = entries.find((item) => item.id === id);
+    await card(id).locator('[data-width]').fill(String(entry.layout.minWidth));
+    await settledGeometry();
+    await capture(id, id + '-minimo');
+    await card(id).locator('[data-width]').fill(String(entry.layout.width));
+  }
+  for (const direction of ['horizontal', 'vertical']) {
+    await variant('clip', direction);
+    const bounds = await card('clip')
+      .locator('.clip-example')
+      .evaluate((el) => ({
+        overflow: getComputedStyle(el).overflow,
+        excess: el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight,
+      }));
+    assert.equal(bounds.overflow, 'hidden');
+    assert.ok(bounds.excess, 'El ejemplo debe mostrar contenido que continúa fuera de la ventana');
+    await capture('clip', 'recorte-' + direction);
+  }
+  for (const type of ['scrim', 'floating']) {
+    await variant('overlay', type);
+    await settledGeometry();
+    await capture('overlay', 'capa-' + type);
+  }
+});
