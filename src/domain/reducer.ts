@@ -14,10 +14,19 @@ import { arrangeProposals } from './proposal-layout';
 import { applyOrganizationCommand } from './commands/organization';
 import { rebaseReferences } from './reference-anchors';
 import { applyCopyCommand } from './commands/copies';
+import { applyComponentCommand } from './commands/components';
+import { reconcileComponentTrees, elementAt } from './component-tree';
 
 export function reduce(state: State, command: Command): State {
   const next = structuredClone(state);
   switch (command.type) {
+    case 'component.edit':
+    case 'composition.save':
+    case 'composition.insert':
+    case 'composition.update':
+    case 'screen-flow.set':
+      applyComponentCommand(next, command);
+      break;
     case 'node.duplicate':
     case 'nodes.duplicate':
     case 'nodes.paste':
@@ -129,7 +138,19 @@ export function reduce(state: State, command: Command): State {
   if ('world' in command) {
     const before = state.worlds.find((w) => w.id === command.world);
     const after = next.worlds.find((w) => w.id === command.world);
-    if (before && after) rebaseReferences(before, after);
+    if (before && after) {
+      reconcileComponentTrees(before, after);
+      if (after.screenFlows)
+        after.screenFlows = after.screenFlows.filter(
+          (f) =>
+            after.canvasGroups?.some(
+              (g) =>
+                g.id === f.from &&
+                (!f.part || (!!g.structure && !!elementAt(g.structure.root, f.part))),
+            ) && after.canvasGroups?.some((g) => g.id === f.to),
+        );
+      rebaseReferences(before, after);
+    }
   }
   if ('world' in command && affectsView(command) !== 'none') {
     const world = next.worlds.find((candidate) => candidate.id === command.world);

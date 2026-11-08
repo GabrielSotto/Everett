@@ -66,6 +66,7 @@ await withTestRun(root, 'unitarias', async ({ runId, directory: destination }) =
         'scripts/verify-unit.mjs',
         'package.json',
         'package-lock.json',
+        'bun.lock',
         'tsconfig.json',
       ]),
     ].sort()) {

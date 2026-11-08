@@ -52,6 +52,7 @@ import { alignmentTargets } from '../../domain/alignment-targets';
 import { layoutFrames } from '../../domain/layout-guides';
 import { paintLayoutGuides } from './layout-guides';
 import { resizedComponent } from '../../domain/component-resize';
+import { componentElements, elementMaterials } from '../../domain/component-tree';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 type Drag =
@@ -178,6 +179,11 @@ export class CanvasView implements View {
       this.abort.signal,
       () => this.camPoint(),
       () => this.paintMaterialIdentifications(),
+      () => {
+        if (!this.drag && !this.ctx.ui.canvas.linkStart) return false;
+        this.cancel();
+        return true;
+      },
     );
     root.addEventListener(
       'contextmenu',
@@ -637,7 +643,8 @@ export class CanvasView implements View {
   }
   private select(kind: 'node' | 'zone' | 'link' | null, id: string | null, additive = false): void {
     const ui = this.ctx.ui.canvas;
-    const members = kind === 'node' && id ? componentSelection(this.ctx.world(), [id]) : [];
+    const members =
+      kind === 'node' && id ? componentSelection(this.ctx.world(), [id], ui.componentEditing) : [];
     ui.selections =
       kind === 'node' && id
         ? additive
@@ -655,6 +662,13 @@ export class CanvasView implements View {
     this.ctx.ui.canvas.zoneSelection = kind === 'zone' ? id : null;
     this.ctx.ui.canvas.linkSelection = kind === 'link' ? id : null;
     const data = this.ctx.world().nodes.find((n) => n.id === id)?.data;
+    const editing = ui.componentEditing;
+    if (editing && kind === 'node' && id) {
+      const tree = this.ctx.world().canvasGroups?.find((g) => g.id === editing.group)?.structure;
+      const scope = tree && componentElements(tree.root).find((e) => e.id === editing.element);
+      const child = scope?.children.find((e) => elementMaterials(e).includes(id));
+      if (child) editing.selected = child.id;
+    }
     if (data?.kind === 'drawing' || data?.kind === 'shape') {
       ui.color = data.color;
       ui.thickness = data.thickness ?? 1;
@@ -695,7 +709,7 @@ export class CanvasView implements View {
       ui = this.ctx.ui;
     if (
       target.closest(
-        '[data-action=group-rename],[data-action=group-ungroup],[data-action=link-preview-retry],[data-action=link-open]',
+        '[data-action=group-rename],[data-action=group-ungroup],[data-action=component-edit],[data-action=link-preview-retry],[data-action=link-open]',
       )
     )
       return;
@@ -966,6 +980,7 @@ export class CanvasView implements View {
       const selected = componentSelection(
         this.ctx.world(),
         materialsInRect(this.ctx.world().nodes, rect),
+        this.ctx.ui.canvas.componentEditing,
       );
       const ui = this.ctx.ui.canvas;
       ui.selections = [...new Set([...(d.additive ? d.before : []), ...selected])];
@@ -1033,12 +1048,13 @@ export class CanvasView implements View {
           sy = d.rect.height / d.origin.height;
         const minimum = Math.max(...members.flatMap((n) => [4 / n.width, 4 / n.height]));
         const scale = Math.max(minimum, Math.abs(sx - 1) >= Math.abs(sy - 1) ? sx : sy);
-        d.rect = {
-          x: d.corner.includes('w') ? fixed.x - d.origin.width * scale : fixed.x,
-          y: d.corner.includes('n') ? fixed.y - d.origin.height * scale : fixed.y,
-          width: d.origin.width * scale,
-          height: d.origin.height * scale,
-        };
+        if (!group.structure)
+          d.rect = {
+            x: d.corner.includes('w') ? fixed.x - d.origin.width * scale : fixed.x,
+            y: d.corner.includes('n') ? fixed.y - d.origin.height * scale : fixed.y,
+            width: d.origin.width * scale,
+            height: d.origin.height * scale,
+          };
         const nodes = resizedComponent(world, group, d.rect);
         for (const node of nodes) {
           const el = this.root.querySelector<HTMLElement>(`[data-node="${CSS.escape(node.id)}"]`);
@@ -1112,7 +1128,7 @@ export class CanvasView implements View {
             selectionBounds(moving),
             (shell.canvasAlignmentGuides
               ? d.kind === 'node'
-                ? alignmentTargets(this.ctx.world(), selected)
+                ? alignmentTargets(this.ctx.world(), selected, this.ctx.ui.canvas.componentEditing)
                 : items
               : []
             ).filter(
@@ -1388,10 +1404,11 @@ export class CanvasView implements View {
                 y: item.point.y + d.point.y - d.origin.y,
               },
             }));
-            const join = groupDropTarget(w, positions);
+            const join = this.ctx.ui.canvas.componentEditing ? null : groupDropTarget(w, positions);
             const detached = positions
               .filter((item) => {
                 const group = w.canvasGroups?.find((g) => g.nodes.includes(item.id));
+                if (group?.component) return false;
                 if (!group || group.nodes.every((id) => positions.some((p) => p.id === id)))
                   return false;
                 if (join) return true;
@@ -1840,7 +1857,10 @@ export class CanvasView implements View {
     const markup = (world.canvasGroups ?? [])
       .map((group) => {
         const allMoving = group.nodes.every((id) => preview.some((p) => p.id === id));
-        const bounds = groupBounds(world, group, allMoving ? nodes : []);
+        const bounds =
+          this.drag?.kind === 'resize' && this.drag.entity === 'group' && this.drag.id === group.id
+            ? this.drag.rect
+            : groupBounds(world, group, allMoving ? nodes : []);
         const zoom = this.cam.current.z;
         // El marco conserva coordenadas del Mundo. Solo la identificación cambia
         // de densidad; el zoom nunca desplaza ni ensancha el conjunto.
@@ -1848,7 +1868,16 @@ export class CanvasView implements View {
           bounds.width * zoom >= 240 ? 'full' : bounds.width * zoom >= 64 ? 'compact' : 'hidden';
         const headingSide = groupHeadingSide({ ...world, nodes }, group);
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div ${isComponent(world, group) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button><small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${selected && isComponent(world, group) && this.ctx.ui.canvas.tool === 'select' ? resizeHandles('group', group.id) : ''}${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
+        return `<div ${isComponent(world, group) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button>${
+          isComponent(world, group)
+            ? `<button type="button" data-action="component-edit" data-id="${group.id}" aria-label="Editar componente ${html(group.name)}">Editar</button>`
+            : group.nodes.every((id) => {
+                  const n = world.nodes.find((n) => n.id === id);
+                  return n?.data.kind === 'wireframe' && !!n.data.content.piece;
+                })
+              ? `<button type="button" data-action="component-edit" data-id="${group.id}">Crear componente</button>`
+              : ''
+        }<small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${selected && isComponent(world, group) && this.ctx.ui.canvas.tool === 'select' ? resizeHandles('group', group.id) : ''}${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
       })
       .join('');
     if (markup !== this.groupMarkup || !layer.childElementCount) {
@@ -2048,6 +2077,7 @@ export class CanvasView implements View {
     }
   }
   private paintSelection(keepLinks = false): void {
+    this.interactions.components.render();
     const w = this.ctx.world(),
       ui = this.ctx.ui,
       connect = ui.canvas.tool === 'connect' || !!ui.canvas.linkSelection;
@@ -2075,10 +2105,17 @@ export class CanvasView implements View {
       if (!node) return;
       const selected = ui.canvas.selections.includes(node.id);
       element.classList.toggle('selected', selected);
-      element.classList.toggle('component-part', !!componentFor(w, node.id));
+      const component = componentFor(w, node.id);
+      const editing = component?.id === ui.canvas.componentEditing?.group;
+      element.classList.toggle('component-part', !!component && !editing);
       element.classList.toggle('primary-selection', node.id === ui.canvas.selection);
       const handles = element.querySelectorAll('.resize-handle');
-      if (selected && ui.canvas.tool === 'select' && !connect && !componentFor(w, node.id)) {
+      if (
+        selected &&
+        ui.canvas.tool === 'select' &&
+        !connect &&
+        (!component || (editing && ui.canvas.selections.length === 1))
+      ) {
         if (!handles.length)
           element.insertAdjacentHTML('beforeend', resizeHandles('node', node.id));
       } else handles.forEach((handle) => handle.remove());

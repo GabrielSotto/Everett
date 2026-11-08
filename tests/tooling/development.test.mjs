@@ -34,6 +34,7 @@ test(
         'index.html',
         'package.json',
         'package-lock.json',
+        'bun.lock',
         'tsconfig.json',
         'vite.config.mjs',
       ])

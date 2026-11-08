@@ -15,6 +15,7 @@ import { validWireframe } from './wireframes';
 import { validLinkPreview, linkUrl } from './link-previews';
 import { isComponent } from './manual-groups';
 import { validLayoutGuides } from './layout-guides';
+import { validComponentTree, componentElements, type ComponentElement } from './component-tree';
 
 export const canvasClipboardMime = 'application/x-everett-canvas';
 const record = (v: unknown): v is Record<string, unknown> =>
@@ -159,6 +160,7 @@ export function parseCanvasClipboard(text: string): CanvasClipboard {
         (g.layoutGuides === undefined || validLayoutGuides(g.layoutGuides)) &&
         (g.component === undefined || typeof g.component === 'boolean') &&
         Array.isArray(g.nodes) &&
+        (g.structure === undefined || validComponentTree(g.structure, g.nodes)) &&
         g.nodes.length > 0 &&
         g.nodes.every((id) => {
           if (typeof id !== 'string' || !ids.has(id) || grouped.has(id)) return false;
@@ -260,6 +262,13 @@ export function captureCanvasCopies(
         name: group.name,
         nodes: [...group.nodes],
         component: isComponent(world, group),
+        ...(group.structure
+          ? {
+              structure: structuredClone(group.structure) as NonNullable<
+                import('./model').CanvasGroup['structure']
+              >,
+            }
+          : {}),
         ...(group.layoutGuides ? { layoutGuides: structuredClone(group.layoutGuides) } : {}),
       })),
   };
@@ -288,12 +297,20 @@ export function insertCanvasCopies(
   }
   for (const link of copied.links)
     world.links.push({ ...link, id: uid(), from: map.get(link.from)!, to: map.get(link.to)! });
-  for (const group of copied.groups)
+  for (const group of copied.groups) {
+    delete group.recipe;
+    if (group.structure) {
+      group.structure.origin.x += offset.x;
+      group.structure.origin.y += offset.y;
+      for (const element of componentElements(group.structure.root))
+        if (element.material) (element as ComponentElement).material = map.get(element.material)!;
+    }
     (world.canvasGroups ??= []).push({
       ...group,
       id: uid(),
       name: group.name + ' — copia',
       nodes: group.nodes.map((id) => map.get(id)!),
     });
+  }
   return [...map.values()];
 }

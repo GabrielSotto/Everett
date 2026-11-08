@@ -1,5 +1,6 @@
 import type { CanvasGroup, Material, Rect, WorldSnapshot, Point } from './model';
 import type { DeepReadonly } from './readonly';
+import { componentElements, elementMaterials } from './component-tree';
 
 /** Compatibilidad con las composiciones de biblioteca guardadas antes de marcar su tipo. */
 export function isComponent(
@@ -28,10 +29,26 @@ export function componentFor(
 ): DeepReadonly<CanvasGroup> | undefined {
   return world.canvasGroups?.find((g) => g.nodes.includes(id) && isComponent(world, g));
 }
-export function componentSelection(world: WorldSnapshot, ids: readonly string[]): string[] {
-  return [...new Set(ids.flatMap((id) => componentFor(world, id)?.nodes ?? [id]))].filter((id) =>
-    world.nodes.some((n) => n.id === id && !n.owner),
-  );
+export function componentSelection(
+  world: WorldSnapshot,
+  ids: readonly string[],
+  editing?: { group: string; element: string },
+): string[] {
+  return [
+    ...new Set(
+      ids.flatMap((id) => {
+        const group = componentFor(world, id);
+        if (group && editing?.group === group.id) {
+          const scope =
+            group.structure &&
+            componentElements(group.structure.root).find((e) => e.id === editing.element);
+          const child = scope?.children.find((e) => elementMaterials(e).includes(id));
+          return child ? elementMaterials(child) : [id];
+        }
+        return group?.nodes ?? [id];
+      }),
+    ),
+  ].filter((id) => world.nodes.some((n) => n.id === id && !n.owner));
 }
 
 export function groupBounds(
@@ -39,6 +56,17 @@ export function groupBounds(
   group: DeepReadonly<CanvasGroup>,
   preview: readonly Material[] = [],
 ): Rect {
+  if (group.structure) {
+    const { origin, root } = group.structure;
+    const moved = preview.find((n) => group.nodes.includes(n.id)),
+      old = moved && world.nodes.find((n) => n.id === moved.id);
+    return {
+      x: origin.x + root.x + (moved && old ? moved.x - old.x : 0),
+      y: origin.y + root.y + (moved && old ? moved.y - old.y : 0),
+      width: root.width,
+      height: root.height,
+    };
+  }
   const nodes = group.nodes.flatMap((id) => {
     const node = preview.find((n) => n.id === id) ?? world.nodes.find((n) => n.id === id);
     if (!node) return [];

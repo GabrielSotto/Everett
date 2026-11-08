@@ -1,5 +1,11 @@
 import type { CanvasGroup, Material, Point, Rect } from './model';
 import { validWireframe, type WireframeContent } from './wireframes';
+import {
+  validComponentTree,
+  treeFromMaterials,
+  componentElements,
+  type ComponentTree,
+} from './component-tree';
 
 export interface LibraryPart {
   x: number;
@@ -15,6 +21,7 @@ export interface LibraryComposition {
   height: number;
   parts: LibraryPart[];
   component?: boolean;
+  structure?: ComponentTree;
 }
 export function validLibraryComposition(value: LibraryComposition): boolean {
   return (
@@ -27,6 +34,11 @@ export function validLibraryComposition(value: LibraryComposition): boolean {
     Array.isArray(value.parts) &&
     value.parts.length > 0 &&
     value.parts.length <= 2000 &&
+    (value.structure === undefined ||
+      validComponentTree(
+        value.structure,
+        value.parts.map((_, i) => String(i)),
+      )) &&
     value.parts.every(
       (p) =>
         p &&
@@ -46,6 +58,7 @@ export function validLibraryComposition(value: LibraryComposition): boolean {
 }
 /** El espacio reservado por el catálogo no forma parte del material insertado. */
 export function libraryBounds(composition: LibraryComposition): Rect {
+  if (composition.structure) return { ...composition.structure.root };
   const x = Math.min(...composition.parts.map((p) => p.x));
   const y = Math.min(...composition.parts.map((p) => p.y));
   return {
@@ -61,6 +74,7 @@ export function instantiateLibrary(
   composition: LibraryComposition,
   id: string,
   center: Point,
+  forceGroup = false,
 ): { nodes: Material[]; group?: CanvasGroup } {
   const bounds = libraryBounds(composition);
   const nodes = composition.parts.map((p, index): Material => ({
@@ -72,15 +86,29 @@ export function instantiateLibrary(
     owner: null,
     data: { kind: 'wireframe', title: p.name, content: structuredClone(p.content) },
   }));
+  const structure = composition.structure
+    ? structuredClone(composition.structure)
+    : treeFromMaterials(nodes, composition.name);
+  if (composition.structure) {
+    for (const element of componentElements(structure.root))
+      if (element.material !== undefined)
+        (element as import('./component-tree').ComponentElement).material =
+          nodes[Number(element.material)]!.id;
+    structure.origin = {
+      x: center.x - bounds.width / 2 - bounds.x,
+      y: center.y - bounds.height / 2 - bounds.y,
+    };
+  }
   return {
     nodes,
-    ...(nodes.length > 1
+    ...(nodes.length > 1 || forceGroup
       ? {
           group: {
             id: `${id}-group`,
             name: composition.name,
             nodes: nodes.map((n) => n.id),
             component: composition.component ?? true,
+            structure,
           },
         }
       : {}),

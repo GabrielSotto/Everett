@@ -14,8 +14,8 @@
 | `Everett-0.7.5.html`                              | Original conservado como base verificable.                                                                                                                 |
 | `entregas/<versión>/`                             | Entrega aprobada: ZIP con fuentes y evidencias, HTML y verificación de integridad.                                                                         |
 | `output/`                                         | Resultados de trabajo reemplazables, según la política indicada abajo.                                                                                     |
-| `dist/`                                           | HTML construido y manifiesto del build actual; se regeneran con `npm run build`.                                                                           |
-| `node_modules/`                                   | Dependencias instaladas por npm; se regeneran con `npm ci`.                                                                                                |
+| `dist/`                                           | HTML construido y manifiesto del build actual; se regeneran con `bun run build`.                                                                           |
+| `node_modules/`                                   | Dependencias instaladas por Bun; se regeneran con `bun install --frozen-lockfile`.                                                                         |
 
 `src/`, `tests/`, `scripts/`, la documentación y la configuración se versionan en Git. `entregas/`, `output/`, `dist/` y `node_modules/` son archivos locales excluidos de Git. Las entregas deben copiarse a un respaldo si se necesita conservarlas fuera de esta computadora.
 
@@ -30,10 +30,10 @@
 
 ## Entorno
 
-Usar Node.js 24.19 o posterior de la rama 24 y npm con el `package-lock.json` del repositorio. PowerShell 7 (`pwsh`) ejecuta el empaquetador y sus controles negativos dentro de las pruebas de herramientas. Instalar las dependencias fijadas con:
+Usar Node.js 24.19 o posterior de la rama 24 y Bun 1.3.14 con el `bun.lock` del repositorio. PowerShell 7 (`pwsh`) ejecuta el empaquetador y sus controles negativos dentro de las pruebas de herramientas. Instalar las dependencias fijadas con:
 
 ```powershell
-npm ci
+bun install --frozen-lockfile
 ```
 
 Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, comprobación de código no utilizado y tipos de importación explícitos. Los scripts de construcción y evidencia utilizan módulos de Node.
@@ -42,24 +42,36 @@ Las fuentes TypeScript de aplicación y pruebas se comprueban con `strict`, `noU
 
 | Comando                       | Resultado                                                                                                           |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                 | Vite en `http://127.0.0.1:4173/`, con HMR de estilos y recarga automática del código.                               |
-| `npm run typecheck`           | Comprueba los tipos sin generar archivos.                                                                           |
-| `npm run format:check`        | Comprueba el formato de fuentes, configuración y documentación.                                                     |
-| `npm run format`              | Aplica el formato del proyecto.                                                                                     |
-| `npm run test:unit`           | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                                  |
-| `npm run test:design`         | Comprueba el catálogo de bosquejos: semántica de estados, variantes, composición, recursos y controles de revisión. |
-| `npm run test:design:browser` | Recorre el catálogo servido por Vite, comprueba geometría, recursos y controles y guarda capturas para revisión.    |
-| `npm run verify:unit`         | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión.      |
-| `npm run build`               | Herramienta histórica de HTML autónomo; fuera del flujo cotidiano de Vite.                                          |
-| `npm run verify:build`        | Comprueba una salida histórica de HTML autónomo, cuando se utiliza ese formato.                                     |
-| `npm run test:browser`        | Ejecuta Playwright sobre las fuentes servidas por Vite; usa 4173 o `EVERETT_TEST_URL`.                              |
-| `npm run verify:browser`      | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.                 |
+| `bun run dev`                 | Vite en `http://127.0.0.1:4173/`, con HMR de estilos y recarga automática del código.                               |
+| `bun run typecheck`           | Comprueba los tipos sin generar archivos.                                                                           |
+| `bun run format:check`        | Comprueba el formato de fuentes, configuración y documentación.                                                     |
+| `bun run format`              | Aplica el formato del proyecto.                                                                                     |
+| `bun run test:unit`           | Ejecuta pruebas de dominio, servicios, navegación y controles negativos del arnés.                                  |
+| `bun run test:design`         | Comprueba el catálogo de bosquejos: semántica de estados, variantes, composición, recursos y controles de revisión. |
+| `bun run test:design:browser` | Recorre el catálogo servido por Vite, comprueba geometría, recursos y controles y guarda capturas para revisión.    |
+| `bun run verify:unit`         | Contrasta una ejecución concreta con su salida TAP, los tests descubiertos, las fuentes actuales y la versión.      |
+| `bun run build`               | Herramienta histórica de HTML autónomo; fuera del flujo cotidiano de Vite.                                          |
+| `bun run verify:build`        | Comprueba una salida histórica de HTML autónomo, cuando se utiliza ese formato.                                     |
+| `bun run test:browser`        | Ejecuta Playwright sobre las fuentes servidas por Vite; usa 4173 o `EVERETT_TEST_URL`.                              |
+| `bun run verify:browser`      | Comprueba la vigencia del HTML, las fuentes del arnés, todos los casos descubiertos y sus adjuntos.                 |
 
-`npm run recover` corresponde a la extracción inicial del HTML original. Rechaza sobrescribir archivos existentes y comprueba primero el hash de la base. El desarrollo cotidiano utiliza las fuentes mantenidas en `src/`.
+`bun run recover` corresponde a la extracción inicial del HTML original. Rechaza sobrescribir archivos existentes y comprueba primero el hash de la base. El desarrollo cotidiano utiliza las fuentes mantenidas en `src/`.
 
 ## Desarrollo continuo
 
-El trabajo cotidiano usa `npm run dev`. Vite 8.3.5 sirve los módulos TypeScript y CSS de
+La instalación utiliza Bun y `bun.lock`; `package-lock.json` se conserva sincronizado como
+metadato de compatibilidad para los verificadores históricos. No ejecutar npm para este flujo.
+Los scripts invocan Node 24 para conservar el entorno comprobado del arnés.
+
+La distribución interna usa `yoga-layout` 3.2.1 ([Yoga](https://www.yogalayout.dev/docs/about-yoga),
+[licencia MIT](https://github.com/facebook/yoga/blob/v3.2.1/LICENSE)). Aporta cálculo mantenido de
+filas, columnas y tamaños intrínsecos; evita implementar un motor Flexbox propio. No introduce
+React ni controla el DOM. Su módulo WASM se prepara una vez antes de recuperar el documento;
+un fallo de carga se informa sin sobrescribir el guardado. Cada cálculo libera sus nodos en
+`finally`. El costo es el módulo WASM y el mantenimiento de su versión fijada; contenido,
+identidades, reglas de validación y migración permanecen en Everett.
+
+El trabajo cotidiano usa `bun run dev`. Vite 8.3.5 sirve los módulos TypeScript y CSS de
 `src/` directamente, observa sus cambios y gestiona HMR. Los estilos se sustituyen sin recargar
 la página; los cambios de código recargan automáticamente la aplicación DOM nativa y recuperan
 el guardado local. No se conserva el historial de Undo en memoria a través de una recarga de
@@ -110,11 +122,11 @@ anteriores y permite modificar texto, símbolos y apariencia de las piezas nueva
 del desarrollo incluye `design/wireframe-library/`, ahora necesario para la aplicación; Vite
 sirve CSS e iconos locales sin servicios externos ni nuevas dependencias.
 
-`npm run test:design` ejecuta `tests/design/`: regresiones semánticas, todas las combinaciones
+`bun run test:design` ejecuta `tests/design/`: regresiones semánticas, todas las combinaciones
 admitidas de variantes/estados/datos, recursos, vacíos y acciones de la interfaz del catálogo.
 Sus contraejemplos retiran cabeceras y fechas, pierden valores seleccionados, duplican indicadores
 y activan todas las herramientas para comprobar que esas alteraciones fallen.
-Con Vite activo, `npm run test:design:browser` ejecuta `tests/design/browser.spec.mjs` en un contexto
+Con Vite activo, `bun run test:design:browser` ejecuta `tests/design/browser.spec.mjs` en un contexto
 aislado. Usa el catálogo de 4173; `EVERETT_DESIGN_URL` admite otro puerto local con la misma ruta.
 Contrasta estilos calculados, carga de imágenes y geometría a 320 px con texto al 200 %, datos
 extensos, estados, variantes y límites de tamaño por muestra. Recorre anchos intermedios y puntos
@@ -164,9 +176,9 @@ Los verificadores usan la última ejecución por defecto; también aceptan su ru
 
 ## Pruebas de navegador
 
-Antes de ejecutar por primera vez, instalar Chromium para la versión fijada de Playwright mediante `npx playwright install chromium`, si el entorno no lo tiene disponible.
+Antes de ejecutar por primera vez, instalar Chromium para la versión fijada de Playwright mediante `bun x playwright install chromium`, si el entorno no lo tiene disponible.
 
-Arrancar Vite con `npm run dev` y ejecutar `npm run test:browser` en otra terminal. No requiere
+Arrancar Vite con `bun run dev` y ejecutar `bun run test:browser` en otra terminal. No requiere
 construir `dist/`. `EVERETT_TEST_URL` permite indicar otro servidor Vite para pruebas aisladas.
 
 El runner guarda `target.json` con versión e identidad SHA-256 de todas las fuentes y recursos
@@ -176,7 +188,7 @@ recorrido; cambiar fuentes durante las pruebas invalida su evidencia. No confund
 fuentes con el hash de un HTML. `verify:browser` vuelve a calcular la identidad y funciona con
 el servidor detenido.
 
-En una segunda terminal de PowerShell, definir `$env:EVERETT_TEST_URL = 'http://127.0.0.1:4173/'` con el puerto utilizado y ejecutar `npm run test:browser`.
+En una segunda terminal de PowerShell, definir `$env:EVERETT_TEST_URL = 'http://127.0.0.1:4173/'` con el puerto utilizado y ejecutar `bun run test:browser`.
 
 La salida se guarda en `output/pruebas/navegador/<fecha UTC>/`: resultados JSON, informe del
 runner, trazas, capturas y videos de fallos. Los casos leen el diagnóstico para contrastar
@@ -191,7 +203,7 @@ fuentes, cambios en el arnés y adjuntos ausentes o vacíos. HARNESS-DEV y HARNE
 comprueban que no se acepte evidencia cruzada ni se pierdan casos de aplicación.
 
 C08-B13 y C08-B90 verifican exclusivamente abrir el antiguo HTML como archivo y llevan
-`@standalone`. Se conservan en el gate histórico `npm run test:artifact`, que requiere ese
+`@standalone`. Se conservan en el gate histórico `bun run test:artifact`, que requiere ese
 HTML construido y su servidor, y no se cuentan como aprobados en el gate de fuentes.
 El resto de recorridos, incluido el servicio HTTP y parser real de C08-B91, se ejecutan contra
 Vite sin depender de `dist/`. DEV-01 prueba en una copia temporal cambios reales de CSS y código,
@@ -292,7 +304,7 @@ El fixture comprueba las entradas obligatorias de cada caso al terminar sus acci
 
 ## Servicio local de previews
 
-La excepción aprobada para 0.8.15 añade POST /api/link-preview al mismo servidor de preview, ligado únicamente a 127.0.0.1. Se ejecuta con `node scripts/preview.mjs 4173`; requiere `npm ci` y el build vigente. Valida Origin y Host locales, limita solicitudes, cachea seis horas y combina descargas concurrentes del mismo destino. link-preview-js extrae metadatos; Undici descarga con DNS público fijado y valida cada redirección; ipaddr.js clasifica direcciones e image-size limita portadas raster. Las versiones quedan fijadas en el lockfile. No recibe cookies ni credenciales del navegador ni ejecuta scripts del destino. Los archivos y las ilustraciones se descargan por el servicio y se conservan como Blobs locales.
+La excepción aprobada para 0.8.15 añade POST /api/link-preview al mismo servidor de preview, ligado únicamente a 127.0.0.1. Se ejecuta con `node scripts/preview.mjs 4173`; requiere `bun install --frozen-lockfile` y el build vigente. Valida Origin y Host locales, limita solicitudes, cachea seis horas y combina descargas concurrentes del mismo destino. link-preview-js extrae metadatos; Undici descarga con DNS público fijado y valida cada redirección; ipaddr.js clasifica direcciones e image-size limita portadas raster. Las versiones quedan fijadas en el lockfile. No recibe cookies ni credenciales del navegador ni ejecuta scripts del destino. Los archivos y las ilustraciones se descargan por el servicio y se conservan como Blobs locales.
 
 La ampliación 0.8.16 reutiliza `@mozilla/readability` 0.6.0 (Apache-2.0) para seleccionar contenido, `jsdom` 30.1.3 (MIT) para analizar el documento sin ejecutar scripts ni cargar recursos y `dompurify` 3.4.17 (Apache-2.0, opción elegida de su licencia dual con MPL-2.0) para sanearlo en servidor y navegador. `get-video-id` 4.2.0 (MIT) reconoce IDs de YouTube/Vimeo, restringidos además por una lista de hosts; `file-type` 22.2.0 (MIT) identifica archivos por sus bytes. Estas bibliotecas evitan escribir parsers propios; añaden análisis DOM en el servicio y saneamiento al bundle.
 

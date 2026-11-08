@@ -14,6 +14,7 @@ import { compositionKinds, wireframeComposition } from '../wireframe-composition
 import { instantiateLibrary, validLibraryComposition } from '../sketch-library';
 import { isComponent } from '../manual-groups';
 import { resizedComponent } from '../component-resize';
+import { applyComponentCommand } from './components';
 
 type CanvasCommand = Extract<
   Command,
@@ -469,6 +470,15 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         'Componente inexistente',
       );
       ensure(isComponent(world, group), 'GROUP', 'Elegí un componente');
+      if (group.structure) {
+        applyComponentCommand(state, {
+          type: 'component.edit',
+          world: command.world,
+          id: command.id,
+          edit: { kind: 'resize', rect: command.rect, scale: false },
+        });
+        break;
+      }
       const nodes = resizedComponent(world, group, command.rect);
       ensure(
         nodes.every(

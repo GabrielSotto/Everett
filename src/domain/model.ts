@@ -67,6 +67,8 @@ export interface CanvasGroup {
   nodes: string[];
   /** Las partes de un componente se manipulan juntas hasta desagruparlo. */
   component?: boolean;
+  structure?: import('./component-tree').ComponentTree;
+  recipe?: { id: string; revision: number };
   layoutGuides?: import('./layout-guides').LayoutGuides;
 }
 export interface ReferenceAnchor {
@@ -295,6 +297,8 @@ export interface World extends Point {
   agents: Agent[];
   nodes: Material[];
   canvasGroups?: CanvasGroup[];
+  compositions?: import('./component-recipes').SavedComposition[];
+  screenFlows?: import('./component-recipes').ScreenFlow[];
   referenceAnchors?: ReferenceAnchor[];
   referenceTargets?: Record<string, Reference>;
   links: Link[];

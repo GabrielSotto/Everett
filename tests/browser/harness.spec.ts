@@ -2,6 +2,43 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { test, expect } from './fixtures';
 import { enterWorld, openSurface } from './interaction-helpers';
+import { snapshot } from './canvas-utility-helpers';
+
+test('UI-HARNESS-06: leer el estado espera la inicialización y conserva el dato real al publicarse', async ({
+  page,
+}) => {
+  const before = await snapshot(page);
+  // Controlar la frontera de disponibilidad sin fabricar un estado del producto.
+  await page.evaluate(() => {
+    const debug = window.EverettDebug!;
+    window.__everettReady = false;
+    delete window.EverettDebug;
+    window.addEventListener(
+      'everett-test-publish-ready',
+      () => {
+        window.EverettDebug = debug;
+        window.__everettReady = true;
+      },
+      { once: true },
+    );
+  });
+  let settled = false;
+  const reading = snapshot(page).then(
+    (value) => ({ value }),
+    (error: unknown) => ({ error }),
+  );
+  void reading.then(() => (settled = true));
+  try {
+    // La ida y vuelta se procesa después de la primera lectura intentada.
+    expect(await page.evaluate(() => window.__everettReady)).toBe(false);
+    expect(settled, 'No debe resolver ni fallar antes de que Everett esté disponible').toBe(false);
+  } finally {
+    await page.evaluate(() => window.dispatchEvent(new Event('everett-test-publish-ready')));
+  }
+  const result = await reading;
+  if ('error' in result) throw result.error;
+  expect(result.value.state).toEqual(before.state);
+});
 
 test('UI-HARNESS-01: el comparador visual detecta la desaparición deliberada de controles', async ({
   page,

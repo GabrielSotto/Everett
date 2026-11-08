@@ -22,7 +22,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ### Ampliación acordada el 8 de noviembre — composición y retículas
 
-En implementación: [wireframes de baja y media fidelidad](docs/alcance-prototipo.md#composición-y-wireframes-de-baja-y-media-fidelidad).
+Implementados los bloques acordados de [wireframes de baja y media fidelidad](docs/alcance-prototipo.md#composición-y-wireframes-de-baja-y-media-fidelidad), pendientes de revisión del usuario.
 El primer bloque incorpora retículas por marco/componente desde Vista: columnas, filas,
 cantidad, márgenes y separación; Shift+G configurable para mostrarlas, ajuste independiente
 de la visibilidad, historial y copias. El cálculo conserva coordenadas del Mundo durante zoom
@@ -34,17 +34,46 @@ frente a `(1,250)`, alineación distante intencional y suspensión con Ctrl/Meta
 50 componentes/4.000 piezas detectó búsquedas repetidas; el cálculo usa un índice compartido
 y el arnés limita los accesos al documento, sin depender de la velocidad de la máquina.
 
-Siguen pendientes la edición dentro de componentes, jerarquía, distribución interna,
-reutilización y recorridos entre pantallas. Alta fidelidad permanece fuera. Concretar modelo
-y migración antes de reemplazar la materialización plana; no inferir agrupaciones perdidas
-ni modificar las composiciones guardadas por su aspecto. La [evaluación ampliada](docs/validacion-prototipo.md#evaluación-de-la-ampliación-de-composición)
-debe comprobar esos recorridos completos; las pruebas de retículas no acreditan toda la expansión.
-Primer bloque verificado: [127 pruebas unitarias](output/pruebas/unitarias/2026-11-08_14-41-34-676Z/result.json)
-y [246 recorridos de navegador](output/pruebas/navegador/2026-11-08_14-43-23-763Z/results.json),
-sin fallos, omisiones ni reintentos. Incluye 30 ciclos sostenidos durante 548.191 ms, tipado,
-formato y revisión visual de retículas, referencia elegida, panel a 320 px y texto al 200 %.
-Los verificadores confirman fuentes y arnés vigentes; [identidad de desarrollo](output/pruebas/navegador/2026-11-08_14-43-23-763Z/target.json)
-SHA-256 `24860b24ee35e29ac85a85371e89d8848f6ad2d2a72e1e7739ea5c699048385e`.
+La edición interna conserva pantalla, contenedores y piezas. Editar, Enter y doble clic permiten
+recorrer niveles sin desagrupar; Escape cancela primero un gesto activo. Se pueden agrupar
+partes, reordenarlas, incorporar piezas sueltas, sustituir contenido y anidar componentes.
+El inspector recupera un nivel válido después de borrar o deshacer y respeta el teclado de los
+controles. El modelo conserva identidad, historial, conexiones y guardado.
+
+La distribución usa Yoga 3.2.1 (MIT) para filas/columnas, espacios, márgenes interiores y tamaños
+fijos, ajustados al contenido o que rellenan su contenedor. Redimensionar conserva la tipografía;
+Escala proporcional es otra acción. La revisión visual encontró dígitos de calendario recortados
+por el redondeo de cajas a píxeles enteros: se conserva la precisión del Mundo y C08-U71/C08-B182
+comprueban dimensiones fraccionarias y tinta completa después de redistribuir.
+
+Reutilizar guarda composiciones en el Mundo. Mis composiciones inserta copias independientes
+por defecto; el vínculo y la aplicación de revisiones son explícitos. Recorrido conecta una
+pantalla o una parte con otra pantalla y permite consultarlas, volver y recuperar cámara y
+selección. Los controles dibujados continúan siendo estáticos.
+
+Las nuevas inserciones del catálogo conservan su jerarquía y las reglas de fila/columna que
+pueden traducirse. Los diseños libres conservan posiciones; no se genera un diseño responsive
+por breakpoint. Las composiciones antiguas adquieren una raíz plana al entrar en edición,
+conservando sus piezas y aspecto, sin inferir agrupaciones perdidas. Alta fidelidad sigue fuera.
+
+La [evaluación ampliada](docs/validacion-prototipo.md#evaluación-de-la-ampliación-de-composición)
+añade C08-U62–U71 y C08-B174–B186: creación desde piezas, edición de seis familias de interfaces,
+contenido largo, jerarquía, distribución, independencia, actualizaciones manuales, consulta,
+Undo/Redo, recarga, teclado, 320 px y texto al 200 %. Tipado, formato y 137 pruebas unitarias
+aprobados; ejecución `2026-11-08_17-54-29-316Z`. El gate completo de navegador
+`2026-11-08_17-54-58-993Z` aprobó los 260 casos, sin omisiones ni reintentos, incluida la sesión
+sostenida de 9,3 minutos. Ambos verificadores confirman evidencia vigente. Identidad de fuentes:
+`34752082554e35783dade6b0e62aad8d2f8b957b826cf949765ccae7995dd234`.
+Se revisaron las capturas de edición, distribución, reutilización, consulta y las seis interfaces,
+incluidos el inspector estrecho y el texto al 200 %. La consulta aísla la pantalla activa y restaura
+la selección y cámara al salir.
+
+El primer gate detectó dos lecturas del arnés antes de terminar la inicialización asíncrona.
+La lectura compartida ahora espera disponibilidad real; UI-HARNESS-06 reproduce la frontera,
+falló antes de corregirla y pasó después. Otro caso recibió `net::ERR_NO_BUFFER_SPACE` de Chromium
+al recargar; no se atribuye a una restricción del contenido ni a una causa de memoria no demostrada.
+Pasó al comprobarlo por separado y en el gate completo con dos trabajadores. Los fallos anteriores
+no se contaron como aprobados ni se relajaron las aserciones de contenido y geometría.
 Vite continúa en 4173. 0.8 permanece abierta, sin integrar en `dev`.
 
 ### Revisión del 1 de noviembre — biblioteca por rediseñar

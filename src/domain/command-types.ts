@@ -25,6 +25,23 @@ import type { NoteFont } from './note-fonts';
 
 export type Command =
   | {
+      type: 'component.edit';
+      world: string;
+      id: string;
+      edit: import('./commands/components').ComponentEdit;
+    }
+  | { type: 'composition.save'; world: string; id: string; name: string; replace?: string }
+  | { type: 'composition.insert'; world: string; id: string; center: Point; linked: boolean }
+  | { type: 'composition.update'; world: string; id: string }
+  | {
+      type: 'screen-flow.set';
+      world: string;
+      from: string;
+      to: string | null;
+      part?: string;
+      label: string;
+    }
+  | {
       type: 'layout-guides.set';
       world: string;
       target: import('./layout-guides').LayoutTarget;

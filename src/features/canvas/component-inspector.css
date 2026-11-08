@@ -1,0 +1,237 @@
+.component-inspector {
+  position: fixed;
+  top: 82px;
+  right: 12px;
+  z-index: 90;
+  width: min(284px, calc(100vw - 24px));
+  max-height: calc(100dvh - 168px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  scrollbar-width: thin;
+  font-variant-numeric: tabular-nums;
+}
+.component-inspector[hidden] {
+  display: none;
+}
+.component-inspector header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.component-inspector header strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.component-inspector .icon-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.component-inspector nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.component-inspector nav button {
+  max-width: 150px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 4px;
+}
+.component-inspector button {
+  font-size: inherit;
+  border-radius: 6px;
+  min-height: 28px;
+}
+.component-inspector button:hover:not(:disabled) {
+  background: var(--hover);
+}
+.component-inspector button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.component-inspector button:focus-visible,
+.component-inspector input:focus-visible,
+.component-inspector select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.component-children {
+  max-height: 160px;
+  overflow: auto;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.component-children button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 6px;
+  text-align: left;
+}
+.component-children button span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.component-children button[aria-pressed='true'] {
+  background: var(--hover);
+}
+.component-children svg {
+  flex-shrink: 0;
+}
+.component-properties {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+}
+.component-inspector label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.component-inspector input,
+.component-inspector select {
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 6px;
+  font-size: inherit;
+  color: var(--text);
+  background: var(--hover);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.component-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.component-row > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.component-row > .icon-button {
+  width: 28px;
+  flex: 0 0 28px;
+}
+.component-inspector details > button {
+  padding: 6px 8px;
+  text-align: left;
+  background: var(--hover);
+}
+.component-inspector summary {
+  font-weight: 600;
+}
+.component-inspector input:disabled,
+.component-inspector select:disabled {
+  opacity: 0.5;
+}
+.consulting-flow .component-inspector {
+  max-height: calc(100dvh - 110px);
+}
+@media (max-width: 699px) {
+  .consulting-flow .component-inspector {
+    top: auto;
+    bottom: 12px;
+    max-height: 180px;
+  }
+}
+.component-sizes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.component-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.component-inspector .component-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.component-check input {
+  width: 14px;
+  min-height: 14px;
+  margin: 0;
+}
+.component-inspector details {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.component-inspector summary {
+  cursor: pointer;
+  padding: 3px 0;
+}
+.component-inspector details[open] {
+  display: grid;
+  gap: 10px;
+}
+.component-inspector p {
+  line-height: 1.5;
+  margin: 8px 0;
+}
+.consulting-flow .resize-handle,
+.consulting-flow .canvas-plane > :not(.flow-screen-part),
+.consulting-flow #canvas-zone-labels,
+.consulting-flow #selection-actions,
+.consulting-flow #canvas-chat-host,
+.consulting-flow .chat-launch,
+.consulting-flow .group-heading,
+.consulting-flow .material-identification,
+.consulting-flow .canvas-tools {
+  visibility: hidden;
+}
+.consulting-flow .material.selected {
+  outline: none;
+}
+.saved-compositions {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.saved-compositions summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.saved-compositions-list {
+  max-height: 160px;
+  overflow: auto;
+  display: grid;
+  gap: 4px;
+}
+.saved-compositions-list button {
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 6px;
+}
+.saved-compositions label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+  font-size: 12px;
+}

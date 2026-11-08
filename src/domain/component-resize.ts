@@ -1,13 +1,29 @@
 import type { CanvasGroup, Material, Rect, WorldSnapshot } from './model';
 import type { DeepReadonly } from './readonly';
 import { groupBounds } from './manual-groups';
+import { layoutComponent } from './component-layout';
+import { elementRect, componentElements } from './component-tree';
 
 /** Escalar la composición mantiene las proporciones y la tipografía de sus piezas. */
 export function resizedComponent(
   world: WorldSnapshot,
   group: DeepReadonly<CanvasGroup>,
   rect: Rect,
+  scaleStructure = false,
 ): Material[] {
+  if (group.structure && !scaleStructure) {
+    const tree = structuredClone(group.structure) as NonNullable<CanvasGroup['structure']>;
+    tree.root.width = rect.width;
+    tree.root.height = rect.height;
+    tree.root.widthMode = tree.root.heightMode = 'fixed';
+    tree.origin = { x: rect.x - tree.root.x, y: rect.y - tree.root.y };
+    layoutComponent(tree.root);
+    const elements = componentElements(tree.root);
+    return group.nodes.map((id) => ({
+      ...structuredClone(world.nodes.find((n) => n.id === id)!),
+      ...elementRect(tree, elements.find((e) => e.material === id)!.id)!,
+    })) as Material[];
+  }
   const bounds = groupBounds(world, group);
   const sx = rect.width / bounds.width,
     sy = rect.height / bounds.height;

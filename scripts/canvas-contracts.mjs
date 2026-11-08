@@ -1,5 +1,26 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  ...[
+    'C08-U62',
+    'C08-U63',
+    'C08-U64',
+    'C08-U65',
+    'C08-U66',
+    'C08-U67',
+    'C08-U68',
+    'C08-U69',
+    'C08-U70',
+    'C08-U71',
+  ].map((id) => ({
+    id,
+    layer: 'unit',
+    contracts: ['C08-COMPONENT-01', 'C08-COMPONENT-02', 'C08-COMPONENT-03'],
+  })),
+  ...Array.from({ length: 13 }, (_, i) => `C08-B${174 + i}`).map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-COMPONENT-01', 'C08-COMPONENT-02', 'C08-COMPONENT-03'],
+  })),
   ...['C08-U57', 'C08-U58', 'C08-U59', 'C08-U60', 'C08-U61'].map((id) => ({
     id,
     layer: 'unit',

@@ -13,6 +13,7 @@ import { icon } from './icons';
 import { libraryBrowser, defaultLibraryChoice } from './sketch-library-browser';
 import { libraryOptions } from './sketch-library-options';
 import { bindLibraryDrag, type LibraryDrop } from './sketch-library-drag';
+import { html } from './dom';
 
 let dismissLibrary: (() => void) | undefined;
 export function sketchLibraryOpen(): boolean {
@@ -131,6 +132,47 @@ export function openSketchLibrary(ctx: Context, parentSignal: AbortSignal): void
     }
   };
   const browserRoot = panel.querySelector<HTMLElement>('.library-browser')!;
+  const saved = ctx.world().compositions ?? [];
+  if (saved.length) {
+    const section = document.createElement('details');
+    section.className = 'saved-compositions';
+    section.innerHTML = `<summary>Mis composiciones (${saved.length})</summary><label><input type="checkbox" data-linked>Permitir actualizaciones manuales</label><div class="saved-compositions-list">${saved.map((s) => `<button type="button" data-saved="${html(s.id)}" title="${html(s.name)}">${html(s.name)}</button>`).join('')}</div>`;
+    browserRoot.after(section);
+    section.addEventListener(
+      'click',
+      (event) => {
+        const id = (event.target as Element).closest<HTMLElement>('[data-saved]')?.dataset.saved;
+        if (!id) return;
+        const viewport = document.querySelector('#viewport')!.getBoundingClientRect(),
+          center = toWorld(
+            { x: viewport.x + viewport.width / 2, y: viewport.y + viewport.height / 2 },
+            ctx.currentCamera(),
+            viewport,
+          );
+        if (
+          ctx.act(
+            {
+              type: 'composition.insert',
+              world: worldId,
+              id,
+              center,
+              linked: section.querySelector<HTMLInputElement>('[data-linked]')!.checked,
+            },
+            'insertar composición guardada',
+            'C08-COMPONENT-02',
+          )
+        ) {
+          close();
+          const group = ctx.world().canvasGroups!.at(-1)!;
+          ctx.ui.canvas.selections = [...group.nodes];
+          ctx.ui.canvas.selection = group.nodes[0] ?? null;
+          ctx.render();
+          frameCanvas(ctx, true, { maximumZoom: 1 });
+        }
+      },
+      { signal },
+    );
+  }
   const search = panel.querySelector<HTMLInputElement>('input[type=search]')!;
   const searchToggle = panel.querySelector<HTMLButtonElement>('[data-action=library-search]')!;
   let searching = false;

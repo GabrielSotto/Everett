@@ -108,6 +108,18 @@ function indexedLayoutFrame(
     const members = group.nodes.flatMap((id) => nodes.get(id) ?? []);
     if (!members.length || members.length !== group.nodes.length || members.some((n) => n.owner))
       return null;
+    if (group.structure) {
+      const { origin, root } = group.structure;
+      return {
+        x: origin.x + root.x,
+        y: origin.y + root.y,
+        width: root.width,
+        height: root.height,
+        target,
+        members: group.nodes,
+        guides: group.layoutGuides ?? {},
+      };
+    }
     const x = Math.min(...members.map((n) => n.x)),
       y = Math.min(...members.map((n) => n.y));
     return {

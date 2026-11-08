@@ -3,7 +3,11 @@ import { expect } from './fixtures';
 import { enterWorld, openSurface } from './interaction-helpers';
 import { storedFixture } from './canvas-fixtures';
 
-export const snapshot = (page: Page) => page.evaluate(() => window.EverettDebug!.snapshot());
+export const snapshot = async (page: Page) => {
+  // La carga del documento puede terminar antes de preparar el motor de distribución.
+  await expect.poll(() => page.evaluate(() => window.__everettReady === true)).toBe(true);
+  return page.evaluate(() => window.EverettDebug!.snapshot());
+};
 export const world = async (page: Page) =>
   (await snapshot(page)).state.worlds.find((item) => item.id === 'scout')!;
 

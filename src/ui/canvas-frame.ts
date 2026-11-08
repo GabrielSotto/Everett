@@ -5,7 +5,7 @@ import { canvasCameraTuning } from '../spatial/tuning';
 export function frameCanvas(
   ctx: Context,
   selection: boolean,
-  options: { maximumZoom?: number } = {},
+  options: { maximumZoom?: number; rightInset?: number; bottomInset?: number } = {},
 ): void {
   const world = ctx.world(),
     ids = ctx.ui.canvas.selections;
@@ -20,15 +20,21 @@ export function frameCanvas(
     maxY = Math.max(...items.map((n) => n.y + n.height));
   const left =
     document.querySelector('.canvas-chat.docked:not(.compact)')?.getBoundingClientRect().right ?? 0;
+  const right = options.rightInset ?? 0,
+    bottom = options.bottomInset ?? 0;
   const z = Math.max(
     canvasCameraTuning.minimumZoom,
     Math.min(
       options.maximumZoom ?? (selection ? canvasCameraTuning.maximumZoom : 1),
-      (innerWidth - left - 96) / Math.max(1, maxX - minX),
-      (innerHeight - 219) / Math.max(1, maxY - minY),
+      (innerWidth - left - right - 96) / Math.max(1, maxX - minX),
+      (innerHeight - 219 - bottom) / Math.max(1, maxY - minY),
     ),
   );
-  const camera = { x: left / 2 - ((minX + maxX) / 2) * z, y: -28 - ((minY + maxY) / 2) * z, z };
+  const camera = {
+    x: (left - right) / 2 - ((minX + maxX) / 2) * z,
+    y: -28 - bottom / 2 - ((minY + maxY) / 2) * z,
+    z,
+  };
   ctx.camera?.set(camera, true);
   ctx.act({ type: 'camera', camera }, 'encuadrar Canvas', 'C08-ZOOM-01');
 }

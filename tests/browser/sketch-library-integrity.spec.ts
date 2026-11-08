@@ -63,6 +63,8 @@ test('C08-B151: tocar, mover, escalar, copiar y borrar un componente conserva su
   );
   await part.dblclick();
   await expect(page.locator('.wireframe-editor')).toHaveCount(0);
+  await expect(page.locator('.component-inspector')).toBeVisible();
+  await page.getByRole('button', { name: 'Terminar edición', exact: true }).click();
   const box = (await part.boundingBox())!;
   await moveMaterial(page, text.id, box.x + box.width / 2 + 80, box.y + box.height / 2 + 60);
   let moved = await world(page);
@@ -80,17 +82,33 @@ test('C08-B151: tocar, mover, escalar, copiar y borrar un componente conserva su
   });
   await page.mouse.up();
   const scaled = await world(page);
-  expect(scaled.nodes.find((n) => n.id === text.id)!.width).toBeGreaterThan(text.width);
-  const scale = scaled.nodes[0]!.width / moved.nodes[0]!.width;
-  for (const node of moved.nodes)
-    expect(scaled.nodes.find((n) => n.id === node.id)!.width / node.width).toBeCloseTo(scale, 4);
+  // Redimensionar el marco conserva el contenido; escalarlo es una acción separada.
+  expect(scaled.canvasGroups![0]!.structure!.root.width).toBeGreaterThan(
+    moved.canvasGroups![0]!.structure!.root.width,
+  );
+  expect(scaled.nodes.find((n) => n.id === text.id)!.data).toEqual(
+    moved.nodes.find((n) => n.id === text.id)!.data,
+  );
   await handle.focus();
   await page.keyboard.press('Shift+ArrowRight');
   const keyboardScaled = await world(page);
-  expect(keyboardScaled.nodes[0]!.width).toBeGreaterThan(scaled.nodes[0]!.width);
+  expect(keyboardScaled.canvasGroups![0]!.structure!.root.width).toBeGreaterThan(
+    scaled.canvasGroups![0]!.structure!.root.width,
+  );
   await expect(handle).toBeFocused();
   await page.keyboard.press('Control+z');
   expect((await world(page)).nodes).toEqual(scaled.nodes);
+  await page.locator('[data-action=component-edit]').click();
+  const inspector = page.locator('.component-inspector');
+  await inspector.getByText('Escala proporcional', { exact: true }).click();
+  await inspector.getByLabel('Porcentaje', { exact: true }).fill('150');
+  await inspector.getByRole('button', { name: 'Escalar composición' }).click();
+  const proportional = await world(page);
+  expect(
+    proportional.nodes.find((n) => n.id === text.id)!.width /
+      scaled.nodes.find((n) => n.id === text.id)!.width,
+  ).toBeCloseTo(1.5, 3);
+  await inspector.getByRole('button', { name: 'Terminar edición' }).click();
   await part.click();
   await page.keyboard.press('Control+d');
   expect((await world(page)).nodes).toHaveLength(created.length * 2);

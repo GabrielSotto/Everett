@@ -87,10 +87,10 @@ test('C08-U51: componentes conservan unidad, escala, copia y separación explíc
     null,
   );
   act({
-    type: 'group.resize',
+    type: 'component.edit',
     world: 'project',
     id: group.id,
-    rect: { ...bounds, width: 240, height: 72 },
+    edit: { kind: 'resize', scale: true, rect: { ...bounds, width: 240, height: 72 } },
   });
   let text = project(store).nodes.find((n) => n.id === 'button-1')!;
   assert.equal(text.width, 160);

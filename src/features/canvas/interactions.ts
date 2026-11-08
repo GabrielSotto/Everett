@@ -39,6 +39,7 @@ import { materialText } from '../../domain/material-content';
 import { publishLocalMaterial } from './local-publish';
 import { bindWireframeEditor, wireframeEditorMarkup } from './wireframe-editor';
 import { componentFor, componentSelection, isComponent } from '../../domain/manual-groups';
+import { ComponentInspector } from './component-inspector';
 
 function clipboardOrigin(plain: string, uriList = '', markup = ''): string | undefined {
   const address = uriList.split(/\r?\n/).find((line) => line.trim() && !line.startsWith('#'));
@@ -54,6 +55,7 @@ function clipboardOrigin(plain: string, uriList = '', markup = ''): string | und
 
 /** Interacciones contextuales; los gestos y la cámara permanecen en CanvasView. */
 export class CanvasInteractions {
+  readonly components: ComponentInspector;
   private overlay: HTMLElement;
   private hoverTimer: ReturnType<typeof setTimeout> | null = null;
   private urls = new Map<string, Promise<string>>();
@@ -72,7 +74,15 @@ export class CanvasInteractions {
     signal: AbortSignal,
     private center: () => Point,
     private identify: () => void,
+    cancelGesture: () => boolean,
   ) {
+    this.components = new ComponentInspector(root, ctx, signal, cancelGesture);
+    root.addEventListener(
+      'component-edit-content',
+      (e) => this.editWireframe((e as CustomEvent<string>).detail),
+      { signal },
+    );
+    root.addEventListener('component-close-overlay', () => this.close(), { signal });
     this.overlay = document.createElement('div');
     this.overlay.className = 'canvas-context-layer';
     root.append(this.overlay);
@@ -217,6 +227,7 @@ export class CanvasInteractions {
           ctx.world().nodes.find((node) => node.id === nodeId)?.data.kind === 'wireframe'
         ) {
           event.preventDefault();
+          if (this.components.enterAt(nodeId)) return;
           this.editWireframe(nodeId);
           return;
         }
@@ -553,7 +564,11 @@ export class CanvasInteractions {
             publishLocalMaterial(this.root, ctx, id, this.previewAbort.signal);
             break;
           case 'context-remove': {
-            const removed = componentFor(ctx.world(), id)?.nodes ?? [id];
+            const component = componentFor(ctx.world(), id);
+            const removed =
+              component?.id === ctx.ui.canvas.componentEditing?.group
+                ? [...ctx.ui.canvas.selections]
+                : (component?.nodes ?? [id]);
             confirmRemoval(
               this.root,
               removed.length > 1
@@ -1114,6 +1129,7 @@ export class CanvasInteractions {
     this.ctx.ui.canvas.selections = componentSelection(
       this.ctx.world(),
       this.ctx.ui.canvas.selections,
+      this.ctx.ui.canvas.componentEditing,
     );
     this.ctx.ui.canvas.zoneSelection = null;
     this.ctx.ui.canvas.linkSelection = null;
@@ -1129,8 +1145,8 @@ export class CanvasInteractions {
         arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1
           ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>'
           : '';
-    if (component) {
-      this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del componente" style="${this.position(point)}"><button role="menuitem" data-action="group-rename" data-id="${component.id}">Renombrar componente</button><button role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button><button role="menuitem" data-action="group-ungroup" data-id="${component.id}">Desagrupar componente</button><button role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangement}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button role="menuitem" data-action="context-remove" data-id="${id}">Eliminar componente</button></div>`;
+    if (component && component.id !== this.ctx.ui.canvas.componentEditing?.group) {
+      this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del componente" style="${this.position(point)}"><button role="menuitem" data-action="component-edit" data-id="${component.id}">Editar componente</button><button role="menuitem" data-action="group-rename" data-id="${component.id}">Renombrar componente</button><button role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button><button role="menuitem" data-action="group-ungroup" data-id="${component.id}">Desagrupar componente</button><button role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangement}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button role="menuitem" data-action="context-remove" data-id="${id}">Eliminar componente</button></div>`;
       this.fitOverlay();
       this.overlay.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
       return;
@@ -1478,8 +1494,11 @@ export class CanvasInteractions {
     return id;
   }
   private editWireframe(id: string): void {
-    if (componentFor(this.ctx.world(), id)) {
-      this.ctx.notice('Desagrupá el componente para editar sus piezas por separado.');
+    if (
+      componentFor(this.ctx.world(), id)?.id !== this.ctx.ui.canvas.componentEditing?.group &&
+      componentFor(this.ctx.world(), id)
+    ) {
+      this.components.open(id);
       return;
     }
     const node = this.ctx.world().nodes.find((node) => node.id === id);

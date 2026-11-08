@@ -16,6 +16,8 @@ type CanvasSnapshot = Required<
     | 'files'
     | 'agents'
     | 'canvasGroups'
+    | 'compositions'
+    | 'screenFlows'
     | 'referenceAnchors'
   >
 >;
@@ -30,6 +32,11 @@ interface Timeline {
   future: Entry[];
 }
 const reversible = new Set<Command['type']>([
+  'component.edit',
+  'composition.save',
+  'composition.insert',
+  'composition.update',
+  'screen-flow.set',
   'group.create',
   'group.remove',
   'group.rename',
@@ -81,6 +88,8 @@ function capture(w: World): CanvasSnapshot {
     files: w.files,
     agents: w.agents,
     canvasGroups: w.canvasGroups ?? [],
+    compositions: w.compositions ?? [],
+    screenFlows: w.screenFlows ?? [],
     referenceAnchors: w.referenceAnchors ?? [],
   });
 }

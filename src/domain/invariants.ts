@@ -5,6 +5,8 @@ import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
 import { validNoteFont, validFontWeight } from './note-fonts';
 import { validLayoutGuides } from './layout-guides';
+import { validComponentTree, elementAt } from './component-tree';
+import { validLibraryComposition } from './sketch-library';
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -75,6 +77,11 @@ export function validate(s: State): void {
       );
     for (const group of w.canvasGroups ?? []) {
       ensure(
+        group.structure === undefined || validComponentTree(group.structure, group.nodes),
+        'COMPONENT_STRUCTURE',
+        'Jerarquía de componente inválida.',
+      );
+      ensure(
         group.component === undefined || typeof group.component === 'boolean',
         'GROUP',
         'Tipo de conjunto inválido',
@@ -88,6 +95,67 @@ export function validate(s: State): void {
         );
         grouped.add(id);
       }
+    }
+    ensure(
+      (w.compositions === undefined || Array.isArray(w.compositions)) &&
+        (w.screenFlows === undefined || Array.isArray(w.screenFlows)),
+      'COMPOSITION',
+      'Biblioteca o recorridos inválidos.',
+    );
+    const savedIds = new Set<string>();
+    for (const saved of w.compositions ?? []) {
+      ensure(
+        !!saved &&
+          typeof saved.id === 'string' &&
+          !!saved.id &&
+          !savedIds.has(saved.id) &&
+          typeof saved.name === 'string' &&
+          saved.name.trim().length > 0 &&
+          saved.name.length <= 200 &&
+          Number.isInteger(saved.revision) &&
+          saved.revision > 0 &&
+          validLibraryComposition(saved.composition),
+        'COMPOSITION',
+        'Composición guardada inválida.',
+      );
+      savedIds.add(saved.id);
+    }
+    for (const group of w.canvasGroups ?? [])
+      ensure(
+        !group.recipe ||
+          (savedIds.has(group.recipe.id) &&
+            Number.isInteger(group.recipe.revision) &&
+            group.recipe.revision > 0),
+        'COMPOSITION',
+        'Vínculo de composición inválido.',
+      );
+    const flowIds = new Set<string>(),
+      sources = new Set<string>();
+    for (const flow of w.screenFlows ?? []) {
+      ensure(
+        !!flow &&
+          typeof flow.id === 'string' &&
+          !!flow.id &&
+          !flowIds.has(flow.id) &&
+          !sources.has(JSON.stringify([flow.from, flow.part])) &&
+          typeof flow.label === 'string' &&
+          !!flow.label.trim() &&
+          flow.label.length <= 100 &&
+          flow.from !== flow.to &&
+          !!w.canvasGroups?.some(
+            (g) =>
+              g.id === flow.from &&
+              (flow.part === undefined ||
+                (typeof flow.part === 'string' &&
+                  !!g.structure &&
+                  !!elementAt(g.structure.root, flow.part))),
+          ) &&
+          !!w.canvasGroups?.some((g) => g.id === flow.to),
+        'FLOW_TARGET',
+        'Recorrido sin pantalla disponible.',
+      );
+      flowIds.add(flow.id);
+      sources.add(JSON.stringify([flow.from, flow.part]));
     }
     for (const anchor of w.referenceAnchors ?? []) {
       const source =

@@ -56,7 +56,8 @@ desplazada, palabra partida y chat fuera de contexto deben fallar. Conservar la 
 
 #### Evaluación de la ampliación de composición
 
-Plan requerido para la ampliación de baja/media fidelidad del 8 de noviembre; aún no ejecutado.
+Evaluación requerida para la ampliación de baja/media fidelidad del 8 de noviembre.
+La ejecución vigente y sus límites se registran en Tareas.
 Un único formulario no demuestra suficiencia. Componer desde piezas y componentes, además de
 editar interfaces prearmadas; evaluar al menos estas familias de trabajo:
 

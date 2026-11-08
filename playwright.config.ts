@@ -42,6 +42,7 @@ const sourceHashes = [
   'scripts/run-process.mjs',
   'package.json',
   'package-lock.json',
+  'bun.lock',
 ]
   .sort()
   .map((path) => ({ path, sha256: createHash('sha256').update(readFileSync(path)).digest('hex') }));

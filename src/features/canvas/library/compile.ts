@@ -3,6 +3,13 @@ import type { LibraryComposition, LibraryPart } from '../../../domain/sketch-lib
 import { libraryBounds, validLibraryComposition } from '../../../domain/sketch-library';
 import { renderLibrary, type LibraryChoice } from './render';
 import { sketchSymbols } from '../../../domain/sketch-symbols';
+import { captureStructureLayout } from './structure-layout';
+import {
+  freeLayout,
+  componentElements,
+  type ComponentElement,
+  type ComponentTree,
+} from '../../../domain/component-tree';
 
 const visibleColor = (s: string) => s !== 'transparent' && s !== 'rgba(0, 0, 0, 0)';
 /** Materializar pseudo-elementos permite que el navegador resuelva también su alineación. */
@@ -62,6 +69,10 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
     expandIndicators(root);
     const origin = root.getBoundingClientRect();
     const parts: LibraryPart[] = [];
+    let current: ComponentElement | undefined;
+    const roots: ComponentElement[] = [];
+    let elementSequence = 0;
+    const frameStyles = new Map<string, CSSStyleDeclaration>();
     const add = (
       rect: DOMRect,
       name: string,
@@ -72,6 +83,19 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
       if (rect.width <= 0 || rect.height <= 0) return;
       const width = Math.max(4, rect.width),
         height = Math.max(4, rect.height);
+      current?.children.push({
+        id: `element-${++elementSequence}`,
+        name: name.slice(0, 200) || 'Pieza',
+        material: String(parts.length),
+        x: rect.x - origin.x - current.x,
+        y: rect.y - origin.y - current.y,
+        width,
+        height,
+        widthMode: 'fixed',
+        heightMode: 'fixed',
+        layout: freeLayout(),
+        children: [],
+      });
       parts.push({
         x: rect.x - origin.x,
         y: rect.y - origin.y,
@@ -92,6 +116,7 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
       inheritedOpacity: number,
       inheritedRotation = 0,
       clip?: DOMRect,
+      parent?: ComponentElement,
     ) => {
       const css = getComputedStyle(element),
         rect = element.getBoundingClientRect();
@@ -146,6 +171,26 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
           rect.top >= clip.bottom)
       )
         return;
+      const frame: ComponentElement = {
+        id: `element-${++elementSequence}`,
+        name: (
+          element.getAttribute('aria-label') ||
+          element.getAttribute('data-part') ||
+          element.classList[0]?.replaceAll('-', ' ') ||
+          'Contenedor'
+        ).slice(0, 200),
+        x: rect.x - origin.x,
+        y: rect.y - origin.y,
+        width: Math.max(4, rect.width),
+        height: Math.max(4, rect.height),
+        widthMode: 'fixed',
+        heightMode: 'fixed',
+        layout: freeLayout(),
+        children: [],
+      };
+      (parent?.children ?? roots).push(frame);
+      frameStyles.set(frame.id, css);
+      current = frame;
       if (element instanceof HTMLImageElement) {
         const symbol = element.dataset.librarySymbol;
         if (!symbol) throw new Error('Símbolo de biblioteca no reconocido.');
@@ -180,7 +225,10 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
         ) ||
         css.boxShadow !== 'none' ||
         css.outlineStyle !== 'none';
-      if (painted) add(paintRect, partName, clipped(paintRect, piece));
+      if (painted) {
+        add(paintRect, partName, clipped(paintRect, piece));
+        if (!rotation && frame.children[0]) frame.children[0].background = true;
+      }
       for (const child of element.childNodes) {
         if (child instanceof Element) {
           const clips = ['hidden', 'auto', 'scroll', 'clip'];
@@ -195,7 +243,8 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
                     Math.max(rect.top, clip?.top ?? rect.top),
                 )
               : clip;
-          walk(child, opacity, rotation, childClip);
+          walk(child, opacity, rotation, childClip, frame);
+          current = frame;
         } else if (child instanceof Text && child.textContent?.trim()) {
           const range = document.createRange();
           range.selectNodeContents(child);
@@ -271,7 +320,58 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
           piece: { style: { backgroundColor: '#ffffff', borderRadius: '6px' } },
         },
       });
+      for (const root of roots)
+        for (const e of componentElements(root))
+          if (e.material !== undefined)
+            (e as ComponentElement).material = String(Number(e.material) + 1);
+      roots[0]?.children.unshift({
+        id: `element-${++elementSequence}`,
+        name: 'Fondo',
+        material: '0',
+        background: true,
+        x: bounds.x - 12 - (roots[0]?.x ?? 0),
+        y: bounds.y - 12 - (roots[0]?.y ?? 0),
+        width: bounds.width + 24,
+        height: bounds.height + 24,
+        widthMode: 'fixed',
+        heightMode: 'fixed',
+        layout: freeLayout(),
+        children: [],
+      });
     }
+    // Los contenedores conservan sus cajas originales; las hojas ya son locales.
+    const localize = (e: ComponentElement, px = 0, py = 0) => {
+      const x = e.x,
+        y = e.y;
+      e.children = e.children.filter((c) => c.material !== undefined || elementMaterialsPresent(c));
+      e.children.filter((c) => c.material === undefined).forEach((c) => localize(c, x, y));
+      e.x -= px;
+      e.y -= py;
+    };
+    const elementMaterialsPresent = (e: ComponentElement): boolean =>
+      e.material !== undefined || e.children.some(elementMaterialsPresent);
+    roots.forEach((r) => localize(r));
+    const bounds = libraryBounds({
+      name: choice.entry.name,
+      width: origin.width,
+      height: origin.height,
+      parts,
+    });
+    const treeRoot = roots[0]!;
+    // Quitar el espacio de exhibición conservando los márgenes y relaciones internos.
+    treeRoot.children.forEach((e) => {
+      e.x -= bounds.x - treeRoot.x;
+      e.y -= bounds.y - treeRoot.y;
+    });
+    Object.assign(treeRoot, {
+      name: choice.entry.name,
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+    });
+    captureStructureLayout(treeRoot, frameStyles);
+    const structure: ComponentTree = { version: 1, origin: { x: 0, y: 0 }, root: treeRoot };
     const result = {
       name:
         choice.entry.id === 'symbol'
@@ -283,6 +383,7 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
       // Una receta con varias partes es una unidad hasta separarla explícitamente.
       // Los conjuntos manuales conservan su comportamiento libre de arrastre.
       component: true,
+      structure,
     };
     if (!validLibraryComposition(result))
       throw new Error('No se pudo preparar esta composición. No se agregó ninguna pieza.');

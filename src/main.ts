@@ -2,17 +2,24 @@ import { EverettApp } from './app/application';
 import { LocalStorage } from './platform/local-storage';
 import { trace } from './app/diagnostics/trace';
 import { exportDiagnostics } from './platform/export-diagnostics';
+import { prepareComponentLayout } from './domain/component-layout';
 const root = document.getElementById('app');
 if (!root) throw new Error('Falta el contenedor de Everett.');
 async function start(root: HTMLElement): Promise<void> {
   root.textContent = 'Recuperando Everett…';
+  let stage = 'component-layout';
   try {
+    await prepareComponentLayout();
+    stage = 'storage';
     const storage = await LocalStorage.open();
     const restored = await storage.load();
     new EverettApp(root, storage, restored ?? undefined);
   } catch (error) {
-    trace.add('storage.recovery.failed', { message: String(error) }, undefined, undefined, 'warn');
-    root.textContent = 'No se pudo recuperar Everett. Tus datos guardados se conservaron. ';
+    trace.add(`${stage}.recovery.failed`, { message: String(error) }, undefined, undefined, 'warn');
+    root.textContent =
+      stage === 'component-layout'
+        ? 'No se pudo cargar el motor de distribución. Tus datos se conservaron. '
+        : 'No se pudo recuperar Everett. Tus datos guardados se conservaron. ';
     const retry = document.createElement('button');
     retry.textContent = 'Reintentar recuperación';
     retry.onclick = () => void start(root);

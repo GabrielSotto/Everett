@@ -131,6 +131,20 @@ Los ejemplos multimedia son archivos locales generados para probar el mismo reco
 
 ### Organización y referencias precisas de Canvas
 
+Los componentes de bosquejo conservan un árbol versionado en `CanvasGroup.structure`: contenedores
+con coordenadas locales y hojas que referencian los mismos materiales del Mundo. La compilación
+del catálogo registra la jerarquía DOM y traduce filas/columnas medibles; no almacena HTML ni
+depende del DOM para editar después. Los documentos antiguos adquieren una raíz plana solo al
+entrar en edición, conservando sus datos originales.
+
+`component-layout` adapta cajas al motor Yoga preparado al iniciar; `commands/components`
+valida cambios y publica una transición del Store. `component-tree` sincroniza los gestos existentes
+sin perder identidad; los arrastres dentro de filas/columnas reordenan y redistribuyen.
+El inspector contiene estado transitorio de selección y consulta. Recetas propias y recorridos
+pertenecen al Mundo, participan del historial y de IndexedDB; sus actualizaciones son explícitas.
+La importación permite disposición libre cuando el patrón de origen no se representa por una
+fila o columna. No se infieren jerarquías perdidas de documentos anteriores.
+
 El orden de World.nodes define el apilamiento de fondo a frente de los materiales. nodes.order cambia ese orden mediante Store e historial, conservando el orden relativo de la selección y de los demás. Los contenidos se aíslan con isolation en el nivel de apilamiento cero para conservar el orden entre materiales. La identificación y los tiradores mantienen su capa de interacción por encima del contenido, sin adelantar el cuerpo del material seleccionado. La representación, los vínculos y la propiedad agéntica conservan su identidad.
 
 La orientación del dock pertenece al contexto personal (ui.shell.canvasDockOrientation), con Horizontal por defecto al recuperar guardados anteriores. La densidad responde al espacio disponible de la ventana y al chat anclado; Quick Chat solo interviene en la separación geométrica. En ventanas estrechas, el dock reserva su columna vertical y ofrece herramientas desbordadas desde Más herramientas. Sus controles forman parte del contexto de interacción del chat para conservarlo abierto y mantener su borrador.

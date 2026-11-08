@@ -515,7 +515,7 @@ export class EverettApp implements Context {
   }
   private wheel(e: WheelEvent): void {
     const target = e.target instanceof Element ? e.target : null;
-    if (target?.closest('#minimap,dialog[open]')) return;
+    if (target?.closest('#minimap,dialog[open],.component-inspector')) return;
     const route = this.store.get().route,
       spatial = route.kind === 'universe' || route.kind === 'world';
     const delta = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);

@@ -1,12 +1,22 @@
 import type { WorldSnapshot } from './model';
 import { isComponent } from './manual-groups';
 import { selectionBounds, type SnapTarget } from './alignment';
+import { componentElements, elementMaterials, elementRect } from './component-tree';
 
 /** Un componente intacto aporta su límite, no cada detalle decorativo interno. */
 export function alignmentTargets(
   world: WorldSnapshot,
   selected: ReadonlySet<string>,
+  editing?: { group: string; element: string },
 ): SnapTarget[] {
+  const structure = world.canvasGroups?.find((g) => g.id === editing?.group)?.structure;
+  if (structure) {
+    const scope = componentElements(structure.root).find((e) => e.id === editing?.element);
+    if (scope)
+      return scope.children
+        .filter((e) => !e.background && !elementMaterials(e).some((id) => selected.has(id)))
+        .map((e) => ({ ...elementRect(structure, e.id)!, id: e.id }));
+  }
   const grouped = new Set<string>();
   const targets: SnapTarget[] = [];
   const nodes = new Map(world.nodes.map((node) => [node.id, node]));
@@ -15,7 +25,12 @@ export function alignmentTargets(
     group.nodes.forEach((id) => grouped.add(id));
     const members = group.nodes.flatMap((id) => nodes.get(id) ?? []);
     if (members.length && members.length === group.nodes.length && members.every((n) => !n.owner))
-      targets.push({ ...selectionBounds(members), id: group.id });
+      targets.push({
+        ...(group.structure
+          ? elementRect(group.structure, group.structure.root.id)!
+          : selectionBounds(members)),
+        id: group.id,
+      });
   }
   return [
     ...targets,

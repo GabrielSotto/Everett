@@ -24,6 +24,7 @@ export interface CanvasUi {
   thickness: number;
   fill: boolean;
   sampleImageIndex?: number;
+  componentEditing?: { group: string; element: string; selected: string };
 }
 
 export function createCanvasUi(): CanvasUi {
