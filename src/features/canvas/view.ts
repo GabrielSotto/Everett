@@ -164,11 +164,24 @@ export class CanvasView implements View {
     private root: HTMLElement,
     private ctx: Context,
   ) {
-    this.directText = new DirectTextEditor(root, ctx, (id) => {
-      this.select('node', id);
-      this.paintSelection();
-      ctx.persist();
-    });
+    this.directText = new DirectTextEditor(
+      root,
+      ctx,
+      (id) => {
+        this.select('node', id);
+        this.paintSelection();
+        ctx.persist();
+      },
+      (el, node) => {
+        this.applyRect(el, node);
+        if (
+          ctx.ui.canvas.selections.length === 1 &&
+          ctx.ui.canvas.selection === node.id &&
+          root.querySelector('.rotation-frame')
+        )
+          showRotation(root.querySelector<HTMLElement>('#canvas-plane')!, [node]);
+      },
+    );
     root.innerHTML =
       '<section class="canvas-stage" id="canvas-stage"><div class="canvas-plane" id="canvas-plane"></div><div id="canvas-zone-labels" aria-hidden="true"></div><div id="selection-actions"></div></section><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><div id="canvas-dock-host"></div><div class="chat-host" id="canvas-chat-host"></div>';
     this.cam = new SpatialCamera(
@@ -520,6 +533,7 @@ export class CanvasView implements View {
       const delta =
         (['ArrowLeft', 'ArrowDown'].includes(event.key) ? -1 : 1) *
         (event.shiftKey || event.key === 'Enter' || event.key === ' ' ? 15 : 1);
+      this.directText.finish();
       this.ctx.act(
         {
           type: 'nodes.rotate',
@@ -531,7 +545,9 @@ export class CanvasView implements View {
         'C08-ROT-01',
         'keyboard',
       );
-      this.root.querySelector<HTMLElement>('.rotation-handle')?.focus({ preventScroll: true });
+      this.root
+        .querySelector<HTMLElement>(`[data-rotation-corner="${element.dataset.rotationCorner}"]`)
+        ?.focus({ preventScroll: true });
       return;
     }
     const ah = element.dataset.arrowHandle as ArrowHandle | undefined;
@@ -846,15 +862,24 @@ export class CanvasView implements View {
       )
     )
       return;
-    if (target.closest('.rotation-handle') && ui.canvas.tool === 'select') {
+    const rotationCorner = target.closest<HTMLElement>('.rotation-handle')?.dataset.rotationCorner;
+    if (rotationCorner && ui.canvas.tool === 'select') {
+      // La edición reemplaza la tinta por un textarea. Entregar el gesto al
+      // material ya guardado antes de capturar sus nodos DOM y su geometría.
+      this.directText.finish();
       const world = this.ctx.world(),
         ids = new Set(ui.canvas.selections),
         nodes = world.nodes.filter((n) => ids.has(n.id) && !n.owner);
-      if (!nodes.length) return;
+      const button = this.root.querySelector<HTMLElement>(
+        `[data-rotation-corner="${rotationCorner}"]`,
+      );
+      if (!nodes.length || !button) return;
       e.preventDefault();
+      this.root.style.setProperty('--active-rotation-cursor', getComputedStyle(button).cursor);
+      this.root.dataset.rotating = rotationCorner;
       this.drag = {
         kind: 'rotate',
-        gesture: beginRotation(this.root, world, nodes, this.point(e)),
+        gesture: beginRotation(this.root, world, nodes, this.point(e), button, this.cam.current.z),
       };
       this.root.setPointerCapture(e.pointerId);
       return;
@@ -983,6 +1008,7 @@ export class CanvasView implements View {
       ['node', 'zone', 'group'].includes(handle.dataset.resize ?? '') &&
       handle.dataset.id
     ) {
+      this.directText.finish();
       const entity = handle.dataset.resize as 'node' | 'zone' | 'group',
         id = handle.dataset.id;
       const original =
@@ -1516,14 +1542,30 @@ export class CanvasView implements View {
     if (this.root.hasPointerCapture(e.pointerId)) this.root.releasePointerCapture(e.pointerId);
     const w = this.ctx.world();
     if (d.kind === 'rotate') {
-      if (normalizedAngle(d.gesture.degrees) > 1e-7)
+      this.clearRotationCursor();
+      if (!d.gesture.moved) {
+        // El área de giro sobresale de la selección y puede estar sobre la
+        // tinta de otra pieza. Un clic simple todavía permite seleccionarla.
+        const underneath = document
+          .elementsFromPoint(e.clientX, e.clientY)
+          .map((el) => el.closest<HTMLElement>('[data-node]'))
+          .find((el) => el && this.root.contains(el))?.dataset.node;
+        if (underneath) {
+          this.select('node', underneath, e.shiftKey);
+          this.ctx.persist();
+        }
+      }
+      if (
+        normalizedAngle(d.gesture.degrees) > 1e-7 &&
         this.ctx.act(
           { type: 'nodes.rotate', world: w.id, nodes: d.gesture.ids, degrees: d.gesture.degrees },
           'girar selección',
           'C08-ROT-01',
           'pointer',
-        );
-      else this.render();
+        )
+      )
+        return;
+      this.render();
       return;
     }
     if (d.kind === 'selection') {
@@ -1824,12 +1866,17 @@ export class CanvasView implements View {
       this.ctx.ui.canvas.selections = this.drag.before;
       this.ctx.ui.canvas.selection = this.drag.before.at(-1) ?? null;
     }
+    if (this.drag?.kind === 'rotate') this.clearRotationCursor();
     this.drag = null;
     this.ctx.ui.canvas.linkStart = null;
     this.cam.stop();
     this.root.classList.remove('panning');
     this.root.style.removeProperty('cursor');
     this.render();
+  }
+  private clearRotationCursor(): void {
+    delete this.root.dataset.rotating;
+    this.root.style.removeProperty('--active-rotation-cursor');
   }
   private connect(from: string, fromAnchor: Anchor, to: string, toAnchor: Anchor): void {
     if (
@@ -2981,6 +3028,9 @@ export class CanvasView implements View {
   }
 
   render(): void {
+    // Las mediciones tardías de fuentes pueden solicitar otro render. El fin
+    // del giro pinta el estado vigente y hasta entonces conserva la captura.
+    if (this.drag?.kind === 'rotate') return;
     const restoreFocus = preserveFocus(this.root);
     const w = this.ctx.world(),
       plane = this.root.querySelector('#canvas-plane');
@@ -3129,6 +3179,7 @@ export class CanvasView implements View {
     restoreFocus();
   }
   dispose(): void {
+    if (this.drag?.kind === 'rotate') this.clearRotationCursor();
     this.directText.finish(false, false);
     this.locateMotion?.cancel();
     this.proposalMotions.forEach((animation) => animation.cancel());

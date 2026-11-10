@@ -132,9 +132,10 @@ button {
 
 @media (hover: hover) and (pointer: fine) {
   body[data-canvas-input='pointer']
-    button:active:not(:focus-visible):not(.world-body):not(.surface-object):not(.dock-grip):not(
-      .chat-grip
-    ) {
+    button:active:not(:focus-visible):not(.world-body):not(.surface-object):not(
+      .dock-grip,
+      .rotation-handle
+    ):not(.chat-grip) {
     scale: calc(var(--control-scale, 1) * 0.97);
   }
 }

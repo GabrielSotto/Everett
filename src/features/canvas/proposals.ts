@@ -34,7 +34,10 @@ export function previewMarkup(ctx: Context, draft: DeepReadonly<ProposalMaterial
   )
     .replace('data-node=', 'data-proposed-node=')
     .replace('style="', `style="--proposal-ratio:${draft.material.width / draft.material.height};`)
-    .replace(/<div class="material-identification">.*?<\/div>/, '')
+    .replace(
+      /<div class="material-label-space"><div class="material-identification">.*?<\/div><\/div>/,
+      '',
+    )
     .replace(/<button[^>]*class="video-play"[^>]*>.*?<\/button>/, '')
     .replace(/<button[^>]*class="comment-marker"[^>]*>.*?<\/button>/, '');
 }

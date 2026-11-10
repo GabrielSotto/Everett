@@ -17,6 +17,7 @@ export class DirectTextEditor {
     private root: HTMLElement,
     private ctx: Context,
     private select: (id: string) => void,
+    private resizeSource: (el: HTMLElement, node: Material) => void,
   ) {}
   position(camera: Camera) {
     this.place?.(camera);
@@ -131,6 +132,14 @@ export class DirectTextEditor {
       // Only the caret needs a minimum hit area. It is never saved in the material.
       draft.style.width = Math.max(data.text ? 4 : 24, bounds.width) + 'px';
       draft.style.height = bounds.height + 'px';
+      const material = source();
+      if (
+        original &&
+        material &&
+        (material.style.width !== bounds.width + 'px' ||
+          material.style.height !== bounds.height + 'px')
+      )
+        this.resizeSource(material, { ...original, ...bounds });
       this.position(this.ctx.currentCamera());
       if (changed) save();
     };

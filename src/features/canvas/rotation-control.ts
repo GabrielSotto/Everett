@@ -8,36 +8,62 @@ import {
 } from '../../domain/rotation';
 import { selectionBounds } from '../../domain/alignment';
 import { anchorPoint, linkPath } from '../../domain/geometry';
-import { icon } from '../../ui/icons';
 
 function frame(nodes: readonly Material[]): OrientedRect {
   return nodes.length === 1 ? nodes[0]! : selectionBounds([...nodes]);
 }
-function position(button: HTMLElement, box: OrientedRect) {
-  const c = centerOf(box),
-    angle = box.rotation ?? 0;
-  Object.assign(button.style, {
-    left: c.x + 'px',
-    top: c.y + 'px',
-    transform: `rotate(${angle}deg) translateX(calc(${box.width / 2}px + 21px / var(--canvas-zoom))) rotate(${-angle}deg) scale(calc(1 / var(--canvas-zoom))) translate(-50%, -50%)`,
+const arrowPath = 'M4 19A15 15 0 0 0 19 4m-4 4 4-4 3 5M8 15l-4 4 4 3';
+// El cursor del sistema no hereda la rotación de su elemento. Compartir los
+// 24 rumbos entre selecciones evita generar una imagen por evento de puntero.
+const cursors = Array.from({ length: 24 }, (_, i) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="-3 -3 30 30"><g transform="rotate(${i * 15} 12 12)" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="${arrowPath}" stroke="#192434" stroke-width="4"/><path d="${arrowPath}" stroke="white" stroke-width="1.8"/></g></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 13 13, crosshair`;
+});
+function position(layer: HTMLElement, box: OrientedRect) {
+  const angle = box.rotation ?? 0;
+  Object.assign(layer.style, {
+    left: box.x + 'px',
+    top: box.y + 'px',
+    width: box.width + 'px',
+    height: box.height + 'px',
+    rotate: angle + 'deg',
   });
+  layer.style.setProperty('--label-turn', -angle + 'deg');
+  const step = Math.round(normalizedAngle(angle) / 15) % 24;
+  layer.style.setProperty('--cursor-se', cursors[step]!);
+  layer.style.setProperty('--cursor-sw', cursors[(step + 6) % 24]!);
 }
 export function showRotation(plane: HTMLElement, nodes: readonly Material[]) {
-  let button = plane.querySelector<HTMLButtonElement>('.rotation-handle');
+  let layer = plane.querySelector<HTMLElement>('.rotation-frame');
   if (!nodes.length) {
-    button?.remove();
+    layer?.remove();
     return;
   }
-  if (!button) {
-    button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'rotation-handle';
-    button.setAttribute('aria-label', 'Girar selección');
-    button.title = 'Arrastrá para girar · Shift: pasos de 15° · Flechas: 1°';
-    button.innerHTML = icon('rotate', 15);
-    plane.append(button);
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.className = 'rotation-frame';
+    for (const corner of ['se', 'sw']) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'rotation-handle';
+      button.dataset.rotationCorner = corner;
+      button.setAttribute(
+        'aria-label',
+        corner === 'se' ? 'Girar selección' : 'Girar desde la esquina inferior izquierda',
+      );
+      if (corner === 'sw') button.tabIndex = -1;
+      button.title = 'Arrastrá para girar · Shift: pasos de 15° · Flechas: 1°';
+      button.innerHTML = `<svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${arrowPath}"/></svg>`;
+      layer.append(button);
+    }
+    plane.append(layer);
   }
-  position(button, frame(nodes));
+  const shape = nodes.length === 1 && nodes[0]?.data.kind === 'shape' ? nodes[0].data : null;
+  layer.style.setProperty(
+    '--rotation-outset',
+    shape?.stroke ? (shape.thickness ?? 1) / 2 + 'px' : '0px',
+  );
+  position(layer, frame(nodes));
 }
 // Resolver los destinos una sola vez. Al mover, actualizar únicamente la selección y sus cables.
 export function beginRotation(
@@ -45,10 +71,11 @@ export function beginRotation(
   w: WorldSnapshot,
   nodes: Material[],
   start: Point,
+  button: HTMLElement,
+  zoom: number,
 ) {
   const box = frame(nodes),
     pivot = centerOf(box),
-    initial = angleOf(start, pivot),
     base = box.rotation ?? 0;
   const parts = nodes.map((node) => ({
     node,
@@ -73,7 +100,7 @@ export function beginRotation(
           ]
         : [];
     });
-  const button = root.querySelector<HTMLButtonElement>('.rotation-handle')!;
+  const layer = button.parentElement!;
   const groups = [...(w.canvasGroups ?? [])]
     .filter((g) => g.nodes.every((id) => selected.has(id)))
     .flatMap((g) => {
@@ -95,16 +122,38 @@ export function beginRotation(
           ]
         : [];
     });
-  let latest = 0;
+  let latest = 0,
+    accumulated = 0,
+    previous = start;
+  let moved = false;
+  const deadRadius = 8 / zoom;
   return {
     ids: [...selected],
     get degrees() {
       return latest;
     },
+    get moved() {
+      return moved;
+    },
     update(point: Point, snap: boolean) {
-      if (Math.hypot(point.x - pivot.x, point.y - pivot.y) < 0.00001) return;
-      const raw = angleOf(point, pivot) - initial;
-      latest = snap ? Math.round((base + raw) / 15) * 15 - base : raw;
+      if (!moved && Math.hypot(point.x - start.x, point.y - start.y) * zoom < 2) return;
+      moved = true;
+      const from = previous;
+      previous = point;
+      const dx = point.x - from.x,
+        dy = point.y - from.y;
+      const lengthSquared = dx * dx + dy * dy;
+      // En el centro no hay dirección. Si se lo atraviesa, retomar desde el
+      // otro lado sin interpretar el cruce como media vuelta.
+      const t = lengthSquared
+        ? Math.max(
+            0,
+            Math.min(1, ((pivot.x - from.x) * dx + (pivot.y - from.y) * dy) / lengthSquared),
+          )
+        : 0;
+      if (Math.hypot(from.x + t * dx - pivot.x, from.y + t * dy - pivot.y) < deadRadius) return;
+      accumulated += normalizedAngle(angleOf(point, pivot) - angleOf(from, pivot) + 180) - 180;
+      latest = snap ? Math.round((base + accumulated) / 15) * 15 - base : accumulated;
       for (const { node, element, controls } of parts) {
         const pose = rotatedPose(node, pivot, latest);
         Object.assign(element.style, {
@@ -145,8 +194,14 @@ export function beginRotation(
           }
         }
       }
-      position(button, { ...box, rotation: normalizedAngle(base + latest) });
-      button.dataset.angle = Math.round(normalizedAngle(base + latest)) + '°';
+      position(layer, { ...box, rotation: base + latest });
+      root.style.setProperty(
+        '--active-rotation-cursor',
+        layer.style.getPropertyValue(
+          button.dataset.rotationCorner === 'sw' ? '--cursor-sw' : '--cursor-se',
+        ),
+      );
+      button.dataset.angle = normalizedAngle(Math.round(base + latest)) + '°';
     },
   };
 }

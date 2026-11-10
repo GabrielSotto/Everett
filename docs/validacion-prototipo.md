@@ -470,3 +470,5 @@ siendo editable en una ventana estrecha sin duplicar la etiqueta detrás del cam
 C08-U78 y C08-B202 verifican pivote compartido, puertos girados, edición de flechas, teclado, cancelación, persistencia y una sola operación de historial. En una escena con 240 materiales el gesto deja intacto el DOM de un material ajeno y actualiza el cable antes de soltar. C08-B200 mide también la tinta real del «4» y de la «C» de la leyenda.
 
 C08-U79 verifica que el giro de una composición conserva la distribución de sus piezas al cambiar de tamaño; C08-B203 gira el camión y la flecha en la escena y edita la curva incluso cuando su tirador coincide con la imagen.
+
+C08-B204 mide la orientación de los caracteres y la separación entre el nombre y el texto al girar desde la edición de tipografía. C08-B205 mide la distancia entre la esquina y el puntero durante el cruce de 0° en ambos sentidos y atraviesa el centro. C08-B206 comprueba el arrastre y su persistencia cuando una fuente remota termina de cargar en pleno giro.

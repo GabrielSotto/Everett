@@ -2,6 +2,9 @@
 export const canvasCases = [
   { id: 'C08-U79', layer: 'unit', contracts: ['C08-ROT-01'] },
   { id: 'C08-B203', layer: 'browser', contracts: ['C08-ROT-01'] },
+  { id: 'C08-B204', layer: 'browser', contracts: ['C08-ROT-01', 'C08-TEXT-01'] },
+  { id: 'C08-B205', layer: 'browser', contracts: ['C08-ROT-01'] },
+  { id: 'C08-B206', layer: 'browser', contracts: ['C08-ROT-01', 'C08-TEXT-01'] },
   { id: 'C08-B202', layer: 'browser', contracts: ['C08-ROT-01', 'C08-LINK-02'] },
   { id: 'C08-U78', layer: 'unit', contracts: ['C08-ROT-01'] },
 
@@ -350,7 +353,7 @@ export const canvasCases = [
   { id: 'C08-B33', layer: 'browser', contracts: ['C08-MAT-07', 'C08-PROP-01'] },
 ];
 export const standaloneCases = ['C08-B13', 'C08-B90'];
-export const developmentCases = ['C08-B200'];
+export const developmentCases = ['C08-B200', 'C08-B203', 'C08-B204', 'C08-B205'];
 export function verifyCanvasCoverage(layer, titles, { targetKind = 'artifact' } = {}) {
   if (!['development', 'artifact'].includes(targetKind))
     throw new Error('Tipo de objetivo inválido.');

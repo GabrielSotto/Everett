@@ -6,7 +6,7 @@
    conservan su capa de interacción por encima de materiales superpuestos. */
 .material
   > :not(
-    .material-identification,
+    .material-label-space,
     .resize-handle,
     .connection-port,
     .comment-marker,
@@ -73,10 +73,20 @@
 .material > .shape-art > * {
   stroke-width: max(var(--shape-thickness), calc(1px / var(--canvas-zoom, 1)));
 }
+.material-label-space {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  container-type: size;
+  z-index: 12;
+}
 .material-identification {
+  /* La altura proyectada mantiene el nombre encima del contenido al girar y redimensionar. */
+  --angle: var(--label-counter-angle, 0deg);
+  --rise: calc(50cqw * abs(sin(var(--angle))) + 50cqh * abs(cos(var(--angle))));
   position: absolute;
   left: 50%;
-  bottom: calc(100% + var(--selection-outset, 0px));
+  bottom: 50%;
   padding-bottom: 7px;
   display: flex;
   align-items: center;
@@ -88,8 +98,8 @@
   visibility: hidden;
   pointer-events: none;
   transition: opacity 100ms ease-out;
-  transform: rotate(var(--label-counter-angle, 0deg)) scale(calc(1 / var(--canvas-zoom)))
-    translateX(-50%)
+  transform: rotate(var(--angle)) translateY(calc(0px - var(--rise) - var(--selection-outset, 0px)))
+    scale(calc(1 / var(--canvas-zoom))) translateX(-50%)
     translate(var(--identification-shift-x, 0px), var(--identification-shift-y, 0px));
   transform-origin: bottom left;
   z-index: 12;
@@ -2016,24 +2026,64 @@ body[data-canvas-motion='reduced']
   pointer-events: none;
 }
 
-.canvas-plane > .rotation-handle {
+.rotation-frame {
   position: absolute;
   z-index: 7;
+  pointer-events: none;
+  --corner-gap: calc(var(--rotation-outset) + 16px / var(--canvas-zoom));
+}
+.rotation-frame .rotation-handle {
+  position: absolute;
+  left: calc(100% + var(--corner-gap));
+  top: calc(100% + var(--corner-gap));
   width: 26px;
   height: 26px;
   padding: 0;
   display: grid;
   place-items: center;
-  transform-origin: 0 0;
+  transform: translate(-50%, -50%) scale(calc(1 / var(--canvas-zoom)));
+  transition: none;
+  pointer-events: auto;
   touch-action: none;
   color: var(--text);
-  background: var(--panel);
-  border: 1px solid var(--accent);
+  background: transparent;
+  border: 0;
   border-radius: 50%;
-  cursor: grab;
+  cursor: var(--cursor-se);
 }
-.rotation-handle:active {
-  cursor: grabbing;
+.rotation-frame [data-rotation-corner='sw'] {
+  left: calc(0px - var(--corner-gap));
+  cursor: var(--cursor-sw);
+}
+.rotation-handle svg {
+  opacity: 0;
+  transition: opacity 100ms ease-out;
+  filter: drop-shadow(0 1px 1px #18232f);
+}
+[data-rotation-corner='sw'] svg {
+  rotate: 90deg;
+}
+.rotation-handle:focus-visible svg,
+.canvas-plane:has(.resize-handle.se:hover) [data-rotation-corner='se'] svg,
+.canvas-plane:has(.resize-handle.sw:hover) [data-rotation-corner='sw'] svg {
+  opacity: 1;
+}
+@media (hover: none), (pointer: coarse) {
+  .rotation-frame .rotation-handle svg {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rotation-handle svg {
+    transition: none;
+  }
+}
+body[data-canvas-motion='reduced'] .rotation-handle svg {
+  transition: none;
+}
+[data-rotating] .canvas-stage,
+[data-rotating] .canvas-stage * {
+  cursor: var(--active-rotation-cursor) !important;
 }
 .rotation-handle:focus-visible {
   outline: 2px solid var(--accent);
@@ -2048,6 +2098,8 @@ body[data-canvas-motion='reduced']
   background: var(--panel);
   border-radius: 3px;
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  rotate: var(--label-turn);
   pointer-events: none;
 }
 

@@ -61,6 +61,9 @@
 .direct-text-source > .canvas-text-run {
   visibility: hidden;
 }
+.material.text.direct-text-source.selected {
+  outline: none;
+}
 .direct-text-format {
   position: absolute;
   display: flex;
