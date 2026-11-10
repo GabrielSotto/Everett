@@ -1,8 +1,18 @@
 import { test, expect } from './fixtures';
 import { start, snapshot, world, capture } from './canvas-utility-helpers';
 import { storedFixture } from './canvas-fixtures';
-import type { Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { googleFontFiles } from './google-font-files';
+
+async function zoomTo(page: Page, percent: number) {
+  await page.getByRole('button', { name: /^Zoom de Canvas:/ }).click();
+  const input = page.getByRole('spinbutton', { name: 'Porcentaje de zoom', exact: true });
+  await input.fill(String(percent));
+  await input.press('Enter');
+  await expect
+    .poll(() => page.evaluate(() => window.EverettDebug!.snapshot().camera!.z))
+    .toBeCloseTo(percent / 100, 3);
+}
 
 async function middle(target: Locator) {
   const { x, y, width, height } = (await target.boundingBox())!;
@@ -48,9 +58,10 @@ test('C08-B204: girar directamente al cambiar la fuente mueve la tinta y deja un
     const box = (await name.boundingBox())!;
     expect(box.y + box.height).toBeLessThan((await label.boundingBox())!.y);
   }
-  await expectNameAboveText();
+  await expect(name).toBeHidden();
   await capture(page, info, 'girar-texto-tras-cambiar-fuente');
   await page.mouse.up();
+  await expectNameAboveText();
   await page.reload();
   await expect(ink).toHaveCSS('font-family', /mono/i);
   expect(parseFloat(await label.evaluate((el) => getComputedStyle(el).rotate))).toBeCloseTo(90, 0);
@@ -94,17 +105,13 @@ test('C08-B205: el control sigue la esquina al cruzar cero en ambos sentidos @de
 
   const note = page.locator('.material.note').first();
   await note.click();
-  const box = (await note.boundingBox())!;
   for (const corner of ['sw', 'se']) {
     const edge = page.locator(`.rotation-handle[data-rotation-corner=${corner}]`);
-    const at = await middle(edge);
-    expect(at.y).toBeCloseTo(box.y + box.height + 16, 0);
-    expect(at.x).toBeCloseTo(corner === 'sw' ? box.x - 16 : box.x + box.width + 16, 0);
     const resize = page.locator(
       `[data-resize=node][data-id="${await note.getAttribute('data-node')}"][data-corner=${corner}]`,
     );
     await resize.hover();
-    await expect(edge.locator('svg')).toHaveCSS('opacity', '1');
+    await expect(edge.locator('svg')).toHaveCSS('opacity', '0');
     expect(await resize.evaluate((el) => el.matches(':hover'))).toBe(true);
     await edge.hover();
     await expect(edge).toHaveCSS('cursor', /url\(/);
@@ -122,6 +129,98 @@ test('C08-B205: el control sigue la esquina al cruzar cero en ambos sentidos @de
   await page.keyboard.press('Escape');
   await page.mouse.up();
   await expect(note).toHaveCSS('rotate', 'none');
+});
+
+test('C08-B207: en ambas diagonales el cursor cambia junto al marco y desaparece al alejarse @development', async ({
+  page,
+}) => {
+  await page.goto('/design/composicion-visual/');
+  const truck = page.locator('[data-node=camion]');
+  await truck.click();
+  const rotate = page.getByRole('button', { name: 'Girar selección', exact: true });
+  for (const zoom of [25, 100, 200]) {
+    await zoomTo(page, zoom);
+    await rotate.press('Shift+ArrowRight');
+    await truck.click();
+    const sw = await middle(page.locator('[data-id=camion][data-corner=sw]'));
+    const se = await middle(page.locator('[data-id=camion][data-corner=se]'));
+    const width = Math.hypot(se.x - sw.x, se.y - sw.y);
+    const ux = (se.x - sw.x) / width,
+      uy = (se.y - sw.y) / width;
+    for (const corner of ['sw', 'se'] as const) {
+      const point = corner === 'se' ? se : sw;
+      const sign = corner === 'se' ? 1 : -1;
+      const dx = (sign * ux - uy) / Math.SQRT2,
+        dy = (sign * uy + ux) / Math.SQRT2;
+      const edge = page.locator(`[data-rotation-corner=${corner}]`);
+      const resize = page.locator(`[data-id=camion][data-corner=${corner}]`);
+      await page.mouse.move(point.x, point.y);
+      expect(await resize.evaluate((el) => el.matches(':hover'))).toBe(true);
+      await expect(edge.locator('svg')).toHaveCSS('opacity', '0');
+      await page.mouse.move(point.x + 12 * dx, point.y + 12 * dy);
+      expect(await edge.evaluate((el) => el.matches(':hover'))).toBe(true);
+      await expect(edge).toHaveCSS('cursor', /url\(/);
+      for (const distance of [21, 26, 34]) {
+        await page.mouse.move(point.x + distance * dx, point.y + distance * dy);
+        expect(await edge.evaluate((el) => el.matches(':hover'))).toBe(false);
+      }
+    }
+  }
+});
+
+test('C08-B208: los grados acompañan al puntero al variar el radio y el texto vecino permanece quieto @development', async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 912, height: 832 });
+  await page.goto('/design/composicion-visual/');
+  await zoomTo(page, 64);
+  const truck = page.locator('[data-node=camion]'),
+    caption = page.locator('[data-node=frio] .canvas-text-run'),
+    name = truck.locator('.material-identification button'),
+    handle = page.locator('[data-rotation-corner=se]'),
+    readout = page.locator('.rotation-readout');
+  await truck.click();
+  const before = await caption.boundingBox();
+  for (const cancel of [true, false]) {
+    const center = await middle(truck),
+      corner = await middle(handle);
+    const dx = corner.x - center.x,
+      dy = corner.y - center.y;
+    await page.mouse.move(corner.x, corner.y);
+    await page.mouse.down();
+    await expect(name).toBeVisible();
+    await expect(readout).toHaveCount(0);
+    for (const [deg, radius] of [
+      [20, 1.8],
+      [70, 0.55],
+      [120, 1.2],
+      [200, 2],
+      [270, 0.65],
+      [330, 1.4],
+    ] as const) {
+      const a = (deg * Math.PI) / 180;
+      const x = center.x + radius * (dx * Math.cos(a) - dy * Math.sin(a));
+      const y = center.y + radius * (dx * Math.sin(a) + dy * Math.cos(a));
+      await page.mouse.move(x, y, { steps: 5 });
+      await expect(name).toBeHidden();
+      const actual = parseFloat(await truck.evaluate((el) => getComputedStyle(el).rotate));
+      expect(Math.abs(actual - deg)).toBeLessThan(1);
+      await expect(readout).toHaveText(Math.round(actual) + '°');
+      const pos = (await readout.boundingBox())!;
+      expect(Math.abs(pos.x - x - 14)).toBeLessThan(2);
+      expect(Math.abs(pos.y - y - 12)).toBeLessThan(2);
+      expect(await caption.boundingBox()).toEqual(before);
+      if (deg === 200 && !cancel)
+        await capture(page, info, 'giro-camion-indicador-junto-al-puntero');
+    }
+    if (cancel) await page.keyboard.press('Escape');
+    await page.mouse.up();
+    await expect(readout).toHaveCount(0);
+    await expect(name).toBeVisible();
+    const label = (await name.boundingBox())!;
+    expect(label.y + label.height).toBeLessThan((await truck.boundingBox())!.y);
+    expect(await caption.boundingBox()).toEqual(before);
+  }
 });
 
 test('C08-B206: una fuente remota termina de cargar con el giro en curso y el texto sigue al puntero', async ({

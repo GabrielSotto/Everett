@@ -28,7 +28,6 @@ function position(layer: HTMLElement, box: OrientedRect) {
     height: box.height + 'px',
     rotate: angle + 'deg',
   });
-  layer.style.setProperty('--label-turn', -angle + 'deg');
   const step = Math.round(normalizedAngle(angle) / 15) % 24;
   layer.style.setProperty('--cursor-se', cursors[step]!);
   layer.style.setProperty('--cursor-sw', cursors[(step + 6) % 24]!);
@@ -59,10 +58,8 @@ export function showRotation(plane: HTMLElement, nodes: readonly Material[]) {
     plane.append(layer);
   }
   const shape = nodes.length === 1 && nodes[0]?.data.kind === 'shape' ? nodes[0].data : null;
-  layer.style.setProperty(
-    '--rotation-outset',
-    shape?.stroke ? (shape.thickness ?? 1) / 2 + 'px' : '0px',
-  );
+  layer.classList.toggle('shape-material', !!shape);
+  if (shape) layer.style.setProperty('--shape-thickness', (shape.thickness ?? 1) + 'px');
   position(layer, frame(nodes));
 }
 // Resolver los destinos una sola vez. Al mover, actualizar únicamente la selección y sus cables.
@@ -101,6 +98,12 @@ export function beginRotation(
         : [];
     });
   const layer = button.parentElement!;
+  const stage = layer.closest<HTMLElement>('.canvas-stage')!;
+  const viewport = stage.getBoundingClientRect();
+  const readout = document.createElement('span');
+  readout.className = 'rotation-readout';
+  readout.setAttribute('aria-hidden', 'true');
+  readout.textContent = normalizedAngle(Math.round(base)) + '°';
   const groups = [...(w.canvasGroups ?? [])]
     .filter((g) => g.nodes.every((id) => selected.has(id)))
     .flatMap((g) => {
@@ -135,9 +138,15 @@ export function beginRotation(
     get moved() {
       return moved;
     },
-    update(point: Point, snap: boolean) {
-      if (!moved && Math.hypot(point.x - start.x, point.y - start.y) * zoom < 2) return;
-      moved = true;
+    update(point: Point, event: PointerEvent) {
+      if (!moved) {
+        if (Math.hypot(point.x - start.x, point.y - start.y) * zoom < 2) return;
+        moved = true;
+        stage.append(readout);
+      }
+      // El indicador sigue el puntero en pantalla, incluso si cambia el radio del gesto.
+      readout.style.setProperty('--pointer-x', event.clientX - viewport.left + 'px');
+      readout.style.setProperty('--pointer-y', event.clientY - viewport.top + 'px');
       const from = previous;
       previous = point;
       const dx = point.x - from.x,
@@ -153,7 +162,7 @@ export function beginRotation(
         : 0;
       if (Math.hypot(from.x + t * dx - pivot.x, from.y + t * dy - pivot.y) < deadRadius) return;
       accumulated += normalizedAngle(angleOf(point, pivot) - angleOf(from, pivot) + 180) - 180;
-      latest = snap ? Math.round((base + accumulated) / 15) * 15 - base : accumulated;
+      latest = event.shiftKey ? Math.round((base + accumulated) / 15) * 15 - base : accumulated;
       for (const { node, element, controls } of parts) {
         const pose = rotatedPose(node, pivot, latest);
         Object.assign(element.style, {
@@ -201,7 +210,7 @@ export function beginRotation(
           button.dataset.rotationCorner === 'sw' ? '--cursor-sw' : '--cursor-se',
         ),
       );
-      button.dataset.angle = normalizedAngle(Math.round(base + latest)) + '°';
+      readout.textContent = normalizedAngle(Math.round(base + latest)) + '°';
     },
   };
 }

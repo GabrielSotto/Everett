@@ -15,7 +15,8 @@
   isolation: isolate;
   z-index: 0;
 }
-.material.shape-material {
+.material.shape-material,
+.rotation-frame.shape-material {
   --selection-outset: calc(
     max(var(--shape-thickness, 1px), calc(1px / var(--canvas-zoom, 1))) / 2 + 1px /
       var(--canvas-zoom, 1)
@@ -2030,14 +2031,16 @@ body[data-canvas-motion='reduced']
   position: absolute;
   z-index: 7;
   pointer-events: none;
-  --corner-gap: calc(var(--rotation-outset) + 16px / var(--canvas-zoom));
+  --corner-offset: 8.5px;
+  --turn-target: 14px;
+  --corner-gap: calc(var(--selection-outset, 0px) + var(--corner-offset) / var(--canvas-zoom));
 }
 .rotation-frame .rotation-handle {
   position: absolute;
   left: calc(100% + var(--corner-gap));
   top: calc(100% + var(--corner-gap));
-  width: 26px;
-  height: 26px;
+  width: var(--turn-target);
+  height: var(--turn-target);
   padding: 0;
   display: grid;
   place-items: center;
@@ -2057,30 +2060,25 @@ body[data-canvas-motion='reduced']
 }
 .rotation-handle svg {
   opacity: 0;
-  transition: opacity 100ms ease-out;
+  pointer-events: none;
   filter: drop-shadow(0 1px 1px #18232f);
 }
 [data-rotation-corner='sw'] svg {
   rotate: 90deg;
 }
-.rotation-handle:focus-visible svg,
-.canvas-plane:has(.resize-handle.se:hover) [data-rotation-corner='se'] svg,
-.canvas-plane:has(.resize-handle.sw:hover) [data-rotation-corner='sw'] svg {
+.rotation-handle:focus-visible svg {
   opacity: 1;
 }
 @media (hover: none), (pointer: coarse) {
+  .rotation-frame {
+    --corner-offset: 16px;
+    --turn-target: 26px;
+  }
   .rotation-frame .rotation-handle svg {
     opacity: 1;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .rotation-handle svg {
-    transition: none;
-  }
-}
-body[data-canvas-motion='reduced'] .rotation-handle svg {
-  transition: none;
-}
+[data-rotating],
 [data-rotating] .canvas-stage,
 [data-rotating] .canvas-stage * {
   cursor: var(--active-rotation-cursor) !important;
@@ -2089,17 +2087,22 @@ body[data-canvas-motion='reduced'] .rotation-handle svg {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-.rotation-handle[data-angle]::after {
-  content: attr(data-angle);
+.canvas-stage:has(> .rotation-readout) .material.selected > .material-label-space {
+  display: none;
+}
+.rotation-readout {
   position: absolute;
-  left: calc(100% + 4px);
+  z-index: 12;
+  left: clamp(4px, calc(var(--pointer-x) + 14px), calc(100% - 5ch - 4px));
+  top: clamp(4px, calc(var(--pointer-y) + 12px), calc(100% - 24px));
+  width: 5ch;
+  text-align: center;
   padding: 2px 4px;
   color: var(--text);
   background: var(--panel);
   border-radius: 3px;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  rotate: var(--label-turn);
   pointer-events: none;
 }
 

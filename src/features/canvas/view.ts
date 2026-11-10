@@ -1176,7 +1176,7 @@ export class CanvasView implements View {
     }
     const point = this.point(e);
     if (d.kind === 'rotate') {
-      d.gesture.update(point, e.shiftKey);
+      d.gesture.update(point, e);
       return;
     }
     if (d.kind === 'selection') {
@@ -1875,6 +1875,7 @@ export class CanvasView implements View {
     this.render();
   }
   private clearRotationCursor(): void {
+    this.root.querySelector('.rotation-readout')?.remove();
     delete this.root.dataset.rotating;
     this.root.style.removeProperty('--active-rotation-cursor');
   }

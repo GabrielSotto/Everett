@@ -472,3 +472,5 @@ C08-U78 y C08-B202 verifican pivote compartido, puertos girados, edición de fle
 C08-U79 verifica que el giro de una composición conserva la distribución de sus piezas al cambiar de tamaño; C08-B203 gira el camión y la flecha en la escena y edita la curva incluso cuando su tirador coincide con la imagen.
 
 C08-B204 mide la orientación de los caracteres y la separación entre el nombre y el texto al girar desde la edición de tipografía. C08-B205 mide la distancia entre la esquina y el puntero durante el cruce de 0° en ambos sentidos y atraviesa el centro. C08-B206 comprueba el arrastre y su persistencia cuando una fuente remota termina de cargar en pleno giro.
+
+C08-B207 recorre las dos diagonales de una selección rotada al 25, 100 y 200 % y comprueba dónde el puntero cambia de tamaño a giro y dónde deja de girar. C08-B208 reproduce la escena del camión al 64 %, varía la distancia del puntero al centro y comprueba la posición de los grados, la reaparición del nombre y la inmovilidad del texto vecino al confirmar y cancelar.
