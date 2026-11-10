@@ -49,6 +49,13 @@ ausentes antes de decidir nuevas herramientas. La organización debe ser útil s
 el procesamiento agéntico real amplía ese trabajo y sigue pendiente de definir. Everett puede
 servir como ejemplo de proyecto complejo para la evaluación; no limita la utilidad a ese caso.
 
+Para evaluar explicaciones visuales, empezar por el viaje ilustrado del camión: distinguir
+origen, tránsito y destino de un vistazo, leer qué sucede entre hitos y poder cambiar tanto
+el texto como la ilustración y el trazado. Después, contrastar esas mismas herramientas con
+una composición sin eje temporal (por ejemplo, comparar alternativas o explicar las partes
+de un sistema). No se presupone una plantilla de cronología, una secuencia de diapositivas
+ni animación. El trabajo de los agentes sigue circunscrito a sus zonas y viene después.
+
 Este criterio guía la evaluación de utilidad de 0.8. El usuario autorizó implementar conjuntos manuales duraderos, referencias a fragmentos de Docs/Code y lectura del panorama; sus contratos están en C08-ORG-01 y C08-REF-01 de la definición detallada. La revisión de 0.8.17 autoriza la consulta conjunta de imágenes seleccionadas en el visor existente. La ampliación posterior a 0.8.18 incorpora alineación, distribución y accesos a acciones y ajustes de Canvas en la barra superior. La revisión de 0.8.21 los separa por ámbito: Bosquejos para crear piezas, Alinear para operar sobre la selección y Vista para encuadre y visualización. También requiere resolver bosquejos de interfaz de baja fidelidad como próximo bloque de Canvas, concretando sus piezas y dirección visual antes de implementarlas. Sustituye la postergación anterior de los wireframes. El editor integral conserva su planificación en 0.9.
 
 ### Materiales y edición

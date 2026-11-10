@@ -36,6 +36,11 @@ vincular una tarea con el código al que corresponde, las decisiones que la expl
 referencias, conservando la identidad y el acceso al contenido de origen. Esta utilidad debe
 existir también en el trabajo manual, sin agentes; la asistencia agéntica amplía ese trabajo.
 
+Canvas también sirve para explicar algo a otra persona con una composición visual. Se pueden
+combinar ilustraciones, texto, notas, formas y flechas: una secuencia muestra qué ocurre
+entre dos hitos; una comparación o un esquema anotado pueden comunicar una idea sin seguir
+un orden temporal. Las piezas siguen siendo editables en el espacio de trabajo.
+
 ## Navegación
 
 La navegación utiliza zoom, paneo y foco. El usuario enfoca una superficie y entra en ella mediante zoom; el recorrido inverso recupera la escala superior y permite desplazarse hacia otra superficie. La continuidad entre escalas forma parte del funcionamiento aprobado.

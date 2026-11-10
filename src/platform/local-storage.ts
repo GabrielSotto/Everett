@@ -29,8 +29,8 @@ function finished(tx: IDBTransaction): Promise<void> {
 /** Estado compartido y contexto personal se confirman juntos; los archivos conservan bytes. */
 export class LocalStorage {
   private constructor(private db: IDBDatabase) {}
-  static async open(): Promise<LocalStorage> {
-    const opening = indexedDB.open('everett-canvas', 1);
+  static async open(database = 'everett-canvas'): Promise<LocalStorage> {
+    const opening = indexedDB.open(database, 1);
     opening.onupgradeneeded = () => {
       for (const name of ['worlds', 'personal', 'assets']) opening.result.createObjectStore(name);
     };

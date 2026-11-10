@@ -2,6 +2,7 @@
 export const canvasCases = [
   { id: 'C08-B201', layer: 'browser', contracts: ['C08-TEXT-01'] },
   { id: 'C08-B199', layer: 'browser', contracts: ['C08-TEXT-01'] },
+  { id: 'C08-B200', layer: 'browser', contracts: ['C08-TEXT-01', 'C08-MAT-05'] },
   { id: 'C08-B197', layer: 'browser', contracts: ['C08-MAT-05', 'C08-LINK-02'] },
   { id: 'C08-U77', layer: 'unit', contracts: ['C08-MAT-05', 'C08-LINK-02'] },
   { id: 'C08-U76', layer: 'unit', contracts: ['C08-TEXT-01'] },
@@ -344,12 +345,16 @@ export const canvasCases = [
   { id: 'C08-B33', layer: 'browser', contracts: ['C08-MAT-07', 'C08-PROP-01'] },
 ];
 export const standaloneCases = ['C08-B13', 'C08-B90'];
+export const developmentCases = ['C08-B200'];
 export function verifyCanvasCoverage(layer, titles, { targetKind = 'artifact' } = {}) {
   if (!['development', 'artifact'].includes(targetKind))
     throw new Error('Tipo de objetivo inválido.');
   const required = canvasCases.filter(
     (item) =>
-      item.layer === layer && (targetKind !== 'development' || !standaloneCases.includes(item.id)),
+      item.layer === layer &&
+      (targetKind === 'development'
+        ? !standaloneCases.includes(item.id)
+        : !developmentCases.includes(item.id)),
   );
   for (const item of required) {
     const matches = titles.filter((title) => title.startsWith(item.id + ':'));

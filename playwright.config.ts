@@ -65,7 +65,7 @@ export default defineConfig({
     sourceHashes,
   },
   forbidOnly: true,
-  grepInvert: targetKind === 'development' ? /@standalone/ : /a^/,
+  grepInvert: targetKind === 'development' ? /@standalone/ : /@development/,
   retries: 0,
   workers: 1,
   timeout: 30_000,

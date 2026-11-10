@@ -6,13 +6,14 @@ import {
   verifyCanvasCoverage,
   verifyContractInventory,
   standaloneCases,
+  developmentCases,
 } from '../../scripts/canvas-contracts.mjs';
 
 test('HARNESS-C08: rechaza cobertura ausente, duplicada y contratos sin caso obligatorio', () => {
   verifyContractInventory(readFileSync('docs/iteraciones/0.8.md', 'utf8'));
   for (const layer of ['unit', 'browser']) {
     const titles = canvasCases
-      .filter((item) => item.layer === layer)
+      .filter((item) => item.layer === layer && !developmentCases.includes(item.id))
       .map((item) => item.id + ': comprobación real');
     assert.equal(verifyCanvasCoverage(layer, titles).length, titles.length);
     for (let index = 0; index < titles.length; index++) {

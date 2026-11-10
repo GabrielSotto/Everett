@@ -455,3 +455,14 @@ el objetivo de la guía dibujada y encadena retención, Ctrl, cancelación, conf
 Estos casos acreditan este bloque; no sustituyen la evaluación completa de la expansión de composición.
 La consulta de 50 marcos y 4.000 piezas debe conservar geometría e identidad sin recorrer todas
 las piezas por cada miembro; se miden accesos para detectar la regresión independientemente del hardware.
+
+C08-B198 reproduce el bloqueo tras cargar la tipografía de un párrafo guardado. Se comprueba
+que el ancho elegido se conserve, que un grafema indivisible quepa, que el repintado se estabilice
+y que el dock y el editor respondan después de dos recargas. C08-B199 retiene una transacción
+real desde otra pestaña, comprueba el aviso de espera y la recuperación automática del mismo texto
+al cerrar esa pestaña. C08-B200, exclusivo de Vite, abre la composición ilustrada, verifica las
+imágenes decodificadas, la relación entre el camión y su leyenda, la edición y el aislamiento del
+guardado. La captura del ejemplo sirve para revisar la lectura del conjunto con el usuario.
+C08-B201 modifica el contenido, la familia y el peso de un texto ya guardado por menú y con
+la herramienta Texto. Comprueba que retiene identidad y formato, y que un nombre largo sigue
+siendo editable en una ventana estrecha sin duplicar la etiqueta detrás del campo.

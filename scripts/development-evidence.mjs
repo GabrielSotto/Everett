@@ -19,6 +19,7 @@ export async function developmentIdentity(root) {
     'src/**/*',
     'scripts/link-preview/**/*.mjs',
     'design/wireframe-library/**/*',
+    'design/composicion-visual/**/*',
   ])
     for await (const entry of glob(pattern, { cwd: root, withFileTypes: true }))
       if (entry.isFile())

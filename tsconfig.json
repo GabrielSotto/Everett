@@ -16,5 +16,10 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "playwright.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "design/composicion-visual/**/*.ts",
+    "playwright.config.ts"
+  ]
 }

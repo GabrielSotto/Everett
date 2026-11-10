@@ -23,11 +23,17 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ### Composición manual: texto, cables y flechas
 
+El menú de un texto suelto ofrece **Editar texto**. También se puede retomar con la herramienta
+Texto, doble clic o Enter. El campo de renombre queda acotado al nombre y no cambia el contenido.
+Verificados 144 casos unitarios y del arnés (`2026-11-10_22-20-51-526Z`) y 12 recorridos de
+navegador sobre las fuentes finales (`2026-11-10_22-24-06-822Z`), incluidos recuperación
+entre pestañas, formato después de recargar y edición del ejemplo con guardado aislado.
+
 El formato y los gestos del texto directo, el grosor de los cables y las flechas libres se verifican con C08-B193 y C08-B195–B197 y C08-U77. La composición de ilustraciones con notas sigue en evaluación. Se comprobaron 144 pruebas unitarias y del arnés (`output/pruebas/unitarias/2026-11-10_21-52-59-520Z`) y 13 recorridos dirigidos en Vite (`output/pruebas/navegador/2026-11-10_21-51-50-151Z`), con revisión de las capturas de formato estrecho, contención del texto y trazados.
 
 ### Texto directo — 10 de noviembre
 
-Texto independiente de Notas en el dock de Canvas: clic para rótulos, arrastre para párrafos; tipografía, peso, tamaño, color y alineación en el lugar. La siguiente evaluación es componer manualmente una cronología visual; el trabajo con agentes en zonas viene después. Contrato y regresiones: [C08-TEXT-01](docs/iteraciones/0.8.md#texto-directo--c08-text-01).
+Texto independiente de Notas en el dock de Canvas: clic para rótulos, arrastre para párrafos; tipografía, peso, tamaño, color y alineación en el lugar. Corregido el bloqueo al recuperar párrafos con fuente remota y ancho fraccionario o menor que un grafema. El primer caso de composición visual es [De la huerta al mercado](design/composicion-visual/index.html), ejemplo editable con guardado propio. Falta contrastar el resultado con el usuario y extender la evaluación a explicaciones sin cronología; el trabajo con agentes en zonas viene después. Contrato: [C08-TEXT-01](docs/iteraciones/0.8.md#texto-directo--c08-text-01).
 
 Tipado y formato aprobados. Evidencia verificada: 143 pruebas unitarias y del arnés
 (`output/pruebas/unitarias/2026-11-10_21-19-56-760Z`) y diez recorridos dirigidos de texto, dock
