@@ -8,6 +8,8 @@ export type Tool =
   | 'ellipse'
   | 'triangle'
   | 'star'
+  | 'straight-arrow'
+  | 'curved-arrow'
   | 'connect'
   | 'zone'
   | 'drawing'

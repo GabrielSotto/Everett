@@ -14,7 +14,8 @@
   border: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: 1.25;
+  /* Las fuentes de respaldo (CJK, emoji) pueden superar la caja latina. */
+  line-height: normal;
   letter-spacing: normal;
   text-transform: none;
   tab-size: 4;
@@ -76,7 +77,7 @@
   color: var(--text);
 }
 .direct-text-format .note-font-field {
-  width: 132px;
+  width: 118px;
 }
 .direct-text-format :is(select, input[type='number'], input[type='color']) {
   height: 32px;
@@ -90,7 +91,83 @@
   font-size: 13px;
 }
 .direct-text-format input[type='number'] {
-  width: 52px;
+  width: 48px;
+}
+.direct-text-weight {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 32px;
+  min-width: 44px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.direct-text-weight svg {
+  transform: rotate(90deg);
+}
+.direct-text-format .direct-text-weight select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.direct-text-weight:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+}
+.direct-text-align {
+  display: flex;
+  border-inline-start: 1px solid var(--line);
+  padding-inline-start: 3px;
+}
+.direct-text-align button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 32px;
+  padding: 0;
+  color: var(--muted);
+  border-radius: 4px;
+}
+.direct-text-align button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--accent);
+}
+@media (hover: hover) {
+  .direct-text-weight:hover,
+  .direct-text-align button:hover {
+    background: var(--hover);
+  }
+}
+@media (max-width: 410px) {
+  .direct-text-format {
+    gap: 2px;
+  }
+  .direct-text-format .note-font-field {
+    width: 95px;
+  }
+  .direct-text-format input[type='number'] {
+    width: 43px;
+  }
+}
+.material.text .resize-handle:is(.w, .e) {
+  top: 50%;
+  cursor: ew-resize;
+  border-radius: 2px;
+}
+.material.text .resize-handle.w {
+  left: 0;
+}
+.material.text .resize-handle.e {
+  left: 100%;
+}
+.material.text .resize-handle::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
 }
 .direct-text-auto {
   width: 28px;

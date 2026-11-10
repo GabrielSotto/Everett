@@ -66,7 +66,7 @@ test('C08-B193: el arrastre define ancho; el formato, el ancho y las líneas via
   await field.fill('Del depósito al punto de entrega. Revisar la carga antes de salir.');
   const size = page.getByRole('spinbutton', { name: 'Tamaño del texto en píxeles' });
   await size.fill('30');
-  await page.getByLabel('Alineación del texto', { exact: true }).selectOption('center');
+  await page.getByRole('button', { name: 'Centrar texto' }).click();
   await page.getByLabel('Peso', { exact: true }).selectOption('700');
   await expect(field).toHaveCSS('font-size', '30px');
   await capture(page, info, 'texto-ajustado-edicion');
@@ -84,7 +84,7 @@ test('C08-B193: el arrastre define ancho; el formato, el ancho y las líneas via
   const run = page.locator('.material.text .canvas-text-run');
   await expect(run).toHaveCSS('font-weight', '700');
   await expect(run).toHaveCSS('text-align', 'center');
-  const handle = page.locator('.material.text .resize-handle.se');
+  const handle = page.locator('.material.text .resize-handle.e');
   await handle.focus();
   for (let i = 0; i < 12; i++) await page.keyboard.press('Shift+ArrowRight');
   expect((await world(page)).nodes[0]!.height).toBeLessThan(n.height);

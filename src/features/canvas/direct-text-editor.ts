@@ -49,7 +49,18 @@ export class DirectTextEditor {
     bar.className = 'direct-text-format';
     bar.setAttribute('role', 'group');
     bar.setAttribute('aria-label', 'Formato del texto');
-    bar.innerHTML = `<div class="note-font-field"><input id="note-font" role="combobox" aria-label="Tipografía" aria-haspopup="grid" aria-controls="note-font-list" aria-expanded="false" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Buscar fuente…"><button type="button" tabindex="-1" aria-label="Mostrar fuentes">${icon('chevron', 14)}</button></div><select id="note-weight" aria-label="Peso"></select><input type="number" id="note-size" aria-label="Tamaño del texto en píxeles" min="8" max="200" value="${data.size}"><input type="color" aria-label="Color del texto"><select aria-label="Alineación del texto"><option value="left">Izquierda</option><option value="center">Centro</option><option value="right">Derecha</option></select>`;
+    bar.innerHTML = `<div class="note-font-field"><input id="note-font" role="combobox" aria-label="Tipografía" aria-haspopup="grid" aria-controls="note-font-list" aria-expanded="false" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Buscar fuente…"><button type="button" tabindex="-1" aria-label="Mostrar fuentes">${icon('chevron', 14)}</button></div><label class="direct-text-weight"><span aria-hidden="true">${data.weight}</span>${icon('chevron', 10)}<select id="note-weight" aria-label="Peso"></select></label><input type="number" id="note-size" aria-label="Tamaño del texto en píxeles" min="8" max="200" step="any" value="${data.size}"><input type="color" aria-label="Color del texto"><div class="direct-text-align" role="group" aria-label="Alineación del texto">${(
+      [
+        ['left', 'Alinear a la izquierda'],
+        ['center', 'Centrar texto'],
+        ['right', 'Alinear a la derecha'],
+      ] as const
+    )
+      .map(
+        ([side, label]) =>
+          `<button type="button" data-align="${side}" title="${label}" aria-label="${label}">${icon('text-' + side, 16)}</button>`,
+      )
+      .join('')}</div>`;
     const reset = document.createElement('button');
     reset.type = 'button';
     reset.className = 'direct-text-auto';
@@ -65,8 +76,13 @@ export class DirectTextEditor {
     const source = () => stage.querySelector<HTMLElement>(`[data-node="${CSS.escape(id)}"]`);
     const size = bar.querySelector<HTMLInputElement>('#note-size')!;
     const color = bar.querySelector<HTMLInputElement>('[type=color]')!;
-    const align = bar.querySelector<HTMLSelectElement>('[aria-label="Alineación del texto"]')!;
-    align.value = data.align;
+    const align = bar.querySelector<HTMLElement>('.direct-text-align')!;
+    const alignButtons = Array.from(align.querySelectorAll<HTMLButtonElement>('button'));
+    const showAlignment = () =>
+      alignButtons.forEach((b) =>
+        b.setAttribute('aria-pressed', String(b.dataset.align === data.align)),
+      );
+    showAlignment();
     let bounds = textBounds(data, width ?? original?.width ?? 4);
     const session = crypto.randomUUID();
     let saved = !!original,
@@ -106,6 +122,7 @@ export class DirectTextEditor {
     };
     const layout = (changed = false) => {
       source()?.classList.add('direct-text-source');
+      bar.querySelector('.direct-text-weight span')!.textContent = String(data.weight);
       bounds = textBounds(data, width ?? original?.width ?? 4);
       const ink = canvasTextInk({ id, ...point, ...bounds, owner: null, data }, world);
       field.style.cssText = textStyle(data, ink);
@@ -199,10 +216,14 @@ export class DirectTextEditor {
       },
       options,
     );
+    align.addEventListener('mousedown', (e) => e.preventDefault(), options);
     align.addEventListener(
-      'change',
-      () => {
-        data.align = align.value as CanvasText['align'];
+      'click',
+      (e) => {
+        const button = alignButtons.find((b) => e.target instanceof Node && b.contains(e.target));
+        if (!button || data.align === button.dataset.align) return;
+        data.align = button.dataset.align as CanvasText['align'];
+        showAlignment();
         layout(true);
       },
       options,

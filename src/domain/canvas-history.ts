@@ -57,6 +57,8 @@ const reversible = new Set<Command['type']>([
   'wireframe.library',
   'node.publish',
   'node.style',
+  'arrow.reshape',
+  'link.thickness',
   'link.label',
   'link.reconnect',
   'zone.instruction',

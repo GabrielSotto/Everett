@@ -8,6 +8,9 @@ import { validNoteFont, validFontWeight, validNoteTypography } from './note-font
 import { validLayoutGuides } from './layout-guides';
 import { validComponentTree, elementAt } from './component-tree';
 import { validLibraryComposition } from './sketch-library';
+import { validLinkWeight } from './link-stroke';
+import { validArrowPoints } from './free-arrow';
+
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
@@ -358,7 +361,8 @@ export function validate(s: State): void {
       }
       if (n.data.kind === 'drawing')
         ensure(
-          n.data.points.length > 0 &&
+          validArrowPoints(n.data.arrow, n.data.points.length) &&
+            n.data.points.length > 0 &&
             n.data.points.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y)) &&
             Number.isFinite(n.data.thickness) &&
             n.data.thickness > 0,
@@ -425,6 +429,11 @@ export function validate(s: State): void {
       );
     }
     for (const l of w.links) {
+      ensure(
+        l.thickness === undefined || validLinkWeight(l.thickness),
+        'LINK_STYLE',
+        'Grosor de conexión inválido',
+      );
       ensure(
         ['north', 'east', 'south', 'west'].includes(l.fromAnchor) &&
           ['north', 'east', 'south', 'west'].includes(l.toAnchor),

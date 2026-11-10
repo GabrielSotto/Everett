@@ -21,6 +21,10 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
+### Composición manual: texto, cables y flechas
+
+El formato y los gestos del texto directo, el grosor de los cables y las flechas libres se verifican con C08-B193 y C08-B195–B197 y C08-U77. La composición de ilustraciones con notas sigue en evaluación. Se comprobaron 144 pruebas unitarias y del arnés (`output/pruebas/unitarias/2026-11-10_21-52-59-520Z`) y 13 recorridos dirigidos en Vite (`output/pruebas/navegador/2026-11-10_21-51-50-151Z`), con revisión de las capturas de formato estrecho, contención del texto y trazados.
+
 ### Texto directo — 10 de noviembre
 
 Texto independiente de Notas en el dock de Canvas: clic para rótulos, arrastre para párrafos; tipografía, peso, tamaño, color y alineación en el lugar. La siguiente evaluación es componer manualmente una cronología visual; el trabajo con agentes en zonas viene después. Contrato y regresiones: [C08-TEXT-01](docs/iteraciones/0.8.md#texto-directo--c08-text-01).

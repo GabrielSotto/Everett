@@ -255,7 +255,10 @@
   outline: none !important;
   stroke: transparent;
   /* El zoom CSS del contenedor HTML queda fuera de non-scaling-stroke. */
-  stroke-width: calc(14px / var(--canvas-zoom));
+  stroke-width: max(
+    calc(14px / var(--canvas-zoom)),
+    calc(var(--cable-weight, 0px) + 6px / var(--canvas-zoom))
+  );
   fill: none;
   pointer-events: stroke;
   cursor: pointer;
@@ -265,7 +268,7 @@
 .link-line,
 .pending-link {
   stroke: #94a0b2;
-  stroke-width: calc(1.4px / var(--canvas-zoom));
+  stroke-width: max(var(--cable-weight, 0px), calc(1.4px / var(--canvas-zoom)));
   fill: none;
   pointer-events: none;
   vector-effect: non-scaling-stroke;
@@ -273,7 +276,10 @@
 
 .connection.selected .link-line {
   stroke: #c5b3e7;
-  stroke-width: calc(2px / var(--canvas-zoom));
+  stroke-width: max(
+    calc(var(--cable-weight, 0px) + 0.6px / var(--canvas-zoom)),
+    calc(2px / var(--canvas-zoom))
+  );
 }
 
 .pending-link {

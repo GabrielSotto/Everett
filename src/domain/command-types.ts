@@ -73,6 +73,14 @@ export type Command =
       fill: boolean;
       stroke: string;
     }
+  | {
+      type: 'arrow.reshape';
+      world: string;
+      id: string;
+      handle: import('./free-arrow').ArrowHandle;
+      point: Point;
+    }
+  | { type: 'link.thickness'; world: string; id: string; thickness: number }
   | { type: 'link.label'; world: string; id: string; text: string }
   | {
       type: 'link.reconnect';
@@ -267,6 +275,7 @@ export type Command =
       world: string;
       id: string;
       rect: Rect;
+      textStyle?: Pick<import('./canvas-text').CanvasText, 'size' | 'sizing'>;
     }
   | { type: 'group.resize'; world: string; id: string; rect: Rect }
   | {

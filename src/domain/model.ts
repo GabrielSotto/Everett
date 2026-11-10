@@ -139,7 +139,14 @@ export type NodeData =
       stroke?: string;
       thickness?: number;
     }
-  | { kind: 'drawing'; title: string; points: readonly Point[]; color: string; thickness: number }
+  | {
+      kind: 'drawing';
+      title: string;
+      points: readonly Point[];
+      color: string;
+      thickness: number;
+      arrow?: 'straight' | 'curve';
+    }
   | {
       kind: 'image' | 'video' | 'pdf';
       title: string;
@@ -174,6 +181,7 @@ export interface Link {
   to: string;
   fromAnchor: Anchor;
   toAnchor: Anchor;
+  thickness?: number;
   label?: string;
 }
 export interface Zone extends Rect {

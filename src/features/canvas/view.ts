@@ -33,7 +33,16 @@ import { restoreNoteFonts } from './note-font-loading';
 import { bindPointerCancellation } from '../../ui/pointer-cancellation';
 import './direct-text.css';
 import { DirectTextEditor } from './direct-text-editor';
-import { textBounds } from './direct-text-layout';
+import {
+  arrowTool,
+  createArrow,
+  editArrow,
+  isArrow,
+  type ArrowHandle,
+} from '../../domain/free-arrow';
+import { arrowArt, arrowHandles, arrowHandlePoint } from './free-arrow';
+import { linkWeights } from '../../domain/link-stroke';
+import { resizeText, textBounds } from './direct-text-layout';
 import { CanvasInteractions } from './interactions';
 import { proposalMarkup } from './proposals';
 import { sameConnection } from '../../domain/link-identity';
@@ -57,8 +66,18 @@ import { paintLayoutGuides } from './layout-guides';
 import { resizedComponent } from '../../domain/component-resize';
 import { componentElements, elementMaterials } from '../../domain/component-tree';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
-type Corner = 'nw' | 'ne' | 'se' | 'sw';
+const shapePalette = [...shapeTools, 'straight-arrow', 'curved-arrow'] as const;
+const shapeNames = {
+  rectangle: 'Rectángulo',
+  ellipse: 'Elipse',
+  triangle: 'Triángulo',
+  star: 'Estrella',
+  'straight-arrow': 'Flecha recta',
+  'curved-arrow': 'Flecha curva',
+};
+type Corner = 'nw' | 'ne' | 'se' | 'sw' | 'w' | 'e';
 type Drag =
+  | { kind: 'arrow'; id: string; handle: ArrowHandle; start: Point; origin: Point; point: Point }
   | { kind: 'pan' }
   | { kind: 'selection'; start: Point; point: Point; before: string[]; additive: boolean }
   | { kind: 'reconnect'; id: string; end: 'from' | 'to'; start: Point; distance: number }
@@ -82,6 +101,7 @@ type Drag =
       origin: Rect;
       rect: Rect;
       corner: Corner;
+      textStyle?: ReturnType<typeof resizeText>['textStyle'];
       intent: Intent;
     }
   | { kind: 'draw'; tool: Tool; start: Point; point: Point; points: Point[]; intent: Intent }
@@ -474,6 +494,34 @@ export class CanvasView implements View {
       event.stopPropagation();
       return;
     }
+    const ah = element.dataset.arrowHandle as ArrowHandle | undefined;
+    if (ah && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+      const n = this.ctx.world().nodes.find((n) => n.id === element.dataset.id && !n.owner);
+      const p = n && arrowHandlePoint(n, ah);
+      if (!n || !p) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const step = event.shiftKey ? 10 : 2;
+      this.ctx.act(
+        {
+          type: 'arrow.reshape',
+          world: this.ctx.world().id,
+          id: n.id,
+          handle: ah,
+          point: {
+            x: p.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0),
+            y: p.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0),
+          },
+        },
+        'ajustar flecha',
+        'C08-MAT-05',
+        'keyboard',
+      );
+      this.root
+        .querySelector<HTMLElement>(`[data-id="${CSS.escape(n.id)}"][data-arrow-handle="${ah}"]`)
+        ?.focus({ preventScroll: true });
+      return;
+    }
     const menu = element.closest('.dock-more-menu,.reference-menu');
     if (menu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
       event.preventDefault();
@@ -582,16 +630,23 @@ export class CanvasView implements View {
       width *= scale;
       height *= scale;
     }
-    if (node.data.kind === 'text')
-      height = textBounds({ ...node.data, sizing: 'wrap' }, width).height;
-    const rect = {
+    if (node.data.kind === 'text' && corner.length === 1 && dx === 0) return;
+    const resizedText =
+      node.data.kind === 'text' ? resizeText(node.data, node, corner, dx, dy) : null;
+    const rect = resizedText?.rect ?? {
       x: corner.includes('w') ? node.x + node.width - width : node.x,
       y: corner.includes('n') ? node.y + node.height - height : node.y,
       width,
       height,
     };
     this.ctx.act(
-      { type: 'node.resize', world: this.ctx.world().id, id: node.id, rect },
+      {
+        type: 'node.resize',
+        world: this.ctx.world().id,
+        id: node.id,
+        rect,
+        ...(resizedText ? { textStyle: resizedText.textStyle } : {}),
+      },
       'redimensionar con teclado',
       'C08-MAT-05',
       'keyboard',
@@ -850,6 +905,25 @@ export class CanvasView implements View {
       this.root.setPointerCapture(e.pointerId);
       return;
     }
+    const ah = target.closest<HTMLElement>('[data-arrow-handle]');
+    if (ah) {
+      const n = this.ctx.world().nodes.find((n) => n.id === ah.dataset.id && !n.owner);
+      const handle = ah.dataset.arrowHandle as ArrowHandle;
+      const origin = n && arrowHandlePoint(n, handle);
+      if (n && origin) {
+        e.preventDefault();
+        this.drag = {
+          kind: 'arrow',
+          id: n.id,
+          handle,
+          start: this.point(e),
+          origin,
+          point: origin,
+        };
+        this.root.setPointerCapture(e.pointerId);
+      }
+      return;
+    }
     const handle = target.closest<HTMLElement>('[data-resize]');
     if (
       handle &&
@@ -903,7 +977,7 @@ export class CanvasView implements View {
     }
     (target.closest<HTMLElement>('[data-node]') ?? this.root).setPointerCapture(e.pointerId);
     if (
-      shapeTools.includes(ui.canvas.tool as Shape) ||
+      shapePalette.includes(ui.canvas.tool as Shape) ||
       ui.canvas.tool === 'zone' ||
       ui.canvas.tool === 'drawing' ||
       ui.canvas.tool === 'note' ||
@@ -1067,6 +1141,20 @@ export class CanvasView implements View {
       preview.setAttribute('d', linkPath(anchorPoint(source, d.anchor), point, d.anchor, 'west'));
       return;
     }
+    if (d.kind === 'arrow') {
+      const n = this.ctx.world().nodes.find((n) => n.id === d.id);
+      const el = this.root.querySelector<HTMLElement>(`[data-node="${CSS.escape(d.id)}"]`);
+      if (n && isArrow(n) && el) {
+        d.point = { x: d.origin.x + point.x - d.start.x, y: d.origin.y + point.y - d.start.y };
+        const preview = editArrow(n, d.handle, d.point);
+        this.applyRect(el, preview);
+        el.querySelector('.arrow-art')!.outerHTML = arrowArt(preview);
+        el.querySelectorAll('.arrow-handle').forEach((h) => h.remove());
+        el.insertAdjacentHTML('beforeend', arrowHandles(preview));
+        this.paintLinks([{ id: n.id, point: preview }]);
+      }
+      return;
+    }
     if (d.kind === 'resize') {
       const dx = point.x - d.start.x,
         dy = point.y - d.start.y;
@@ -1111,8 +1199,13 @@ export class CanvasView implements View {
       }
       const material = this.ctx.world().nodes.find((n) => n.id === d.id);
       if (material?.data.kind === 'text') {
-        const height = textBounds({ ...material.data, sizing: 'wrap' }, d.rect.width).height;
-        d.rect = { ...d.rect, height, y: d.corner.includes('n') ? fixed.y - height : fixed.y };
+        const result = resizeText(material.data, d.origin, d.corner, dx, dy);
+        d.rect = result.rect;
+        d.textStyle = result.textStyle;
+        const run = this.root.querySelector<HTMLElement>(
+          `[data-node="${CSS.escape(d.id)}"] .canvas-text-run`,
+        );
+        if (run) run.style.fontSize = result.textStyle.size + 'px';
       }
       if (material?.data.kind === 'image' || material?.data.kind === 'video') {
         const sx = d.rect.width / d.origin.width,
@@ -1274,6 +1367,18 @@ export class CanvasView implements View {
       this.applyRect(preview, rect);
       preview.innerHTML = `<svg viewBox="0 0 ${rect.width} ${rect.height}" preserveAspectRatio="none"><polyline points="${d.points.map((p) => `${p.x - rect.x},${p.y - rect.y}`).join(' ')}" fill="none" stroke="${this.ctx.ui.canvas.color}" stroke-width="${this.ctx.ui.canvas.thickness}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     }
+    if (arrowTool(d.tool)) {
+      const n = createArrow(
+        '',
+        d.start,
+        d.point,
+        d.tool === 'curved-arrow',
+        this.ctx.ui.canvas.color,
+        this.ctx.ui.canvas.thickness,
+      );
+      this.applyRect(preview, n);
+      preview.innerHTML = arrowArt(n);
+    }
     if (shapeTools.includes(d.tool as Shape))
       preview.innerHTML = shapeMarkup({
         id: '',
@@ -1372,6 +1477,16 @@ export class CanvasView implements View {
         this.connect(d.node, d.anchor, port.dataset.anchorNode, port.dataset.anchor as Anchor);
       return;
     }
+    if (d.kind === 'arrow') {
+      if (d.point.x !== d.origin.x || d.point.y !== d.origin.y)
+        this.ctx.act(
+          { type: 'arrow.reshape', world: w.id, id: d.id, handle: d.handle, point: d.point },
+          'ajustar flecha',
+          'C08-MAT-05',
+          'pointer',
+        );
+      return;
+    }
     if (d.kind === 'resize') {
       this.ctx.act(
         {
@@ -1384,6 +1499,7 @@ export class CanvasView implements View {
           world: w.id,
           id: d.id,
           rect: d.rect,
+          ...(d.textStyle ? { textStyle: d.textStyle } : {}),
         },
         'redimensionar',
         'DRAW-01',
@@ -1536,31 +1652,40 @@ export class CanvasView implements View {
     } else {
       const click = Math.hypot(d.point.x - d.start.x, d.point.y - d.start.y) < 3;
       const geometry = d.tool === 'note' && click ? { ...rect, width: 240, height: 175 } : rect;
-      const node: Material = {
-        id,
-        ...geometry,
-        owner: null,
-        data:
-          d.tool === 'note'
-            ? { kind: 'note', title: '', text: '', color: colors[0]! }
-            : d.tool === 'drawing'
-              ? {
-                  kind: 'drawing',
-                  title: 'Sin nombre',
-                  points: d.points.map((p) => ({ x: p.x - rect.x, y: p.y - rect.y })),
-                  color: this.ctx.ui.canvas.color,
-                  thickness: this.ctx.ui.canvas.thickness,
-                }
-              : {
-                  kind: 'shape',
-                  shape: d.tool as Shape,
-                  title: 'Sin nombre',
-                  color: this.ctx.ui.canvas.color,
-                  stroke: this.ctx.ui.canvas.stroke,
-                  thickness: this.ctx.ui.canvas.thickness,
-                  fill: this.ctx.ui.canvas.fill,
-                },
-      };
+      const node: Material = arrowTool(d.tool)
+        ? createArrow(
+            id,
+            d.start,
+            click ? { x: d.start.x + 110, y: d.start.y } : d.point,
+            d.tool === 'curved-arrow',
+            this.ctx.ui.canvas.color,
+            this.ctx.ui.canvas.thickness,
+          )
+        : {
+            id,
+            ...geometry,
+            owner: null,
+            data:
+              d.tool === 'note'
+                ? { kind: 'note', title: '', text: '', color: colors[0]! }
+                : d.tool === 'drawing'
+                  ? {
+                      kind: 'drawing',
+                      title: 'Sin nombre',
+                      points: d.points.map((p) => ({ x: p.x - rect.x, y: p.y - rect.y })),
+                      color: this.ctx.ui.canvas.color,
+                      thickness: this.ctx.ui.canvas.thickness,
+                    }
+                  : {
+                      kind: 'shape',
+                      shape: d.tool as Shape,
+                      title: 'Sin nombre',
+                      color: this.ctx.ui.canvas.color,
+                      stroke: this.ctx.ui.canvas.stroke,
+                      thickness: this.ctx.ui.canvas.thickness,
+                      fill: this.ctx.ui.canvas.fill,
+                    },
+          };
       this.ctx.act(
         { type: 'node.create', world: w.id, node },
         d.tool === 'note' ? 'crear nota' : 'dibujar forma',
@@ -1575,7 +1700,8 @@ export class CanvasView implements View {
       { operation: 'draw', tool: d.tool, start: d.start, end: d.point, requested: rect, id },
       d.intent,
     );
-    if (d.tool === 'note' || d.tool === 'zone') this.ctx.ui.canvas.tool = 'select';
+    if (d.tool === 'note' || d.tool === 'zone' || arrowTool(d.tool))
+      this.ctx.ui.canvas.tool = 'select';
     this.render();
   }
   private cancel(): void {
@@ -1678,7 +1804,7 @@ export class CanvasView implements View {
           'hand',
           'note',
           'text',
-          ...shapeTools,
+          ...shapePalette,
           'zone',
           'connect',
           'drawing',
@@ -1716,7 +1842,7 @@ export class CanvasView implements View {
         this.closeReview();
         break;
       case 'shapes':
-        if (shapeTools.includes(ctx.ui.canvas.tool as Shape)) {
+        if (shapePalette.includes(ctx.ui.canvas.tool as Shape)) {
           ctx.ui.canvas.tool = 'select';
           this.select(null, null);
           this.shapesOpen = false;
@@ -1764,6 +1890,21 @@ export class CanvasView implements View {
         this.select(null, null);
         this.render();
         break;
+      case 'link-thickness': {
+        const link = w.links.find((l) => l.id === ctx.ui.canvas.linkSelection);
+        const thickness = Number(t.dataset.value);
+        if (link && (link.thickness ?? 1.4) !== thickness) {
+          ctx.act(
+            { type: 'link.thickness', world: w.id, id: link.id, thickness },
+            'cambiar grosor de conexión',
+            'C08-LINK-02',
+          );
+          this.root
+            .querySelector<HTMLElement>(`[data-action=link-thickness][data-value="${thickness}"]`)
+            ?.focus({ preventScroll: true });
+        }
+        break;
+      }
       case 'select-link':
         this.select('link', id);
         this.paintSelection(true);
@@ -2061,7 +2202,11 @@ export class CanvasView implements View {
         base = group.querySelector('.mask-base');
       if (mask && base) {
         // La región predeterminada depende del viewport SVG (1 × 1), no del cable.
-        const margin = 16 / zoom;
+        const margin = Math.max(
+          16 / zoom,
+          (this.ctx.world().links.find((l) => l.id === group.dataset.link)?.thickness ?? 0) / 2 +
+            3 / zoom,
+        );
         const region = {
           x: bounds.x - margin,
           y: bounds.y - margin,
@@ -2180,7 +2325,12 @@ export class CanvasView implements View {
         (!component || (editing && ui.canvas.selections.length === 1))
       ) {
         if (!handles.length)
-          element.insertAdjacentHTML('beforeend', resizeHandles('node', node.id));
+          element.insertAdjacentHTML(
+            'beforeend',
+            isArrow(node)
+              ? arrowHandles(node)
+              : resizeHandles('node', node.id, node.data.kind === 'text'),
+          );
       } else handles.forEach((handle) => handle.remove());
       const ports = element.querySelectorAll('.connection-port');
       if (connect && !ports.length) element.insertAdjacentHTML('beforeend', connectionPorts(node));
@@ -2450,9 +2600,13 @@ export class CanvasView implements View {
       .world()
       .nodes.find((node) => node.id === this.ctx.ui.canvas.selection);
     const chosen = dock.querySelector<HTMLElement>(
-      shapeTools.includes(this.ctx.ui.canvas.tool as Shape) || selected?.data.kind === 'shape'
-        ? '[data-action=shapes]'
-        : '[data-tool=drawing]',
+      this.ctx.ui.canvas.linkSelection
+        ? '[data-tool=connect]'
+        : shapePalette.includes(this.ctx.ui.canvas.tool as Shape) ||
+            (selected && isArrow(selected)) ||
+            selected?.data.kind === 'shape'
+          ? '[data-action=shapes]'
+          : '[data-tool=drawing]',
     );
     const trigger = chosen?.offsetWidth
       ? chosen
@@ -2540,12 +2694,12 @@ export class CanvasView implements View {
         ),
       )
       .join('');
-    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, this.shapesOpen || shapeTools.includes(ctx.ui.canvas.tool as Shape))}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', `data-dock-secondary aria-haspopup="dialog" aria-expanded="${this.referenceMenu}" aria-controls="canvas-material-picker"`)}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div>${this.shapesOpen ? `<div class="shape-menu" role="group" aria-label="Elegir forma">${shapeTools.map((shape) => btn('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}<button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMarkup()}`;
+    holder.innerHTML = `<div class="canvas-tools" role="toolbar" aria-label="Herramientas de Canvas" style="${this.dock ? `left:${this.dock.x}px;top:${this.dock.y}px;bottom:auto;transform:none` : ''}"><span class="dock-grip" data-action="dock-grip">${icon('grip', 14)}</span>${tools}${btn('canvas-tool', 'draw', 'Dibujar', 'data-tool="drawing"', ctx.ui.canvas.tool === 'drawing')}<div class="shape-picker dock-extra">${btn('shapes', 'shapes', 'Formas', `aria-expanded="${this.shapesOpen}"`, this.shapesOpen || shapePalette.includes(ctx.ui.canvas.tool as Shape))}</div>${btn('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect" data-dock-secondary', ctx.ui.canvas.tool === 'connect')}${btn('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''), 'data-dock-secondary', ctx.ui.canvas.tool === 'comment')}${btn('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone" data-dock-secondary', ctx.ui.canvas.tool === 'zone')}${btn('references', 'plus', 'Incorporar materiales', `data-dock-secondary aria-haspopup="dialog" aria-expanded="${this.referenceMenu}" aria-controls="canvas-material-picker"`)}${btn('dock-more', 'more', 'Más herramientas', `aria-haspopup="menu" aria-expanded="${this.dockMore}"`)}</div>${this.shapesOpen ? `<div class="shape-menu" role="group" aria-label="Elegir forma">${shapePalette.map((shape) => btn('canvas-tool', shape, shapeNames[shape], `data-tool="${shape}"`, ctx.ui.canvas.tool === shape)).join('')}</div>` : ''}<button type="button" class="chat-launch" data-action="chat-open" aria-label="Quick Chat" data-tip="Quick Chat">${icon('conversation', 20)}</button>${this.referenceMarkup()}`;
     const selected = w.nodes.find((n) => n.id === ctx.ui.canvas.selection);
     if (
       !this.shapesOpen &&
       (ctx.ui.canvas.tool === 'drawing' ||
-        shapeTools.includes(ctx.ui.canvas.tool as Shape) ||
+        shapePalette.includes(ctx.ui.canvas.tool as Shape) ||
         selected?.data.kind === 'shape' ||
         selected?.data.kind === 'drawing')
     ) {
@@ -2554,6 +2708,13 @@ export class CanvasView implements View {
       holder.insertAdjacentHTML(
         'beforeend',
         `<div class="canvas-style" aria-label="Estilo de dibujo y formas"><label>Color<input type="color" id="draw-color" data-action="color-open" value="${rgb(ctx.ui.canvas.color)}"></label>${strokePicker(ctx.ui.canvas.thickness)}${shape ? `<label>Borde<input type="color" id="shape-border" data-action="color-open" value="${rgb(ctx.ui.canvas.stroke)}"></label><label><input type="checkbox" id="shape-fill" ${ctx.ui.canvas.fill ? 'checked' : ''}>Relleno</label>` : ''}</div>`,
+      );
+    }
+    const cable = w.links.find((link) => link.id === ctx.ui.canvas.linkSelection);
+    if (cable && !this.shapesOpen && !holder.querySelector('.canvas-style')) {
+      holder.insertAdjacentHTML(
+        'beforeend',
+        `<div class="canvas-style" role="group" aria-label="Estilo de conexión">Grosor ${strokePicker(cable.thickness ?? 1.4, 'link-thickness', linkWeights)}</div>`,
       );
     }
     const dock = holder.querySelector<HTMLElement>('.canvas-tools')!;
@@ -2606,7 +2767,7 @@ export class CanvasView implements View {
         `<button type="button" role="menuitem" data-action="${action}" ${attributes}>${icon(symbol, 16)}<span>${html(label)}</span></button>`;
       holder.insertAdjacentHTML(
         'beforeend',
-        `<div class="dock-more-menu" role="menu" aria-label="Más herramientas de Canvas">${(['select', 'hand', 'note', 'text', 'drawing'] as const).map((tool) => item('canvas-tool', { select: 'select', hand: 'hand', note: 'note', text: 'text', drawing: 'draw' }[tool], { select: 'Seleccionar', hand: 'Panear', note: 'Crear nota', text: 'Texto', drawing: 'Dibujar' }[tool], `data-tool="${tool}"`)).join('')}${shapeTools.map((shape) => item('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`)).join('')}${item('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"')}${item('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''))}${item('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"')}${item('references', 'plus', 'Incorporar materiales')}</div>`,
+        `<div class="dock-more-menu" role="menu" aria-label="Más herramientas de Canvas">${(['select', 'hand', 'note', 'text', 'drawing'] as const).map((tool) => item('canvas-tool', { select: 'select', hand: 'hand', note: 'note', text: 'text', drawing: 'draw' }[tool], { select: 'Seleccionar', hand: 'Panear', note: 'Crear nota', text: 'Texto', drawing: 'Dibujar' }[tool], `data-tool="${tool}"`)).join('')}${shapePalette.map((shape) => item('canvas-tool', shape, shapeNames[shape], `data-tool="${shape}"`)).join('')}${item('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"')}${item('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''))}${item('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"')}${item('references', 'plus', 'Incorporar materiales')}</div>`,
       );
       const menu = holder.querySelector<HTMLElement>('.dock-more-menu')!,
         bounds = dock.getBoundingClientRect();
@@ -2622,7 +2783,7 @@ export class CanvasView implements View {
       for (const button of menu.querySelectorAll<HTMLElement>('[data-action]'))
         if (
           shown.has(button.dataset.action + ':' + (button.dataset.tool ?? '')) ||
-          (shapeTools.includes(button.dataset.tool as Shape) && shown.has('shapes:'))
+          (shapePalette.includes(button.dataset.tool as Shape) && shown.has('shapes:'))
         )
           button.remove();
       menu.style.left = `${Math.max(12, Math.min(innerWidth - menu.offsetWidth - 12, vertical ? bounds.left - menu.offsetWidth - 8 : bounds.left + bounds.width / 2 - menu.offsetWidth / 2))}px`;

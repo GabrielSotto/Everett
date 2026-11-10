@@ -438,7 +438,10 @@ body[data-canvas-motion='reduced']
 }
 .connection:hover .link-line,
 .connection:focus-within .link-line {
-  stroke-width: calc(3px / var(--canvas-zoom));
+  stroke-width: max(
+    calc(var(--cable-weight, 0px) + 1.6px / var(--canvas-zoom)),
+    calc(3px / var(--canvas-zoom))
+  );
 }
 .cable-label {
   font-size: calc(12px / var(--canvas-zoom));
@@ -1955,4 +1958,41 @@ body[data-canvas-motion='reduced']
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 6;
   overflow: hidden;
+}
+
+.arrow-art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.material.free-arrow {
+  pointer-events: none;
+}
+.material.free-arrow
+  :is(.material-identification, .connection-port, .arrow-handle, .comment-marker) {
+  pointer-events: auto;
+}
+.arrow-art .arrow-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: max(calc(14px / var(--canvas-zoom, 1)), calc(var(--drawing-thickness) + 4px));
+  pointer-events: stroke;
+}
+.arrow-art .arrow-ink {
+  pointer-events: none;
+}
+.material .arrow-handle {
+  border-radius: 50%;
+  cursor: move;
+}
+.material .arrow-handle[data-arrow-handle='bend'] {
+  background: var(--accent);
+}
+.arrow-handle::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+}
+.draw-preview .arrow-hit {
+  pointer-events: none;
 }

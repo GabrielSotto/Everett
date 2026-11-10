@@ -68,6 +68,8 @@ export function reduce(state: State, command: Command): State {
     case 'assignment.retry':
     case 'node.rename':
     case 'node.style':
+    case 'arrow.reshape':
+    case 'link.thickness':
     case 'link.label':
     case 'link.reconnect':
     case 'zone.instruction':

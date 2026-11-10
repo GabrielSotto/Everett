@@ -75,6 +75,11 @@ const paths: Record<string, string> = {
   link: '<path d="m10 13 4-4M8 16l-2 2a3.5 3.5 0 0 1-5-5l4-4a3.5 3.5 0 0 1 5 0m4-1 2-2a3.5 3.5 0 0 1 5 5l-4 4a3.5 3.5 0 0 1-5 0"/>',
   comment:
     '<path d="M20 15a3 3 0 0 1-3 3H9l-5 3V6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/><path d="M8 10h8"/>',
+  'straight-arrow': '<path d="M4 19 20 5m-9 0h9v9"/>',
+  'curved-arrow': '<path d="M3 19Q3 5 20 5m-6-3 6 3-4 6"/>',
+  'text-left': '<path d="M4 5h16M4 10h10M4 15h16M4 20h10"/>',
+  'text-center': '<path d="M4 5h16M7 10h10M4 15h16M7 20h10"/>',
+  'text-right': '<path d="M4 5h16M10 10h10M4 15h16M10 20h10"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
   trash: '<path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',
   folder: '<path d="M3 6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',

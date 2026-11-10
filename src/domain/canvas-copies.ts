@@ -12,6 +12,8 @@ import { ensure } from './invariants';
 import { referenceExcerpt } from './reference-anchors';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
+import { validLinkWeight } from './link-stroke';
+import { validArrowPoints } from './free-arrow';
 import { validCanvasText } from './canvas-text';
 import { validNoteFont, validFontWeight, validNoteTypography } from './note-fonts';
 import { validLinkPreview, linkUrl } from './link-previews';
@@ -56,6 +58,7 @@ function validData(v: unknown): v is NodeData {
     case 'drawing':
       return (
         Array.isArray(v.points) &&
+        validArrowPoints(v.arrow, v.points.length) &&
         v.points.length > 0 &&
         v.points.every(point) &&
         color(v.color) &&
@@ -156,6 +159,7 @@ export function parseCanvasClipboard(text: string): CanvasClipboard {
         l.from !== l.to &&
         ['north', 'east', 'south', 'west'].includes(String(l.fromAnchor)) &&
         ['north', 'east', 'south', 'west'].includes(String(l.toAnchor)) &&
+        (l.thickness === undefined || validLinkWeight(l.thickness)) &&
         (l.label === undefined || typeof l.label === 'string'),
     ),
     'CLIPBOARD_LINK',

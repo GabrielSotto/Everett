@@ -11,6 +11,8 @@ import { orderMaterials } from '../material-order';
 import { validLinkPreview } from '../link-previews';
 import { resolveMedia } from '../resolved-media';
 import { validWireframe } from '../wireframes';
+import { editArrow, isArrow, restrokeArrow } from '../free-arrow';
+import { validLinkWeight } from '../link-stroke';
 import { validCanvasText } from '../canvas-text';
 import { compositionKinds, wireframeComposition } from '../wireframe-compositions';
 import { instantiateLibrary, validLibraryComposition } from '../sketch-library';
@@ -33,6 +35,8 @@ type CanvasCommand = Extract<
       | 'assignment.retry'
       | 'node.rename'
       | 'node.style'
+      | 'arrow.reshape'
+      | 'link.thickness'
       | 'link.label'
       | 'link.reconnect'
       | 'zone.instruction'
@@ -379,6 +383,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         'Este material no tiene estilo de trazo',
       );
       if (material.data.kind === 'shape' || material.data.kind === 'drawing') {
+        if (isArrow(material)) Object.assign(material, restrokeArrow(material, command.thickness));
         material.data.color = command.color;
         material.data.thickness = command.thickness;
         if (material.data.kind === 'shape') {
@@ -411,6 +416,29 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         'Ya existe una conexión entre esos anclajes',
       );
       Object.assign(link, next);
+      break;
+    }
+    case 'arrow.reshape': {
+      const material = node(command.id);
+      ensure(!material.owner && isArrow(material), 'ARROW', 'Elegí una flecha libre disponible');
+      ensure(
+        ['start', 'bend', 'end'].includes(command.handle) &&
+          [command.point.x, command.point.y].every(Number.isFinite),
+        'GEOMETRY',
+        'Punto de flecha inválido',
+      );
+      if (isArrow(material))
+        Object.assign(material, editArrow(material, command.handle, command.point));
+      break;
+    }
+    case 'link.thickness': {
+      const link = need(
+        world.links.find((l) => l.id === command.id),
+        'Conexión inexistente',
+      );
+      ensure(validLinkWeight(command.thickness), 'LINK_STYLE', 'Grosor de conexión inválido');
+      if (command.thickness === 1.4) delete link.thickness;
+      else link.thickness = command.thickness;
       break;
     }
     case 'link.label':
@@ -558,7 +586,15 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
     case 'node.resize': {
       const material = node(command.id);
       ensure(!material.owner, 'LOCKED', 'El agente está usando el material');
-      if (material.data.kind === 'text') material.data.sizing = 'wrap';
+      if (material.data.kind === 'text') {
+        const style = command.textStyle ?? { size: material.data.size, sizing: 'wrap' };
+        ensure(
+          validCanvasText({ ...material.data, size: style.size, sizing: style.sizing }),
+          'STYLE',
+          'Tamaño de texto inválido',
+        );
+        Object.assign(material.data, { size: style.size, sizing: style.sizing });
+      }
       if (material.data.kind === 'drawing')
         material.data.points = material.data.points.map((p) => ({
           x: (p.x * command.rect.width) / material.width,

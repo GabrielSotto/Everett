@@ -11,6 +11,8 @@ import {
 import { localText, localNames } from '../../domain/local-content';
 import { wireframeMarkup } from './wireframe-markup';
 import { wireframeText } from '../../domain/wireframes';
+import { isArrow } from '../../domain/free-arrow';
+import { arrowArt, arrowHandles } from './free-arrow';
 import { anchorPoint, linkPath, shapeVertices } from '../../domain/geometry';
 import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
@@ -37,14 +39,15 @@ export function shapeMarkup(material: Material): string {
 function drawingMarkup(material: Material): string {
   if (material.data.kind !== 'drawing') return '';
   const d = material.data;
+  if (isArrow(material)) return arrowArt(material);
   const point = d.points[0]!;
   return `<svg class="drawing-art" style="--drawing-thickness:${d.thickness}px" viewBox="0 0 ${material.width} ${material.height}" aria-hidden="true">${d.points.length === 1 ? `<circle cx="${point.x}" cy="${point.y}" r="${d.thickness / 2}" fill="${d.color}"/>` : `<polyline points="${d.points.map((p) => `${p.x},${p.y}`).join(' ')}" fill="none" stroke="${d.color}" stroke-width="${d.thickness}" stroke-linecap="round" stroke-linejoin="round"/>`}</svg>`;
 }
-export function resizeHandles(kind: 'node' | 'zone' | 'group', id: string): string {
-  return ['nw', 'ne', 'se', 'sw']
+export function resizeHandles(kind: 'node' | 'zone' | 'group', id: string, text = false): string {
+  return (text ? ['nw', 'ne', 'se', 'sw', 'w', 'e'] : ['nw', 'ne', 'se', 'sw'])
     .map(
       (corner) =>
-        `<button type="button" class="resize-handle ${corner}" data-resize="${kind}" data-id="${id}" data-corner="${corner}" aria-label="Redimensionar ${corner}" title="Redimensionar con las flechas; Shift para pasos mayores"></button>`,
+        `<button type="button" class="resize-handle ${corner}" data-resize="${kind}" data-id="${id}" data-corner="${corner}" aria-label="${text ? (corner.length === 1 ? 'Cambiar ancho' : 'Escalar texto') : 'Redimensionar'} ${corner}" title="${text ? (corner.length === 1 ? 'Cambiar ancho del párrafo' : 'Escalar texto proporcionalmente') : 'Redimensionar con las flechas; Shift para pasos mayores'}"></button>`,
     )
     .join('');
 }
@@ -111,7 +114,7 @@ export function materialMarkup(
   } else content = '';
   const comment = w.comments.find((c) => c.node === material.id && !c.resolved);
   const ports = connect ? connectionPorts(material) : '';
-  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'note' ? noteFontAttributes(d) : d.kind === 'text' ? textFontAttributes(d) : ''} ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? noteStyle(d) : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ wireframe: 'Bosquejo', text: 'Texto', note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
+  return `<article class="material ${isArrow(material) ? 'free-arrow' : ''} ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'note' ? noteFontAttributes(d) : d.kind === 'text' ? textFontAttributes(d) : ''} ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? noteStyle(d) : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ wireframe: 'Bosquejo', text: 'Texto', note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? (isArrow(material) ? arrowHandles(material) : resizeHandles('node', material.id, d.kind === 'text')) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {
   wireframe: { label: 'Bosquejos', icon: 'canvas' },
@@ -226,5 +229,5 @@ export function connectionMarkup(
       return `<g class="link-endpoint" transform="translate(${point.x},${point.y})" tabindex="0" role="button" aria-label="Reconectar ${end === 'from' ? 'origen' : 'destino'}" data-action="link-endpoint" data-id="${link.id}" data-end="${end}"><circle class="endpoint-hit"/><circle class="endpoint-dot"/></g>`;
     })
     .join('');
-  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}">${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse" mask-type="luminance"><rect class="mask-base" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label ? 'Conexión: ' + link.label : 'Conexión sin etiqueta')}" aria-description="Doble clic o Enter para editar la etiqueta. Suprimir o Backspace para eliminar." aria-pressed="${selected}" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" d="${path}" ${link.label ? `mask="url(#mask-${link.id})"` : ''}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}${ends}</g>`;
+  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}" style="--cable-weight:${link.thickness ?? 0}px">${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse" mask-type="luminance"><rect class="mask-base" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label ? 'Conexión: ' + link.label : 'Conexión sin etiqueta')}" aria-description="Doble clic o Enter para editar la etiqueta. Suprimir o Backspace para eliminar." aria-pressed="${selected}" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" d="${path}" ${link.label ? `mask="url(#mask-${link.id})"` : ''}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}${ends}</g>`;
 }
