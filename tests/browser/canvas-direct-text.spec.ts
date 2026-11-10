@@ -2,6 +2,181 @@ import { test, expect } from './fixtures';
 import { start, world, snapshot, capture, moveMaterial } from './canvas-utility-helpers';
 import { storedFixture } from './canvas-fixtures';
 import { googleFontFiles } from './google-font-files';
+import { newCanvasText } from '../../src/domain/canvas-text';
+
+test('C08-B201: editar contenido y tipografía después de guardar, sin confundir nombre ni crear otra pieza', async ({
+  page,
+}, info) => {
+  await start(page);
+  await page.setViewportSize({ width: 390, height: 720 });
+  await page.keyboard.press('t');
+  await page.mouse.click(220, 345);
+  const editor = page.getByRole('textbox', { name: 'Texto en Canvas' });
+  await editor.fill('Idea');
+  await editor.press('Escape');
+  const id = (await world(page)).nodes[0]!.id,
+    node = page.locator(`[data-node="${id}"]`),
+    ink = node.locator('.canvas-text-run');
+  await page.reload();
+  await ink.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Editar texto', exact: true }).click();
+  await expect(editor).toBeFocused();
+  await expect(editor).toHaveValue('Idea');
+  await editor.fill('Un mapa de ideas');
+  const picker = page.getByRole('combobox', { name: 'Tipografía', exact: true });
+  await picker.fill('Monoespaciada');
+  await page.locator('[data-action=font-select][data-font=mono]').click();
+  await page.getByLabel('Peso', { exact: true }).selectOption('700');
+  await editor.press('Escape');
+  await page.reload();
+  await ink.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: /^Renombrar/ }).click();
+  const name = page.getByRole('textbox', { name: 'Nombre del material' });
+  await name.fill('Sur');
+  const small = (await name.boundingBox())!;
+  await expect(node.locator('.material-identification button')).toBeHidden();
+  expect(small.width).toBeLessThan(170);
+  await name.fill(
+    'Un nombre largo que se puede seguir editando completo cerca del borde de la ventana',
+  );
+  const large = (await name.boundingBox())!;
+  expect(large.x + large.width).toBeLessThanOrEqual(390);
+  expect(large.width).toBeLessThan(225);
+  await name.fill('Sur');
+  await capture(page, info, 'renombrar-texto');
+  await name.press('Enter');
+  await page.keyboard.press('t');
+  await ink.click();
+  await expect(editor).toBeFocused();
+  await expect(editor).toHaveValue('Un mapa de ideas');
+  await expect(page.getByLabel('Peso', { exact: true })).toHaveValue('700');
+  await editor.fill('El mapa final');
+  await editor.press('Escape');
+  await page.reload();
+  const nodes = (await world(page)).nodes;
+  expect(nodes).toHaveLength(1);
+  expect(nodes[0]).toMatchObject({
+    id,
+    data: { title: 'Sur', text: 'El mapa final', font: 'mono', weight: 700 },
+  });
+});
+
+test('C08-B199: esperar otra pestaña y recuperar el mismo texto sin recargar ni borrar el mundo', async ({
+  page,
+}) => {
+  await start(page);
+  await page.keyboard.press('t');
+  await page.mouse.click(360, 310);
+  const editor = page.getByRole('textbox', { name: 'Texto en Canvas' });
+  await editor.fill('El trabajo sigue acá');
+  await editor.press('Escape');
+  const original = (await world(page)).nodes[0]!;
+  const holder = await page.context().newPage();
+  try {
+    // Página inerte del mismo origen: solo retiene la transacción, nunca guarda
+    // una segunda sesión de Everett sobre el mundo que queremos restaurar.
+    await holder.route('**/retener-guardado', (route) =>
+      route.fulfill({ contentType: 'text/html', body: '<!doctype html>' }),
+    );
+    await holder.goto(new URL('/retener-guardado', page.url()).href);
+    await holder.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((ok, fail) => {
+        const req = indexedDB.open('everett-canvas', 1);
+        req.onsuccess = () => ok(req.result);
+        req.onerror = () => fail(req.error);
+      });
+      await new Promise<void>((ready, fail) => {
+        const tx = db.transaction('worlds', 'readwrite'),
+          store = tx.objectStore('worlds');
+        tx.onabort = () => fail(tx.error);
+        const hold = () => {
+          const read = store.getKey('shared');
+          read.onsuccess = () => {
+            ready();
+            hold();
+          };
+        };
+        hold();
+      });
+    });
+    await page.reload();
+    await expect(page.locator('#app')).toContainText('Esperando el guardado local', {
+      timeout: 12000,
+    });
+    await holder.close();
+    const saved = page.locator('.material.text .canvas-text-run');
+    await expect(saved).toHaveText('El trabajo sigue acá');
+    expect((await world(page)).nodes[0]).toEqual(original);
+    await saved.dblclick();
+    await expect(editor).toHaveValue('El trabajo sigue acá');
+  } finally {
+    if (!holder.isClosed()) await holder.close();
+  }
+});
+
+test('C08-B198: restaurar párrafos de ancho fraccionario o menor que una letra no bloquea el dock', async ({
+  page,
+}) => {
+  await start(page);
+  await googleFontFiles(page);
+  const saved = await snapshot(page);
+  const w = saved.state.worlds.find((w) => w.id === 'scout')!;
+  w.nodes = [173.4375, 4].map((width, i) => ({
+    id: 'restored-' + i,
+    x: i * 180 - 250,
+    y: -160,
+    width,
+    height: 32,
+    owner: null,
+    data: {
+      ...newCanvasText('wrap'),
+      font: 'google:Lora',
+      size: 36,
+      text: i ? 'W' : 'Explicar con imágenes',
+    },
+  }));
+  await storedFixture(page, saved.state, saved.ui);
+  // Fusible de prueba: ante un ciclo de microtareas el navegador no podría ni
+  // exportar el diagnóstico. Solo se interviene si ya se repintó 24 veces sin un gesto.
+  await page.addInitScript(() => {
+    let renders = 0,
+      previous: Element | null = null;
+    new MutationObserver(() => {
+      const paper = document.querySelector('[data-node="restored-0"]');
+      if (!paper || paper === previous) return;
+      previous = paper;
+      if (++renders > 24) {
+        document.documentElement.dataset.renderLoop = 'true';
+        document.querySelectorAll('.material.text').forEach((n) => n.remove());
+      }
+    }).observe(document, { subtree: true, childList: true });
+  });
+  for (let visit = 0; visit < 2; visit++) {
+    await page.reload();
+    await expect(
+      page.locator('[data-node="restored-1"][data-font-state="ready"], html[data-render-loop]'),
+    ).toHaveCount(1);
+    await expect(page.locator('html')).not.toHaveAttribute('data-render-loop', 'true', {
+      timeout: 300,
+    });
+    const nodes = (await world(page)).nodes;
+    expect(nodes[0]!.width).toBe(173.4375);
+    expect(nodes[1]!.width).toBeGreaterThan(20);
+    await page.getByRole('button', { name: 'Texto · T', exact: true }).click();
+    await page.mouse.click(420, 420 + visit * 90);
+    const editor = page.getByRole('textbox', { name: 'Texto en Canvas' });
+    await editor.fill('Una comparación visual');
+    await editor.press('Escape');
+    await expect(
+      page.locator('.material.text .canvas-text-run').filter({ hasText: 'Una comparación visual' }),
+    ).toHaveCount(visit + 1);
+    expect(
+      (await world(page)).nodes.filter(
+        (n) => n.data.kind === 'text' && n.data.text === 'Una comparación visual',
+      ),
+    ).toHaveLength(visit + 1);
+  }
+});
 
 test('C08-B192: T escribe sobre la escena, conserva saltos, edición y copias independientes', async ({
   page,

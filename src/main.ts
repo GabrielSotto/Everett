@@ -8,6 +8,12 @@ if (!root) throw new Error('Falta el contenedor de Everett.');
 async function start(root: HTMLElement): Promise<void> {
   root.textContent = 'Recuperando Everett…';
   let stage = 'component-layout';
+  const slow = window.setTimeout(() => {
+    root.textContent =
+      stage === 'storage'
+        ? 'Esperando el guardado local. Si otra pestaña de Everett dejó de responder, cerrala. El proyecto se abrirá acá cuando termine la lectura.'
+        : 'Preparando el espacio de trabajo…';
+  }, 4000);
   try {
     await prepareComponentLayout();
     stage = 'storage';
@@ -27,6 +33,8 @@ async function start(root: HTMLElement): Promise<void> {
     diagnostic.textContent = 'Exportar diagnóstico';
     diagnostic.onclick = () => exportDiagnostics(trace, { stage: 'bootstrap' });
     root.append(retry, diagnostic);
+  } finally {
+    window.clearTimeout(slow);
   }
 }
 void start(root);

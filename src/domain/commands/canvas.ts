@@ -122,8 +122,10 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       ensure(!material.owner, 'LOCKED', 'El agente está usando el material.');
       if (material.data.kind !== 'text')
         throw new DomainError('TEXT_FORMAT', 'Este material no es texto.');
+      // La vista ya respetó el ancho del párrafo salvo para contener un grafema.
+      // Confirmar ambas medidas evita volver a solicitar el mismo ajuste al renderizar.
+      material.width = command.width;
       material.height = command.height;
-      if (material.data.sizing === 'auto') material.width = command.width;
       break;
     }
     case 'text.edit': {

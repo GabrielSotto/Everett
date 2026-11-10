@@ -104,7 +104,15 @@ type Drag =
       textStyle?: ReturnType<typeof resizeText>['textStyle'];
       intent: Intent;
     }
-  | { kind: 'draw'; tool: Tool; start: Point; point: Point; points: Point[]; intent: Intent }
+  | {
+      kind: 'draw';
+      tool: Tool;
+      start: Point;
+      point: Point;
+      points: Point[];
+      intent: Intent;
+      textTarget?: string;
+    }
   | { kind: 'dock'; start: Point; origin: Point; intent: Intent }
   | {
       kind: 'connect';
@@ -986,6 +994,12 @@ export class CanvasView implements View {
       this.drag = {
         kind: 'draw',
         tool: ui.canvas.tool,
+        ...(ui.canvas.tool === 'text' &&
+        nodeId &&
+        !componentFor(this.ctx.world(), nodeId) &&
+        this.ctx.world().nodes.some((n) => n.id === nodeId && !n.owner && n.data.kind === 'text')
+          ? { textTarget: nodeId }
+          : {}),
         start: point,
         point,
         points: [point],
@@ -1631,6 +1645,15 @@ export class CanvasView implements View {
         dragged = Math.abs(end.x - d.start.x) * this.cam.current.z >= 4;
       const start = dragged ? { x: Math.min(d.start.x, end.x), y: d.start.y } : d.start;
       this.ctx.ui.canvas.tool = 'select';
+      if (
+        d.textTarget &&
+        Math.hypot(end.x - d.start.x, end.y - d.start.y) * this.cam.current.z < 4
+      ) {
+        this.select('node', d.textTarget);
+        this.render();
+        this.editText(d.textTarget);
+        return;
+      }
       this.select(null, null);
       this.render();
       this.directText.start(id, start, dragged ? Math.abs(end.x - d.start.x) : undefined);

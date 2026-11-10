@@ -77,7 +77,7 @@ export function materialMarkup(
     }
   } else if (d.kind === 'note') content = `<h3>${html(d.title)}</h3><p>${html(d.text)}</p>`;
   else if (d.kind === 'text')
-    content = `<div class="canvas-text-run" style="${html(textStyle(d, canvasTextInk(material, w)))}">${html(d.text)}</div>`;
+    content = `<div class="canvas-text-run" title="Doble clic para editar el texto" style="${html(textStyle(d, canvasTextInk(material, w)))}">${html(d.text)}</div>`;
   else if (d.kind === 'shape') content = shapeMarkup(material);
   else if (d.kind === 'drawing') content = drawingMarkup(material);
   else if (d.kind === 'image')

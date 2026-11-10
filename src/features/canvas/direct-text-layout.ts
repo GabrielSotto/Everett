@@ -15,7 +15,8 @@ export function textBounds(data: CanvasText, width: number) {
   const mirror = document.createElement('div');
   mirror.className = 'canvas-text-run direct-text-measure';
   mirror.style.cssText = textStyle(data);
-  mirror.style.width = data.sizing === 'auto' ? 'max-content' : Math.max(4, width) + 'px';
+  const wrapWidth = Math.max(4, width);
+  mirror.style.width = data.sizing === 'auto' ? 'max-content' : wrapWidth + 'px';
   // El ancho mínimo intrínseco incluye el grafema indivisible más ancho (también emoji).
   mirror.style.minWidth = 'min-content';
   mirror.textContent = data.text + '\u200b';
@@ -23,7 +24,14 @@ export function textBounds(data: CanvasText, width: number) {
   const rect = mirror.getBoundingClientRect();
   mirror.remove();
   return {
-    width: Math.max(4, Math.ceil(rect.width) + (data.sizing === 'auto' ? 1 : 0)),
+    // Conservar el ancho elegido, incluso con zoom fraccionario. Solo ampliarlo
+    // si el mínimo intrínseco lo exige; el DOM cuantiza la medida a subpíxeles.
+    width:
+      data.sizing === 'auto'
+        ? Math.max(4, Math.ceil(rect.width) + 1)
+        : rect.width > wrapWidth + 1 / 64
+          ? Math.ceil(rect.width)
+          : wrapWidth,
     height: Math.max(4, Math.ceil(rect.height)),
   };
 }
