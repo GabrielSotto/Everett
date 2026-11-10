@@ -6,16 +6,19 @@ Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referenci
 
 **0.7.5 está aprobada e integrada en `dev`.** La reconstrucción estableció fuentes modulares, tipado, arnés y presentación espacial. La navegación aprobada se conserva. 0.8 sigue en desarrollo: la revisión de 0.8.13 confirmó capas y marcos de formas y autorizó corregir la densidad del dock, el comportamiento de rueda en zonas, los anclajes de etiquetas durante zoom y la ubicación de los ajustes dentro de Preferencias. La candidata 0.8.15 incorpora previews reales de enlaces mediante el servicio local autorizado y completó el gate y la revisión visual; la aprobación del usuario sigue pendiente. El estado de pruebas, evidencia y aprobaciones está en [Tareas](../TAREAS.md).
 
-| Versión    | Alcance principal                                                                                        |
-| ---------- | -------------------------------------------------------------------------------------------------------- |
-| **0.7.5**  | Reconstrucción modular, tipado, arnés, motion y propuestas para la vista del Mundo.                      |
-| **0.8**    | Canvas, tomando los comportamientos aplicables de Infinity Canvas.                                       |
-| **0.9**    | Code + Docs.                                                                                             |
-| **0.10**   | Session y registros de actividad de agentes compartidos con Board.                                       |
-| **0.11**   | Board fusionado con Agents, asignación y traspaso de tareas, y Shipping Mode.                            |
-| **0.12**   | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design). |
-| **1.0 RC** | Integración completa, regresiones y pulido final.                                                        |
-| **1.0**    | Prototipo aprobado.                                                                                      |
+| Versión     | Alcance principal                                                                                        |
+| ----------- | -------------------------------------------------------------------------------------------------------- |
+| **0.7.5**   | Reconstrucción modular, tipado, arnés, motion y propuestas para la vista del Mundo.                      |
+| **0.8**     | Canvas, tomando los comportamientos aplicables de Infinity Canvas.                                       |
+| **0.9**     | Code + Docs.                                                                                             |
+| **0.10**    | Session y registros de actividad de agentes compartidos con Board.                                       |
+| **0.11**    | Board fusionado con Agents, asignación y traspaso de tareas, y Shipping Mode.                            |
+| **0.12**    | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design). |
+| **Preview** | Versión pública de feedback previo a 1.0; el contenido funcional concreto está pendiente de definir.     |
+| **1.0 RC**  | Integración completa, regresiones y pulido final.                                                        |
+| **1.0**     | Prototipo aprobado.                                                                                      |
+
+**Preview** es un hito de lanzamiento de producto (decisión del 9 de noviembre de 2026, documentada el 10). Se publica antes de 1.0 para obtener feedback rápido mientras continúa la iteración hacia 1.0. No sustituye el recorrido de prototipo `0.8` → … → `0.12` → `1.0 RC` → `1.0`; se inserta como release pública anterior a esas candidatas finales. El alcance funcional de Preview permanece TBD hasta su definición. No confundir con los previews de enlaces o medios de Canvas 0.8. Las superficies de destino siguen siendo cinco: Code, Canvas, Docs, Board y Sessions (Agents se fusiona en Board).
 
 **Regla de avance:** implementación → pruebas → tu feedback → correcciones → aprobación. Si una etapa necesita correcciones, continúa como `0.8.1`, `0.8.2`, etc. No se pasa a la siguiente dejando pendientes los problemas de su alcance.
 
@@ -503,6 +506,16 @@ La consolidación transversal corresponde a 0.12. Las iteraciones anteriores con
 
 ---
 
+## Preview — versión pública de feedback
+
+Decisión del 9 de noviembre de 2026 (documentada el 10): lanzar una versión **Preview** antes de 1.0 para recoger feedback mientras se itera hacia la aprobación del prototipo. Es un hito de release de producto, no una etapa adicional del recorrido `0.8`–`0.12` ni los previews de enlaces/medios de Canvas.
+
+El camino de prototipo documentado arriba se conserva. Preview se publica como release pública anterior a `1.0 RC` y `1.0`. Qué entra en Preview —superficies, recorridos y límites— está **pendiente de definir**; este registro fija el hito sin inventar alcance.
+
+Las superficies de destino del producto siguen siendo Code, Canvas, Docs, Board y Sessions, con Agents integrado en Board.
+
+---
+
 ## 1.0 RC — integración y pulido final
 
 ### Recorridos completos
@@ -624,4 +637,4 @@ Ideas conservadas para evaluar, sin una versión de implementación comprometida
   [Frame.io permite anclar comentarios a un punto del visor](https://help.frame.io/en/articles/9105251-commenting-on-your-media).
   Estas fuentes describen sus comportamientos, no confirman el mecanismo interno propuesto para Everett.
 
-**Próximo paso del roadmap: desarrollar 0.8 y cerrar Canvas antes de pasar a 0.9.**
+**Próximo paso del roadmap: desarrollar 0.8 y cerrar Canvas antes de pasar a 0.9.** Preview queda registrado como hito posterior de release pública; su contenido se define cuando se acuerde el alcance.
