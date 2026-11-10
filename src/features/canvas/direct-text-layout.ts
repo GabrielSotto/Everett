@@ -8,7 +8,7 @@ export function textFontAttributes(data: CanvasText): string {
   return `data-note-font="${html(googleFamily(data.font) ?? '')}" data-note-weight="${data.weight}" data-note-italic="${data.italic}"`;
 }
 export function textStyle(data: CanvasText, ink?: { color: string; textShadow: string }): string {
-  return `font-family:${fontFamilyCss(data.font)};font-size:${data.size}px;font-weight:${data.weight};font-style:${data.italic ? 'italic' : 'normal'};text-align:${data.align};color:${data.color ?? ink?.color ?? 'var(--text)'};text-shadow:${!data.color && ink ? ink.textShadow : 'none'}`;
+  return `font-family:${data.font === 'serif' ? 'Cambria, "Times New Roman", serif' : fontFamilyCss(data.font)};font-variant-numeric:lining-nums;font-size:${data.size}px;font-weight:${data.weight};font-style:${data.italic ? 'italic' : 'normal'};text-align:${data.align};color:${data.color ?? ink?.color ?? 'var(--text)'};text-shadow:${!data.color && ink ? ink.textShadow : 'none'}`;
 }
 /** The mirror uses the same line boxes as the painted text, independent of camera scale. */
 export function textBounds(data: CanvasText, width: number) {

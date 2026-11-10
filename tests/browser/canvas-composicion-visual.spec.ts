@@ -23,6 +23,17 @@ test('C08-B200: una explicación ilustrada se ve, se edita y permanece separada 
   const truck = scene.locator('[data-node=camion]'),
     label = scene.locator('[data-node=frio] .canvas-text-run');
   await expect(label).toHaveText('4 °C en tránsito');
+  const ink = await label.evaluate((el) => {
+    const style = getComputedStyle(el),
+      c = document.createElement('canvas').getContext('2d')!;
+    c.font = style.fontWeight + ' 60px ' + style.fontFamily;
+    return ['4', 'C'].map((ch) => {
+      const m = c.measureText(ch);
+      return { top: m.actualBoundingBoxAscent, bottom: m.actualBoundingBoxDescent };
+    });
+  });
+  expect(Math.abs(ink[0]!.top - ink[1]!.top)).toBeLessThanOrEqual(3);
+  expect(Math.abs(ink[0]!.bottom - ink[1]!.bottom)).toBeLessThanOrEqual(2);
   const truckBox = (await truck.boundingBox())!,
     caption = (await label.boundingBox())!;
   expect(caption.y).toBeGreaterThan(truckBox.y + truckBox.height);
