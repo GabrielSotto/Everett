@@ -436,6 +436,11 @@ C08-B189 comprueba el centrado de todas las muestras de color y la selección po
 900 y 320 px, sin doble marco ni controles redundantes de título/cuerpo. Incluye formato de un
 título vacío antes de escribir y conservación del destino al pasar desde el texto a sus controles.
 El cambio de destino automático se recorre también mediante Enter y Tab en C08-B187/B188.
+C08-U74/U75 y FONT-02 distinguen transporte local, proveedor, permisos, cuota, tiempos de espera,
+JSON inválido y errores desconocidos; rechazan catálogos parciales y comprueban recuperación sin
+filtrar secretos. C08-B190/B191 verifican el mensaje de causa y acción a 900/320 px, su asociación
+accesible al selector, reintento con teclado sin duplicar solicitudes, conservación de búsqueda,
+favoritas, nota y formato, y respuestas tardías al volver a escribir o cerrar el editor.
 
 C08-U57–U61 y C08-B170–B173 verifican retículas por marco: cantidad, márgenes, huecos,
 filas/columnas, errores atómicos y recuperación al encoger; copias independientes, historial y

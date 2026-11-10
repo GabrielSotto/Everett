@@ -11,8 +11,64 @@ function weightsOf(variants, italic = false) {
   });
   return [...new Set(weights)].sort((a, b) => a - b);
 }
+// Google comparte HTTP 403 entre cuota, permisos y API deshabilitada. El motivo
+// estructurado distingue esos casos; nunca reenviamos mensajes ni metadatos privados.
+const providerReasons = {
+  dailyLimitExceeded: 'quota',
+  quotaExceeded: 'quota',
+  rateLimitExceeded: 'quota',
+  userRateLimitExceeded: 'quota',
+  dailyLimitExceededUnreg: 'quota',
+  RATE_LIMIT_EXCEEDED: 'quota',
+  QUOTA_EXCEEDED: 'quota',
+  SERVICE_DISABLED: 'api-disabled',
+  API_KEY_INVALID: 'credentials',
+  API_KEY_EXPIRED: 'credentials',
+  keyInvalid: 'credentials',
+  API_KEY_SERVICE_BLOCKED: 'access-denied',
+  API_KEY_HTTP_REFERRER_BLOCKED: 'access-denied',
+  API_KEY_IP_ADDRESS_BLOCKED: 'access-denied',
+  API_KEY_ANDROID_APP_BLOCKED: 'access-denied',
+  API_KEY_IOS_APP_BLOCKED: 'access-denied',
+  accessNotConfigured: 'access-denied',
+};
+function providerFailure(status, data) {
+  const error = data?.error;
+  const reasons = [
+    ...(Array.isArray(error?.details)
+      ? error.details
+          .filter(
+            (detail) =>
+              detail?.['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo' &&
+              detail.domain === 'googleapis.com',
+          )
+          .map((detail) => detail.reason)
+      : []),
+    ...(Array.isArray(error?.errors) ? error.errors.map((item) => item?.reason) : []),
+  ];
+  const reason = reasons.find(
+    (value) => typeof value === 'string' && Object.hasOwn(providerReasons, value),
+  );
+  const code = reason
+    ? providerReasons[reason]
+    : status === 429 || error?.status === 'RESOURCE_EXHAUSTED'
+      ? 'quota'
+      : status === 401
+        ? 'credentials'
+        : status === 403
+          ? 'access-denied'
+          : status === 400
+            ? 'invalid-request'
+            : 'unavailable';
+  return {
+    status: code === 'quota' ? 429 : 502,
+    error: code,
+    providerStatus: status,
+    ...(reason ? { providerReason: reason } : {}),
+  };
+}
 /** Catálogo remoto: no descarga ni conserva archivos de tipografías. */
-export function googleFontsEndpoint({ getKey, request = fetch }) {
+export function googleFontsEndpoint({ getKey, request = fetch, timeoutMs = 10_000 }) {
   let cached, pending;
   const lifetime = new AbortController();
   const json = (response, status, value) =>
@@ -24,7 +80,7 @@ export function googleFontsEndpoint({ getKey, request = fetch }) {
       })
       .end(JSON.stringify(value));
   async function catalogue(key) {
-    const timeout = AbortSignal.timeout(10_000);
+    const timeout = AbortSignal.timeout(timeoutMs);
     try {
       const url = new URL('https://www.googleapis.com/webfonts/v1/webfonts');
       url.search = new URLSearchParams({
@@ -36,16 +92,15 @@ export function googleFontsEndpoint({ getKey, request = fetch }) {
         signal: AbortSignal.any([timeout, lifetime.signal]),
         redirect: 'error',
       });
-      if (!response.ok)
-        return {
-          status: response.status === 429 ? 429 : 502,
-          error: [400, 401, 403].includes(response.status)
-            ? 'credentials'
-            : response.status === 429
-              ? 'quota'
-              : 'unavailable',
-        };
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+        if (response.ok) return { status: 502, error: 'invalid-response' };
+        // Una página de error no JSON conserva su estado HTTP; no es un corte de red.
+      }
+      if (!response.ok) return providerFailure(response.status, data);
       if (!Array.isArray(data?.items) || !data.items.length || data.items.length > 20_000)
         return { status: 502, error: 'invalid-response' };
       const families = data.items.filter(
@@ -57,22 +112,21 @@ export function googleFontsEndpoint({ getKey, request = fetch }) {
           typeof item.category === 'string' &&
           Array.isArray(item.variants),
       );
-      if (!families.length) return { status: 502, error: 'invalid-response' };
+      if (families.length !== data.items.length) return { status: 502, error: 'invalid-response' };
       const value = {
-        families: families
-          .map(({ family, category, variants }) => {
-            const upright = weightsOf(variants);
-            const italic = upright.length === 0;
-            return {
-              family,
-              category,
-              weights: italic ? weightsOf(variants, true) : upright,
-              italic,
-            };
-          })
-          .filter((family) => family.weights.length),
+        families: families.map(({ family, category, variants }) => {
+          const upright = weightsOf(variants);
+          const italic = upright.length === 0;
+          return {
+            family,
+            category,
+            weights: italic ? weightsOf(variants, true) : upright,
+            italic,
+          };
+        }),
       };
-      if (!value.families.length) return { status: 502, error: 'invalid-response' };
+      if (value.families.some((family) => !family.weights.length))
+        return { status: 502, error: 'invalid-response' };
       cached = { value, until: Date.now() + 3600_000 };
       return { status: 200, ...value };
     } catch {

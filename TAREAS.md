@@ -21,6 +21,27 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
+### Errores del catálogo de fuentes — 10 de noviembre
+
+El caso de revisión se reprodujo con el servicio local detenido (`ERR_CONNECTION_REFUSED`).
+Vite quedó activo en 4173 y el catálogo real volvió a responder con 1.968 familias; la nota del
+usuario conserva su texto y formato. El selector ahora presenta causa y acción antes del
+reintento, con texto legible y acceso por teclado. Conserva búsqueda y favoritas, y una respuesta
+tardía no reabre el panel ni roba el foco.
+
+Se separaron errores de transporte local, proveedor, cuota, permisos, API deshabilitada,
+configuración y respuesta inválida. Los motivos estructurados de Google evitan atribuir todo
+403 a la clave; el servicio conserva códigos de diagnóstico sin filtrar mensajes ni secretos.
+El contrato y las regresiones figuran en [Validación](docs/validacion-prototipo.md).
+
+Tipado, formato y 142 pruebas unitarias/del arnés aprobados; 10 recorridos dirigidos de notas y
+fuentes aprobados sin reintentos, con hashes, controles y adjuntos verificados. Incluyen
+C08-U74/U75, FONT-02 y C08-B190/B191; revisadas las capturas de fallo/recuperación a 900/320 px.
+Este cambio tiene regresión dirigida; no se presenta como una ejecución completa de Everett.
+Evidencia actual: `output/pruebas/unitarias/2026-11-10_14-18-00-475Z` y
+`output/pruebas/navegador/2026-11-10_14-22-35-688Z`. SHA-256 de fuentes:
+`9a1361650153fb7951505fca445096909b829b0ca848a33400d93b4701a03b11`.
+
 ### Tipografía independiente de título y cuerpo — 8 de noviembre
 
 Implementados familia y peso separados en notas. El destino sigue el último campo enfocado,
@@ -41,9 +62,10 @@ corrección oficial. C08-B27 mide el espacio del campo de atajos desde el borde,
 dos veces el padding con la nueva medición de Chromium; un contraejemplo estrecho verifica
 que siga detectando recortes reales. Detalle en [Desarrollo](docs/desarrollo.md).
 
-Evidencia vigente en `output/pruebas/unitarias/2026-11-08_21-11-24-437Z` y
-`output/pruebas/navegador/2026-11-08_21-14-18-139Z`. SHA-256 de fuentes:
+SHA-256 de las fuentes verificadas en ese bloque:
 `dacc6ab24787b3a1aa0b5e33050788d75c7039f78a8808c6db788765dfc2ed50`.
+Las ejecuciones anteriores fueron sustituidas según la conservación de resultados; la evidencia
+actual está indicada en el bloque de errores del catálogo.
 La carga pública de Lora 700 y Roboto Mono 400 se comprobó en la implementación anterior;
 su evidencia permanece en `output/pruebas/notas-fuentes-reales`.
 

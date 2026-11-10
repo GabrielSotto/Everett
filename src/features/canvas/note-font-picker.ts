@@ -1,6 +1,5 @@
 import {
   googleFamily,
-  validFontWeight,
   validGoogleFamily,
   validNoteFont,
   type NoteFont,
@@ -8,17 +7,14 @@ import {
 import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { noteFonts } from './note-colors';
+import {
+  fetchGoogleFontCatalogue,
+  FontCatalogueError,
+  type GoogleFontFamily,
+} from '../../platform/google-font-catalogue';
 
-type Family = { family: string; category: string; weights: number[]; italic?: boolean };
 type Choice = { id: NoteFont; name: string; weights: number[]; italic?: boolean };
-let catalogue: Family[] | null = null;
-const catalogErrors: Record<string, string> = {
-  'not-configured':
-    'El catálogo necesita una clave de Google Fonts. Podés escribir el nombre exacto y pulsar Enter.',
-  credentials: 'Google rechazó la clave del catálogo. Revisá su configuración.',
-  quota: 'Se alcanzó el límite de consultas. Reintentá más tarde.',
-  timeout: 'El catálogo tardó demasiado. Reintentá.',
-};
+let catalogue: GoogleFontFamily[] | null = null;
 const weightNames: Record<number, string> = {
   100: 'Fina',
   200: 'Extraligera',
@@ -64,7 +60,7 @@ export class NoteFontPicker {
     this.panel.className = 'note-font-picker';
     this.panel.popover = 'manual';
     this.panel.innerHTML =
-      '<div id="note-font-list" class="font-results" role="grid" aria-label="Fuentes" aria-colcount="2"></div><p class="font-catalog-status" role="status" hidden></p><button type="button" data-font-retry-catalog hidden>Reintentar catálogo</button>';
+      '<div class="font-catalog-feedback" hidden><p id="note-font-catalog-status" class="font-catalog-status" role="status" aria-live="polite"></p><button type="button" data-action="font-catalog-retry" data-font-retry-catalog aria-describedby="note-font-catalog-status" hidden>Reintentar catálogo</button></div><div id="note-font-list" class="font-results" role="grid" aria-label="Fuentes" aria-colcount="2"></div>';
     document.body.append(this.panel);
     const options = { signal: this.abort.signal };
     document.addEventListener(
@@ -82,6 +78,20 @@ export class NoteFontPicker {
     this.panel.addEventListener(
       'keydown',
       (event) => {
+        if (
+          event.key === 'Tab' &&
+          (event.target as Element).hasAttribute('data-font-retry-catalog')
+        ) {
+          event.preventDefault();
+          if (event.shiftKey) this.input.focus();
+          else {
+            this.close(false);
+            const next = this.weightControl.disabled
+              ? this.anchor.parentElement!.querySelector<HTMLInputElement>('#note-size')!
+              : this.weightControl;
+            next.focus();
+          }
+        }
         if (event.key === 'Escape') {
           event.preventDefault();
           event.stopPropagation();
@@ -205,7 +215,7 @@ export class NoteFontPicker {
       empty = document.createElement('p');
       empty.className = 'font-empty';
       empty.setAttribute('role', 'status');
-      this.panel.prepend(empty);
+      grid.before(empty);
     }
     empty.textContent = catalogue
       ? 'No hay fuentes con ese nombre.'
@@ -268,6 +278,12 @@ export class NoteFontPicker {
       return;
     }
     if (event.key === 'Tab') {
+      const retry = this.panel.querySelector<HTMLButtonElement>('[data-font-retry-catalog]')!;
+      if (!event.shiftKey && this.isOpen() && !retry.hidden) {
+        event.preventDefault();
+        retry.focus();
+        return;
+      }
       this.close(false);
       return;
     }
@@ -318,54 +334,33 @@ export class NoteFontPicker {
     if (this.loading) return;
     this.loading = true;
     const status = this.panel.querySelector<HTMLElement>('.font-catalog-status')!;
+    const feedback = this.panel.querySelector<HTMLElement>('.font-catalog-feedback')!;
     const retry = this.panel.querySelector<HTMLButtonElement>('[data-font-retry-catalog]')!;
-    status.hidden = false;
+    // El botón permanece enfocado durante el reintento; al terminar vuelve al selector.
+    const retryFocused = document.activeElement === retry;
+    feedback.hidden = false;
+    delete this.panel.dataset.catalogError;
+    this.input.setAttribute('aria-describedby', status.id);
     status.textContent = 'Cargando fuentes…';
-    retry.hidden = true;
+    retry.setAttribute('aria-disabled', 'true');
     try {
-      const response = await fetch('/api/google-fonts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-        signal: AbortSignal.any([this.abort.signal, AbortSignal.timeout(12_000)]),
-      });
-      const data: unknown = await response.json();
-      if (!response.ok) {
-        const code = data && typeof data === 'object' && 'error' in data ? String(data.error) : '';
-        throw new Error(
-          catalogErrors[code] ??
-            'No se pudo consultar el catálogo. Revisá la conexión y reintentá.',
-        );
-      }
-      if (
-        !data ||
-        typeof data !== 'object' ||
-        !('families' in data) ||
-        !Array.isArray(data.families)
-      )
-        throw new Error('El catálogo recibido no es válido. Reintentá.');
-      const families = data.families.filter(
-        (item): item is Family =>
-          !!item &&
-          validGoogleFamily(item.family) &&
-          typeof item.category === 'string' &&
-          Array.isArray(item.weights) &&
-          item.weights.length > 0 &&
-          item.weights.every(validFontWeight) &&
-          (item.italic === undefined || typeof item.italic === 'boolean'),
-      );
-      if (!families.length) throw new Error('El catálogo recibido está vacío. Reintentá.');
-      catalogue = families;
-      status.hidden = true;
+      catalogue = await fetchGoogleFontCatalogue(this.abort.signal);
+      feedback.hidden = true;
+      retry.hidden = true;
+      this.input.removeAttribute('aria-describedby');
       this.updateWeights();
       if (this.isOpen()) this.results();
+      if (retryFocused && this.isOpen()) this.input.focus();
     } catch (error) {
       if (this.abort.signal.aborted) return;
-      status.textContent =
-        error instanceof Error ? error.message : 'No se pudo consultar el catálogo.';
+      const failure =
+        error instanceof FontCatalogueError ? error : new FontCatalogueError('unexpected-response');
+      this.panel.dataset.catalogError = failure.code;
+      status.textContent = failure.message;
       retry.hidden = false;
     } finally {
       this.loading = false;
+      retry.removeAttribute('aria-disabled');
     }
   }
   open(select = true): void {

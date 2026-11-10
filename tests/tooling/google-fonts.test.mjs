@@ -62,8 +62,9 @@ test('FONT-01: catálogo oficial, clave privada, concurrencia y fallos diferenci
     assert.deepEqual(await (await send()).json(), { error: 'not-configured' });
     key = 'test-only-key';
     for (const [failure, code] of [
-      ['400', 'credentials'],
-      ['403', 'credentials'],
+      ['400', 'invalid-request'],
+      ['401', 'credentials'],
+      ['403', 'access-denied'],
       ['429', 'quota'],
       ['500', 'unavailable'],
       ['network', 'network'],
@@ -72,7 +73,10 @@ test('FONT-01: catálogo oficial, clave privada, concurrencia y fallos diferenci
       mode = failure;
       const response = await send();
       assert.ok(!response.ok);
-      assert.deepEqual(await response.json(), { error: code });
+      assert.deepEqual(await response.json(), {
+        error: code,
+        ...(Number(failure) ? { providerStatus: Number(failure) } : {}),
+      });
     }
     mode = 'ok';
     const before = calls;
@@ -92,5 +96,117 @@ test('FONT-01: catálogo oficial, clave privada, concurrencia y fallos diferenci
   } finally {
     endpoint.close();
     await new Promise((r) => server.close(r));
+  }
+});
+
+test('FONT-02: motivos reales de Google, JSON inválido, timeout y diagnóstico sin secretos', async () => {
+  let reply = () => Response.json({ items: [] });
+  let configurationBroken = false;
+  const secret = 'private-test-key';
+  const endpoint = googleFontsEndpoint({
+    getKey: () => {
+      if (configurationBroken) throw new Error(secret);
+      return secret;
+    },
+    timeoutMs: 40,
+    request: async (_url, { signal }) => {
+      if (!reply)
+        return new Promise((_resolve, reject) =>
+          signal.addEventListener('abort', () => reject(signal.reason), { once: true }),
+        );
+      return reply();
+    },
+  });
+  const server = createServer((req, res) => void endpoint.handle(req, res, server.address().port));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  async function check(expected, status = 502) {
+    const response = await fetch(origin, {
+      method: 'POST',
+      headers: { origin, 'content-type': 'application/json' },
+      body: '{}',
+    });
+    const text = await response.text();
+    assert.equal(response.status, status);
+    assert.ok(!text.includes(secret));
+    assert.deepEqual(JSON.parse(text), expected);
+  }
+  try {
+    for (const [reason, code] of [
+      ['dailyLimitExceeded', 'quota'],
+      ['quotaExceeded', 'quota'],
+      ['rateLimitExceeded', 'quota'],
+      ['userRateLimitExceeded', 'quota'],
+      ['SERVICE_DISABLED', 'api-disabled'],
+      ['API_KEY_INVALID', 'credentials'],
+      ['API_KEY_EXPIRED', 'credentials'],
+      ['API_KEY_HTTP_REFERRER_BLOCKED', 'access-denied'],
+      ['API_KEY_SERVICE_BLOCKED', 'access-denied'],
+      ['API_KEY_IP_ADDRESS_BLOCKED', 'access-denied'],
+      ['accessNotConfigured', 'access-denied'],
+    ]) {
+      for (const format of ['legacy', 'rpc']) {
+        reply = () =>
+          Response.json(
+            {
+              error: {
+                message: secret,
+                ...(format === 'legacy'
+                  ? { errors: [{ reason, message: secret }] }
+                  : {
+                      details: [
+                        {
+                          '@type': 'type.googleapis.com/google.rpc.ErrorInfo',
+                          domain: 'googleapis.com',
+                          reason,
+                          metadata: { key: secret },
+                        },
+                      ],
+                    }),
+              },
+            },
+            { status: 403 },
+          );
+        await check(
+          { error: code, providerStatus: 403, providerReason: reason },
+          code === 'quota' ? 429 : 502,
+        );
+      }
+    }
+    reply = () => Response.json({ error: { errors: [{ reason: secret }] } }, { status: 403 });
+    await check({ error: 'access-denied', providerStatus: 403 });
+    reply = () => Response.json({ error: { status: 'RESOURCE_EXHAUSTED' } }, { status: 403 });
+    await check({ error: 'quota', providerStatus: 403 }, 429);
+    reply = () => new Response('<html>Bad Gateway</html>', { status: 502 });
+    await check({ error: 'unavailable', providerStatus: 502 });
+    reply = () => new Response('not JSON');
+    await check({ error: 'invalid-response' });
+    for (const items of [
+      [],
+      [null],
+      [{ family: 'Lora', category: 'serif', variants: ['regular'] }, null],
+      [{ family: 'Lora', category: 'serif', variants: ['unknown'] }],
+    ]) {
+      reply = () => Response.json({ items });
+      await check({ error: 'invalid-response' });
+    }
+    reply = () => {
+      throw new Error(secret);
+    };
+    await check({ error: 'network' });
+    reply = undefined;
+    await check({ error: 'timeout' });
+    configurationBroken = true;
+    await check({ error: 'configuration' }, 503);
+    configurationBroken = false;
+    reply = () =>
+      Response.json({ items: [{ family: 'Lora', category: 'serif', variants: ['regular'] }] });
+    await check(
+      { families: [{ family: 'Lora', category: 'serif', weights: [400], italic: false }] },
+      200,
+    );
+  } finally {
+    endpoint.close();
+    await new Promise((resolve) => server.close(resolve));
   }
 });

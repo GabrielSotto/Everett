@@ -92,7 +92,17 @@
 .font-results [data-action='font-favorite'][aria-pressed='true'] svg {
   fill: currentColor;
 }
-.font-catalog-status,
+.font-catalog-status {
+  margin: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.font-catalog-feedback:not([hidden]) {
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
 .font-empty {
   margin: 8px;
   font-size: 12px;
@@ -101,7 +111,8 @@
 }
 [data-font-retry-catalog] {
   margin: 0 8px 8px;
-  font-size: 12px;
+  min-height: 32px;
+  font-size: 13px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }

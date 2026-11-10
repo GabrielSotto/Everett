@@ -91,6 +91,14 @@ trabajo cotidiano. El servidor `preview.mjs` queda retirado del uso diario.
 
 ### Google Fonts en notas
 
+`/api/google-fonts` devuelve errores con código estable; distingue la respuesta de Google mediante
+su estado HTTP y motivos estructurados. Un 403 no equivale necesariamente a credenciales inválidas:
+puede indicar cuota, API deshabilitada o restricciones de acceso. El diagnóstico conserva
+`providerStatus` y, si se reconoce, `providerReason`; nunca reenvía mensajes, metadatos ni claves.
+JSON inválido y catálogo incompleto se clasifican como `invalid-response`, separados de `network`
+y `timeout`. El cliente distingue además conexión y espera del servicio local, y muestra causa
+y acción sin sustituir la tipografía guardada. Referencia: [errores de las APIs de Google](https://docs.cloud.google.com/resource-manager/docs/core_errors).
+
 La consulta de familias usa Google Fonts Developer API, habilitada en un proyecto de Google Cloud.
 Crear una clave restringida a esa API y configurar `GOOGLE_FONTS_API_KEY` en `.env.local`
 (excluido de Git). No usar el prefijo `VITE_`: la clave se lee en el servicio local y no se

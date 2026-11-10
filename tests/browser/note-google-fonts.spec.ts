@@ -135,6 +135,153 @@ async function choose(page: Page, family: string) {
   await expect(picker(page)).toBeHidden();
 }
 
+async function failingCatalogue(page: Page) {
+  await page.addInitScript(() => {
+    const original = window.fetch;
+    const state = { failure: 'service-unreachable', calls: 0, delay: 0 };
+    Object.assign(window, { catalogueTest: state });
+    window.fetch = async (...args) => {
+      if (String(args[0]) !== '/api/google-fonts') return original(...args);
+      state.calls++;
+      const failure = state.failure;
+      if (state.delay) await new Promise((resolve) => setTimeout(resolve, state.delay));
+      if (failure === 'service-unreachable') throw new TypeError('Failed to fetch');
+      if (failure === 'invalid-response') return Response.json({ families: [null] });
+      if (failure) return Response.json({ error: failure }, { status: 502 });
+      return original(...args);
+    };
+  });
+}
+async function catalogueState(page: Page, changes: { failure?: string; delay?: number }) {
+  await page.evaluate(
+    (next) => Object.assign((window as unknown as { catalogueTest: object }).catalogueTest, next),
+    changes,
+  );
+}
+
+test('C08-B190: error de catálogo legible y accesible, causas distintas y recuperación sin perder la nota', async ({
+  page,
+}, info) => {
+  await failingCatalogue(page);
+  await setup(page);
+  await choose(page, 'Serif');
+  await page.getByLabel('Peso del cuerpo').selectOption('700');
+  const before = (await world(page)).nodes[0]!.data;
+  await input(page).click();
+  await picker(page).getByRole('button', { name: 'Favorita: Serif' }).click();
+  await input(page).fill('Roboto');
+  const status = picker(page).locator('.font-catalog-status');
+  const retry = picker(page).getByRole('button', { name: 'Reintentar catálogo' });
+  await expect(status).toContainText('servidor esté en marcha');
+  await expect(input(page)).toHaveAttribute('aria-describedby', 'note-font-catalog-status');
+  await expect(retry).toHaveAccessibleDescription(/servidor esté en marcha/);
+  await expect(status).toHaveCSS('font-size', '14px');
+  for (const width of [900, 320]) {
+    await page.setViewportSize({ width, height: 740 });
+    const bounds = (await picker(page).boundingBox())!;
+    for (const element of [status, retry]) {
+      const box = (await element.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(bounds.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+      expect(box.y + box.height).toBeLessThanOrEqual(bounds.y + bounds.height);
+    }
+    expect(await picker(page).evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await capture(page, info, `catalogo-servicio-caido-${width}`);
+  }
+  for (const [failure, text] of [
+    ['quota', 'límite de consultas'],
+    ['access-denied', 'restricciones de la clave'],
+    ['credentials', 'rechazó la clave'],
+    ['api-disabled', 'API de Google Fonts está deshabilitada'],
+    ['network', 'conectarse con Google Fonts'],
+    ['invalid-response', 'formato válido'],
+  ] as const) {
+    await catalogueState(page, { failure });
+    await retry.click();
+    await expect(status).toContainText(text);
+    await expect(input(page)).toHaveValue('Roboto');
+    expect((await world(page)).nodes[0]!.data).toEqual(before);
+  }
+  await catalogueState(page, { failure: '', delay: 600 });
+  await input(page).focus();
+  await page.keyboard.press('Tab');
+  await expect(retry).toBeFocused();
+  const callsBefore = await page.evaluate(
+    () => (window as unknown as { catalogueTest: { calls: number } }).catalogueTest.calls,
+  );
+  await page.keyboard.press('Enter');
+  await expect(status).toHaveText('Cargando fuentes…');
+  await expect(retry).toBeFocused();
+  await expect(retry).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Enter');
+  await expect(status).toBeHidden();
+  await expect(input(page)).toBeFocused();
+  await expect(input(page)).toHaveValue('Roboto');
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { catalogueTest: { calls: number } }).catalogueTest.calls,
+    ),
+  ).toBe(callsBefore + 1);
+  await expect(
+    picker(page).getByRole('button', { name: 'Roboto Mono', exact: true }),
+  ).toBeVisible();
+  expect((await world(page)).nodes[0]!.data).toEqual(before);
+  await input(page).fill('');
+  await expect(picker(page).getByRole('row').first()).toContainText('Serif');
+  await capture(page, info, 'catalogo-recuperado-320');
+  await choose(page, 'Roboto Mono');
+  await expect(page.locator('.note-paper')).toHaveAttribute('data-font-state', 'ready');
+  await expect(page.locator('#note-text')).toHaveCSS('font-weight', '700');
+  await expect(page.locator('#note-title')).not.toHaveCSS('font-family', /Roboto Mono/);
+  await page.reload();
+  await expect(page.locator('#note-text')).toHaveCSS('font-family', /Roboto Mono/);
+  await expect(page.locator('#note-text')).toHaveValue('Conservar el contexto y las decisiones.');
+});
+
+test('C08-B191: reintento tardío no reabre el selector ni roba el foco al volver a escribir o salir', async ({
+  page,
+}) => {
+  await failingCatalogue(page);
+  await setup(page);
+  // Una fuente guardada conserva un solo peso conocido mientras falta el catálogo.
+  await input(page).fill('Lora');
+  await input(page).press('Enter');
+  await expect(page.getByLabel('Peso del cuerpo')).toBeDisabled();
+  await input(page).click();
+  await expect(picker(page).locator('.font-catalog-status')).toContainText(
+    'servidor esté en marcha',
+  );
+  await input(page).press('Tab');
+  await expect(picker(page).getByRole('button', { name: 'Reintentar catálogo' })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(input(page)).toBeFocused();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('spinbutton', { name: 'Tamaño del texto' })).toBeFocused();
+  await input(page).click();
+  await catalogueState(page, { failure: 'quota', delay: 400 });
+  await picker(page).getByRole('button', { name: 'Reintentar catálogo' }).click();
+  await page.locator('#note-title').fill('Seguir trabajando');
+  await expect(picker(page)).toBeHidden();
+  await expect(picker(page).locator('.font-catalog-status')).toHaveText(/límite de consultas/);
+  await expect(page.locator('#note-title')).toBeFocused();
+  await input(page).click();
+  await catalogueState(page, { failure: '', delay: 400 });
+  await picker(page).getByRole('button', { name: 'Reintentar catálogo' }).click();
+  await page.getByRole('button', { name: 'Volver al Canvas', exact: true }).click();
+  await expect(picker(page)).toHaveCount(0);
+  // Esperar la respuesta tardía controlada y comprobar que no reconstruye UI destruida.
+  await page.waitForTimeout(600);
+  await expect(picker(page)).toHaveCount(0);
+  await catalogueState(page, { failure: 'service-unreachable', delay: 0 });
+  await page.locator('[data-node=font-note]').dblclick({ position: { x: 10, y: 10 } });
+  await input(page).click();
+  await expect(picker(page).locator('.font-catalog-status')).toContainText(
+    'servidor esté en marcha',
+  );
+  await expect(page.locator('#note-title')).toHaveValue('Seguir trabajando');
+});
+
 test('C08-B166: catálogo completo, favoritas, pesos reales, tarjeta, copia y persistencia', async ({
   page,
 }, info) => {
