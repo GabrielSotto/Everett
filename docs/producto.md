@@ -10,7 +10,7 @@ Este documento recoge la descripción general aportada por el usuario. El detall
 
 Un Mundo representa un proyecto. Contiene sus materiales, información, estado y superficies de trabajo. Todas las superficies acceden al mismo proyecto; el Mundo conecta sus datos y actividades.
 
-El Universo permite recorrer los Mundos. Dentro de cada Mundo, sus seis superficies se distribuyen espacialmente sin una jerarquía visual central.
+El Universo permite recorrer los Mundos. Dentro de cada Mundo, sus superficies se distribuyen espacialmente sin una jerarquía visual central.
 
 ## Superficies de trabajo
 
@@ -19,11 +19,16 @@ El Universo permite recorrer los Mundos. Dentro de cada Mundo, sus seis superfic
 | Code       | Desarrollo manual de código y asistencia agéntica contextual. El FAB despliega el composer lateralmente.                                                  |
 | Canvas     | Trabajo espacial con materiales, ideas, referencias, diagramas y contenido visual. Las zonas de agentes permiten asignar materiales y revisar propuestas. |
 | Docs       | Escritura y edición directa de documentos, con Markdown como base. Comparte el patrón de FAB y composer contextual de Code.                               |
-| Board      | Planificación y seguimiento del estado del proyecto, sus tareas y evolución.                                                                              |
-| Agents     | Gestión de los agentes del Mundo y su actividad en el proyecto.                                                                                           |
+| Board      | Planificación y seguimiento del proyecto y sus tareas, con gestión de los agentes del Mundo y su actividad.                                               |
 | Sessions   | Conversación con personas y agentes y coordinación de acciones sobre las demás superficies.                                                               |
 
 Las distintas interfaces responden a actividades diferentes dentro del mismo Mundo. Una Session puede iniciar trabajo que aparezca en Board, Docs, Canvas o Code manteniendo el contexto del proyecto.
+
+La dirección confirmada fusiona Board y Agents en una misma superficie. Conserva las capacidades
+de planificación, propiedades y vistas del tablero y la gestión, conversación directa, capacidades,
+memoria y actividad de los agentes. El prototipo actual aún presenta ambos accesos por separado;
+su integración se concreta en el [alcance de Board](alcance-prototipo.md#011--board--shipping-mode)
+y se refleja en la vista de superficies del Mundo.
 
 Canvas reúne visual y espacialmente materiales de las distintas superficies para organizar el
 trabajo, relacionar sus elementos, comprender el conjunto y diagramar cómo funciona. Debe poder
@@ -54,6 +59,11 @@ configuración vigente. La definición de cada iteración concreta las acciones 
 El usuario puede trabajar manualmente, delegar una tarea completa o combinar ambas formas. Las capacidades manuales permanecen disponibles. La asistencia aparece en el contexto de la actividad: composer en Code y Docs, zonas y propuestas en Canvas, conversación y coordinación en Sessions.
 
 Las propuestas requieren aceptación antes de modificar el contenido compartido. Las asignaciones deben conservar la identidad y el contenido de los materiales y permitir recuperarlos al cancelar o retirar al agente.
+
+El Board permite asignar, delegar y recuperar tareas entre participantes. El traspaso de trabajo
+iniciado conserva el contexto y espera un punto seguro del paso en curso. El PM interviene cuando
+hace falta coordinación o una decisión. Las reglas y los mecanismos pendientes se definen en
+[Asignación y traspaso de tareas](alcance-prototipo.md#asignación-y-traspaso-de-tareas).
 
 ## Continuidad del proyecto
 

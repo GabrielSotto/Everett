@@ -11,8 +11,8 @@ Las referencias a Infinity Canvas, OpenCode y Notion se conservan como referenci
 | **0.7.5**  | Reconstrucción modular, tipado, arnés, motion y propuestas para la vista del Mundo.                      |
 | **0.8**    | Canvas, tomando los comportamientos aplicables de Infinity Canvas.                                       |
 | **0.9**    | Code + Docs.                                                                                             |
-| **0.10**   | Session + Agents.                                                                                        |
-| **0.11**   | Board + Shipping Mode.                                                                                   |
+| **0.10**   | Session y registros de actividad de agentes compartidos con Board.                                       |
+| **0.11**   | Board fusionado con Agents, asignación y traspaso de tareas, y Shipping Mode.                            |
 | **0.12**   | Vista de superficies del Mundo, barra global, perfil, configuración y sistema de diseño (Atomic Design). |
 | **1.0 RC** | Integración completa, regresiones y pulido final.                                                        |
 | **1.0**    | Prototipo aprobado.                                                                                      |
@@ -256,6 +256,10 @@ El desglose que señalaste en **OpenCode** queda como referencia para esta etapa
 
 ### Agents
 
+Conservar las capacidades siguientes como parte de la fusión confirmada con Board. En 0.10 se
+trabajan sus registros y continuidad con Sessions; en 0.11 se concreta la experiencia unificada
+de gestión de agentes y tareas. Esta distribución conserva el orden de las iteraciones.
+
 - Relacionar actividad, tareas, herramientas, duración, consumo, errores y resultados.
 - Utilizar las mismas ejecuciones que aparecen en las conversaciones.
 - Permitir pasar de una métrica o gráfico a los registros que la explican.
@@ -277,6 +281,11 @@ El desglose que señalaste en **OpenCode** queda como referencia para esta etapa
 ## 0.11 — Board + Shipping Mode
 
 ### Board
+
+**Dirección confirmada:** fusionar Board y Agents en una misma superficie, conservando la gestión,
+conversación directa, capacidades, memoria y actividad de los agentes previstas en 0.10. Las tareas,
+asignaciones y ejecuciones deben compartir identidad y estado con Sessions y las demás superficies.
+La disposición y navegación concretas se definen al planificar la experiencia unificada.
 
 Tomar como referencia de estructura y estética el tablero de Codroid aportado por el usuario
 el 9 de octubre de 2026: interfaz en `C:/Proyectos/codroid/tools/board/web` y guía en
@@ -352,6 +361,70 @@ comprobada. La investigación debe tener un responsable explícito. El selector 
 agente y la preparación de la acción se proponen en la ficha revisada; abrir un bug o consultar
 una hipótesis no inicia una ejecución.
 
+#### Asignación y traspaso de tareas
+
+**Reglas confirmadas:** cualquier participante puede asignar tareas a otro o a sí mismo. El
+usuario puede recuperar trabajo de un worker o delegar una tarea que estaba realizando. La
+solicitud puede hacerse en cualquier momento; si la ejecución ya comenzó, el traspaso espera
+un punto seguro del paso en curso desde el que el nuevo responsable pueda continuar. La tarea
+completa puede seguir abierta.
+
+El PM interviene cuando hace falta coordinación o una decisión. Una tarea clara puede pasar al
+worker adecuado y continuar directamente. Los demás participantes siguen trabajando y esperan
+cuando su trabajo depende del resultado, su validación o las pruebas pertinentes. Transferir una
+tarea no la completa ni valida su resultado.
+
+Conservar avance, contexto, recursos e identidad de la tarea durante el traspaso, con persistencia,
+trazabilidad y protección frente a ejecuciones duplicadas por accidente. Distinguir el estado de
+la tarea, su validación, el responsable y el estado del traspaso. La prevención de duplicados de
+una misma ejecución debe permitir el trabajo paralelo coordinado sobre tareas distintas.
+
+Fuente de las reglas: mensajes del usuario del 4 de noviembre de 2026 en
+[Diseñar loop de Everett](https://chatgpt.com/c/6ad9ded1-9208-83e8-acfd-14df8c564e0e).
+El registro de este alcance y de las propuestas siguientes fue autorizado el 10 de noviembre.
+
+**Protocolo propuesto, pendiente de concretar y aprobar antes de implementarlo:**
+
+| Estado del traspaso   | Comportamiento propuesto                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------- |
+| Solicitado            | Registrar destino; el ejecutor actual conserva el control y prepara el cierre seguro del paso en curso. |
+| Preparando entrega    | Estabilizar el paso, guardar avance y resolver las operaciones que no pueden abandonarse.               |
+| Listo para continuar  | Persistir el punto de recuperación y comprobar que el ejecutor anterior dejó de actuar sobre la tarea.  |
+| Transferido           | Confirmar el nuevo responsable y su autorización de ejecución antes de que continúe.                    |
+| Requiere intervención | Conservar el avance disponible e identificar qué impide entregar o recuperar el control.                |
+
+Estos estados describen el traspaso y no requieren columnas adicionales en el Kanban. La aceptación
+del destino puede ser automática para un worker disponible y compatible; el gesto de recuperar
+una tarea puede expresar la aceptación del usuario. Definir estos comportamientos junto con la
+interfaz y los permisos configurados.
+
+Evaluar un registro coordinado y versionado de la autorización de ejecución, con cambio persistido
+de responsable y autorización en una única transición. Resolver solicitudes simultáneas contra
+la versión vigente y rechazar resultados tardíos de ejecuciones anteriores. El aislamiento mediante
+worktrees debe complementarse con el control de procesos, herramientas y otros recursos afectados.
+Un timeout no demuestra que el ejecutor haya dejado de actuar; la recuperación debe comprobar el
+estado real antes de habilitar un reemplazo.
+
+**Escenarios que debe cubrir la verificación del protocolo:**
+
+- Autoasignación de una tarea libre: un responsable y una sola ejecución autorizada.
+- Delegación de una tarea clara: el worker recupera el avance y continúa sin intervención
+  innecesaria del PM; una decisión pendiente activa la coordinación correspondiente.
+- Recuperación durante una operación: la solicitud permanece visible y el cambio espera al
+  punto seguro, conservando el contenido y los pendientes.
+- Solicitudes simultáneas: una sola transferencia se confirma; las demás reciben el estado vigente.
+- Cierre o recarga durante el traspaso: recuperar el estado confirmado sin perder avance ni
+  iniciar dos ejecuciones; los resultados tardíos no alteran la tarea transferida.
+- Fallo o desaparición del worker: conservar el último avance verificable y comprobar operaciones
+  y recursos pendientes antes de habilitar otro ejecutor.
+- Dependencias: transferir una tarea no libera trabajo que todavía espera un resultado validado.
+
+**Decisiones abiertas:** definir el punto seguro y la evidencia necesaria por herramienta; el
+contenido mínimo del punto de recuperación; la selección y aceptación del destino; cuándo
+interviene el PM; la cancelación o el rechazo de una solicitud; el arbitraje de solicitudes
+simultáneas; y la recuperación cuando un worker no puede entregar el control. Concretar cómo se
+revoca y verifica la autorización anterior, incluidos procesos y efectos externos pendientes.
+
 ### Shipping Mode
 
 **Fundamento confirmado:** Shipping orienta el Mundo entero al cierre de una entrega,
@@ -372,7 +445,9 @@ mecanismos de preparación permanecen pendientes de evaluación y definición de
 - Reflejar el estado en las demás superficies sin añadir contenido innecesario.
 - Verificar consultas sobre bloqueantes y trabajo pendiente para lanzar.
 
-**Cierre de 0.11:** organizar el mismo trabajo desde distintas vistas y utilizar Shipping sin discrepancias entre tareas, propiedades, cantidades y estado global.
+**Cierre de 0.11:** organizar el mismo trabajo desde distintas vistas, gestionar agentes y tareas
+en la experiencia unificada y verificar los traspasos sin pérdida de contexto ni ejecuciones
+duplicadas. Utilizar Shipping sin discrepancias entre tareas, propiedades, cantidades y estado global.
 
 ---
 
@@ -380,12 +455,15 @@ mecanismos de preparación permanecen pendientes de evaluación y definición de
 
 ### Vista de superficies del Mundo
 
-Esta vista muestra las seis superficies de un único Mundo (proyecto). El Universo es la vista que reúne todos los Mundos; ambas escalas conservan la navegación aprobada.
+Esta vista muestra las superficies de un único Mundo (proyecto), reflejando la fusión confirmada
+de Board y Agents. El Universo es la vista que reúne todos los Mundos; ambas escalas conservan
+la navegación aprobada. Las seis superficies de la base corresponden a la presentación previa
+a esa integración.
 
 El nombre y la representación se trabajan inicialmente en la reconstrucción de 0.7.5. En 0.12 se verifica su integración con las superficies terminadas y se resuelven los ajustes que el usuario apruebe.
 
 - Acordar el nombre que reemplazará a `Vista atómica`.
-- Definir y aprobar una referencia visual para representar las seis superficies.
+- Definir y aprobar una referencia visual para representar las superficies tras la fusión de Board y Agents.
 - Sustituir las tarjetas actuales por una representación cohesiva con Everett.
 - Mantener identificación, foco y destino inequívocos.
 - Conservar la navegación aprobada.
