@@ -83,6 +83,8 @@ export function reduce(state: State, command: Command): State {
     case 'node.resolve-link':
     case 'node.edit':
     case 'wireframe.edit':
+    case 'text.measure':
+    case 'text.edit':
     case 'wireframe.compose':
     case 'wireframe.library':
     case 'node.delete':

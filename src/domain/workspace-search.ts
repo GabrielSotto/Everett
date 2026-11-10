@@ -14,6 +14,7 @@ export interface SearchResult {
 const normalize = (value: string): string =>
   value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase().trim();
 const kinds = {
+  text: ['Texto', 'text'],
   note: ['Nota', 'note'],
   shape: ['Forma', 'shapes'],
   drawing: ['Dibujo', 'draw'],

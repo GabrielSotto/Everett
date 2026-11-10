@@ -3,6 +3,7 @@ import { humanParticipants } from './conversations';
 import { validLinkPreview, linkUrl } from './link-previews';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
+import { validCanvasText } from './canvas-text';
 import { validNoteFont, validFontWeight, validNoteTypography } from './note-fonts';
 import { validLayoutGuides } from './layout-guides';
 import { validComponentTree, elementAt } from './component-tree';
@@ -295,10 +296,13 @@ export function validate(s: State): void {
           'reference',
           'local',
           'wireframe',
+          'text',
         ].includes(n.data.kind),
         'MATERIAL',
         'Tipo de material desconocido',
       );
+      if (n.data.kind === 'text')
+        ensure(validCanvasText(n.data), 'TEXT_FORMAT', 'El texto o su formato no son válidos.');
       if (n.data.kind === 'note')
         ensure(
           (n.data.font === undefined || validNoteFont(n.data.font)) &&

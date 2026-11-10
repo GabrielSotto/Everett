@@ -21,6 +21,16 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
+### Texto directo — 10 de noviembre
+
+Texto independiente de Notas en el dock de Canvas: clic para rótulos, arrastre para párrafos; tipografía, peso, tamaño, color y alineación en el lugar. La siguiente evaluación es componer manualmente una cronología visual; el trabajo con agentes en zonas viene después. Contrato y regresiones: [C08-TEXT-01](docs/iteraciones/0.8.md#texto-directo--c08-text-01).
+
+Tipado y formato aprobados. Evidencia verificada: 143 pruebas unitarias y del arnés
+(`output/pruebas/unitarias/2026-11-10_21-19-56-760Z`) y diez recorridos dirigidos de texto, dock
+y tipografías (`output/pruebas/navegador/2026-11-10_21-19-56-913Z`). Se comprobó también la
+recarga con el cursor dentro del campo y la llegada tardía de una fuente después de salir.
+La integración en `dev` y la aprobación de 0.8 siguen pendientes.
+
 ### Errores del catálogo de fuentes — 10 de noviembre
 
 El caso de revisión se reprodujo con el servicio local detenido (`ERR_CONNECTION_REFUSED`).

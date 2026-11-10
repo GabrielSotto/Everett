@@ -116,6 +116,7 @@ export interface CanvasClipboard {
   groups: CanvasGroup[];
 }
 export type NodeData =
+  | import('./canvas-text').CanvasText
   | { kind: 'wireframe'; title: string; content: import('./wireframes').WireframeContent }
   | { kind: 'local'; title: string; content: LocalContent }
   | {
@@ -362,6 +363,8 @@ export function routeKey(r: Route): string {
         : `${r.world}/${r.surface}/${r.entity ?? ''}${r.fragment ? '#' + r.fragment : ''}`;
 }
 export function nodeTitle(w: DeepReadonly<World>, n: Material): string {
+  if (n.data.kind === 'text')
+    return n.data.title.trim() || n.data.text.trim().split('\n')[0]?.slice(0, 80) || 'Texto';
   if (n.data.kind !== 'reference') return n.data.title?.trim() || 'Sin nombre';
   return referenceTitle(w, n.data.ref) ?? 'Referencia';
 }

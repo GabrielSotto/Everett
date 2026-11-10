@@ -1,5 +1,11 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-U76', layer: 'unit', contracts: ['C08-TEXT-01'] },
+  ...['C08-B192', 'C08-B193', 'C08-B194', 'C08-B195'].map((id) => ({
+    id,
+    layer: 'browser',
+    contracts: ['C08-TEXT-01'],
+  })),
   ...[
     'C08-U62',
     'C08-U63',

@@ -11,8 +11,13 @@ interface FontLoad {
 }
 const pending = new WeakMap<HTMLElement, Map<NotePart, FontLoad>>();
 
-export function restoreNoteFonts(root: HTMLElement, onReady: () => void = () => {}): void {
-  for (const paper of root.querySelectorAll<HTMLElement>('.note-paper,.material.note')) {
+export function restoreNoteFonts(
+  root: HTMLElement,
+  onReady: (paper: HTMLElement) => void = () => {},
+): void {
+  for (const paper of root.querySelectorAll<HTMLElement>(
+    '.note-paper,.material.note,.material.text,.direct-text-draft',
+  )) {
     const jobs = pending.get(paper) ?? new Map<NotePart, FontLoad>();
     pending.set(paper, jobs);
     const refresh = () => {
@@ -84,7 +89,7 @@ export function restoreNoteFonts(root: HTMLElement, onReady: () => void = () => 
               if (!current()) return;
               job.state = 'ready';
               refresh();
-              onReady();
+              onReady(paper);
             },
             (error: unknown) => {
               if (!current()) return;

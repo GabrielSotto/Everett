@@ -72,6 +72,7 @@ export class CanvasInteractions {
     private root: HTMLElement,
     private ctx: Context,
     signal: AbortSignal,
+    editText: (id: string) => boolean,
     private center: () => Point,
     private identify: () => void,
     cancelGesture: () => boolean,
@@ -361,6 +362,7 @@ export class CanvasInteractions {
         } else if (event.key === ' ' || event.key === 'Enter') {
           event.preventDefault();
           event.stopPropagation();
+          if (event.key === 'Enter' && editText(id)) return;
           if (
             event.key === 'Enter' &&
             ctx.world().nodes.find((node) => node.id === id)?.data.kind === 'wireframe'

@@ -1,7 +1,7 @@
 import { noteTypography, validNoteTextStyle } from '../note-fonts';
 import { type State, getWorld, type Material, need } from '../model';
 import type { Command } from '../command-types';
-import { ensure } from '../invariants';
+import { ensure, DomainError } from '../invariants';
 import { releaseZoneMaterials } from '../zone-ownership';
 import { restoreMaterialLinks } from '../material-links';
 import { arrangeProposals } from '../proposal-layout';
@@ -11,6 +11,7 @@ import { orderMaterials } from '../material-order';
 import { validLinkPreview } from '../link-previews';
 import { resolveMedia } from '../resolved-media';
 import { validWireframe } from '../wireframes';
+import { validCanvasText } from '../canvas-text';
 import { compositionKinds, wireframeComposition } from '../wireframe-compositions';
 import { instantiateLibrary, validLibraryComposition } from '../sketch-library';
 import { isComponent } from '../manual-groups';
@@ -24,6 +25,8 @@ type CanvasCommand = Extract<
       | 'node.create'
       | 'group.resize'
       | 'wireframe.edit'
+      | 'text.measure'
+      | 'text.edit'
       | 'wireframe.compose'
       | 'wireframe.library'
       | 'assignment.interrupt'
@@ -108,6 +111,47 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       );
       world.nodes.push(...composition.nodes);
       (world.canvasGroups ??= []).push(composition.group);
+      break;
+    }
+    case 'text.measure': {
+      const material = node(command.id);
+      ensure(!material.owner, 'LOCKED', 'El agente está usando el material.');
+      if (material.data.kind !== 'text')
+        throw new DomainError('TEXT_FORMAT', 'Este material no es texto.');
+      material.height = command.height;
+      if (material.data.sizing === 'auto') material.width = command.width;
+      break;
+    }
+    case 'text.edit': {
+      ensure(validCanvasText(command.data), 'TEXT_FORMAT', 'El texto o su formato no son válidos.');
+      if (command.insertAt) {
+        ensure(
+          !world.nodes.some((n) => n.id === command.id),
+          'MATERIAL',
+          'Ya existe un material con este identificador.',
+        );
+        if (command.data.text.trim())
+          world.nodes.push({
+            id: command.id,
+            x: command.insertAt.x,
+            y: command.insertAt.y,
+            width: command.width,
+            height: command.height,
+            owner: null,
+            data: structuredClone(command.data),
+          });
+        break;
+      }
+      const material = node(command.id);
+      ensure(!material.owner, 'LOCKED', 'El agente está usando el material.');
+      ensure(material.data.kind === 'text', 'TEXT_FORMAT', 'Este material no es texto.');
+      if (!command.data.text.trim()) {
+        applyCanvasCommand(state, { type: 'node.delete', world: world.id, id: command.id });
+        break;
+      }
+      material.data = structuredClone(command.data);
+      material.width = command.width;
+      material.height = command.height;
       break;
     }
     case 'wireframe.edit': {
@@ -514,6 +558,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
     case 'node.resize': {
       const material = node(command.id);
       ensure(!material.owner, 'LOCKED', 'El agente está usando el material');
+      if (material.data.kind === 'text') material.data.sizing = 'wrap';
       if (material.data.kind === 'drawing')
         material.data.points = material.data.points.map((p) => ({
           x: (p.x * command.rect.width) / material.width,

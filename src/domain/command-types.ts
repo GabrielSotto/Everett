@@ -194,6 +194,23 @@ export type Command =
       data: Extract<NodeData, { kind: 'image' | 'video' | 'pdf' }>;
     }
   | {
+      type: 'text.measure';
+      world: string;
+      id: string;
+      width: number;
+      height: number;
+    }
+  | {
+      type: 'text.edit';
+      session: string;
+      insertAt?: Point;
+      world: string;
+      id: string;
+      data: import('./canvas-text').CanvasText;
+      width: number;
+      height: number;
+    }
+  | {
       type: 'wireframe.edit';
       world: string;
       id: string;

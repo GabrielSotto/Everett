@@ -30,6 +30,17 @@ export function sketchTextInk(material: Material, world: WorldSnapshot): Wirefra
   if (material.data.kind !== 'wireframe') throw new Error('Se esperaba un bosquejo.');
   const content = material.data.content;
   if (!content.piece?.autoInk || content.appearance) return content;
+  const { color, textShadow } = canvasTextInk(material, world);
+  return {
+    ...content,
+    piece: {
+      ...content.piece,
+      style: { ...content.piece.style, color, textShadow },
+      placeholderColor: color,
+    },
+  };
+}
+export function canvasTextInk(material: Material, world: WorldSnapshot) {
   // Muestrear extremos y centro: el texto puede cruzar dos fondos distintos.
   const points = [
     [material.x + 1, material.y + 1],
@@ -79,12 +90,5 @@ export function sketchTextInk(material: Material, world: WorldSnapshot): Wirefra
   const mixed = Math.max(contrast(dark), contrast(light)) < 4.5;
   const color = mixed || contrast(light) >= contrast(dark) ? light : dark;
   const textShadow = mixed ? '0 0 2px #26323c,0 0 2px #26323c,0 0 1px #26323c' : 'none';
-  return {
-    ...content,
-    piece: {
-      ...content.piece,
-      style: { ...content.piece.style, color, textShadow },
-      placeholderColor: color,
-    },
-  };
+  return { color, textShadow };
 }

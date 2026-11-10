@@ -665,7 +665,13 @@ export class EverettApp implements Context {
           this.persist();
           return;
         }
-        if (action === 'hand' || action === 'select' || action === 'note' || action === 'connect')
+        if (
+          action === 'hand' ||
+          action === 'select' ||
+          action === 'note' ||
+          action === 'text' ||
+          action === 'connect'
+        )
           this.ui.canvas.tool = action;
         this.ui.canvas.linkStart = null;
         this.render();

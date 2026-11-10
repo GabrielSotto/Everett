@@ -58,13 +58,14 @@ export function noteInk(color: string): string {
 export function noteStyle(data: Extract<NodeData, { kind: 'note' }>): string {
   const color = noteColor(data.color);
   const { title, body } = noteTypography(data);
-  const font = (value: NoteFont) => {
-    const family = googleFamily(value);
-    return family
-      ? `'${family}', ${noteFonts.sans.css}`
-      : noteFonts[value as keyof typeof noteFonts].css;
-  };
+  const font = fontFamilyCss;
   return `background:${color};--note-fill:${color};--note-ink:${noteInk(color)};--note-font:${font(body.font)};--note-size:${data.fontSize ?? 16}px;--note-style:${body.italic ? 'italic' : 'normal'};--note-weight:${body.weight};--note-title-font:${font(title.font)};--note-title-style:${title.italic ? 'italic' : 'normal'};--note-title-weight:${title.weight}`;
+}
+export function fontFamilyCss(value: NoteFont) {
+  const family = googleFamily(value);
+  return family
+    ? `'${family}', ${noteFonts.sans.css}`
+    : noteFonts[value as keyof typeof noteFonts].css;
 }
 
 export function noteFontMetadata(

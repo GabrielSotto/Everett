@@ -31,6 +31,9 @@ import { trace, type Intent } from '../../app/diagnostics/trace';
 import { colors } from './note-colors';
 import { restoreNoteFonts } from './note-font-loading';
 import { bindPointerCancellation } from '../../ui/pointer-cancellation';
+import './direct-text.css';
+import { DirectTextEditor } from './direct-text-editor';
+import { textBounds } from './direct-text-layout';
 import { CanvasInteractions } from './interactions';
 import { proposalMarkup } from './proposals';
 import { sameConnection } from '../../domain/link-identity';
@@ -118,16 +121,23 @@ export class CanvasView implements View {
   } | null = null;
   private locateMotion: Animation | null = null;
   private sequence = 0;
+  private directText: DirectTextEditor;
   private interactions: CanvasInteractions;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
   ) {
+    this.directText = new DirectTextEditor(root, ctx, (id) => {
+      this.select('node', id);
+      this.paintSelection();
+      ctx.persist();
+    });
     root.innerHTML =
       '<section class="canvas-stage" id="canvas-stage"><div class="canvas-plane" id="canvas-plane"></div><div id="canvas-zone-labels" aria-hidden="true"></div><div id="selection-actions"></div></section><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><div id="canvas-dock-host"></div><div class="chat-host" id="canvas-chat-host"></div>';
     this.cam = new SpatialCamera(
       ctx.store.get().camera,
       (camera) => {
+        this.directText.position(camera);
         const plane = root.querySelector<HTMLElement>('#canvas-plane');
         if (plane) {
           plane.style.transform = `translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
@@ -177,6 +187,7 @@ export class CanvasView implements View {
       root,
       ctx,
       this.abort.signal,
+      (id) => this.editText(id),
       () => this.camPoint(),
       () => this.paintMaterialIdentifications(),
       () => {
@@ -391,7 +402,14 @@ export class CanvasView implements View {
       );
   }
   closeTransient(): boolean {
+    if (this.directText.finish(true)) return true;
     if (this.interactions.close()) return true;
+    if (this.ctx.ui.canvas.tool === 'text') {
+      this.ctx.ui.canvas.tool = 'select';
+      if (this.drag) this.cancel();
+      else this.render();
+      return true;
+    }
     if (this.drag || this.ctx.ui.canvas.linkStart) {
       this.cancel();
       return true;
@@ -446,6 +464,16 @@ export class CanvasView implements View {
   private materialKey(event: KeyboardEvent): void {
     if (!(event.target instanceof HTMLElement)) return;
     const element = event.target;
+    if (
+      event.key === 'Enter' &&
+      element === this.root &&
+      this.ctx.ui.canvas.selections.length === 1 &&
+      this.editText(this.ctx.ui.canvas.selections[0]!)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     const menu = element.closest('.dock-more-menu,.reference-menu');
     if (menu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
       event.preventDefault();
@@ -554,6 +582,8 @@ export class CanvasView implements View {
       width *= scale;
       height *= scale;
     }
+    if (node.data.kind === 'text')
+      height = textBounds({ ...node.data, sizing: 'wrap' }, width).height;
     const rect = {
       x: corner.includes('w') ? node.x + node.width - width : node.x,
       y: corner.includes('n') ? node.y + node.height - height : node.y,
@@ -572,7 +602,15 @@ export class CanvasView implements View {
       )
       ?.focus({ preventScroll: true });
   }
+  private editText(id: string): boolean {
+    const node = this.ctx.world().nodes.find((n) => n.id === id);
+    if (!node || node.owner || node.data.kind !== 'text' || componentFor(this.ctx.world(), id))
+      return false;
+    this.directText.start(node.id, node, node.width, node);
+    return true;
+  }
   private open(id: string): void {
+    if (this.editText(id)) return;
     if (componentFor(this.ctx.world(), id)) return;
     const destination = materialRoute(this.ctx.store.get(), this.ctx.world().id, id);
     if (destination)
@@ -868,7 +906,8 @@ export class CanvasView implements View {
       shapeTools.includes(ui.canvas.tool as Shape) ||
       ui.canvas.tool === 'zone' ||
       ui.canvas.tool === 'drawing' ||
-      ui.canvas.tool === 'note'
+      ui.canvas.tool === 'note' ||
+      ui.canvas.tool === 'text'
     ) {
       this.drag = {
         kind: 'draw',
@@ -1071,6 +1110,10 @@ export class CanvasView implements View {
         return;
       }
       const material = this.ctx.world().nodes.find((n) => n.id === d.id);
+      if (material?.data.kind === 'text') {
+        const height = textBounds({ ...material.data, sizing: 'wrap' }, d.rect.width).height;
+        d.rect = { ...d.rect, height, y: d.corner.includes('n') ? fixed.y - height : fixed.y };
+      }
       if (material?.data.kind === 'image' || material?.data.kind === 'video') {
         const sx = d.rect.width / d.origin.width,
           sy = d.rect.height / d.origin.height;
@@ -1224,7 +1267,8 @@ export class CanvasView implements View {
       preview.className = 'draw-preview ' + d.tool;
       this.root.querySelector('#canvas-plane')?.append(preview);
     }
-    this.applyRect(preview, drawRect(d.start, d.point));
+    const rect = drawRect(d.start, d.point);
+    this.applyRect(preview, d.tool === 'text' ? { ...rect, y: d.start.y, height: 30 } : rect);
     if (d.tool === 'drawing') {
       const rect = this.strokeRect(d.points);
       this.applyRect(preview, rect);
@@ -1466,6 +1510,16 @@ export class CanvasView implements View {
     if (d.kind !== 'draw') return;
     const rect = d.tool === 'drawing' ? this.strokeRect(d.points) : drawRect(d.start, d.point),
       id = this.nextId();
+    if (d.tool === 'text') {
+      const end = this.point(e),
+        dragged = Math.abs(end.x - d.start.x) * this.cam.current.z >= 4;
+      const start = dragged ? { x: Math.min(d.start.x, end.x), y: d.start.y } : d.start;
+      this.ctx.ui.canvas.tool = 'select';
+      this.select(null, null);
+      this.render();
+      this.directText.start(id, start, dragged ? Math.abs(end.x - d.start.x) : undefined);
+      return;
+    }
     if (d.tool === 'zone') {
       this.ctx.act(
         {
@@ -1619,7 +1673,16 @@ export class CanvasView implements View {
         break;
       case 'canvas-tool': {
         const tool = t.dataset.tool;
-        const all: Tool[] = ['select', 'hand', 'note', ...shapeTools, 'zone', 'connect', 'drawing'];
+        const all: Tool[] = [
+          'select',
+          'hand',
+          'note',
+          'text',
+          ...shapeTools,
+          'zone',
+          'connect',
+          'drawing',
+        ];
         if (all.includes(tool as Tool)) {
           if (tool !== 'select' && tool !== 'hand') this.select(null, null);
           ctx.ui.canvas.tool = ctx.ui.canvas.tool === tool ? 'select' : (tool as Tool);
@@ -2464,6 +2527,7 @@ export class CanvasView implements View {
         ['select', 'select', 'Seleccionar'],
         ['hand', 'hand', 'Panear'],
         ['note', 'note', 'Crear nota'],
+        ['text', 'text', 'Texto'],
       ] as const
     )
       .map(([tool, ico, label]) =>
@@ -2542,7 +2606,7 @@ export class CanvasView implements View {
         `<button type="button" role="menuitem" data-action="${action}" ${attributes}>${icon(symbol, 16)}<span>${html(label)}</span></button>`;
       holder.insertAdjacentHTML(
         'beforeend',
-        `<div class="dock-more-menu" role="menu" aria-label="Más herramientas de Canvas">${(['select', 'hand', 'note', 'drawing'] as const).map((tool) => item('canvas-tool', { select: 'select', hand: 'hand', note: 'note', drawing: 'draw' }[tool], { select: 'Seleccionar', hand: 'Panear', note: 'Crear nota', drawing: 'Dibujar' }[tool], `data-tool="${tool}"`)).join('')}${shapeTools.map((shape) => item('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`)).join('')}${item('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"')}${item('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''))}${item('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"')}${item('references', 'plus', 'Incorporar materiales')}</div>`,
+        `<div class="dock-more-menu" role="menu" aria-label="Más herramientas de Canvas">${(['select', 'hand', 'note', 'text', 'drawing'] as const).map((tool) => item('canvas-tool', { select: 'select', hand: 'hand', note: 'note', text: 'text', drawing: 'draw' }[tool], { select: 'Seleccionar', hand: 'Panear', note: 'Crear nota', text: 'Texto', drawing: 'Dibujar' }[tool], `data-tool="${tool}"`)).join('')}${shapeTools.map((shape) => item('canvas-tool', shape, { rectangle: 'Rectángulo', ellipse: 'Elipse', triangle: 'Triángulo', star: 'Estrella' }[shape], `data-tool="${shape}"`)).join('')}${item('canvas-tool', 'link', 'Conectar' + (ctx.ui.shortcuts.connect ? ' · ' + ctx.ui.shortcuts.connect : ''), 'data-tool="connect"')}${item('canvas-comment', 'bubble', 'Comentar' + (ctx.ui.shortcuts.comment ? ' · ' + ctx.ui.shortcuts.comment : ''))}${item('canvas-tool', 'zone', 'Dibujar zona', 'data-tool="zone"')}${item('references', 'plus', 'Incorporar materiales')}</div>`,
       );
       const menu = holder.querySelector<HTMLElement>('.dock-more-menu')!,
         bounds = dock.getBoundingClientRect();
@@ -2725,10 +2789,26 @@ export class CanvasView implements View {
           );
         }
       });
-    restoreNoteFonts(this.root);
+    this.directText.position(this.cam.current);
+    restoreNoteFonts(this.root, (paper) => {
+      if (!paper.matches('.material.text') || this.root.dataset.editingText === paper.dataset.node)
+        return;
+      const w = this.ctx.world(),
+        n = w.nodes.find((n) => n.id === paper.dataset.node && !n.owner);
+      if (n?.data.kind !== 'text') return;
+      const bounds = textBounds(n.data, n.width);
+      if (n.width !== bounds.width || n.height !== bounds.height)
+        this.ctx.act(
+          { type: 'text.measure', world: w.id, id: n.id, ...bounds },
+          'ajustar texto a la fuente cargada',
+          'C08-TEXT-01',
+          'service',
+        );
+    });
     restoreFocus();
   }
   dispose(): void {
+    this.directText.finish(false, false);
     this.locateMotion?.cancel();
     this.proposalMotions.forEach((animation) => animation.cancel());
     this.abort.abort();

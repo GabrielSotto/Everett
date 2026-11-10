@@ -54,6 +54,8 @@ desplazada, palabra partida y chat fuera de contexto deben fallar. Conservar la 
 
 ### Trabajo continuo de Canvas
 
+Texto directo: C08-U76 y C08-B192–B195 comprueban creación por clic y por ancho, edición en el lugar, descarte vacío, deshacer una sesión, copia independiente, recarga durante la escritura, contraste sobre una forma clara, formato a 320 px y ajuste cuando una fuente remota llega tarde. Los recorridos utilizan contextos de navegador aislados.
+
 #### Evaluación de la ampliación de composición
 
 Evaluación requerida para la ampliación de baja/media fidelidad del 8 de noviembre.

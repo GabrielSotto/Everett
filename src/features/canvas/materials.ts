@@ -18,6 +18,8 @@ import { materialDensity, materialGroups } from '../../domain/material-density';
 import { referenceExcerpt } from '../../domain/reference-anchors';
 import { linkCardMarkup } from './link-card';
 import { noteStyle, noteFontAttributes } from './note-colors';
+import { textStyle, textFontAttributes } from './direct-text-layout';
+import { canvasTextInk } from '../../domain/sketch-text-ink';
 const anchors: Anchor[] = ['north', 'east', 'south', 'west'];
 export function shapeMarkup(material: Material): string {
   if (material.data.kind !== 'shape') return '';
@@ -71,6 +73,8 @@ export function materialMarkup(
       content += `<div class="task-material-meta"><span aria-label="Estado: ${html(statusNames[task.status])}">${icon('status', 12)}${html(statusNames[task.status])}</span><span aria-label="Prioridad: ${html(task.priority)}">${icon('flag', 12)}${html(task.priority)}</span><span aria-label="Responsable: ${html(task.assignee || 'Sin responsable')}">${icon('user', 12)}${html(task.assignee || 'Sin responsable')}</span></div>`;
     }
   } else if (d.kind === 'note') content = `<h3>${html(d.title)}</h3><p>${html(d.text)}</p>`;
+  else if (d.kind === 'text')
+    content = `<div class="canvas-text-run" style="${html(textStyle(d, canvasTextInk(material, w)))}">${html(d.text)}</div>`;
   else if (d.kind === 'shape') content = shapeMarkup(material);
   else if (d.kind === 'drawing') content = drawingMarkup(material);
   else if (d.kind === 'image')
@@ -107,10 +111,11 @@ export function materialMarkup(
   } else content = '';
   const comment = w.comments.find((c) => c.node === material.id && !c.resolved);
   const ports = connect ? connectionPorts(material) : '';
-  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'note' ? noteFontAttributes(d) : ''} ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? noteStyle(d) : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ wireframe: 'Bosquejo', note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
+  return `<article class="material ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'note' ? noteFontAttributes(d) : d.kind === 'text' ? textFontAttributes(d) : ''} ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? noteStyle(d) : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ wireframe: 'Bosquejo', text: 'Texto', note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? resizeHandles('node', material.id) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {
   wireframe: { label: 'Bosquejos', icon: 'canvas' },
+  text: { label: 'Textos', icon: 'text' },
   note: { label: 'Notas', icon: 'note' },
   document: { label: 'Documentos', icon: 'docs' },
   file: { label: 'Archivos', icon: 'code' },
@@ -136,7 +141,7 @@ export function assignedPreview(w: WorldSnapshot, n: Material): string {
         ? localText(d.content)
         : d.kind === 'reference' && d.ref.fragment
           ? (referenceExcerpt(w, d.ref) ?? 'Fragmento no disponible. Revisá su origen.')
-          : d.kind === 'note'
+          : d.kind === 'note' || d.kind === 'text'
             ? d.text
             : d.kind === 'reference'
               ? d.ref.kind === 'document'

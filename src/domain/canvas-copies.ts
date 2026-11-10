@@ -12,6 +12,7 @@ import { ensure } from './invariants';
 import { referenceExcerpt } from './reference-anchors';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
+import { validCanvasText } from './canvas-text';
 import { validNoteFont, validFontWeight, validNoteTypography } from './note-fonts';
 import { validLinkPreview, linkUrl } from './link-previews';
 import { isComponent } from './manual-groups';
@@ -28,6 +29,8 @@ const point = (v: unknown): boolean => record(v) && Number.isFinite(v.x) && Numb
 function validData(v: unknown): v is NodeData {
   if (!record(v) || typeof v.title !== 'string') return false;
   switch (v.kind) {
+    case 'text':
+      return validCanvasText(v);
     case 'wireframe':
       return validWireframe(v.content);
     case 'note':
@@ -299,8 +302,7 @@ export function insertCanvasCopies(
     node.id = map.get(node.id)!;
     node.x += offset.x;
     node.y += offset.y;
-    if (node.data.kind !== 'reference')
-      node.data.title = (node.data.title?.trim() || 'Sin nombre') + ' — copia';
+    if (node.data.kind !== 'reference') node.data.title = nodeTitle(world, node) + ' — copia';
     world.nodes.push(node);
   }
   for (const link of copied.links)

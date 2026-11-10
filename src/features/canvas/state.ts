@@ -3,6 +3,7 @@ export type Tool =
   | 'select'
   | 'hand'
   | 'note'
+  | 'text'
   | 'rectangle'
   | 'ellipse'
   | 'triangle'

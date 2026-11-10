@@ -8,6 +8,7 @@ export function affectsView(c: Command): 'navigation' | 'content' | 'none' {
           'node.link-preview',
           'node.resolve-link',
           'node.edit',
+          'text.edit',
           'node.local-edit',
           'wireframe.edit',
           'document.edit',

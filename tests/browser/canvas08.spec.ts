@@ -1174,7 +1174,8 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
             const minimal = chatRight > 0 && width - chatRight < 237;
             if (
               boxes.length < (minimal ? 1 : 5) ||
-              (width - chatRight >= 420 && boxes.length !== 9)
+              (width - chatRight >= 420 && boxes.length < 9) ||
+              (width - chatRight >= 460 && boxes.length !== 10)
             )
               errors.push('Cantidad de herramientas incorrecta');
             if (boxes.some((box) => box.width < 35 || box.height < 35))
@@ -1198,6 +1199,7 @@ test('C08-B19: chat hasta el borde y dock sin huecos ni filas accidentales entre
         'Seleccionar',
         'Panear',
         'Crear nota',
+        'Texto',
         'Dibujar',
         'Rectángulo',
         'Elipse',

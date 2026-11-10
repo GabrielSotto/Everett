@@ -52,6 +52,7 @@ const reversible = new Set<Command['type']>([
   'nodes.paste',
   'node.local-edit',
   'wireframe.edit',
+  'text.edit',
   'wireframe.compose',
   'wireframe.library',
   'node.publish',
@@ -170,6 +171,10 @@ export class CanvasHistory {
       command.type === 'node.edit' ||
       command.type === 'node.local-edit' ||
       command.type === 'wireframe.edit';
+    if (command.type === 'text.edit') {
+      action += ':' + command.session;
+      typing = true;
+    }
     if (command.type === 'node.edit') {
       const old = a.nodes.find((node) => node.id === command.id)?.data;
       const current = b.nodes.find((node) => node.id === command.id)?.data;
@@ -237,9 +242,16 @@ export class CanvasHistory {
     const at = Date.now(),
       previous = t.past.at(-1);
     // Agrupa una ráfaga de escritura; los arrastres se confirman al soltar el puntero.
-    if (typing && previous?.action === action && at - previous.at < 750 && t.future.length === 0) {
+    if (
+      typing &&
+      previous?.action === action &&
+      (command.type === 'text.edit' || at - previous.at < 750) &&
+      t.future.length === 0
+    ) {
       previous.after = b;
       previous.at = at;
+      if (command.type === 'text.edit' && JSON.stringify(previous.before) === JSON.stringify(b))
+        t.past.pop();
     } else t.past.push({ before: a, after: b, action, at });
     t.future = [];
     if (t.past.length > 100) t.past.shift();
