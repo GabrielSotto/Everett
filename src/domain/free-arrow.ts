@@ -1,4 +1,5 @@
 import type { Material, NodeData, Point } from './model';
+import { around, centerOf, rotatedPose } from './rotation';
 type Drawing = Extract<NodeData, { kind: 'drawing' }>;
 export type FreeArrow = Material & { data: Drawing & { arrow: 'straight' | 'curve' } };
 export type ArrowHandle = 'start' | 'bend' | 'end';
@@ -80,7 +81,13 @@ export function createArrow(
     ),
   };
 }
-export function editArrow(n: FreeArrow, h: ArrowHandle, p: Point): FreeArrow {
+function relocalize(n: FreeArrow, data: FreeArrow['data'], points: Point[]) {
+  const next = located(data, points);
+  const { x, y } = rotatedPose(next, centerOf(n), n.rotation ?? 0);
+  return { ...next, x, y };
+}
+export function editArrow(n: FreeArrow, h: ArrowHandle, worldPoint: Point): FreeArrow {
+  const p = around(worldPoint, centerOf(n), -(n.rotation ?? 0));
   const [a, m, b] = n.data.points.map((v) => ({ x: v.x + n.x, y: v.y + n.y })) as [
     Point,
     Point,
@@ -95,7 +102,7 @@ export function editArrow(n: FreeArrow, h: ArrowHandle, p: Point): FreeArrow {
   const straight = Math.hypot(bend.x - center.x, bend.y - center.y) < 0.75;
   return {
     ...n,
-    ...located({ ...n.data, arrow: straight ? 'straight' : 'curve' }, [
+    ...relocalize(n, { ...n.data, arrow: straight ? 'straight' : 'curve' }, [
       start,
       straight ? center : bend,
       end,
@@ -103,7 +110,8 @@ export function editArrow(n: FreeArrow, h: ArrowHandle, p: Point): FreeArrow {
   };
 }
 export function restrokeArrow(n: FreeArrow, thickness: number) {
-  return located(
+  return relocalize(
+    n,
     { ...n.data, thickness },
     n.data.points.map((p) => ({ x: p.x + n.x, y: p.y + n.y })),
   );

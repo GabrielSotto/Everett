@@ -45,6 +45,7 @@ export function captureComposition(
       y: n.y - y,
       width: n.width,
       height: n.height,
+      ...(n.rotation ? { rotation: n.rotation } : {}),
       name: 'title' in n.data ? n.data.title : 'Pieza',
       content: structuredClone(n.data.kind === 'wireframe' ? n.data.content : neverContent()),
     })),

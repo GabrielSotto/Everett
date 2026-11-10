@@ -424,3 +424,35 @@ test('C08-U71: distribuir conserva las cajas fraccionarias de texto en coordenad
   assert.ok(Math.abs(first.height - 15.4) < 0.0001);
   assert.ok(Math.abs(second.x - first.x - first.width - 3.375) < 0.0001);
 });
+
+test('C08-U79: girar un componente respeta su distribución local al redimensionar y no pierde la orientación de sus piezas', async () => {
+  const store = await component();
+  const group = () => project(store).canvasGroups![0]!;
+  const tree = () => group().structure!;
+  const local = structuredClone(tree().root);
+  store.dispatch(
+    { type: 'nodes.rotate', world: 'project', nodes: [...group().nodes], degrees: 90 },
+    intent,
+  );
+  assert.deepEqual(tree().root, local);
+  assert.equal(tree().rotation, 90);
+  const w = project(store);
+  const a = w.nodes.find((n) => n.id === group().nodes[0])!,
+    b = w.nodes.find((n) => n.id === group().nodes[1])!;
+  const centers = (n: typeof a) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+  assert.ok(centers(a).x > centers(b).x);
+  assert.ok(Math.abs(centers(a).y - centers(b).y) < 0.001);
+  store.dispatch(
+    {
+      type: 'group.resize',
+      world: 'project',
+      id: group().id,
+      rect: { x: 40, y: 40, width: 350, height: 185 },
+    },
+    intent,
+  );
+  assert.equal(tree().rotation, 90);
+  const [first, second] = group().nodes.map((id) => project(store).nodes.find((n) => n.id === id)!);
+  assert.ok(centers(first!).x > centers(second!).x);
+  assert.ok(Math.abs(centers(first!).y - centers(second!).y) < 0.001);
+});

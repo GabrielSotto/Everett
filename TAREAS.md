@@ -33,7 +33,9 @@ El formato y los gestos del texto directo, el grosor de los cables y las flechas
 
 ### Texto directo — 10 de noviembre
 
-Texto independiente de Notas en el dock de Canvas: clic para rótulos, arrastre para párrafos; tipografía, peso, tamaño, color y alineación en el lugar. Corregido el bloqueo al recuperar párrafos con fuente remota y ancho fraccionario o menor que un grafema. El primer caso de composición visual es [De la huerta al mercado](design/composicion-visual/index.html), ejemplo editable con guardado propio. Falta contrastar el resultado con el usuario y extender la evaluación a explicaciones sin cronología; el trabajo con agentes en zonas viene después. Contrato: [C08-TEXT-01](docs/iteraciones/0.8.md#texto-directo--c08-text-01).
+Texto independiente de Notas en el dock de Canvas: clic para rótulos, arrastre para párrafos; tipografía, peso, tamaño, color y alineación en el lugar. Corregido el bloqueo al recuperar párrafos con fuente remota y ancho fraccionario o menor que un grafema. Contrato: [C08-TEXT-01](docs/iteraciones/0.8.md#texto-directo--c08-text-01).
+
+La revisión de [De la huerta al mercado](design/composicion-visual/index.html), ejemplo editable con guardado propio, señaló la altura del numeral y la falta de giro. Se verificaron el [giro de materiales y selecciones](docs/iteraciones/0.8.md#giro-de-materiales--c08-rot-01), la edición de la flecha aunque su curva quede detrás del camión y la alineación de las cifras. Pasaron 147 pruebas unitarias y del arnés (`2026-11-10_22-55-48-231Z`) y 23 recorridos dirigidos en Vite (`2026-11-10_22-59-34-633Z`). Pendiente de revisión del usuario. Próximo caso para evaluar composición: comparar dos diseños anotados y reconocer los cambios desde el panorama. El trabajo con agentes en zonas viene después.
 
 Tipado y formato aprobados. Evidencia verificada: 143 pruebas unitarias y del arnés
 (`output/pruebas/unitarias/2026-11-10_21-19-56-760Z`) y diez recorridos dirigidos de texto, dock

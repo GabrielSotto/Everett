@@ -1,3 +1,4 @@
+import { visualBounds } from './rotation';
 import type { CanvasGroup, Material, Rect, WorldSnapshot, Point } from './model';
 import type { DeepReadonly } from './readonly';
 import { componentElements, elementMaterials } from './component-tree';
@@ -71,7 +72,7 @@ export function groupBounds(
     const node = preview.find((n) => n.id === id) ?? world.nodes.find((n) => n.id === id);
     if (!node) return [];
     const returned = node.owner ? world.assignments.find((a) => a.node === id)?.returnTo : null;
-    return [{ ...node, ...(returned ?? {}) }];
+    return [visualBounds({ ...node, ...(returned ?? {}) })];
   });
   const padding = isComponent(world, group) ? 0 : 16;
   const x = Math.min(...nodes.map((n) => n.x)) - padding;

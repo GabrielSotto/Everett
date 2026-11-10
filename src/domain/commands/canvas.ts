@@ -1,3 +1,5 @@
+import { centerOf, rotatedPose } from '../rotation';
+import { selectionBounds } from '../alignment';
 import { noteTypography, validNoteTextStyle } from '../note-fonts';
 import { type State, getWorld, type Material, need } from '../model';
 import type { Command } from '../command-types';
@@ -43,6 +45,7 @@ type CanvasCommand = Extract<
       | 'zone.rename'
       | 'assignment.schedule'
       | 'node.move'
+      | 'nodes.rotate'
       | 'nodes.move'
       | 'nodes.order'
       | 'nodes.delete'
@@ -472,6 +475,37 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       job.dueAt = command.dueAt;
       job.runId = command.runId;
       job.input = command.input;
+      break;
+    }
+    case 'nodes.rotate': {
+      ensure(
+        Number.isFinite(command.degrees) && command.nodes.length > 0,
+        'GEOMETRY',
+        'Elegí materiales y un ángulo válido.',
+      );
+      const ids = new Set(command.nodes);
+      const selected = world.nodes.filter((n) => ids.has(n.id));
+      ensure(selected.length === ids.size, 'MATERIAL', 'La selección ya no está disponible.');
+      ensure(
+        selected.every((n) => !n.owner),
+        'LOCKED',
+        'Devolvé los materiales del agente antes de girarlos.',
+      );
+      const pivot = centerOf(selectionBounds(selected));
+      for (const item of selected) Object.assign(item, rotatedPose(item, pivot, command.degrees));
+      for (const group of world.canvasGroups ?? []) {
+        const tree = group.structure;
+        if (!tree || !group.nodes.every((id) => ids.has(id))) continue;
+        const root = {
+          ...tree.root,
+          x: tree.origin.x + tree.root.x,
+          y: tree.origin.y + tree.root.y,
+          rotation: tree.rotation,
+        };
+        const pose = rotatedPose(root, pivot, command.degrees);
+        tree.rotation = pose.rotation;
+        tree.origin = { x: pose.x - tree.root.x, y: pose.y - tree.root.y };
+      }
       break;
     }
     case 'node.create':

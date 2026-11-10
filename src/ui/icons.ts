@@ -21,6 +21,7 @@ const paths: Record<string, string> = {
   'arrange-space-y':
     '<path d="M4 3h16M4 21h16M12 7v2m0 6v2"/><rect x="6" y="10" width="12" height="4" rx="1"/>',
   undo: '<path d="M9 4 4 9l5 5M4 9h9a7 7 0 0 1 0 14"/>',
+  rotate: '<path d="M19 10a7 7 0 1 0 .1 5M19 4v6h-6"/>',
   redo: '<path d="m15 4 5 5-5 5m5-5h-9a7 7 0 0 0 0 14"/>',
   bubble: '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H8l-5 3v-7a8.5 8.5 0 1 1 18-4.5z"/>',
   flag: '<path d="M5 21V3m0 1h13l-3 4 3 4H5"/>',

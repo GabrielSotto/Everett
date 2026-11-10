@@ -138,7 +138,7 @@ export class DirectTextEditor {
       source()?.classList.add('direct-text-source');
       const x = stage.clientWidth / 2 + camera.x + point.x * camera.z,
         y = stage.clientHeight / 2 + camera.y + point.y * camera.z;
-      draft.style.transform = `translate(${x}px,${y}px) scale(${camera.z})`;
+      draft.style.transform = `translate(${x}px,${y}px) scale(${camera.z}) translate(50%,50%) rotate(${original?.rotation ?? 0}deg) translate(-50%,-50%)`;
       const margin = 6;
       bar.style.left =
         Math.max(margin, Math.min(x, stage.clientWidth - bar.offsetWidth - margin)) + 'px';

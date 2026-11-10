@@ -466,3 +466,7 @@ guardado. La captura del ejemplo sirve para revisar la lectura del conjunto con 
 C08-B201 modifica el contenido, la familia y el peso de un texto ya guardado por menú y con
 la herramienta Texto. Comprueba que retiene identidad y formato, y que un nombre largo sigue
 siendo editable en una ventana estrecha sin duplicar la etiqueta detrás del campo.
+
+C08-U78 y C08-B202 verifican pivote compartido, puertos girados, edición de flechas, teclado, cancelación, persistencia y una sola operación de historial. En una escena con 240 materiales el gesto deja intacto el DOM de un material ajeno y actualiza el cable antes de soltar. C08-B200 mide también la tinta real del «4» y de la «C» de la leyenda.
+
+C08-U79 verifica que el giro de una composición conserva la distribución de sus piezas al cambiar de tamaño; C08-B203 gira el camión y la flecha en la escena y edita la curva incluso cuando su tirador coincide con la imagen.

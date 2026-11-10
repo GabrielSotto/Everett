@@ -1,4 +1,5 @@
 import type { Material, Point, Rect, WorldSnapshot } from './model';
+import { visualBounds } from './rotation';
 import { selectionBounds } from './alignment';
 
 export const arrangements = [
@@ -27,7 +28,8 @@ export function arrangementUnits(world: WorldSnapshot, ids: readonly string[]): 
     units.push({ ...selectionBounds(nodes), nodes });
     nodes.forEach((node) => remaining.delete(node.id));
   }
-  for (const node of selected) if (remaining.has(node.id)) units.push({ ...node, nodes: [node] });
+  for (const node of selected)
+    if (remaining.has(node.id)) units.push({ ...visualBounds(node), nodes: [node] });
   return units;
 }
 

@@ -1,5 +1,7 @@
+import { validRotation } from './rotation';
 import type { CanvasGroup, Material, Point, Rect, World, WorldSnapshot } from './model';
 import type { DeepReadonly } from './readonly';
+import { centerOf, rotatedPose } from './rotation';
 import { layoutComponent } from './component-layout';
 
 export type Sizing = 'fixed' | 'hug' | 'fill';
@@ -25,6 +27,7 @@ export interface ComponentElement extends Rect {
 }
 export interface ComponentTree {
   version: 1;
+  rotation?: number;
   origin: Point;
   root: ComponentElement;
 }
@@ -74,7 +77,12 @@ export function validComponentTree(
 ): value is ComponentTree {
   if (!value || typeof value !== 'object') return false;
   const t = value as ComponentTree;
-  if (t.version !== 1 || !t.origin || ![t.origin.x, t.origin.y].every(Number.isFinite))
+  if (
+    !validRotation(t.rotation) ||
+    t.version !== 1 ||
+    !t.origin ||
+    ![t.origin.x, t.origin.y].every(Number.isFinite)
+  )
     return false;
   const ids = new Set<string>(),
     leaves = new Set<string>();
@@ -166,12 +174,20 @@ export function treeFromMaterials(
     },
   };
 }
+export function treeCenter(tree: DeepReadonly<ComponentTree>): Point {
+  return centerOf({ ...tree.root, x: tree.origin.x + tree.root.x, y: tree.origin.y + tree.root.y });
+}
+export function treePosition(tree: DeepReadonly<ComponentTree>, rect: Rect): Rect {
+  if (!tree.rotation) return rect;
+  const { x, y } = rotatedPose(rect, treeCenter(tree), tree.rotation);
+  return { ...rect, x, y };
+}
 export function writeTreeGeometry(world: World, group: CanvasGroup): void {
   const tree = group.structure!;
   const nodes = new Map(world.nodes.map((n) => [n.id, n]));
   const visit = (e: ComponentElement, parent: Point) => {
     const rect = { x: parent.x + e.x, y: parent.y + e.y, width: e.width, height: e.height };
-    if (e.material) Object.assign(nodes.get(e.material)!, rect);
+    if (e.material) Object.assign(nodes.get(e.material)!, treePosition(tree, rect));
     e.children.forEach((c) => visit(c, rect));
   };
   visit(tree.root, tree.origin);
@@ -212,6 +228,28 @@ export function reconcileComponentTrees(before: WorldSnapshot, after: World): vo
     if (translated) {
       tree.origin.x += dx;
       tree.origin.y += dy;
+    }
+    if (
+      tree.rotation &&
+      translated &&
+      members.length === previous.nodes.length &&
+      group.name === previous.name &&
+      members.every((id) => {
+        const a = oldNodes.get(id)!.data,
+          b = nodes.get(id)!.data;
+        return !('title' in a && 'title' in b) || a.title === b.title;
+      })
+    )
+      continue;
+    if (tree.rotation) {
+      const pivot = treeCenter(tree),
+        prior = treeCenter(previous.structure);
+      for (const id of members) {
+        const n = nodes.get(id)!,
+          old = oldNodes.get(id);
+        nodes.set(id, { ...n, ...rotatedPose(n, pivot, -tree.rotation) });
+        if (old) oldNodes.set(id, { ...old, ...rotatedPose(old, prior, -tree.rotation) });
+      }
     }
     if (!translated) {
       const moveContainer = (e: ComponentElement) => {

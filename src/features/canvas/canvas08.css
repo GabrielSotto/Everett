@@ -25,16 +25,16 @@
   outline: calc(1px / var(--canvas-zoom, 1)) solid var(--accent);
   outline-offset: var(--selection-outset);
 }
-.material .resize-handle:is(.nw, .sw) {
+:is(.material, .orientation-controls) .resize-handle:is(.nw, .sw) {
   left: calc(0px - var(--selection-outset));
 }
-.material .resize-handle:is(.ne, .se) {
+:is(.material, .orientation-controls) .resize-handle:is(.ne, .se) {
   left: calc(100% + var(--selection-outset));
 }
-.material .resize-handle:is(.nw, .ne) {
+:is(.material, .orientation-controls) .resize-handle:is(.nw, .ne) {
   top: calc(0px - var(--selection-outset));
 }
-.material .resize-handle:is(.sw, .se) {
+:is(.material, .orientation-controls) .resize-handle:is(.sw, .se) {
   top: calc(100% + var(--selection-outset));
 }
 .connection:not(.selected) .link-endpoint {
@@ -88,7 +88,8 @@
   visibility: hidden;
   pointer-events: none;
   transition: opacity 100ms ease-out;
-  transform: scale(calc(1 / var(--canvas-zoom))) translateX(-50%)
+  transform: rotate(var(--label-counter-angle, 0deg)) scale(calc(1 / var(--canvas-zoom)))
+    translateX(-50%)
     translate(var(--identification-shift-x, 0px), var(--identification-shift-y, 0px));
   transform-origin: bottom left;
   z-index: 12;
@@ -1956,8 +1957,8 @@ body[data-canvas-motion='reduced']
   stroke: var(--accent);
   stroke-width: calc(1px / var(--canvas-zoom));
 }
-.material .resize-handle,
-.material button.resize-handle:active {
+:is(.material, .orientation-controls) .resize-handle,
+:is(.material, .orientation-controls) button.resize-handle:active {
   width: 7px;
   height: 7px;
   border-width: 1px;
@@ -1999,11 +2000,11 @@ body[data-canvas-motion='reduced']
 .arrow-art .arrow-ink {
   pointer-events: none;
 }
-.material .arrow-handle {
+:is(.material, .orientation-controls) .arrow-handle {
   border-radius: 50%;
   cursor: move;
 }
-.material .arrow-handle[data-arrow-handle='bend'] {
+:is(.material, .orientation-controls) .arrow-handle[data-arrow-handle='bend'] {
   background: var(--accent);
 }
 .arrow-handle::after {
@@ -2013,4 +2014,57 @@ body[data-canvas-motion='reduced']
 }
 .draw-preview .arrow-hit {
   pointer-events: none;
+}
+
+.canvas-plane > .rotation-handle {
+  position: absolute;
+  z-index: 7;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  transform-origin: 0 0;
+  touch-action: none;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  cursor: grab;
+}
+.rotation-handle:active {
+  cursor: grabbing;
+}
+.rotation-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.rotation-handle[data-angle]::after {
+  content: attr(data-angle);
+  position: absolute;
+  left: calc(100% + 4px);
+  padding: 2px 4px;
+  color: var(--text);
+  background: var(--panel);
+  border-radius: 3px;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.rotation-form input {
+  inline-size: 7ch;
+}
+.rotation-form > div {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.orientation-controls {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+}
+.orientation-controls > .resize-handle {
+  pointer-events: auto;
 }

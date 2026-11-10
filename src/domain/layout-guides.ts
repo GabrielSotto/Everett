@@ -12,6 +12,7 @@ export interface LayoutGuides {
 }
 export type LayoutTarget = { kind: 'node' | 'group'; id: string };
 export interface LayoutFrame extends Rect {
+  rotation?: number;
   target: LayoutTarget;
   guides: LayoutGuides;
   members: readonly string[];
@@ -111,6 +112,7 @@ function indexedLayoutFrame(
     if (group.structure) {
       const { origin, root } = group.structure;
       return {
+        ...(group.structure.rotation ? { rotation: group.structure.rotation } : {}),
         x: origin.x + root.x,
         y: origin.y + root.y,
         width: root.width,

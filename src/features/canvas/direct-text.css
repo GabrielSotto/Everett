@@ -153,18 +153,18 @@
     width: 43px;
   }
 }
-.material.text .resize-handle:is(.w, .e) {
+:is(.material, .orientation-controls).text .resize-handle:is(.w, .e) {
   top: 50%;
   cursor: ew-resize;
   border-radius: 2px;
 }
-.material.text .resize-handle.w {
+:is(.material, .orientation-controls).text .resize-handle.w {
   left: 0;
 }
-.material.text .resize-handle.e {
+:is(.material, .orientation-controls).text .resize-handle.e {
   left: 100%;
 }
-.material.text .resize-handle::after {
+:is(.material, .orientation-controls).text .resize-handle::after {
   content: '';
   position: absolute;
   inset: -4px;

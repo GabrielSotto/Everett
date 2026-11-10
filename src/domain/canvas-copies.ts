@@ -1,3 +1,4 @@
+import { validRotation } from './rotation';
 import {
   need,
   nodeTitle,
@@ -134,6 +135,7 @@ export function parseCanvasClipboard(text: string): CanvasClipboard {
         Number.isFinite(n.height) &&
         n.height >= 4 &&
         n.owner === null &&
+        validRotation(n.rotation) &&
         (n.layoutGuides === undefined || validLayoutGuides(n.layoutGuides)) &&
         validData(n.data),
     ),

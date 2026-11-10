@@ -170,6 +170,7 @@ export type NodeData =
       ref: Reference;
     };
 export interface Material extends Rect {
+  rotation?: number;
   id: string;
   data: NodeData;
   owner: string | null;

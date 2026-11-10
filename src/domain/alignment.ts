@@ -1,3 +1,4 @@
+import { around, centerOf, rotateVector, rotatedPose, visualBounds } from './rotation';
 import type { Rect, Point } from './model';
 import { layoutBands, type LayoutFrame } from './layout-guides';
 import { snapAxis } from '../vendor/snap-axis';
@@ -8,6 +9,7 @@ export interface AlignmentGuide {
   from: number;
   to: number;
   markers: number[];
+  transform?: { degrees: number; pivot: Point };
   target?: string;
   source?: 'object' | 'layout';
 }
@@ -28,15 +30,19 @@ interface Candidate {
   distance: number;
   context: number;
 }
-export function selectionBounds(items: Rect[]): Rect {
-  const x = Math.min(...items.map((item) => item.x)),
-    y = Math.min(...items.map((item) => item.y));
-  return {
-    x,
-    y,
-    width: Math.max(...items.map((item) => item.x + item.width)) - x,
-    height: Math.max(...items.map((item) => item.y + item.height)) - y,
-  };
+export function selectionBounds(input: Rect[]): Rect {
+  let x = Infinity,
+    y = Infinity,
+    right = -Infinity,
+    bottom = -Infinity;
+  for (const rect of input) {
+    const r = visualBounds(rect);
+    x = Math.min(x, r.x);
+    y = Math.min(y, r.y);
+    right = Math.max(right, r.x + r.width);
+    bottom = Math.max(bottom, r.y + r.height);
+  }
+  return { x, y, width: right - x, height: bottom - y };
 }
 /** Umbral de pantalla: la misma proximidad funciona con cualquier cámara. */
 export function alignRect(
@@ -56,10 +62,26 @@ export function alignRect(
     item.y + item.height / 2 >= rect.y &&
     item.y + item.height / 2 <= rect.y + rect.height;
   const frame = options.frames
-    ?.filter((item) => contains(item, moving))
+    ?.filter((item) => {
+      const center = around(centerOf(moving), centerOf(item), -(item.rotation ?? 0));
+      return contains(item, { ...center, width: 0, height: 0 });
+    })
     .sort(
       (a, b) => a.width * a.height - b.width * b.height || a.target.id.localeCompare(b.target.id),
     )[0];
+  if (frame?.rotation) {
+    // Evaluar los bordes en los ejes de la retícula y devolver el desplazamiento al Mundo.
+    const pivot = centerOf(frame),
+      degrees = frame.rotation;
+    const local = visualBounds({ ...moving, ...rotatedPose(moving, pivot, -degrees) });
+    const snapped = alignRect(local, [], zoom, { ...options, frames: [{ ...frame, rotation: 0 }] });
+    if (snapped.guides.length)
+      return {
+        correction: rotateVector(snapped.correction, degrees),
+        guides: snapped.guides.map((g) => ({ ...g, transform: { degrees, pivot } })),
+        memory: snapped.memory,
+      };
+  }
   const edges = (rect: Rect, axis: 'x' | 'y'): number[] => {
     const size = axis === 'x' ? rect.width : rect.height;
     return [rect[axis], rect[axis] + size / 2, rect[axis] + size];
@@ -95,7 +117,7 @@ export function alignRect(
       );
     };
     targets.forEach((target) => add(target, edges(target, axis), 'object'));
-    if (frame) {
+    if (frame && !frame.rotation) {
       const positions = [
         ...new Set(
           layoutBands(frame, frame.guides)

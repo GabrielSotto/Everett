@@ -1,3 +1,4 @@
+import { rectsCross } from './rotation';
 export type MaterialOrder = 'front' | 'forward' | 'backward' | 'back';
 
 interface LayerItem {
@@ -10,14 +11,7 @@ interface LayerItem {
 }
 
 function overlaps(a: LayerItem, b: LayerItem): boolean {
-  return (
-    !a.owner &&
-    !b.owner &&
-    a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.height > b.y
-  );
+  return !a.owner && !b.owner && rectsCross(a, b);
 }
 
 /** Orden de fondo a frente. Cada paso cruza una superposición visible, sin

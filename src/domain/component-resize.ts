@@ -2,7 +2,7 @@ import type { CanvasGroup, Material, Rect, WorldSnapshot } from './model';
 import type { DeepReadonly } from './readonly';
 import { groupBounds } from './manual-groups';
 import { layoutComponent } from './component-layout';
-import { elementRect, componentElements } from './component-tree';
+import { treePosition, elementRect, componentElements } from './component-tree';
 
 /** Escalar la composición mantiene las proporciones y la tipografía de sus piezas. */
 export function resizedComponent(
@@ -21,7 +21,7 @@ export function resizedComponent(
     const elements = componentElements(tree.root);
     return group.nodes.map((id) => ({
       ...structuredClone(world.nodes.find((n) => n.id === id)!),
-      ...elementRect(tree, elements.find((e) => e.material === id)!.id)!,
+      ...treePosition(tree, elementRect(tree, elements.find((e) => e.material === id)!.id)!),
     })) as Material[];
   }
   const bounds = groupBounds(world, group);

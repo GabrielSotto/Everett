@@ -1,3 +1,4 @@
+import { around, centerOf } from '../../domain/rotation';
 import { arrowGeometry, isArrow, type FreeArrow, type ArrowHandle } from '../../domain/free-arrow';
 import type { Material } from '../../domain/model';
 import { html } from '../../ui/dom';
@@ -22,5 +23,5 @@ export function arrowHandles(n: FreeArrow) {
 export function arrowHandlePoint(n: Material, h: ArrowHandle) {
   if (!isArrow(n)) return null;
   const p = n.data.points[handles.findIndex(([k]) => k === h)];
-  return p ? { x: n.x + p.x, y: n.y + p.y } : null;
+  return p ? around({ x: n.x + p.x, y: n.y + p.y }, centerOf(n), n.rotation ?? 0) : null;
 }

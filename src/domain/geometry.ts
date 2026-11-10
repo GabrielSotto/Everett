@@ -1,3 +1,4 @@
+import { around, centerOf, rotateVector } from './rotation';
 import type { Point, Rect, Material, Anchor, Shape } from './model';
 
 export const minimumDrawSize = 4;
@@ -41,6 +42,9 @@ export function shapeVertices(shape: Shape): Point[] {
   ];
 }
 export function anchorPoint(material: Material, anchor: Anchor): Point {
+  return around(unrotatedAnchor(material, anchor), centerOf(material), material.rotation ?? 0);
+}
+export function unrotatedAnchor(material: Material, anchor: Anchor): Point {
   if (material.data.kind === 'drawing') {
     const horizontal = anchor === 'west' || anchor === 'east';
     const direction = anchor === 'west' || anchor === 'north' ? -1 : 1;
@@ -85,7 +89,14 @@ export function anchorPoint(material: Material, anchor: Anchor): Point {
   }
   return { x: material.x + x * material.width, y: material.y + y * material.height };
 }
-export function linkPath(from: Point, to: Point, fromAnchor: Anchor, toAnchor: Anchor): string {
+export function linkPath(
+  from: Point,
+  to: Point,
+  fromAnchor: Anchor,
+  toAnchor: Anchor,
+  fromAngle = 0,
+  toAngle = 0,
+): string {
   const normals: Record<Anchor, Point> = {
     north: { x: 0, y: -1 },
     east: { x: 1, y: 0 },
@@ -93,7 +104,7 @@ export function linkPath(from: Point, to: Point, fromAnchor: Anchor, toAnchor: A
     west: { x: -1, y: 0 },
   };
   const length = Math.max(28, Math.min(160, Math.hypot(to.x - from.x, to.y - from.y) * 0.42));
-  const a = normals[fromAnchor],
-    b = normals[toAnchor];
+  const a = rotateVector(normals[fromAnchor], fromAngle),
+    b = rotateVector(normals[toAnchor], toAngle);
   return `M ${from.x} ${from.y} C ${from.x + a.x * length} ${from.y + a.y * length} ${to.x + b.x * length} ${to.y + b.y * length} ${to.x} ${to.y}`;
 }

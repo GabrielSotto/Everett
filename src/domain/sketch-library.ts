@@ -1,3 +1,4 @@
+import { validRotation } from './rotation';
 import type { CanvasGroup, Material, Point, Rect } from './model';
 import { validWireframe, type WireframeContent } from './wireframes';
 import {
@@ -8,6 +9,7 @@ import {
 } from './component-tree';
 
 export interface LibraryPart {
+  rotation?: number;
   x: number;
   y: number;
   width: number;
@@ -42,6 +44,7 @@ export function validLibraryComposition(value: LibraryComposition): boolean {
     value.parts.every(
       (p) =>
         p &&
+        validRotation(p.rotation) &&
         typeof p.name === 'string' &&
         p.name.length <= 200 &&
         [p.x, p.y, p.width, p.height].every(Number.isFinite) &&
@@ -83,6 +86,7 @@ export function instantiateLibrary(
     y: center.y - bounds.height / 2 + p.y - bounds.y,
     width: p.width,
     height: p.height,
+    ...(p.rotation ? { rotation: p.rotation } : {}),
     owner: null,
     data: { kind: 'wireframe', title: p.name, content: structuredClone(p.content) },
   }));

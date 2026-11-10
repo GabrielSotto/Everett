@@ -1,3 +1,4 @@
+import { validRotation } from './rotation';
 import { getWorld, need, type State } from './model';
 import { humanParticipants } from './conversations';
 import { validLinkPreview, linkUrl } from './link-previews';
@@ -283,7 +284,10 @@ export function validate(s: State): void {
       ...w.assignments.flatMap((a) => a.output?.map((draft) => draft.material) ?? []),
     ]) {
       ensure(
-        [n.x, n.y, n.width, n.height].every(Number.isFinite) && n.width >= 4 && n.height >= 4,
+        validRotation(n.rotation) &&
+          [n.x, n.y, n.width, n.height].every(Number.isFinite) &&
+          n.width >= 4 &&
+          n.height >= 4,
         'GEOMETRY',
         'Geometría inválida',
       );

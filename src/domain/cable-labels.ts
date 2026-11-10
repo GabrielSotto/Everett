@@ -40,8 +40,11 @@ export function labeledPath(
   b: Anchor,
   center: Point,
   original: Point,
+  fromAngle = 0,
+  toAngle = 0,
 ): string {
-  if (Math.hypot(center.x - original.x, center.y - original.y) < 1) return linkPath(from, to, a, b);
+  if (Math.hypot(center.x - original.x, center.y - original.y) < 1)
+    return linkPath(from, to, a, b, fromAngle, toAngle);
   const horizontal = Math.abs(to.x - from.x) >= Math.abs(to.y - from.y);
   const incoming: Anchor = horizontal
     ? to.x >= from.x
@@ -53,7 +56,7 @@ export function labeledPath(
   const outgoing: Anchor = { north: 'south', south: 'north', west: 'east', east: 'west' }[
     incoming
   ] as Anchor;
-  const first = linkPath(from, center, a, incoming);
-  const second = linkPath(center, to, outgoing, b);
+  const first = linkPath(from, center, a, incoming, fromAngle);
+  const second = linkPath(center, to, outgoing, b, 0, toAngle);
   return first + second.slice(second.indexOf(' C'));
 }

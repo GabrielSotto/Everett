@@ -10,6 +10,14 @@ import {
   type Camera,
   nodeTitle,
 } from '../../domain/model';
+import {
+  placeResized,
+  rotateVector,
+  visualBounds,
+  type OrientedRect,
+  normalizedAngle,
+} from '../../domain/rotation';
+import { beginRotation, showRotation, controlLayer, syncControlBox } from './rotation-control';
 import { drawRect, anchorPoint, linkPath } from '../../domain/geometry';
 import { html, target, preserveFocus, type View } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
@@ -77,6 +85,7 @@ const shapeNames = {
 };
 type Corner = 'nw' | 'ne' | 'se' | 'sw' | 'w' | 'e';
 type Drag =
+  | { kind: 'rotate'; gesture: ReturnType<typeof beginRotation> }
   | { kind: 'arrow'; id: string; handle: ArrowHandle; start: Point; origin: Point; point: Point }
   | { kind: 'pan' }
   | { kind: 'selection'; start: Point; point: Point; before: string[]; additive: boolean }
@@ -98,7 +107,7 @@ type Drag =
       entity: 'node' | 'zone' | 'group';
       id: string;
       start: Point;
-      origin: Rect;
+      origin: OrientedRect;
       rect: Rect;
       corner: Corner;
       textStyle?: ReturnType<typeof resizeText>['textStyle'];
@@ -502,6 +511,29 @@ export class CanvasView implements View {
       event.stopPropagation();
       return;
     }
+    if (
+      element.matches('.rotation-handle') &&
+      ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' '].includes(event.key)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      const delta =
+        (['ArrowLeft', 'ArrowDown'].includes(event.key) ? -1 : 1) *
+        (event.shiftKey || event.key === 'Enter' || event.key === ' ' ? 15 : 1);
+      this.ctx.act(
+        {
+          type: 'nodes.rotate',
+          world: this.ctx.world().id,
+          nodes: [...this.ctx.ui.canvas.selections],
+          degrees: delta,
+        },
+        'girar selección',
+        'C08-ROT-01',
+        'keyboard',
+      );
+      this.root.querySelector<HTMLElement>('.rotation-handle')?.focus({ preventScroll: true });
+      return;
+    }
     const ah = element.dataset.arrowHandle as ArrowHandle | undefined;
     if (ah && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
       const n = this.ctx.world().nodes.find((n) => n.id === element.dataset.id && !n.owner);
@@ -652,7 +684,7 @@ export class CanvasView implements View {
         type: 'node.resize',
         world: this.ctx.world().id,
         id: node.id,
-        rect,
+        rect: placeResized(node, rect),
         ...(resizedText ? { textStyle: resizedText.textStyle } : {}),
       },
       'redimensionar con teclado',
@@ -814,6 +846,19 @@ export class CanvasView implements View {
       )
     )
       return;
+    if (target.closest('.rotation-handle') && ui.canvas.tool === 'select') {
+      const world = this.ctx.world(),
+        ids = new Set(ui.canvas.selections),
+        nodes = world.nodes.filter((n) => ids.has(n.id) && !n.owner);
+      if (!nodes.length) return;
+      e.preventDefault();
+      this.drag = {
+        kind: 'rotate',
+        gesture: beginRotation(this.root, world, nodes, this.point(e)),
+      };
+      this.root.setPointerCapture(e.pointerId);
+      return;
+    }
     const header = target.closest<HTMLElement>('[data-group]');
     const headerRect = header?.getBoundingClientRect();
     // El puente de hover es transparente: solo el encabezado visible arrastra
@@ -951,7 +996,18 @@ export class CanvasView implements View {
             : this.ctx.world().zones.find((z) => z.id === id);
       if (!original) return;
       e.preventDefault();
-      const rect = { x: original.x, y: original.y, width: original.width, height: original.height };
+      const rect = {
+        x: original.x,
+        y: original.y,
+        width: original.width,
+        height: original.height,
+        rotation:
+          entity === 'node'
+            ? (original as Material).rotation
+            : entity === 'group'
+              ? this.ctx.world().canvasGroups?.find((g) => g.id === id)?.structure?.rotation
+              : undefined,
+      };
       this.drag = {
         kind: 'resize',
         entity,
@@ -1093,6 +1149,10 @@ export class CanvasView implements View {
       return;
     }
     const point = this.point(e);
+    if (d.kind === 'rotate') {
+      d.gesture.update(point, e.shiftKey);
+      return;
+    }
     if (d.kind === 'selection') {
       d.point = point;
       const rect = drawRect(d.start, point, 0);
@@ -1128,6 +1188,8 @@ export class CanvasView implements View {
           d.end === 'to' ? point : anchorPoint(to, link.toAnchor),
           link.fromAnchor,
           link.toAnchor,
+          from.rotation,
+          to.rotation,
         );
         group
           .querySelectorAll('path')
@@ -1152,7 +1214,10 @@ export class CanvasView implements View {
         preview.classList.add('pending-link');
         this.root.querySelector('.canvas-links')?.append(preview);
       }
-      preview.setAttribute('d', linkPath(anchorPoint(source, d.anchor), point, d.anchor, 'west'));
+      preview.setAttribute(
+        'd',
+        linkPath(anchorPoint(source, d.anchor), point, d.anchor, 'west', source.rotation),
+      );
       return;
     }
     if (d.kind === 'arrow') {
@@ -1163,15 +1228,19 @@ export class CanvasView implements View {
         const preview = editArrow(n, d.handle, d.point);
         this.applyRect(el, preview);
         el.querySelector('.arrow-art')!.outerHTML = arrowArt(preview);
-        el.querySelectorAll('.arrow-handle').forEach((h) => h.remove());
-        el.insertAdjacentHTML('beforeend', arrowHandles(preview));
+        const controls =
+          this.root.querySelector<HTMLElement>(`[data-controls-for="${CSS.escape(n.id)}"]`) ?? el;
+        controls.querySelectorAll('.arrow-handle').forEach((h) => h.remove());
+        controls.insertAdjacentHTML('beforeend', arrowHandles(preview));
         this.paintLinks([{ id: n.id, point: preview }]);
       }
       return;
     }
     if (d.kind === 'resize') {
-      const dx = point.x - d.start.x,
-        dy = point.y - d.start.y;
+      const { x: dx, y: dy } = rotateVector(
+        { x: point.x - d.start.x, y: point.y - d.start.y },
+        -(d.origin.rotation ?? 0),
+      );
       const fixed = {
         x: d.corner.includes('w') ? d.origin.x + d.origin.width : d.origin.x,
         y: d.corner.includes('n') ? d.origin.y + d.origin.height : d.origin.y,
@@ -1196,6 +1265,7 @@ export class CanvasView implements View {
             width: d.origin.width * scale,
             height: d.origin.height * scale,
           };
+        d.rect = placeResized(d.origin, d.rect);
         const nodes = resizedComponent(world, group, d.rect);
         for (const node of nodes) {
           const el = this.root.querySelector<HTMLElement>(`[data-node="${CSS.escape(node.id)}"]`);
@@ -1234,6 +1304,7 @@ export class CanvasView implements View {
           height,
         };
       }
+      d.rect = placeResized(d.origin, d.rect);
       const element = this.root.querySelector<HTMLElement>(`[data-${d.entity}="${d.id}"]`);
       if (element) {
         this.applyRect(element, d.rect);
@@ -1313,14 +1384,14 @@ export class CanvasView implements View {
             layer.innerHTML = snap.guides
               .map(
                 (guide) =>
-                  `<line data-snap-target="${html(guide.target ?? '')}" data-snap-source="${guide.source}" x1="${guide.axis === 'x' ? guide.position : guide.from}" y1="${guide.axis === 'y' ? guide.position : guide.from}" x2="${guide.axis === 'x' ? guide.position : guide.to}" y2="${guide.axis === 'y' ? guide.position : guide.to}"/>${guide.markers
+                  `<g${guide.transform ? ` transform="rotate(${guide.transform.degrees} ${guide.transform.pivot.x} ${guide.transform.pivot.y})"` : ''}><line data-snap-target="${html(guide.target ?? '')}" data-snap-source="${guide.source}" x1="${guide.axis === 'x' ? guide.position : guide.from}" y1="${guide.axis === 'y' ? guide.position : guide.from}" x2="${guide.axis === 'x' ? guide.position : guide.to}" y2="${guide.axis === 'y' ? guide.position : guide.to}"/>${guide.markers
                     .map((p) => {
                       const x = guide.axis === 'x' ? guide.position : p,
                         y = guide.axis === 'y' ? guide.position : p,
                         d = 3 / this.cam.current.z;
                       return `<path d="M${x - d} ${y - d}l${2 * d} ${2 * d}m0 ${-2 * d}l${-2 * d} ${2 * d}"/>`;
                     })
-                    .join('')}`,
+                    .join('')}</g>`,
               )
               .join('');
             this.root.querySelector('#canvas-plane')?.append(layer);
@@ -1334,6 +1405,10 @@ export class CanvasView implements View {
         if (element) {
           element.style.left = item.point.x + 'px';
           element.style.top = item.point.y + 'px';
+          const controls = this.root.querySelector<HTMLElement>(
+            `[data-controls-for="${CSS.escape(item.id)}"]`,
+          );
+          if (controls) syncControlBox(controls, element);
           if (d.kind === 'node') {
             const node = this.ctx.world().nodes.find((n) => n.id === item.id);
             if (node?.data.kind === 'wireframe' && node.data.content.piece?.autoInk) {
@@ -1416,6 +1491,10 @@ export class CanvasView implements View {
       width: rect.width + 'px',
       height: rect.height + 'px',
     });
+    const id = element.dataset.node,
+      controls =
+        id && this.root.querySelector<HTMLElement>(`[data-controls-for="${CSS.escape(id)}"]`);
+    if (controls) syncControlBox(controls, element);
   }
   private strokeRect(points: Point[]): Rect {
     const xs = points.map((p) => p.x),
@@ -1436,6 +1515,17 @@ export class CanvasView implements View {
     this.root.style.removeProperty('cursor');
     if (this.root.hasPointerCapture(e.pointerId)) this.root.releasePointerCapture(e.pointerId);
     const w = this.ctx.world();
+    if (d.kind === 'rotate') {
+      if (normalizedAngle(d.gesture.degrees) > 1e-7)
+        this.ctx.act(
+          { type: 'nodes.rotate', world: w.id, nodes: d.gesture.ids, degrees: d.gesture.degrees },
+          'girar selección',
+          'C08-ROT-01',
+          'pointer',
+        );
+      else this.render();
+      return;
+    }
     if (d.kind === 'selection') {
       this.root.querySelector('.selection-box')?.remove();
       if (Math.hypot(d.point.x - d.start.x, d.point.y - d.start.y) * this.cam.current.z < 3) {
@@ -2095,7 +2185,7 @@ export class CanvasView implements View {
           bounds.width * zoom >= 240 ? 'full' : bounds.width * zoom >= 64 ? 'compact' : 'hidden';
         const headingSide = groupHeadingSide({ ...world, nodes }, group);
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div ${isComponent(world, group) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button>${
+        return `<div ${isComponent(world, group) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px;${group.structure?.rotation ? 'rotate:' + group.structure.rotation + 'deg' : ''}"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button>${
           isComponent(world, group)
             ? `<button type="button" data-action="component-edit" data-id="${group.id}" aria-label="Editar componente ${html(group.name)}">Editar</button>`
             : group.nodes.every((id) => {
@@ -2158,12 +2248,14 @@ export class CanvasView implements View {
     if (!svg) return;
     const obstacles: Rect[] = Array.from(
       this.root.querySelectorAll<HTMLElement>('.material[data-node]'),
-      (el) => ({
-        x: parseFloat(el.style.left),
-        y: parseFloat(el.style.top),
-        width: el.offsetWidth,
-        height: el.offsetHeight,
-      }),
+      (el) =>
+        visualBounds({
+          rotation: parseFloat(el.style.rotate) || 0,
+          x: parseFloat(el.style.left),
+          y: parseFloat(el.style.top),
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+        }),
     );
     const zoom = this.cam.current.z;
     const measured = Array.from(svg.querySelectorAll<SVGGElement>('[data-link]'), (group) => {
@@ -2187,16 +2279,30 @@ export class CanvasView implements View {
             : {}),
         };
       };
-      const from = anchorPoint(currentNode(link.from), link.fromAnchor),
-        to = anchorPoint(currentNode(link.to), link.toAnchor);
-      path.setAttribute('d', linkPath(from, to, link.fromAnchor, link.toAnchor));
+      const a = currentNode(link.from),
+        b = currentNode(link.to);
+      const from = anchorPoint(a, link.fromAnchor),
+        to = anchorPoint(b, link.toAnchor);
+      path.setAttribute(
+        'd',
+        linkPath(from, to, link.fromAnchor, link.toAnchor, a.rotation, b.rotation),
+      );
       const length = path.getTotalLength(),
         original = path.getPointAtLength(length / 2);
       // Reservar espacio de lectura a escala de panorama sin recolocar el cable
       // al girar la rueda. La medida tipográfica se normaliza a coordenadas del Mundo.
       const size = { width: (text.getComputedTextLength() * zoom + 12) / 0.4, height: 14 / 0.4 };
       const middle = labelPosition(original, size, obstacles);
-      const next = labeledPath(from, to, link.fromAnchor, link.toAnchor, middle, original);
+      const next = labeledPath(
+        from,
+        to,
+        link.fromAnchor,
+        link.toAnchor,
+        middle,
+        original,
+        a.rotation,
+        b.rotation,
+      );
       group.querySelectorAll<SVGPathElement>('path').forEach((el) => el.setAttribute('d', next));
       obstacles.push({ x: middle.x - size.width / 2, y: middle.y - size.height / 2, ...size });
       return {
@@ -2330,31 +2436,55 @@ export class CanvasView implements View {
       this.root.dataset.chatObscured = obscured;
       this.renderDock();
     }
+    const plane = this.root.querySelector<HTMLElement>('#canvas-plane')!;
+    const indexes = new Map(w.nodes.map((n) => [n.id, n]));
+    const selectedIds = new Set(ui.canvas.selections);
+    const componentIndex = new Map<string, NonNullable<typeof w.canvasGroups>[number]>();
+    for (const group of w.canvasGroups ?? [])
+      if (isComponent(w, group, indexes))
+        for (const id of group.nodes) componentIndex.set(id, group);
+    const layers = new Map(
+      [...plane.querySelectorAll<HTMLElement>('[data-controls-for]')].map((el) => [
+        el.dataset.controlsFor!,
+        el,
+      ]),
+    );
     // Mantener el material conserva el destino del doble clic y la captura del puntero.
     this.root.querySelectorAll<HTMLElement>('[data-node]').forEach((element) => {
-      const node = w.nodes.find((n) => n.id === element.dataset.node);
+      const node = indexes.get(element.dataset.node!);
       if (!node) return;
-      const selected = ui.canvas.selections.includes(node.id);
+      const selected = selectedIds.has(node.id);
       element.classList.toggle('selected', selected);
-      const component = componentFor(w, node.id);
+      const component = componentIndex.get(node.id);
       const editing = component?.id === ui.canvas.componentEditing?.group;
       element.classList.toggle('component-part', !!component && !editing);
       element.classList.toggle('primary-selection', node.id === ui.canvas.selection);
-      const handles = element.querySelectorAll('.resize-handle');
+      let layer = layers.get(node.id);
       if (
         selected &&
         ui.canvas.tool === 'select' &&
         !connect &&
         (!component || (editing && ui.canvas.selections.length === 1))
       ) {
-        if (!handles.length)
-          element.insertAdjacentHTML(
+        if (node.rotation && !layer) layer = controlLayer(plane, element, node);
+        if (layer) {
+          if (!node.rotation) {
+            layer.remove();
+            layer = undefined;
+          } else {
+            element.querySelectorAll('.resize-handle').forEach((h) => layer!.append(h));
+            layers.delete(node.id);
+          }
+        }
+        const host = layer ?? element;
+        if (!host.querySelector('.resize-handle'))
+          host.insertAdjacentHTML(
             'beforeend',
             isArrow(node)
               ? arrowHandles(node)
               : resizeHandles('node', node.id, node.data.kind === 'text'),
           );
-      } else handles.forEach((handle) => handle.remove());
+      } else element.querySelectorAll('.resize-handle').forEach((handle) => handle.remove());
       const ports = element.querySelectorAll('.connection-port');
       if (connect && !ports.length) element.insertAdjacentHTML('beforeend', connectionPorts(node));
       else if (!connect) ports.forEach((port) => port.remove());
@@ -2363,6 +2493,13 @@ export class CanvasView implements View {
       const zone = w.zones.find((z) => z.id === element.dataset.zone);
       if (zone) element.classList.toggle('selected', zone.id === ui.canvas.zoneSelection);
     });
+    layers.forEach((layer) => layer.remove());
+    showRotation(
+      this.root.querySelector<HTMLElement>('#canvas-plane')!,
+      ui.canvas.tool === 'select' && !connect
+        ? w.nodes.filter((n) => selectedIds.has(n.id) && !n.owner)
+        : [],
+    );
     if (keepLinks) {
       this.root.querySelectorAll<SVGElement>('[data-link]').forEach((el) => {
         const selected = el.dataset.link === ui.canvas.linkSelection;

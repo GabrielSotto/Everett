@@ -1,3 +1,4 @@
+import { visualBounds } from '../domain/rotation';
 import type { Context } from '../app/context';
 import { canvasCameraTuning } from '../spatial/tuning';
 
@@ -10,7 +11,7 @@ export function frameCanvas(
   const world = ctx.world(),
     ids = ctx.ui.canvas.selections;
   const items = [
-    ...world.nodes.filter((n) => !n.owner && (!selection || ids.includes(n.id))),
+    ...world.nodes.filter((n) => !n.owner && (!selection || ids.includes(n.id))).map(visualBounds),
     ...(!selection ? world.zones : []),
   ];
   if (!items.length) return;

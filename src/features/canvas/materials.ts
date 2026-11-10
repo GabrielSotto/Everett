@@ -13,7 +13,7 @@ import { wireframeMarkup } from './wireframe-markup';
 import { wireframeText } from '../../domain/wireframes';
 import { isArrow } from '../../domain/free-arrow';
 import { arrowArt, arrowHandles } from './free-arrow';
-import { anchorPoint, linkPath, shapeVertices } from '../../domain/geometry';
+import { anchorPoint, unrotatedAnchor, linkPath, shapeVertices } from '../../domain/geometry';
 import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { materialDensity, materialGroups } from '../../domain/material-density';
@@ -54,7 +54,7 @@ export function resizeHandles(kind: 'node' | 'zone' | 'group', id: string, text 
 export function connectionPorts(material: Material): string {
   return anchors
     .map((anchor) => {
-      const point = anchorPoint(material, anchor);
+      const point = unrotatedAnchor(material, anchor);
       return `<button type="button" class="connection-port ${anchor}" data-anchor="${anchor}" data-anchor-node="${material.id}" aria-label="Anclaje ${anchor}" style="left:${point.x - material.x}px;top:${point.y - material.y}px"></button>`;
     })
     .join('');
@@ -114,7 +114,7 @@ export function materialMarkup(
   } else content = '';
   const comment = w.comments.find((c) => c.node === material.id && !c.resolved);
   const ports = connect ? connectionPorts(material) : '';
-  return `<article class="material ${isArrow(material) ? 'free-arrow' : ''} ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'note' ? noteFontAttributes(d) : d.kind === 'text' ? textFontAttributes(d) : ''} ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? noteStyle(d) : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ wireframe: 'Bosquejo', text: 'Texto', note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? (isArrow(material) ? arrowHandles(material) : resizeHandles('node', material.id, d.kind === 'text')) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
+  return `<article class="material ${isArrow(material) ? 'free-arrow' : ''} ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'note' ? noteFontAttributes(d) : d.kind === 'text' ? textFontAttributes(d) : ''} ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}${material.rotation ? 'rotate:' + material.rotation + 'deg;--label-counter-angle:' + -material.rotation + 'deg;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? noteStyle(d) : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ wireframe: 'Bosquejo', text: 'Texto', note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div>${selected && resize && !connect ? (isArrow(material) ? arrowHandles(material) : resizeHandles('node', material.id, d.kind === 'text')) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {
   wireframe: { label: 'Bosquejos', icon: 'canvas' },
@@ -219,6 +219,8 @@ export function connectionMarkup(
     anchorPoint(to, link.toAnchor),
     link.fromAnchor,
     link.toAnchor,
+    from.rotation,
+    to.rotation,
   );
   const ends = (['from', 'to'] as const)
     .map((end) => {

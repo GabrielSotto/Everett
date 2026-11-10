@@ -52,3 +52,50 @@ test('C08-B200: una explicación ilustrada se ve, se edita y permanece separada 
   expect(after.worlds).toEqual(original.worlds);
   expect(after.camera).toEqual(original.camera);
 });
+
+test('C08-B203: girar camión y flecha, escalar la ilustración sobre sus ejes y retocar la curva @development', async ({
+  page,
+}, info) => {
+  await page.goto('/design/composicion-visual/');
+  const truck = page.locator('[data-node=camion]'),
+    arrow = page.locator('[data-node=recorrido]');
+  await truck.click();
+  const control = page.getByRole('button', { name: 'Girar selección', exact: true });
+  await control.press('Shift+ArrowLeft');
+  await expect(truck).toHaveCSS('rotate', '345deg');
+  const nw = page.locator('[data-id=camion][data-corner=nw]'),
+    se = page.locator('[data-id=camion][data-corner=se]');
+  const midpoint = async (el: typeof nw) => {
+    const r = (await el.boundingBox())!;
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+  };
+  const fixed = await midpoint(nw),
+    handle = await midpoint(se);
+  await page.mouse.move(handle.x, handle.y);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + 24, handle.y + 14, { steps: 6 });
+  await page.mouse.up();
+  const after = await midpoint(nw);
+  expect(Math.hypot(after.x - fixed.x, after.y - fixed.y)).toBeLessThan(2);
+  const ink = arrow.locator('.arrow-ink');
+  const xy = await ink.evaluate((el) => {
+    const svg = el as SVGPathElement,
+      p = svg.getPointAtLength(svg.getTotalLength() * 0.35).matrixTransform(svg.getScreenCTM()!);
+    return { x: p.x, y: p.y };
+  });
+  await page.mouse.click(xy.x, xy.y);
+  await control.press('Shift+ArrowRight');
+  await expect(arrow).toHaveCSS('rotate', '15deg');
+  const bend = await midpoint(page.locator('[data-id=recorrido][data-arrow-handle=bend]')),
+    before = await ink.getAttribute('d');
+  await page.mouse.move(bend.x, bend.y);
+  await page.mouse.down();
+  await page.mouse.move(bend.x, bend.y + 18, { steps: 4 });
+  await page.mouse.up();
+  expect(await ink.getAttribute('d')).not.toBe(before);
+  await page.reload();
+  await expect(truck).toHaveCSS('rotate', '345deg');
+  await expect(arrow).toHaveCSS('rotate', '15deg');
+  await truck.click();
+  await capture(page, info, 'camion-y-recorrido-girados');
+});

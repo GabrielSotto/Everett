@@ -1,7 +1,8 @@
+import { visualBounds } from './rotation';
 import type { WorldSnapshot } from './model';
 import { isComponent } from './manual-groups';
 import { selectionBounds, type SnapTarget } from './alignment';
-import { componentElements, elementMaterials, elementRect } from './component-tree';
+import { componentElements, elementMaterials, elementRect, treePosition } from './component-tree';
 
 /** Un componente intacto aporta su límite, no cada detalle decorativo interno. */
 export function alignmentTargets(
@@ -15,7 +16,13 @@ export function alignmentTargets(
     if (scope)
       return scope.children
         .filter((e) => !e.background && !elementMaterials(e).some((id) => selected.has(id)))
-        .map((e) => ({ ...elementRect(structure, e.id)!, id: e.id }));
+        .map((e) => ({
+          ...visualBounds({
+            ...treePosition(structure, elementRect(structure, e.id)!),
+            rotation: structure.rotation,
+          }),
+          id: e.id,
+        }));
   }
   const grouped = new Set<string>();
   const targets: SnapTarget[] = [];
@@ -27,13 +34,18 @@ export function alignmentTargets(
     if (members.length && members.length === group.nodes.length && members.every((n) => !n.owner))
       targets.push({
         ...(group.structure
-          ? elementRect(group.structure, group.structure.root.id)!
+          ? visualBounds({
+              ...elementRect(group.structure, group.structure.root.id)!,
+              rotation: group.structure.rotation,
+            })
           : selectionBounds(members)),
         id: group.id,
       });
   }
   return [
     ...targets,
-    ...world.nodes.filter((n) => !n.owner && !selected.has(n.id) && !grouped.has(n.id)),
+    ...world.nodes
+      .filter((n) => !n.owner && !selected.has(n.id) && !grouped.has(n.id))
+      .map((n) => ({ ...visualBounds(n), id: n.id })),
   ];
 }

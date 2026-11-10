@@ -31,7 +31,10 @@ export function paintLayoutGuides(
   const markup = frames
     .map(
       (frame) =>
-        `<g data-layout-frame="${html(frame.target.id)}">${layoutBands(frame, frame.guides)
+        `<g data-layout-frame="${html(frame.target.id)}"${frame.rotation ? ` transform="rotate(${frame.rotation} ${frame.x + frame.width / 2} ${frame.y + frame.height / 2})"` : ''}>${layoutBands(
+          frame,
+          frame.guides,
+        )
           .map(
             (band) =>
               `<rect data-axis="${band.axis}" x="${band.x}" y="${band.y}" width="${band.width}" height="${band.height}"/>`,

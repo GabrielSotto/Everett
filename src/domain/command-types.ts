@@ -178,6 +178,7 @@ export type Command =
       detach?: string[];
       join?: string;
     }
+  | { type: 'nodes.rotate'; world: string; nodes: string[]; degrees: number }
   | { type: 'nodes.delete'; world: string; nodes: string[] }
   | {
       type: 'nodes.order';
