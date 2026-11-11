@@ -73,6 +73,7 @@ export class CanvasInteractions {
   private menuMaterial: string | null = null;
   private loadingSamples = false;
   private arrangeOrigin: Point = { x: 12, y: 70 };
+  private illustrationPosition?: Point;
   private previews = new Map<string, Promise<string>>();
   private colorField: 'color' | 'stroke' | null = null;
   private previewAbort = new AbortController();
@@ -1628,16 +1629,27 @@ export class CanvasInteractions {
     );
     this.fitOverlay();
   }
-  showIllustrations(point: Point, replace: string, asset = ''): void {
+  showIllustrations(point: Point, replace: string, asset = '', opener?: DOMRect): void {
     const choose = (source: Illustration | File) =>
       void this.useIllustration(panel, source, this.center());
     const fit = () => this.fitOverlay();
+    const move = (to: Point) => {
+      panel.style.left = to.x + 'px';
+      panel.style.top = to.y + 'px';
+      fit();
+      if (!replace) this.illustrationPosition = { x: panel.offsetLeft, y: panel.offsetTop };
+    };
     const panel = asset
       ? illustrationColors(asset, choose, fit)
-      : illustrationPicker(!!replace, choose, fit);
+      : illustrationPicker(!!replace, choose, fit, move);
     panel.dataset.replace = replace;
-    panel.style.cssText = this.position(point);
+    const previous = !replace && this.illustrationPosition;
+    panel.style.cssText = this.position(previous || point);
     this.overlay.replaceChildren(panel);
+    if (!previous && opener) {
+      const above = opener.top - panel.offsetHeight - 6;
+      panel.style.top = (above >= 70 ? above : opener.bottom + 6) + 'px';
+    }
     this.fitOverlay();
     panel.focus({ preventScroll: true });
   }

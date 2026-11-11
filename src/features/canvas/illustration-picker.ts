@@ -8,6 +8,7 @@ import {
   type Illustration,
 } from './illustrations';
 import { pickerSearch, searchKey } from '../../ui/picker-search';
+import { bindPaletteMove, categoryMenu } from './illustration-controls';
 
 const dragType = 'application/x-everett-illustration';
 export function bindIllustrationDrop(
@@ -40,13 +41,14 @@ export function illustrationPicker(
   replacement: boolean,
   choose: (source: Illustration | File) => void,
   fit: () => void,
+  move: (point: Point) => void,
 ): HTMLElement {
   const panel = document.createElement('section');
   const title = replacement ? 'Reemplazar imagen' : 'Ilustraciones';
   panel.className = 'canvas-context-form illustration-picker';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-label', title);
-  panel.innerHTML = `<header><strong>${title}</strong><button type="button" class="icon-button" data-action="context-close" aria-label="Cerrar" title="Cerrar">${icon('close', 22)}</button></header>
+  panel.innerHTML = `<header><button type="button" class="illustration-grip" aria-label="Mover paleta" aria-description="Arrastrá o usá las flechas del teclado." title="Mover paleta · arrastrá o usá las flechas">${icon('grip', 14)}<strong>${title}</strong></button><button type="button" class="icon-button" data-action="context-close" aria-label="Cerrar" title="Cerrar">${icon('close', 22)}</button></header>
     <div class="illustration-grid" aria-label="Dibujos disponibles"></div>
     ${replacement ? '<button type="button" data-choose-file>Elegir un archivo…</button><input type="file" accept="image/*" hidden>' : ''}
     <p role="status"></p>`;
@@ -54,13 +56,8 @@ export function illustrationPicker(
   const status = panel.querySelector<HTMLElement>('[role=status]')!;
   const first = () => grid.querySelector<HTMLElement>('button:not([hidden])');
   const header = panel.querySelector('header')!;
-  const categoryControl = document.createElement('label');
-  categoryControl.className = 'illustration-category';
-  categoryControl.innerHTML = icon('filter', 18);
-  const category = document.createElement('select');
-  category.ariaLabel = 'Filtrar por categoría';
-  categoryControl.title = category.ariaLabel;
-  categoryControl.append(category);
+  bindPaletteMove(panel, header.querySelector('.illustration-grip')!, move);
+  let category = '';
   let query = '';
   const filter = (s: string) => {
     query = searchKey(s);
@@ -68,7 +65,7 @@ export function illustrationPicker(
     let matches = 0;
     for (const tile of grid.querySelectorAll<HTMLElement>('button')) {
       tile.hidden =
-        (!!category.value && tile.dataset.category !== category.value) ||
+        (!!category && tile.dataset.category !== category) ||
         !words.every((word) => tile.dataset.terms!.includes(word));
       if (!tile.hidden) matches++;
       tile.tabIndex = -1;
@@ -79,30 +76,25 @@ export function illustrationPicker(
     if (grid.childElementCount)
       status.textContent = !matches
         ? 'Sin coincidencias.'
-        : category.value
-          ? category.value + ' · ' + matches
+        : category
+          ? category + ' · ' + matches
           : '';
     fit();
   };
   const search = pickerSearch(header, 'Buscar ilustración', filter, first);
-  header.insertBefore(categoryControl, header.lastElementChild);
-  category.onchange = () => {
-    categoryControl.classList.toggle('active', !!category.value);
-    categoryControl.title = category.value || 'Filtrar por categoría';
+  const setCategories = categoryMenu(panel, (value) => {
+    category = value;
     filter(query);
-  };
+  });
   panel.tabIndex = -1;
   async function populate() {
     status.textContent = 'Cargando ilustraciones…';
     try {
       const items = await loadIllustrations();
       if (!panel.isConnected) return;
-      category.replaceChildren(new Option('Todas las categorías', ''));
-      for (const name of [...new Set(items.map((item) => item.category))].sort((a, b) =>
-        a.localeCompare(b, 'es'),
-      )) {
-        category.add(new Option(name, name));
-      }
+      setCategories(
+        [...new Set(items.map((item) => item.category))].sort((a, b) => a.localeCompare(b, 'es')),
+      );
       grid.innerHTML = items
         .map(
           (item) =>
@@ -164,8 +156,8 @@ export function illustrationPicker(
     const offsets: Record<string, number> = {
       ArrowRight: 1,
       ArrowLeft: -1,
-      ArrowDown: 4,
-      ArrowUp: -4,
+      ArrowDown: 3,
+      ArrowUp: -3,
       Home: -index,
       End: choices.length - index - 1,
     };

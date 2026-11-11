@@ -2756,6 +2756,8 @@ export class CanvasView implements View {
     this.interactions.showIllustrations(
       { x: trigger?.left ?? innerWidth / 2 - 134, y: trigger?.top ?? innerHeight / 2 - 150 },
       '',
+      '',
+      trigger,
     );
   }
   private referenceTrigger(): HTMLElement | null {

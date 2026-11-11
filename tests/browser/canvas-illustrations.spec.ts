@@ -1,6 +1,75 @@
 import { test, expect } from './fixtures';
 import { capture, connect, start, world } from './canvas-utility-helpers';
 
+test('C08-B213: mover la paleta y recorrer categorías deja libre el Canvas y conserva la cámara @development', async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 690, height: 668 });
+  await page.goto('/design/composicion-visual/');
+  await expect(page.locator('[data-node=camion]')).toBeVisible();
+  const camera = () => page.evaluate(() => window.EverettDebug!.snapshot().state.camera);
+  const initial = await camera();
+  await page.keyboard.press('i');
+  const panel = page.getByRole('dialog', { name: 'Ilustraciones', exact: true });
+  const bounds = async () => (await panel.boundingBox())!;
+  const grip = panel.getByRole('button', { name: 'Mover paleta' });
+  const filter = panel.getByRole('button', { name: 'Filtrar por categoría' });
+  const menu = panel.getByRole('menu', { name: 'Categorías de ilustraciones' });
+  await expect(panel.getByRole('button', { name: 'Camión', exact: true })).toBeVisible();
+  const original = await bounds();
+  expect(original.width).toBeLessThanOrEqual(250);
+  expect(original.height).toBeLessThanOrEqual(235);
+  const handle = (await grip.boundingBox())!;
+  const point = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2 };
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.mouse.move(point.x - 160, point.y - 120, { steps: 10 });
+  await page.mouse.up();
+  const moved = await bounds();
+  expect(moved.x).toBeCloseTo(original.x - 160, 0);
+  expect(moved.y).toBeCloseTo(original.y - 120, 0);
+  await grip.press('ArrowRight');
+  const remembered = await bounds();
+  expect(remembered.x).toBeCloseTo(moved.x + 8, 0);
+  await filter.click();
+  await expect(menu.getByRole('menuitemradio', { checked: true })).toBeFocused();
+  const list = (await menu.boundingBox())!;
+  expect(list.height).toBeLessThanOrEqual(145);
+  expect(list.y).toBeGreaterThan(remembered.y + 30);
+  expect(list.y + list.height).toBeLessThan(remembered.y + remembered.height);
+  expect(await bounds()).toEqual(remembered);
+  const grid = panel.locator('.illustration-grid');
+  await menu.hover();
+  await page.mouse.wheel(0, 650);
+  await expect.poll(() => menu.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  expect(await grid.evaluate((el) => el.scrollTop)).toBe(0);
+  expect(await camera()).toEqual(initial);
+  await page.keyboard.press('End');
+  const last = menu.getByRole('menuitemradio').last();
+  await expect(last).toBeFocused();
+  await last.press('Enter');
+  await expect(menu).toBeHidden();
+  await expect(filter).toBeFocused();
+  await filter.press('Space');
+  await expect(last).toHaveAttribute('aria-checked', 'true');
+  await last.press('Escape');
+  await expect(panel).toBeVisible();
+  await filter.press('Escape');
+  await expect(panel).toHaveCount(0);
+  await page.keyboard.press('i');
+  await expect(panel.getByRole('button', { name: 'Camión', exact: true })).toBeVisible();
+  expect(await bounds()).toEqual(remembered);
+  await page.setViewportSize({ width: 320, height: 340 });
+  await filter.click();
+  const small = await bounds();
+  const contained = (await menu.boundingBox())!;
+  expect(small.x + small.width).toBeLessThanOrEqual(320);
+  expect(small.y + small.height).toBeLessThanOrEqual(340);
+  expect(contained.y).toBeGreaterThan(small.y);
+  expect(contained.y + contained.height).toBeLessThan(small.y + small.height);
+  await capture(page, info, 'categorias-dentro-del-canvas');
+});
+
 test('C08-B211: buscar por atajo, cambiar una tinta, deshacer y recuperar la paleta después de recargar @development', async ({
   page,
 }, info) => {
@@ -29,7 +98,7 @@ test('C08-B211: buscar por atajo, cambiar una tinta, deshacer y recuperar la pal
   const compact = await picker.boundingBox();
   expect(compact!.width).toBeLessThan(300);
   expect(compact!.y + compact!.height).toBeLessThanOrEqual(640);
-  const category = picker.getByRole('combobox', { name: 'Filtrar por categoría' });
+  const category = picker.getByRole('button', { name: 'Filtrar por categoría' });
   const close = picker.getByRole('button', { name: 'Cerrar' });
   const [s, f, c] = await Promise.all([
     search.boundingBox(),
@@ -39,7 +108,8 @@ test('C08-B211: buscar por atajo, cambiar una tinta, deshacer y recuperar la pal
   expect([s!.width, s!.height]).toEqual([c!.width, c!.height]);
   expect(f!.x).toBeGreaterThanOrEqual(s!.x + s!.width);
   expect(c!.x).toBeGreaterThanOrEqual(f!.x + f!.width);
-  await category.selectOption('Salud y ciencia');
+  await category.click();
+  await picker.getByRole('menuitemradio', { name: 'Salud y ciencia' }).click();
   await expect(picker.getByRole('button', { name: 'Termómetro', exact: true })).toBeVisible();
   await expect(picker.getByRole('button', { name: 'Camión', exact: true })).toBeHidden();
   await search.click();
@@ -50,9 +120,10 @@ test('C08-B211: buscar por atajo, cambiar una tinta, deshacer y recuperar la pal
   await expect(picker.locator('[data-illustration]:visible')).toHaveCount(1);
   expect(await input.evaluate((el) => getComputedStyle(el).boxShadow)).toBe('none');
   await input.press('Escape');
-  await expect(category).toHaveValue('Salud y ciencia');
+  await expect(category).toHaveAttribute('title', 'Categoría: Salud y ciencia');
   await capture(page, info, 'ilustraciones-por-categoria');
-  await category.selectOption('');
+  await category.click();
+  await picker.getByRole('menuitemradio', { name: 'Todas las categorías' }).click();
   await page.setViewportSize(originalView);
   await search.click();
   await input.fill('fresa');
