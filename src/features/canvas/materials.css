@@ -158,11 +158,12 @@
 }
 .canvas-context-form.graphic-picker {
   width: min(280px, calc(100vw - 24px));
-  max-height: min(288px, 52dvh);
+  max-height: min(305px, calc(100dvh - 85px));
+  z-index: 62;
   padding: 6px;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
   gap: 4px;
 }
 .graphic-picker header {
@@ -170,14 +171,8 @@
   align-items: center;
   justify-content: space-between;
 }
-.graphic-picker header .graphic-grip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: grab;
-  touch-action: none;
-  background: none;
-  padding: 4px;
+.graphic-picker header strong {
+  padding-inline: 5px;
   font-size: 13px;
 }
 .graphic-picker header button {
@@ -194,6 +189,7 @@
 .graphic-picker [data-graphic] {
   min-width: 0;
   display: grid;
+  align-content: start;
   gap: 2px;
   padding: 5px 6px 7px;
   text-align: left;

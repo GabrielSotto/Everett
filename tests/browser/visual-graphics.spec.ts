@@ -2,15 +2,15 @@ import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 import { start, capture, world, moveMaterial } from './canvas-utility-helpers';
 
-async function palette(page: Page, compact = false) {
-  const trigger = page.getByRole('button', { name: 'Incorporar materiales', exact: true });
-  // Tras redimensionar, esperar el acceso del nuevo ancho; el dock anterior puede seguir visible un frame.
-  if (!compact) await trigger.click();
-  else {
-    await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Incorporar materiales', exact: true }).click();
-  }
-  await page.getByRole('button', { name: 'Gráfico explicativo…', exact: true }).click();
+async function palette(page: Page) {
+  const tools = page.getByRole('toolbar', { name: 'Creación, organización y vista de Canvas' });
+  const trigger = tools.getByRole('button', { name: 'Gráficos explicativos', exact: true });
+  await expect(trigger).toBeInViewport({ ratio: 1 });
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    page.getByRole('dialog', { name: 'Incorporar materiales', exact: true }),
+  ).toHaveCount(0);
   return page.getByRole('dialog', { name: 'Gráficos explicativos', exact: true });
 }
 const pickerNames = ['sequence', 'cycle', 'comparison', 'anatomy'] as const;
@@ -19,14 +19,18 @@ test('C08-B214: crear y editar cuatro formatos, comparar lo mismo y deshacer la 
 }, info) => {
   await start(page);
   await page.setViewportSize({ width: 375, height: 600 });
-  const narrow = await palette(page, true);
+  const narrow = await palette(page);
   const rect = (await narrow.boundingBox())!;
   expect(rect.x).toBeGreaterThanOrEqual(0);
   expect(rect.x + rect.width).toBeLessThanOrEqual(375);
   expect(rect.y + rect.height).toBeLessThanOrEqual(600);
   await narrow.locator('[data-graphic=anatomy]').hover();
   await capture(page, info, 'menu-estrecho');
-  await narrow.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await narrow.getByRole('button', { name: /Imagen anotada/ }).click();
+  await expect(narrow).toHaveCount(0);
+  await expect(page.locator('.canvas-stage .canvas-leaders .link-line')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+  await expect(page.locator('.canvas-stage .material')).toHaveCount(0);
   await page.setViewportSize({ width: 800, height: 670 });
   for (const kind of pickerNames) {
     const panel = await palette(page);

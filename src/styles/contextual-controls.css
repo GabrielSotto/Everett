@@ -567,6 +567,17 @@ select option {
     display: none;
   }
 }
+/* Las bibliotecas mantienen el nombre mientras hay espacio; en móvil, su posición. */
+@media (min-width: 760px) and (max-width: 1100px) {
+  .canvas-actions-trigger:is([data-action='canvas-wireframes'], [data-action='canvas-graphics']) {
+    width: auto;
+    padding-inline: 6px;
+  }
+  .canvas-actions-trigger:is([data-action='canvas-wireframes'], [data-action='canvas-graphics'])
+    > span {
+    display: inline;
+  }
+}
 @media (max-width: 360px) {
   .shell:has(.canvas-zoom) {
     padding-inline: 4px;

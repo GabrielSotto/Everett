@@ -6,6 +6,7 @@ import { frameCanvas } from './canvas-frame';
 import { target } from './dom';
 import { icon } from './icons';
 import { bindDismiss } from './popover';
+import { openGraphicPicker } from '../features/canvas/graphic-picker';
 import { openSketchLibrary, closeSketchLibrary, sketchLibraryOpen } from './sketch-library';
 import { selectedLayoutTarget } from '../domain/layout-guides';
 import { openLayoutGuideEditor } from './layout-guide-editor';
@@ -13,6 +14,7 @@ import { html } from './dom';
 
 /** Creación, organización y vista tienen entradas propias en la cabecera. */
 export class CanvasActions {
+  private graphics: ReturnType<typeof openGraphicPicker> | null = null;
   private open = false;
   private page: 'view' | 'arrange' = 'view';
   private painted: string | null = null;
@@ -44,7 +46,13 @@ export class CanvasActions {
         const button = target(event);
         if (!button || button.hasAttribute('disabled')) return;
         switch (button.dataset.action) {
+          case 'canvas-graphics': {
+            if (this.graphics) this.graphics.close();
+            else this.showGraphics(signal);
+            break;
+          }
           case 'canvas-wireframes': {
+            this.graphics?.close(false);
             const wasOpen = sketchLibraryOpen();
             this.close(false);
             if (wasOpen) closeSketchLibrary();
@@ -58,6 +66,7 @@ export class CanvasActions {
           }
           case 'canvas-view':
           case 'canvas-organize': {
+            this.graphics?.close(false);
             closeSketchLibrary();
             const page = button.dataset.action === 'canvas-organize' ? 'arrange' : 'view';
             this.open = !this.open || this.page !== page;
@@ -141,6 +150,17 @@ export class CanvasActions {
           event.stopPropagation();
           const action =
             event.target.closest<HTMLElement>('.canvas-actions-trigger')?.dataset.action;
+          if (action === 'canvas-graphics') {
+            if (!this.graphics) this.showGraphics(signal);
+            else
+              document
+                .querySelector<HTMLElement>(
+                  '.graphic-picker .graphic-flows button,.graphic-picker [data-graphic]',
+                )
+                ?.focus();
+            return;
+          }
+          this.graphics?.close(false);
           if (action === 'canvas-wireframes') {
             this.close(false);
             if (!sketchLibraryOpen()) openSketchLibrary(ctx, signal);
@@ -212,6 +232,21 @@ export class CanvasActions {
       { signal },
     );
   }
+  private showGraphics(signal: AbortSignal) {
+    closeSketchLibrary();
+    const shell = this.ctx.ui.shell;
+    shell.profile = shell.status = shell.surfaceMenu = shell.searchOpen = false;
+    shell.search = '';
+    this.close(false);
+    this.graphics = openGraphicPicker(
+      this.ctx,
+      () => this.root.querySelector('[data-action=canvas-graphics]'),
+      signal,
+      () => {
+        this.graphics = null;
+      },
+    );
+  }
   private trigger(): HTMLElement | null {
     return this.root.querySelector(
       `[data-action=${this.page === 'arrange' ? 'canvas-organize' : 'canvas-view'}]`,
@@ -231,11 +266,13 @@ export class CanvasActions {
     if (focus) this.trigger()?.focus({ preventScroll: true });
   }
   dismiss(): void {
+    this.graphics?.close(false);
     closeSketchLibrary();
     this.open = false;
     this.painted = null;
   }
   position(): void {
+    this.graphics?.position();
     const menu = this.root.querySelector<HTMLElement>('.canvas-actions-pop'),
       rect = this.trigger()?.getBoundingClientRect();
     if (!menu || !rect) {
@@ -251,6 +288,7 @@ export class CanvasActions {
   markup(): string {
     const route = this.ctx.store.get().route;
     if (route.kind !== 'surface' || route.surface !== 'canvas') {
+      this.graphics?.close(false);
       closeSketchLibrary();
       this.open = false;
       return '';
@@ -266,6 +304,13 @@ export class CanvasActions {
         label: 'Bosquejos',
         name: 'Bosquejos',
         glyph: 'sketch',
+      },
+      {
+        page: 'graphics',
+        action: 'canvas-graphics',
+        label: 'Gráficos',
+        name: 'Gráficos explicativos',
+        glyph: 'visual-graphic',
       },
       {
         page: 'arrange',
@@ -287,6 +332,6 @@ export class CanvasActions {
       this.page === 'arrange'
         ? `${arrangementMarkup(this.ctx)}<hr><div class="arrangement-layers" role="group" aria-label="Orden de capas"><span class="arrangement-label">Capas</span>${(['front', 'forward', 'backward', 'back'] as const).map((order) => `<button type="button" role="menuitem" data-action="selection-order" data-order="${order}" ${canOrderMaterials(this.ctx.world().nodes, this.ctx.ui.canvas.selections, order) ? '' : 'disabled'}>${{ front: 'Traer al frente', forward: 'Avanzar una capa', backward: 'Retroceder una capa', back: 'Enviar al fondo' }[order]}</button>`).join('')}</div>`
         : `<button type="button" role="menuitem" data-action="actions-fit" data-selection="true" ${units.length ? '' : 'disabled'}>Ajustar a la selección</button><button type="button" role="menuitem" data-action="actions-fit" ${this.ctx.world().nodes.some((node) => !node.owner) || this.ctx.world().zones.length ? '' : 'disabled'}>Ajustar al contenido</button><hr>${check('canvas-guides-toggle', 'Guías y ajuste automático', shell.canvasAlignmentGuides)}<hr><strong class="canvas-menu-title">Retículas de layout</strong>${check('layout-guides-toggle', 'Mostrar retículas' + (this.ctx.ui.shortcuts.layoutGuides ? `<kbd>${html(this.ctx.ui.shortcuts.layoutGuides)}</kbd>` : ''), shell.canvasLayoutGuides)}${check('layout-snap-toggle', 'Ajustar a las retículas', shell.canvasLayoutSnap)}<button type="button" role="menuitem" data-action="layout-guides-edit" ${selectedLayoutTarget(this.ctx.world(), this.ctx.ui.canvas.selections) ? '' : 'disabled'}>Configurar retícula de selección…</button><hr>${check('canvas-grid-toggle', 'Fondo cuadriculado', shell.canvasBackground === 'grid')}${check('canvas-dock-toggle', 'Dock vertical', shell.canvasDockOrientation === 'vertical')}<hr><button type="button" role="menuitem" data-action="actions-preferences">Preferencias de Canvas</button><button type="button" role="menuitem" data-action="actions-shortcuts">Atajos de Canvas</button>`;
-    return `<div class="canvas-actions" role="toolbar" aria-label="Creación, organización y vista de Canvas">${menus.map((menu) => `<button type="button" class="canvas-actions-trigger" data-action="${menu.action}" aria-label="${menu.name}" data-tip="${menu.name}" aria-haspopup="${menu.page === 'wireframes' ? 'dialog' : 'menu'}" aria-expanded="${menu.page === 'wireframes' ? sketchLibraryOpen() : this.open && this.page === menu.page}" aria-controls="canvas-${menu.page}-menu">${icon(menu.glyph, 16)}<span>${menu.label}</span>${icon('down', 10)}</button>`).join('')}${this.open ? `<div class="canvas-actions-pop ${this.page === 'arrange' ? 'arrangement-menu' : ''}" id="canvas-${this.page}-menu" role="menu" aria-label="${current.name}">${this.page === 'arrange' ? '' : `<strong class="canvas-menu-title">${current.label}</strong>`}${content}</div>` : ''}</div>`;
+    return `<div class="canvas-actions" role="toolbar" aria-label="Creación, organización y vista de Canvas">${menus.map((menu) => `<button type="button" class="canvas-actions-trigger" data-action="${menu.action}" aria-label="${menu.name}" data-tip="${menu.name}" aria-haspopup="${menu.page === 'wireframes' || menu.page === 'graphics' ? 'dialog' : 'menu'}" aria-expanded="${menu.page === 'wireframes' ? sketchLibraryOpen() : menu.page === 'graphics' ? !!this.graphics : this.open && this.page === menu.page}" aria-controls="canvas-${menu.page}-menu">${icon(menu.glyph, 16)}<span>${menu.label}</span>${icon('down', 10)}</button>`).join('')}${this.open ? `<div class="canvas-actions-pop ${this.page === 'arrange' ? 'arrangement-menu' : ''}" id="canvas-${this.page}-menu" role="menu" aria-label="${current.name}">${this.page === 'arrange' ? '' : `<strong class="canvas-menu-title">${current.label}</strong>`}${content}</div>` : ''}</div>`;
   }
 }

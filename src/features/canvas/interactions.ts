@@ -18,7 +18,6 @@ import {
   type Illustration,
 } from './illustrations';
 import { imageDetailAt } from '../../domain/cable-geometry';
-import { graphicPicker } from './graphic-picker';
 import { bindIllustrationDrop, illustrationPicker } from './illustration-picker';
 import { toWorld } from '../../spatial/math';
 import { pdfPreview } from '../../platform/pdf-preview';
@@ -726,24 +725,6 @@ export class CanvasInteractions {
             input.oninput = () => input.setCustomValidity('');
             this.fitOverlay();
             input.focus();
-            break;
-          }
-          case 'canvas-graphic': {
-            const anchor = button.closest('.reference-menu') ?? button;
-            const box = anchor.getBoundingClientRect();
-            const panel = graphicPicker(
-              ctx,
-              this.center,
-              (p) => {
-                panel.style.cssText = this.position(p);
-                this.fitOverlay();
-              },
-              () => this.close(),
-            );
-            panel.style.cssText = this.position({ x: box.left, y: box.top });
-            this.overlay.replaceChildren(panel);
-            this.fitOverlay();
-            panel.querySelector<HTMLElement>('[data-graphic]')?.focus({ preventScroll: true });
             break;
           }
           case 'canvas-illustrations':
@@ -2023,7 +2004,7 @@ export class CanvasInteractions {
   }
   close(): boolean {
     const insertingIllustration = this.overlay.querySelector(
-      '.illustration-picker[data-replace=""],.graphic-picker',
+      '.illustration-picker[data-replace=""]',
     );
     this.closeWireframeEditor?.();
     this.closeWireframeEditor = null;

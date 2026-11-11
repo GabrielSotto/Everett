@@ -286,7 +286,12 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   await prepare(page);
   const original = await world(page);
   const selection = (await snapshot(page)).ui.canvas.selections;
-  const names = ['Bosquejos', 'Alinear selección', 'Vista y ajustes de Canvas'];
+  const names = [
+    'Bosquejos',
+    'Gráficos explicativos',
+    'Alinear selección',
+    'Vista y ajustes de Canvas',
+  ];
   const sketchTrigger = page.getByRole('button', { name: 'Bosquejos', exact: true });
   await sketchTrigger.hover();
   await expect(page.locator('#tooltip')).toHaveClass(/visible/);
@@ -310,9 +315,13 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
       const menu =
         name === 'Bosquejos'
           ? page.getByRole('dialog', { name: 'Biblioteca de bosquejos' })
-          : page.getByRole('menu', { name, exact: true });
+          : name === 'Gráficos explicativos'
+            ? page.getByRole('dialog', { name, exact: true })
+            : page.getByRole('menu', { name, exact: true });
       await expect(menu).toBeVisible();
-      await expect(page.locator('.canvas-actions-pop,.sketch-library')).toHaveCount(1);
+      await expect(page.locator('.canvas-actions-pop,.sketch-library,.graphic-picker')).toHaveCount(
+        1,
+      );
       const geometry = await menu.evaluate((element) => {
         const rect = element.getBoundingClientRect();
         return { left: rect.left, right: rect.right, bottom: rect.bottom };
@@ -327,6 +336,9 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
         await expect(
           menu.getByRole('menuitem', { name: /Alinear|Ajustar|Preferencias/ }),
         ).toHaveCount(0);
+      } else if (name === 'Gráficos explicativos') {
+        await expect(menu.locator('[data-graphic]')).toHaveCount(4);
+        await expect(menu.getByRole('button', { name: 'En secuencia', exact: true })).toBeVisible();
       } else if (name === 'Alinear selección') {
         await expect(
           menu.getByRole('menuitem', { name: 'Alinear a la izquierda', exact: true }),
@@ -363,6 +375,17 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
   await expect(page.getByRole('button', { name: 'Agregar Polígono', exact: true })).toBeFocused();
   await first.focus();
   await page.keyboard.press('ArrowRight');
+  const graphics = page.getByRole('button', { name: 'Gráficos explicativos', exact: true });
+  await expect(graphics).toBeFocused();
+  await graphics.press('ArrowDown');
+  await expect(page.getByRole('dialog', { name: 'Gráficos explicativos' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Biblioteca de bosquejos' })).toHaveCount(0);
+  await page.getByRole('button', { name: /Secuencia Del boceto/ }).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('button', { name: /Comparación Dos maneras/ })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(graphics).toBeFocused();
+  await graphics.press('ArrowRight');
   await expect(page.getByRole('button', { name: 'Alinear selección', exact: true })).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menu', { name: 'Alinear selección', exact: true })).toBeVisible();

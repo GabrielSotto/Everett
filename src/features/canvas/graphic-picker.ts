@@ -8,7 +8,8 @@ import type { Point } from '../../domain/model';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { html } from '../../ui/dom';
 import { icon } from '../../ui/icons';
-import { bindPaletteMove } from './illustration-controls';
+import { bindDismiss } from '../../ui/popover';
+import { toWorld } from '../../spatial/math';
 import {
   illustrationBlob,
   illustrationPreview,
@@ -65,20 +66,96 @@ function thumbnail(kind: GraphicKind) {
   }
   return `<svg aria-hidden="true" viewBox="${b.x - 12} ${b.y - 12} ${b.width + 24} ${b.height + 24}">${[...paths, ...leaders].join('')}</svg>`;
 }
-export function graphicPicker(
+export function openGraphicPicker(
   ctx: Context,
-  center: () => Point,
-  move: (p: Point) => void,
-  close: () => void,
+  trigger: () => HTMLElement | null,
+  parentSignal: AbortSignal,
+  onClosed: () => void,
 ) {
+  const controller = new AbortController(),
+    { signal } = controller;
+  const worldId = ctx.world().id;
+  const center = (): Point => {
+    const box = document.querySelector('#canvas-stage')!.getBoundingClientRect();
+    const left = Math.max(
+      box.left,
+      document.querySelector('.canvas-chat.docked:not(.compact)')?.getBoundingClientRect().right ??
+        box.left,
+    );
+    return toWorld(
+      { x: (left + box.right) / 2, y: box.top + box.height / 2 },
+      ctx.currentCamera(),
+      box,
+    );
+  };
   const panel = document.createElement('section');
   panel.className = 'canvas-context-form graphic-picker';
+  panel.id = 'canvas-graphics-menu';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-label', 'Gráficos explicativos');
-  panel.innerHTML = `<header><button type="button" class="graphic-grip" title="Mover paleta" aria-label="Mover paleta">${icon('grip', 14)}<strong>Gráficos explicativos</strong></button><button class="icon-button" type="button" data-action="context-close" aria-label="Cerrar">${icon('close', 18)}</button></header><div class="graphic-options"></div><p role="status"></p>`;
+  panel.innerHTML = `<header><strong>Gráficos explicativos</strong><button class="icon-button" type="button" data-close aria-label="Cerrar">${icon('close', 18)}</button></header><div class="graphic-options"></div><p role="status"></p>`;
   const grid = panel.querySelector<HTMLElement>('.graphic-options')!,
     status = panel.querySelector<HTMLElement>('[role=status]')!;
-  bindPaletteMove(panel, panel.querySelector('header button')!, move);
+  const close = (focus = true) => {
+    if (signal.aborted) return;
+    controller.abort();
+    panel.remove();
+    onClosed();
+    trigger()?.setAttribute('aria-expanded', 'false');
+    if (focus) trigger()?.focus({ preventScroll: true });
+  };
+  const position = () => {
+    const anchor = trigger()?.getBoundingClientRect();
+    if (!anchor?.width || ctx.world().id !== worldId) return close(false);
+    panel.style.left =
+      Math.max(8, Math.min(anchor.left, innerWidth - panel.offsetWidth - 8)) + 'px';
+    panel.style.top = anchor.bottom + 8 + 'px';
+  };
+  parentSignal.addEventListener('abort', () => close(false), { once: true, signal });
+  bindDismiss(
+    signal,
+    () => true,
+    (source) => close(source === 'keyboard'),
+    '.graphic-picker,[data-action=canvas-graphics]',
+  );
+  panel.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => close();
+  window.addEventListener('resize', position, { signal });
+  panel.addEventListener(
+    'keydown',
+    (event) => {
+      const buttons = [...panel.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')],
+        i = buttons.indexOf(document.activeElement as HTMLButtonElement);
+      if (
+        event.key === 'Tab' &&
+        ((i === buttons.length - 1 && !event.shiftKey) || (i === 0 && event.shiftKey))
+      ) {
+        close();
+        return;
+      }
+      const columns = document.activeElement?.closest('.graphic-options') ? 2 : 1;
+      const step =
+        (
+          { ArrowRight: 1, ArrowLeft: -1, ArrowDown: columns, ArrowUp: -columns } as Record<
+            string,
+            number
+          >
+        )[event.key] ?? 0;
+      if (step || event.key === 'Home' || event.key === 'End') {
+        event.preventDefault();
+        const items = columns === 2 ? buttons.filter((button) => grid.contains(button)) : buttons;
+        const current = items.indexOf(document.activeElement as HTMLButtonElement);
+        items[
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? items.length - 1
+              : (current + step + items.length) % items.length
+        ]?.focus();
+      }
+      event.stopPropagation();
+    },
+    { signal },
+  );
   const entries = Object.keys(graphics) as GraphicKind[];
   for (const k of entries) {
     const button = document.createElement('button');
@@ -112,7 +189,7 @@ export function graphicPicker(
     };
     flows.append(button);
   }
-  if (flows.childElementCount > 1) status.before(flows);
+  if (flows.childElementCount > 1) grid.before(flows);
   async function load() {
     await loadIllustrations();
     if (!panel.isConnected) return;
@@ -185,5 +262,11 @@ export function graphicPicker(
       panel.removeAttribute('aria-busy');
     }
   }
-  return panel;
+  document.body.append(panel);
+  trigger()?.setAttribute('aria-expanded', 'true');
+  position();
+  panel
+    .querySelector<HTMLButtonElement>('.graphic-flows button,[data-graphic]')
+    ?.focus({ preventScroll: true });
+  return { close, position };
 }
