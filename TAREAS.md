@@ -29,6 +29,8 @@ En el Canvas de trabajo, **Incorporar materiales → Gráfico explicativo…** p
 
 Verificación de desarrollo del 11 de noviembre: 150 pruebas unitarias y del arnés; 18 recorridos dirigidos en Vite, incluidos los ejemplos anteriores. La última ejecución de C08-B214–216 conserva las capturas de los cuatro formatos y de la paleta a 375 px, y comprueba también que cerrar un ciclo con piezas propias conserva el cable ya rotulado y se puede deshacer.
 
+Los ejemplos [Prueba de imprenta](design/composicion-visual/index.html?escena=imprenta) y [Cámara oscura](design/composicion-visual/index.html?escena=optica) se editan en dos mundos de revisión independientes. El primero ejercita una decisión con dos salidas y retorno; el segundo, cuatro llamadas precisas sobre la misma imagen. Al seleccionar una conexión con texto, **Etiqueta → Inicio, Centro o Final** permite acercar la respuesta a su pregunta. Las llamadas tienen contorno para poder seguirlas al cruzar fondos claros y oscuros.
+
 El menú de un texto suelto ofrece **Editar texto**. También se puede retomar con la herramienta
 Texto, doble clic o Enter. El campo de renombre queda acotado al nombre y no cambia el contenido.
 Verificados 144 casos unitarios y del arnés (`2026-11-10_22-20-51-526Z`) y 12 recorridos de

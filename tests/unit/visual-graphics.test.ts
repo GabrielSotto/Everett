@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, project, intent } from './fixtures';
 import { captureCanvasCopies, parseCanvasClipboard } from '../../src/domain/canvas-copies';
+import { labelDistance } from '../../src/domain/cable-labels';
 import { rectsCross } from '../../src/domain/rotation';
 import { selectionBounds } from '../../src/domain/alignment';
 import { imageDetailAt, detailPoint } from '../../src/domain/cable-geometry';
@@ -78,6 +79,27 @@ test('C08-U81: el recorrido respeta la posición, conserva cables con nombre y v
   );
 });
 
+test('C08-U83: la etiqueta conserva su extremo en un cable largo y la posición viaja con una copia', () => {
+  const { store, worldId: world } = setup();
+  const place = (placement: 'start' | 'center' | 'end') =>
+    store.dispatch({ type: 'link.label', world, id: 'link', text: 'Sí', placement }, intent);
+  assert.equal(labelDistance(500), 250);
+  for (const at of ['start', 'end', 'center'] as const) assert.equal(labelDistance(70, at), 35);
+  assert.equal(labelDistance(500, 'start'), 64);
+  assert.equal(labelDistance(500, 'end'), 436);
+  place('start');
+  const copy = captureCanvasCopies(project(store), ['note-a', 'note-b']);
+  assert.equal(parseCanvasClipboard(JSON.stringify(copy)).links[0]?.labelPlacement, 'start');
+  assert.throws(() => parseCanvasClipboard(JSON.stringify(copy).replace('"start"', '"bad"')), {
+    code: 'CLIPBOARD_LINK',
+  });
+  place('end');
+  store.dispatch({ type: 'canvas.undo', world }, intent);
+  assert.equal(project(store).links[0]?.labelPlacement, 'start');
+  assert.throws(() => place('bad' as 'start'), { code: 'LINK_LABEL_PLACEMENT' });
+  place('center');
+  assert.equal(project(store).links[0]?.labelPlacement, undefined);
+});
 test('C08-U82: punto de imagen en píxeles visibles, guardado atómico y copia con vínculo independiente', () => {
   const { store, worldId: world } = setup();
   const photo = {

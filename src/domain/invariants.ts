@@ -10,6 +10,7 @@ import { validNoteFont, validFontWeight, validNoteTypography } from './note-font
 import { validLayoutGuides } from './layout-guides';
 import { validComponentTree, elementAt } from './component-tree';
 import { validLibraryComposition } from './sketch-library';
+import { validLabelPlacement } from './cable-labels';
 import { validLinkDirection, validLinkWeight } from './link-stroke';
 import { validArrowPoints } from './free-arrow';
 
@@ -434,6 +435,11 @@ export function validate(s: State): void {
       );
     }
     for (const l of w.links) {
+      ensure(
+        l.labelPlacement === undefined || validLabelPlacement(l.labelPlacement),
+        'LINK_LABEL_PLACEMENT',
+        'Ubicación de etiqueta inválida',
+      );
       ensure(
         l.direction === undefined || validLinkDirection(l.direction),
         'LINK_DIRECTION',

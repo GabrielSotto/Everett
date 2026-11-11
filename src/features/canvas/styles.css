@@ -275,6 +275,16 @@
   vector-effect: non-scaling-stroke;
 }
 
+.leader-outline {
+  stroke: #253237;
+  stroke-width: max(
+    calc(var(--cable-weight, 0px) + 3px / var(--canvas-zoom)),
+    calc(4.4px / var(--canvas-zoom))
+  );
+  fill: none;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
 .canvas-leaders .connection:not(.selected) .link-line {
   stroke: #ffd18b;
 }

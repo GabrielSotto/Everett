@@ -1,6 +1,16 @@
 import type { Anchor, Point, Rect } from './model';
 import { linkPath } from './geometry';
 
+export type LabelPlacement = 'start' | 'center' | 'end';
+export function validLabelPlacement(value: unknown): value is LabelPlacement {
+  return value === 'start' || value === 'center' || value === 'end';
+}
+/** Distancia sobre el trazo. En conexiones cortas los tres sitios convergen en el centro. */
+export function labelDistance(length: number, placement: LabelPlacement = 'center'): number {
+  const inset = Math.min(length / 2, 64);
+  return placement === 'start' ? inset : placement === 'end' ? length - inset : length / 2;
+}
+
 export function overlaps(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }

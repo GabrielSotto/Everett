@@ -7,6 +7,7 @@ import {
   type OrientedRect,
 } from '../../domain/rotation';
 import { selectionBounds } from '../../domain/alignment';
+import { labelDistance } from '../../domain/cable-labels';
 import { cableGeometry } from '../../domain/cable-geometry';
 
 function frame(nodes: readonly Material[]): OrientedRect {
@@ -192,7 +193,9 @@ export function beginRotation(
           el.setAttribute('transform', `translate(${p.x},${p.y})`);
         });
         if (label && paths[0]) {
-          const p = paths[0].getPointAtLength(paths[0].getTotalLength() / 2);
+          const p = paths[0].getPointAtLength(
+            labelDistance(paths[0].getTotalLength(), link.labelPlacement),
+          );
           label.setAttribute('x', String(p.x));
           label.setAttribute('y', String(p.y));
           if (cut) {

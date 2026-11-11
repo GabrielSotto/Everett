@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" viewBox="0 0 600 300">
+  <title>Corte de una cámara oscura: los rayos de una vela cruzan el orificio y proyectan la llama abajo</title>
+  <defs>
+    <pattern id="wood" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="9" height="9" fill="#bd9070"/><path d="M0 0v9" stroke="#825a44" stroke-width="2"/></pattern>
+    <g id="candle"><path d="M-12 0h24v64h-24z" fill="#e5ba7f"/><path d="M-12 0c5-5 15 3 24-2v7q-5 4-7-1-4-3-6 2t-6-2l-5 1z" fill="#f3d5a4"/><path d="M0-1v-11" stroke="#473d39" stroke-width="3"/><path d="M0-10c-19-8 4-25 0-37 18 16 14 30 0 37z" fill="#e16743"/><path d="M1-12c-4-4 0-10 2-15 5 8 4 12-2 15z" fill="#ffe899"/></g>
+  </defs>
+  <rect x="3" y="3" width="594" height="294" rx="9" fill="#f0e6cc"/>
+  <g stroke="#bdb29b" fill="none"><path d="M27 233h140m-125 6h104"/><path d="M35 45h26m-26 5h14"/></g>
+  <path d="M232 49h310v204H232z" fill="#29383b" stroke="#74513d" stroke-width="2"/>
+  <path d="M241 58h287v186H241z" fill="#15282e"/>
+  <path d="M232 49h310v10H232zm0 194h310v10H232zm0-185h10v85h-10zm0 92h10v94h-10z" fill="url(#wood)"/>
+  <path d="M232 143h10v7h-10z" fill="#f0e6cc"/>
+  <rect x="490" y="58" width="40" height="185" fill="#f8edce"/>
+  <path d="M491 63v175M529 63v175" stroke="#a49170" fill="none"/>
+  <g transform="translate(66 147) scale(.85)"><use href="#candle"/></g>
+  <path d="M37 202h61l-5 5H42z" fill="#9e7960"/>
+  <g transform="translate(510 145.7) scale(.75 -1.357)" opacity=".84"><use href="#candle"/></g>
+  <g fill="none" stroke-width="2.6"><path d="M66 107.05 237 146.5 510 209.48" stroke="#e58050"/><path d="M66 201.4 237 146.5 510 58.85" stroke="#408e87"/></g>
+</svg>

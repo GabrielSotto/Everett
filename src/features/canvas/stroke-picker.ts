@@ -1,5 +1,22 @@
 import { linkDirections, type LinkDirection } from '../../domain/link-stroke';
 
+import type { LabelPlacement } from '../../domain/cable-labels';
+
+export function labelPlacementPicker(current: LabelPlacement = 'center') {
+  const names = { start: 'Inicio', center: 'Centro', end: 'Final' } satisfies Record<
+    LabelPlacement,
+    string
+  >;
+  return `<label>Etiqueta<select data-label-placement aria-label="Ubicación de la etiqueta">${Object.entries(
+    names,
+  )
+    .map(
+      ([value, name]) =>
+        `<option value="${value}" ${value === current ? 'selected' : ''}>${name}</option>`,
+    )
+    .join('')}</select></label>`;
+}
+
 const directionLabels = {
   none: 'Sin flechas',
   forward: 'Flecha al destino',

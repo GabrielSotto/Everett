@@ -2,9 +2,10 @@ import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 import { start, capture, world, moveMaterial } from './canvas-utility-helpers';
 
-async function palette(page: Page) {
+async function palette(page: Page, compact = false) {
   const trigger = page.getByRole('button', { name: 'Incorporar materiales', exact: true });
-  if (await trigger.isVisible()) await trigger.click();
+  // Tras redimensionar, esperar el acceso del nuevo ancho; el dock anterior puede seguir visible un frame.
+  if (!compact) await trigger.click();
   else {
     await page.getByRole('button', { name: 'Más herramientas', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Incorporar materiales', exact: true }).click();
@@ -18,7 +19,7 @@ test('C08-B214: crear y editar cuatro formatos, comparar lo mismo y deshacer la 
 }, info) => {
   await start(page);
   await page.setViewportSize({ width: 375, height: 600 });
-  const narrow = await palette(page);
+  const narrow = await palette(page, true);
   const rect = (await narrow.boundingBox())!;
   expect(rect.x).toBeGreaterThanOrEqual(0);
   expect(rect.x + rect.width).toBeLessThanOrEqual(375);

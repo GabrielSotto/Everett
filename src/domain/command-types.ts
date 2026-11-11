@@ -101,7 +101,13 @@ export type Command =
     }
   | { type: 'graphic.callout'; world: string; image: string; detail: Point; text: string }
   | { type: 'link.thickness'; world: string; id: string; thickness: number }
-  | { type: 'link.label'; world: string; id: string; text: string }
+  | {
+      type: 'link.label';
+      world: string;
+      id: string;
+      text: string;
+      placement?: import('./cable-labels').LabelPlacement;
+    }
   | {
       type: 'link.reconnect';
       world: string;

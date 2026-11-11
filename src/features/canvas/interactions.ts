@@ -1420,11 +1420,13 @@ export class CanvasInteractions {
     const path = this.root.querySelector<SVGPathElement>(
         `[data-link="${CSS.escape(id)}"] .link-line`,
       ),
+      caption = path?.parentElement?.querySelector('.cable-label')?.getBoundingClientRect(),
       rect = path?.getBoundingClientRect();
     const midpoint = path?.getPointAtLength(path.getTotalLength() / 2),
       matrix = path?.getScreenCTM();
-    const point =
-      midpoint && matrix
+    const point = caption
+      ? { x: caption.x + caption.width / 2, y: caption.y + caption.height / 2 }
+      : midpoint && matrix
         ? new DOMPoint(midpoint.x, midpoint.y).matrixTransform(matrix)
         : rect
           ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }

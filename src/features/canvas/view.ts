@@ -57,7 +57,7 @@ import { proposalMarkup } from './proposals';
 import { sameConnection } from '../../domain/link-identity';
 import { materialsInRect } from '../../domain/material-selection';
 import { motion, reducedMotion } from '../../ui/motion';
-import { directionPicker, strokePicker } from './stroke-picker';
+import { directionPicker, labelPlacementPicker, strokePicker } from './stroke-picker';
 import { rgb } from './color';
 import {
   groupBounds,
@@ -67,7 +67,13 @@ import {
   componentSelection,
   isComponent,
 } from '../../domain/manual-groups';
-import { labelPosition, labeledPath, overlaps } from '../../domain/cable-labels';
+import {
+  validLabelPlacement,
+  labelDistance,
+  labelPosition,
+  labeledPath,
+  overlaps,
+} from '../../domain/cable-labels';
 import { alignRect, selectionBounds, type SnapMemory } from '../../domain/alignment';
 import { alignmentTargets } from '../../domain/alignment-targets';
 import { layoutFrames } from '../../domain/layout-guides';
@@ -2376,7 +2382,7 @@ export class CanvasView implements View {
         { from, to } = cable;
       path.setAttribute('d', cable.path);
       const length = path.getTotalLength(),
-        original = path.getPointAtLength(length / 2);
+        original = path.getPointAtLength(labelDistance(length, link.labelPlacement));
       // Reservar espacio de lectura a escala de panorama sin recolocar el cable
       // al girar la rueda. La medida tipográfica se normaliza a coordenadas del Mundo.
       const size = { width: (text.getComputedTextLength() * zoom + 12) / 0.4, height: 14 / 0.4 };
@@ -2973,9 +2979,23 @@ export class CanvasView implements View {
     if (cable && !this.shapesOpen && !holder.querySelector('.canvas-style')) {
       holder.insertAdjacentHTML(
         'beforeend',
-        `<div class="canvas-style" role="group" aria-label="Estilo de conexión">Grosor ${strokePicker(cable.thickness ?? 1.4, 'link-thickness', linkWeights)}${directionPicker(cable.direction)}</div>`,
+        `<div class="canvas-style" role="group" aria-label="Estilo de conexión">Grosor ${strokePicker(cable.thickness ?? 1.4, 'link-thickness', linkWeights)}${directionPicker(cable.direction)}${cable.label ? labelPlacementPicker(cable.labelPlacement) : ''}</div>`,
       );
     }
+    const placement = holder.querySelector<HTMLSelectElement>(
+      '.canvas-style [data-label-placement]',
+    );
+    if (placement && cable?.label)
+      placement.onchange = () => {
+        const next = placement.value;
+        if (!validLabelPlacement(next)) return;
+        ctx.act(
+          { type: 'link.label', world: w.id, id: cable.id, text: cable.label!, placement: next },
+          'ubicar etiqueta de conexión',
+          'C08-LINK-02',
+        );
+        holder.querySelector<HTMLElement>('.canvas-style select')?.focus({ preventScroll: true });
+      };
     const dock = holder.querySelector<HTMLElement>('.canvas-tools')!;
     const hiddenChat = this.chatHidden();
     const docked = ctx.ui.chat.chatMode === 'docked' && !ctx.ui.chat.chatCompact && !hiddenChat;

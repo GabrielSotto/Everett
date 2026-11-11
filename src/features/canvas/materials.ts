@@ -228,10 +228,12 @@ export function connectionMarkup(
   const marker =
     direction === 'none'
       ? ''
-      : `<marker id="${html(head)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9 2.5,5" fill="context-stroke"/></marker>`;
+      : `<marker id="${html(head)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9 2.5,5" fill="context-stroke" ${link.detail ? 'stroke="#253237" stroke-width="1.4" stroke-linejoin="round" paint-order="stroke"' : ''}/></marker>`;
+  const mask = link.label ? `mask="url(#mask-${link.id})"` : '';
+  const outline = link.detail ? `<path class="leader-outline" d="${path}" ${mask}/>` : '';
   const tips =
     (direction === 'backward' || direction === 'both' ? `marker-start="url(#${html(head)})"` : '') +
     ' ' +
     (direction === 'forward' || direction === 'both' ? `marker-end="url(#${html(head)})"` : '');
-  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}" style="--cable-weight:${link.thickness ?? 0}px">${marker}${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse" mask-type="luminance"><rect class="mask-base" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label ? 'Conexión: ' + link.label : 'Conexión sin etiqueta')}" aria-description="Doble clic o Enter para editar la etiqueta. Suprimir o Backspace para eliminar." aria-pressed="${selected}" data-action="select-link" data-id="${link.id}" d="${path}"/><path class="link-line" ${tips} d="${path}" ${link.label ? `mask="url(#mask-${link.id})"` : ''}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}${ends}</g>`;
+  return `<g data-link="${link.id}" class="connection ${selected ? 'selected' : ''}" style="--cable-weight:${link.thickness ?? 0}px">${marker}${link.label ? `<mask id="mask-${link.id}" maskUnits="userSpaceOnUse" mask-type="luminance"><rect class="mask-base" fill="white"/><rect class="label-cut" fill="black"/></mask>` : ''}<path class="link-hit" tabindex="0" role="button" aria-label="${html(link.label ? 'Conexión: ' + link.label : 'Conexión sin etiqueta')}" aria-description="Doble clic o Enter para editar la etiqueta. Suprimir o Backspace para eliminar." aria-pressed="${selected}" data-action="select-link" data-id="${link.id}" d="${path}"/>${outline}<path class="link-line" ${tips} d="${path}" ${mask}/>${link.label ? `<text class="cable-label" text-anchor="middle" dominant-baseline="middle" data-action="select-link" data-id="${link.id}">${html(link.label)}</text>` : ''}${ends}</g>`;
 }

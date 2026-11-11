@@ -18,6 +18,7 @@ import { connectVisualFlow } from '../visual-flow';
 import { validDetail } from '../cable-geometry';
 import { createImageCallout } from '../image-callout';
 import { insertGraphic } from '../visual-graphics';
+import { validLabelPlacement } from '../cable-labels';
 import { validLinkDirection, validLinkWeight } from '../link-stroke';
 import { validCanvasText } from '../canvas-text';
 import { compositionKinds, wireframeComposition } from '../wireframe-compositions';
@@ -491,12 +492,24 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       else link.thickness = command.thickness;
       break;
     }
-    case 'link.label':
-      need(
+    case 'link.label': {
+      const link = need(
         world.links.find((l) => l.id === command.id),
         'Conexión inexistente',
-      ).label = command.text;
+      );
+      if (command.placement !== undefined) {
+        ensure(
+          validLabelPlacement(command.placement),
+          'LINK_LABEL_PLACEMENT',
+          'Ubicación de etiqueta inválida',
+        );
+        if (command.placement === 'center') delete link.labelPlacement;
+        else link.labelPlacement = command.placement;
+      }
+      link.label = command.text;
+      if (!link.label) delete link.labelPlacement;
       break;
+    }
     case 'zone.instruction':
       need(
         world.zones.find((z) => z.id === command.id),

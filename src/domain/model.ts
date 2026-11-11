@@ -187,6 +187,7 @@ export interface Link {
   detail?: Point;
   thickness?: number;
   label?: string;
+  labelPlacement?: import('./cable-labels').LabelPlacement;
 }
 export interface Zone extends Rect {
   id: string;
