@@ -194,7 +194,47 @@ test('C08-B210: dos diseños anotados se pueden leer, editar y recuperar por sep
     // Cada tamaño abre una composición sin guardado previo; cambiar la ventana conserva las ediciones.
     await page.goto('/design/composicion-visual/?escena=etiquetas');
     const text = page.locator('[data-node=propuesta-frio] .canvas-text-run');
-    await expect(text).toHaveText('4 °C');
+    await expect(text).toHaveText('Conservar a 4 °C');
+    for (const part of ['producto', 'frio', 'peso', 'fruta']) {
+      const styles = await page.evaluate(
+        (part) =>
+          ['actual', 'propuesta'].map((id) => {
+            const node = document.querySelector<HTMLElement>(`[data-node=${id}-${part}]`)!;
+            const paper = document.querySelector<HTMLElement>(`[data-node=${id}-papel]`)!;
+            const el = node.querySelector('.canvas-text-run, img')!;
+            const style = getComputedStyle(el);
+            const a = node.getBoundingClientRect(),
+              b = paper.getBoundingClientRect();
+            return {
+              x: a.x - b.x,
+              y: a.y - b.y,
+              width: a.width,
+              height: a.height,
+              text: el.textContent,
+              asset: el.getAttribute('data-asset'),
+              color: style.color,
+              font: style.fontFamily,
+              size: style.fontSize,
+              weight: style.fontWeight,
+            };
+          }),
+        part,
+      );
+      const [a, b] = styles;
+      expect(a!.x).toBeCloseTo(b!.x, 1);
+      expect(a!.y).toBeCloseTo(b!.y, 1);
+      expect(a!.width).toBeCloseTo(b!.width, 1);
+      expect(a!.height).toBeCloseTo(b!.height, 1);
+      expect([a!.text, a!.asset, a!.font, a!.size, a!.color]).toEqual([
+        b!.text,
+        b!.asset,
+        b!.font,
+        b!.size,
+        b!.color,
+      ]);
+      if (part === 'frio') expect([a!.weight, b!.weight]).toEqual(['400', '700']);
+      else expect(a!.weight).toEqual(b!.weight);
+    }
     const left = (await page.locator('[data-node=actual-papel]').boundingBox())!,
       right = (await page.locator('[data-node=propuesta-papel]').boundingBox())!;
     if (width === 390) expect(right.y).toBeGreaterThan(left.y + left.height);
@@ -237,7 +277,7 @@ test('C08-B210: dos diseños anotados se pueden leer, editar y recuperar por sep
       await page.evaluate(
         () =>
           new Promise<void>((resolve, reject) => {
-            const req = indexedDB.deleteDatabase('everett-review-etiquetas');
+            const req = indexedDB.deleteDatabase('everett-review-etiquetas-peso');
             req.onsuccess = () => resolve();
             req.onerror = () => reject(req.error);
             req.onblocked = () => reject(Error('Base de comparación ocupada'));

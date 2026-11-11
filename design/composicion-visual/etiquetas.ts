@@ -9,7 +9,7 @@ export function compareLabels(stacked: boolean) {
   const nodes: Material[] = [
     label(
       'titulo',
-      'El frío, de un vistazo',
+      'Un dato, dos pesos',
       x,
       heading,
       stacked ? 400 : 850,
@@ -20,7 +20,7 @@ export function compareLabels(stacked: boolean) {
     ),
     label(
       'bajada',
-      'Dos etiquetas para la misma caja de frutillas.',
+      'Compará la indicación de frío en ambas etiquetas.',
       x + 1,
       heading + (stacked ? 50 : 74),
       stacked ? 400 : 850,
@@ -30,11 +30,11 @@ export function compareLabels(stacked: boolean) {
   ];
   function pack(id: string, left: number, top: number, proposed: boolean) {
     const dark = '#283438',
-      accent = proposed ? '#acd7c1' : '#f3b978';
+      accent = '#c8d9df';
     nodes.push(
       label(
         id + '-variante',
-        proposed ? 'Propuesta' : 'Etiqueta actual',
+        proposed ? 'B · Negrita' : 'A · Regular',
         left,
         top - 42,
         385,
@@ -54,57 +54,39 @@ export function compareLabels(stacked: boolean) {
           shape: 'rectangle',
           title: 'Papel de la etiqueta',
           fill: true,
-          color: proposed ? '#ddebdc' : '#f1dec8',
-          stroke: proposed ? '#ddebdc' : '#f1dec8',
+          color: '#f1dec8',
+          stroke: '#f1dec8',
           thickness: 1,
         },
       },
       image(id + '-fruta', 'Frutilla', left + 270, top + 30, 103, 'frutilla'),
-      label(
-        id + '-producto',
-        'Frutillas',
-        left + 24,
-        top + 16,
-        238,
-        proposed ? 23 : 42,
-        dark,
-        600,
-        true,
-      ),
+      label(id + '-producto', 'Frutillas', left + 24, top + 16, 238, 36, dark, 600, true),
       label(
         id + '-frio',
-        proposed ? '4 °C' : 'Conservar a 4 °C',
+        'Conservar a 4 °C',
         left + 24,
-        top + (proposed ? 49 : 104),
+        top + 69,
         240,
-        proposed ? 51 : 17,
+        23,
         dark,
-        proposed ? 750 : 400,
+        proposed ? 700 : 400,
       ),
-      label(
-        id + '-peso',
-        proposed ? 'Peso neto · 250 g' : '250 g',
-        left + 24,
-        top + (proposed ? 121 : 78),
-        245,
-        17,
-        dark,
-      ),
+      label(id + '-peso', 'Peso neto · 250 g', left + 24, top + 113, 245, 17, dark),
     );
-    const target = { x: left + (proposed ? 171 : 176), y: top + (proposed ? 93 : 116) };
+    const target = { x: left + 220, y: top + 83 };
     const callout = createArrow(
       id + '-flecha',
       { x: left + 219, y: top + 192 },
       target,
       true,
-      proposed ? '#4c8768' : '#a67341',
+      '#84989f',
       3,
     );
     nodes.push(
       editArrow(callout, 'bend', { x: left + 209, y: top + 144 }),
       label(
         id + '-observacion',
-        proposed ? 'La temperatura se lee primero.' : 'El frío queda entre los datos secundarios.',
+        proposed ? 'Temperatura en negrita · 700' : 'Temperatura en regular · 400',
         left,
         top + 202,
         394,

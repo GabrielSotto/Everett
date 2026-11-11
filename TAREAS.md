@@ -23,7 +23,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ### Composición manual: ilustraciones, texto, cables y flechas
 
-La biblioteca de **Ilustraciones** abre desde Materiales o con **I** (configurable); los dibujos se pueden buscar, arrastrar, recolorear y reemplazar. Bosquejos incluye 152 símbolos del mismo trazo. Los ejemplos [Viaje](design/composicion-visual/index.html?escena=viaje) y [Comparación de etiquetas](design/composicion-visual/index.html?escena=etiquetas) tienen guardados separados; no sustituyen el Canvas de trabajo. La revisión visual del usuario sigue abierta.
+La biblioteca de **Ilustraciones** abre desde Materiales o con **I** (configurable); las 319 ilustraciones se pueden filtrar por 14 categorías, buscar, arrastrar, recolorear y reemplazar. Bosquejos incluye 152 símbolos del mismo trazo. Los ejemplos [Viaje](design/composicion-visual/index.html?escena=viaje) y [Comparación de etiquetas](design/composicion-visual/index.html?escena=etiquetas) tienen guardados separados; la comparación aísla el peso de la indicación de frío. La [versión anterior](design/composicion-visual/index.html?escena=etiquetas&revision=anterior) conserva su guardado. No sustituyen el Canvas de trabajo. La revisión visual del usuario sigue abierta.
 
 El menú de un texto suelto ofrece **Editar texto**. También se puede retomar con la herramienta
 Texto, doble clic o Enter. El campo de renombre queda acotado al nombre y no cambia el contenido.

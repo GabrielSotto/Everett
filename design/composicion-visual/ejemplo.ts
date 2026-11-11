@@ -13,7 +13,8 @@ import {
 
 // Escena de revisión compuesta con materiales ordinarios. Esta página de Vite
 // no abre la base de trabajo ni agrega un modo de presentación a Everett.
-const sceneName = new URLSearchParams(location.search).get('escena');
+const params = new URLSearchParams(location.search);
+const sceneName = params.get('escena');
 const comparison = sceneName === 'etiquetas';
 async function compose(storage: LocalStorage) {
   const state = seed(true, 42),
@@ -53,14 +54,25 @@ async function openExample(root: HTMLElement) {
   try {
     if (comparison) document.title = 'Dos etiquetas · Everett';
     await prepareComponentLayout();
+    const previousComparison = comparison && params.get('revision') === 'anterior';
     const storage = await LocalStorage.open(
       comparison
-        ? 'everett-review-etiquetas'
+        ? previousComparison
+          ? 'everett-review-etiquetas'
+          : 'everett-review-etiquetas-peso'
         : sceneName === 'viaje'
           ? 'everett-review-viaje'
           : 'everett-review-composicion',
     );
-    new EverettApp(root, storage, (await storage.load()) ?? (await compose(storage)));
+    const saved = await storage.load();
+    if (!saved && previousComparison) {
+      const link = document.createElement('a');
+      link.href = '?escena=etiquetas';
+      link.textContent = 'Abrir la comparación actual';
+      root.replaceChildren('No hay una comparación anterior guardada en este navegador. ', link);
+      return;
+    }
+    new EverettApp(root, storage, saved ?? (await compose(storage)));
   } catch (error) {
     root.textContent = error instanceof Error ? error.message : 'No se pudo abrir el ejemplo.';
   } finally {
