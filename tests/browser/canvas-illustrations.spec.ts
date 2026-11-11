@@ -29,9 +29,32 @@ test('C08-B211: buscar por atajo, cambiar una tinta, deshacer y recuperar la pal
   const compact = await picker.boundingBox();
   expect(compact!.width).toBeLessThan(300);
   expect(compact!.y + compact!.height).toBeLessThanOrEqual(640);
-  await page.setViewportSize(originalView);
+  const category = picker.getByRole('combobox', { name: 'Filtrar por categoría' });
+  const close = picker.getByRole('button', { name: 'Cerrar' });
+  const [s, f, c] = await Promise.all([
+    search.boundingBox(),
+    category.boundingBox(),
+    close.boundingBox(),
+  ]);
+  expect([s!.width, s!.height]).toEqual([c!.width, c!.height]);
+  expect(f!.x).toBeGreaterThanOrEqual(s!.x + s!.width);
+  expect(c!.x).toBeGreaterThanOrEqual(f!.x + f!.width);
+  await category.selectOption('Salud y ciencia');
+  await expect(picker.getByRole('button', { name: 'Termómetro', exact: true })).toBeVisible();
+  await expect(picker.getByRole('button', { name: 'Camión', exact: true })).toBeHidden();
   await search.click();
   const input = picker.getByRole('searchbox');
+  await input.fill('reparto');
+  await expect(picker.getByRole('status')).toHaveText('Sin coincidencias.');
+  await input.fill('frio');
+  await expect(picker.locator('[data-illustration]:visible')).toHaveCount(1);
+  expect(await input.evaluate((el) => getComputedStyle(el).boxShadow)).toBe('none');
+  await input.press('Escape');
+  await expect(category).toHaveValue('Salud y ciencia');
+  await capture(page, info, 'ilustraciones-por-categoria');
+  await category.selectOption('');
+  await page.setViewportSize(originalView);
+  await search.click();
   await input.fill('fresa');
   await expect(picker.locator('[data-illustration]:visible')).toHaveCount(1);
   await input.press('Escape');

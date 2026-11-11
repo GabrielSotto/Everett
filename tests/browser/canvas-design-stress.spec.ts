@@ -171,7 +171,7 @@ test('C08-B106: panorámica y retrato extremos conservan proporción, ajuste y c
     await expect(page.locator('.image-inspector img')).toBeVisible();
     await expect(page.locator('.transition-ghost')).toHaveCount(0);
     await page.setViewportSize({ width: 320, height: 760 });
-    await page.getByRole('button', { name: 'Ajustar', exact: true }).click();
+    await page.getByRole('button', { name: 'Ajustar a la vista', exact: true }).click();
     const image = page.locator('.image-inspector img');
     await expect
       .poll(async () => {
@@ -261,7 +261,8 @@ test('C08-B107: controles de Canvas responden al teclado sin animar y el desbord
   expect(await menu.evaluate((e) => e.getAnimations().length)).toBe(0);
   expect(await menu.evaluate((e) => getComputedStyle(e).opacity)).toBe('1');
   await page.mouse.up();
-  await page.keyboard.press('Escape');
+  // Elegir la herramienta ya cerró el desborde. Otro Escape navega al Mundo.
+  await expect(menu).toHaveCount(0);
   await page.setViewportSize({ width: 1440, height: 900 });
   const hand = page.getByRole('button', { name: 'Panear · H', exact: true });
   await hand.hover();

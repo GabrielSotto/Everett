@@ -109,12 +109,12 @@ test('C08-B101: imagen con controles reales de zoom, paneo, rotación y salida A
   await expect.poll(async () => (await image.boundingBox())!.x).not.toBeCloseTo(before.x, 0);
   await page.getByRole('button', { name: 'Rotar imagen', exact: true }).click();
   await expect(image).toHaveAttribute('style', /rotate\(90deg\)/);
-  await page.getByRole('button', { name: 'Ajustar', exact: true }).click();
+  await page.getByRole('button', { name: 'Ajustar a la vista', exact: true }).click();
   await page.getByRole('button', { name: '100 %', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Zoom de imagen', exact: true })).toHaveText(
     '100 %',
   );
-  await page.getByRole('button', { name: 'Ajustar', exact: true }).click();
+  await page.getByRole('button', { name: 'Ajustar a la vista', exact: true }).click();
   await capture(page, info, 'imagen-inspeccionable');
   expect((await world(page)).nodes[0]!.data).toEqual(data);
   await page.locator('.image-stage').hover();

@@ -46,37 +46,67 @@ export function illustrationPicker(
   panel.className = 'canvas-context-form illustration-picker';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-label', title);
-  panel.innerHTML = `<header><strong>${title}</strong><button type="button" class="icon-button" data-action="context-close" aria-label="Cerrar">${icon('close', 14)}</button></header>
+  panel.innerHTML = `<header><strong>${title}</strong><button type="button" class="icon-button" data-action="context-close" aria-label="Cerrar" title="Cerrar">${icon('close', 22)}</button></header>
     <div class="illustration-grid" aria-label="Dibujos disponibles"></div>
     ${replacement ? '<button type="button" data-choose-file>Elegir un archivo…</button><input type="file" accept="image/*" hidden>' : ''}
     <p role="status"></p>`;
   const grid = panel.querySelector<HTMLElement>('.illustration-grid')!;
   const status = panel.querySelector<HTMLElement>('[role=status]')!;
   const first = () => grid.querySelector<HTMLElement>('button:not([hidden])');
+  const header = panel.querySelector('header')!;
+  const categoryControl = document.createElement('label');
+  categoryControl.className = 'illustration-category';
+  categoryControl.innerHTML = icon('filter', 18);
+  const category = document.createElement('select');
+  category.ariaLabel = 'Filtrar por categoría';
+  categoryControl.title = category.ariaLabel;
+  categoryControl.append(category);
   let query = '';
   const filter = (s: string) => {
     query = searchKey(s);
+    const words = query.split(/\s+/);
+    let matches = 0;
     for (const tile of grid.querySelectorAll<HTMLElement>('button')) {
-      tile.hidden = !query.split(/\s+/).every((word) => tile.dataset.terms!.includes(word));
+      tile.hidden =
+        (!!category.value && tile.dataset.category !== category.value) ||
+        !words.every((word) => tile.dataset.terms!.includes(word));
+      if (!tile.hidden) matches++;
       tile.tabIndex = -1;
     }
     const available = first();
     if (available) available.tabIndex = 0;
     grid.scrollTop = 0;
-    if (grid.childElementCount) status.textContent = first() ? '' : 'Sin coincidencias.';
+    if (grid.childElementCount)
+      status.textContent = !matches
+        ? 'Sin coincidencias.'
+        : category.value
+          ? category.value + ' · ' + matches
+          : '';
     fit();
   };
-  const search = pickerSearch(panel.querySelector('header')!, 'Buscar ilustración', filter, first);
+  const search = pickerSearch(header, 'Buscar ilustración', filter, first);
+  header.insertBefore(categoryControl, header.lastElementChild);
+  category.onchange = () => {
+    categoryControl.classList.toggle('active', !!category.value);
+    categoryControl.title = category.value || 'Filtrar por categoría';
+    filter(query);
+  };
   panel.tabIndex = -1;
   async function populate() {
     status.textContent = 'Cargando ilustraciones…';
     try {
       const items = await loadIllustrations();
       if (!panel.isConnected) return;
+      category.replaceChildren(new Option('Todas las categorías', ''));
+      for (const name of [...new Set(items.map((item) => item.category))].sort((a, b) =>
+        a.localeCompare(b, 'es'),
+      )) {
+        category.add(new Option(name, name));
+      }
       grid.innerHTML = items
         .map(
           (item) =>
-            `<button type="button" data-illustration="${item.id}" data-terms="${html(searchKey(item.id.replaceAll('-', ' ') + ' ' + item.name + ' ' + item.keywords))}" draggable="${!replacement}" title="${html(item.name)}"><img loading="lazy" draggable="false" src="${html(illustrationPreview(item))}" alt=""><span>${html(item.name)}</span></button>`,
+            `<button type="button" data-illustration="${item.id}" data-category="${html(item.category)}" data-terms="${html(searchKey([item.id.replaceAll('-', ' '), item.name, item.category, item.keywords].join(' ')))}" draggable="${!replacement}" title="${html(item.name)}"><img loading="lazy" draggable="false" src="${html(illustrationPreview(item))}" alt=""><span>${html(item.name)}</span></button>`,
         )
         .join('');
       filter(query);

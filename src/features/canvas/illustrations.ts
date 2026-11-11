@@ -1,6 +1,7 @@
 interface Drawing {
   id: string;
   name: string;
+  category: string;
   keywords: string;
   body: string;
 }
@@ -32,9 +33,15 @@ export const isLibraryAsset = (asset: string) => asset.startsWith(prefix);
 const normalizeColor = (hex: string) =>
   hex.length === 4 ? '#' + [...hex.slice(1)].map((c) => c + c).join('') : hex;
 const paint = /((?:fill|stroke|stop-color)=")(#[\da-f]{6}|#[\da-f]{3})"/gi;
+// Las tintas que definen una silueta no se ven: cambiar una máscara puede recortar el dibujo.
+const geometry = /(<(?:clipPath|mask)\b[^>]*>[\s\S]*?<\/(?:clipPath|mask)>)/gi;
 export function drawingColors(item: Illustration) {
   return [
-    ...new Set([...item.body.matchAll(paint)].map((m) => normalizeColor(m[2]!.toLowerCase()))),
+    ...new Set(
+      [...item.body.replace(geometry, '').matchAll(paint)].map((m) =>
+        normalizeColor(m[2]!.toLowerCase()),
+      ),
+    ),
   ];
 }
 export async function illustrationFromAsset(asset: string): Promise<Illustration | undefined> {
@@ -52,10 +59,17 @@ export async function illustrationFromAsset(asset: string): Promise<Illustration
 }
 function svg(item: Illustration) {
   const body = item.colors?.size
-    ? item.body.replace(paint, (all: string, prop: string, col: string) => {
-        const next = item.colors?.get(normalizeColor(col.toLowerCase()));
-        return next && /^#[\da-f]{6}$/i.test(next) ? prop + next + '"' : all;
-      })
+    ? item.body
+        .split(geometry)
+        .map((part, i) =>
+          i % 2
+            ? part
+            : part.replace(paint, (all: string, prop: string, col: string) => {
+                const next = item.colors?.get(normalizeColor(col.toLowerCase()));
+                return next && /^#[\da-f]{6}$/i.test(next) ? prop + next + '"' : all;
+              }),
+        )
+        .join('')
     : item.body;
   return (
     '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32">' +
