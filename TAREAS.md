@@ -23,7 +23,11 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ### Composición manual: ilustraciones, texto, cables y flechas
 
-La paleta móvil de **Ilustraciones** abre desde Materiales o con **I** (configurable); las 319 ilustraciones se pueden filtrar por 14 categorías, buscar, arrastrar, recolorear y reemplazar. Bosquejos incluye 152 símbolos del mismo trazo. Los ejemplos [Viaje](design/composicion-visual/index.html?escena=viaje) y [Comparación de etiquetas](design/composicion-visual/index.html?escena=etiquetas) tienen guardados separados; la comparación aísla el peso de la indicación de frío. La [versión anterior](design/composicion-visual/index.html?escena=etiquetas&revision=anterior) conserva su guardado. No sustituyen el Canvas de trabajo. La revisión visual del usuario sigue abierta.
+La paleta móvil de **Ilustraciones** abre desde Materiales o con **I** (configurable); las 319 ilustraciones se pueden filtrar por 14 categorías, buscar, arrastrar, recolorear y reemplazar. Bosquejos incluye 152 símbolos del mismo trazo. Los ejemplos [Viaje](design/composicion-visual/index.html?escena=viaje) y [Comparación de etiquetas](design/composicion-visual/index.html?escena=etiquetas) tienen guardados separados; la comparación aísla el peso de la indicación de frío. La [versión anterior](design/composicion-visual/index.html?escena=etiquetas&revision=anterior) conserva su guardado. El usuario revisó la paleta y las dos etiquetas y aprobó pasar a la expansión de las explicaciones visuales.
+
+En el Canvas de trabajo, **Incorporar materiales → Gráfico explicativo…** permite empezar con una secuencia, un ciclo, una comparación o una imagen anotada, y conectar materiales propios sin recolocarlos. **Señalar un detalle…** sobre una imagen añade una llamada que sigue su punto durante las transformaciones. Pendiente de revisión del usuario; 0.8 sigue abierta.
+
+Verificación de desarrollo del 11 de noviembre: 150 pruebas unitarias y del arnés; 18 recorridos dirigidos en Vite, incluidos los ejemplos anteriores. La última ejecución de C08-B214–216 conserva las capturas de los cuatro formatos y de la paleta a 375 px, y comprueba también que cerrar un ciclo con piezas propias conserva el cable ya rotulado y se puede deshacer.
 
 El menú de un texto suelto ofrece **Editar texto**. También se puede retomar con la herramienta
 Texto, doble clic o Enter. El campo de renombre queda acotado al nombre y no cambia el contenido.

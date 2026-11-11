@@ -6,10 +6,15 @@ import { canvasCameraTuning } from '../spatial/tuning';
 export function frameCanvas(
   ctx: Context,
   selection: boolean,
-  options: { maximumZoom?: number; rightInset?: number; bottomInset?: number } = {},
+  options: {
+    maximumZoom?: number;
+    rightInset?: number;
+    bottomInset?: number;
+    nodes?: readonly string[];
+  } = {},
 ): void {
   const world = ctx.world(),
-    ids = ctx.ui.canvas.selections;
+    ids = options.nodes ?? ctx.ui.canvas.selections;
   const items = [
     ...world.nodes.filter((n) => !n.owner && (!selection || ids.includes(n.id))).map(visualBounds),
     ...(!selection ? world.zones : []),

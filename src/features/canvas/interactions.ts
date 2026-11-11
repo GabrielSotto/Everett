@@ -17,6 +17,8 @@ import {
   isLibraryAsset,
   type Illustration,
 } from './illustrations';
+import { imageDetailAt } from '../../domain/cable-geometry';
+import { graphicPicker } from './graphic-picker';
 import { bindIllustrationDrop, illustrationPicker } from './illustration-picker';
 import { toWorld } from '../../spatial/math';
 import { pdfPreview } from '../../platform/pdf-preview';
@@ -307,7 +309,7 @@ export class CanvasInteractions {
           return;
         }
         event.preventDefault();
-        this.menu(material.dataset.node, { x: event.clientX, y: event.clientY });
+        this.menu(material.dataset.node, { x: event.clientX, y: event.clientY }, true);
       },
       { signal },
     );
@@ -686,6 +688,64 @@ export class CanvasInteractions {
           case 'canvas-examples':
             if (!this.loadingSamples) void this.examples();
             break;
+          case 'image-callout': {
+            const menu = button.closest('.canvas-context-menu')!.getBoundingClientRect();
+            const detail = { x: Number(button.dataset.u), y: Number(button.dataset.v) };
+            const form = document.createElement('form');
+            form.className = 'canvas-context-form compact-edit';
+            form.setAttribute('aria-label', 'Señalar un detalle');
+            form.style.cssText = this.position(menu);
+            form.innerHTML =
+              '<label for="image-callout-text">Rótulo del detalle</label><input id="image-callout-text" name="caption" placeholder="Escribí el rótulo…" required maxlength="120" autocomplete="off"><button type="submit">Agregar rótulo</button>';
+            this.overlay.replaceChildren(form);
+            const input = form.querySelector('input')!;
+            form.onsubmit = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!input.value.trim()) {
+                input.setCustomValidity('Escribí el rótulo del detalle.');
+                input.reportValidity();
+                return;
+              }
+              if (
+                ctx.act(
+                  {
+                    type: 'graphic.callout',
+                    world: ctx.world().id,
+                    image: id,
+                    detail,
+                    text: input.value,
+                  },
+                  'señalar detalle de imagen',
+                  'C08-VIS-01',
+                )
+              ) {
+                this.close();
+              }
+            };
+            input.oninput = () => input.setCustomValidity('');
+            this.fitOverlay();
+            input.focus();
+            break;
+          }
+          case 'canvas-graphic': {
+            const anchor = button.closest('.reference-menu') ?? button;
+            const box = anchor.getBoundingClientRect();
+            const panel = graphicPicker(
+              ctx,
+              this.center,
+              (p) => {
+                panel.style.cssText = this.position(p);
+                this.fitOverlay();
+              },
+              () => this.close(),
+            );
+            panel.style.cssText = this.position({ x: box.left, y: box.top });
+            this.overlay.replaceChildren(panel);
+            this.fitOverlay();
+            panel.querySelector<HTMLElement>('[data-graphic]')?.focus({ preventScroll: true });
+            break;
+          }
           case 'canvas-illustrations':
           case 'material-image-colors':
           case 'material-replace-image': {
@@ -893,7 +953,10 @@ export class CanvasInteractions {
           }
         } else if (form.dataset.reconnect) {
           const node = form.querySelector<HTMLSelectElement>('[name=node]')!.value;
-          const anchor = form.querySelector<HTMLSelectElement>('[name=anchor]')!.value as Anchor;
+          const choice = form.querySelector<HTMLSelectElement>('[name=anchor]')!.value;
+          const original = ctx.world().links.find((l) => l.id === form.dataset.reconnect);
+          const keep = choice === 'detail' && original?.detail && node === original.to;
+          const anchor = keep ? original.toAnchor : (choice as Anchor);
           if (
             ctx.act(
               {
@@ -901,6 +964,7 @@ export class CanvasInteractions {
                 world: ctx.world().id,
                 id: form.dataset.reconnect,
                 end: form.dataset.end as 'from' | 'to',
+                ...(keep ? { detail: original!.detail! } : {}),
                 node,
                 anchor,
               },
@@ -1209,7 +1273,7 @@ export class CanvasInteractions {
     this.fitOverlay();
     this.overlay.querySelector<HTMLInputElement>('input')?.select();
   }
-  private menu(id: string, point: Point): void {
+  private menu(id: string, point: Point, pointed = false): void {
     const node = this.ctx.world().nodes.find((n) => n.id === id && !n.owner);
     if (!node) return;
     this.menuMaterial = id;
@@ -1240,13 +1304,29 @@ export class CanvasInteractions {
       this.overlay.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
       return;
     }
+    const detail =
+      node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1
+        ? pointed
+          ? imageDetailAt(
+              node,
+              toWorld(
+                point,
+                this.ctx.currentCamera(),
+                this.root.querySelector('.canvas-stage')!.getBoundingClientRect(),
+              ),
+            )
+          : { x: 0.5, y: 0.5 }
+        : null;
+    const callout = detail
+      ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="image-callout" data-u="${detail.x}" data-v="${detail.y}">Señalar un detalle…</button>`
+      : '';
     const editAction =
       node.data.kind === 'text' && !component && this.ctx.ui.canvas.selections.length === 1
         ? '<button type="button" role="menuitem" data-action="material-edit-text" data-id="' +
           id +
           '">Editar texto <kbd aria-hidden="true">Enter</kbd></button>'
         : '';
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}">${editAction}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 && isLibraryAsset(node.data.asset) ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-image-colors">Editar colores…</button>` : ''}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-replace-image">Reemplazar imagen…</button>` : ''}<button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'wireframe' ? `<button type="button" role="menuitem" data-action="wireframe-edit" data-id="${id}">Editar contenido</button>` : ''}${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-rotate">Girar…</button><button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}">${editAction}${callout}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 && isLibraryAsset(node.data.asset) ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-image-colors">Editar colores…</button>` : ''}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-replace-image">Reemplazar imagen…</button>` : ''}<button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'wireframe' ? `<button type="button" role="menuitem" data-action="wireframe-edit" data-id="${id}">Editar contenido</button>` : ''}${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-rotate">Girar…</button><button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
@@ -1320,6 +1400,17 @@ export class CanvasInteractions {
       .join(
         '',
       )}</select></label><label>Anclaje<select name="anchor" aria-label="Anclaje ${end === 'from' ? 'de origen' : 'de destino'}">${(['north', 'east', 'south', 'west'] as const).map((value) => `<option value="${value}" ${anchor === value ? 'selected' : ''}>${{ north: 'Arriba', east: 'Derecha', south: 'Abajo', west: 'Izquierda' }[value]}</option>`).join('')}</select></label><div><button type="button" data-action="context-close">Cancelar</button><button type="submit">Guardar</button></div></form>`;
+    if (end === 'to' && link.detail) {
+      const node = this.overlay.querySelector<HTMLSelectElement>('[name=node]')!,
+        select = this.overlay.querySelector<HTMLSelectElement>('[name=anchor]')!;
+      const option = new Option('Punto señalado', 'detail', true, true);
+      select.prepend(option);
+      select.value = 'detail';
+      node.onchange = () => {
+        option.disabled = node.value !== current;
+        if (option.disabled && select.value === 'detail') select.value = anchor;
+      };
+    }
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('select')?.focus({ preventScroll: true });
   }
@@ -1930,7 +2021,7 @@ export class CanvasInteractions {
   }
   close(): boolean {
     const insertingIllustration = this.overlay.querySelector(
-      '.illustration-picker[data-replace=""]',
+      '.illustration-picker[data-replace=""],.graphic-picker',
     );
     this.closeWireframeEditor?.();
     this.closeWireframeEditor = null;

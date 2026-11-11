@@ -243,6 +243,7 @@
   box-shadow: 0 0 0 3px #819fc92a;
 }
 
+.canvas-leaders,
 .canvas-links {
   position: absolute;
   top: 0;
@@ -274,6 +275,9 @@
   vector-effect: non-scaling-stroke;
 }
 
+.canvas-leaders .connection:not(.selected) .link-line {
+  stroke: #ffd18b;
+}
 .connection.selected .link-line {
   stroke: #c5b3e7;
   stroke-width: max(

@@ -156,6 +156,105 @@
 .chat-draft-area {
   flex-shrink: 0;
 }
+.canvas-context-form.graphic-picker {
+  width: min(280px, calc(100vw - 24px));
+  max-height: min(288px, 52dvh);
+  padding: 6px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  gap: 4px;
+}
+.graphic-picker header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.graphic-picker header .graphic-grip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: grab;
+  touch-action: none;
+  background: none;
+  padding: 4px;
+  font-size: 13px;
+}
+.graphic-picker header button {
+  height: 32px;
+}
+.graphic-picker .graphic-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
+}
+.graphic-picker [data-graphic] {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 5px 6px 7px;
+  text-align: left;
+  background: transparent;
+  line-height: 1.3;
+}
+.graphic-picker [data-graphic]:is(:hover, :focus-visible) {
+  background: var(--raised-hover, var(--panel));
+}
+.graphic-picker [data-graphic] .graphic-thumb {
+  display: grid;
+  place-items: center;
+  height: 42px;
+  border-radius: 4px;
+  background: var(--surface);
+  margin-bottom: 2px;
+}
+.graphic-thumb svg {
+  width: 95%;
+  height: 37px;
+}
+.graphic-picker [data-graphic] strong {
+  font-size: 12px;
+}
+.graphic-picker [data-graphic] small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.graphic-flows {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 0;
+  padding: 4px 2px;
+  display: flex;
+  gap: 4px;
+}
+.graphic-flows legend {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 5px;
+}
+.graphic-flows button {
+  flex: 1;
+  min-height: 28px;
+}
+.graphic-picker [role='status'] {
+  font-size: 12px;
+  margin: 0 4px;
+}
+.graphic-picker [role='status']:empty {
+  display: none;
+}
+.canvas-style:has(.cable-directions) {
+  max-width: calc(100vw - 24px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.cable-directions {
+  border-inline-start: 1px solid var(--line);
+  padding-inline-start: 4px;
+}
 .canvas-context-form.illustration-picker {
   width: min(244px, calc(100vw - 24px));
   height: min(228px, 48dvh, calc(100dvh - 86px));

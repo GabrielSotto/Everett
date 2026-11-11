@@ -1,3 +1,4 @@
+import { validDetail } from './cable-geometry';
 import { validRotation } from './rotation';
 import { getWorld, need, type State } from './model';
 import { humanParticipants } from './conversations';
@@ -9,7 +10,7 @@ import { validNoteFont, validFontWeight, validNoteTypography } from './note-font
 import { validLayoutGuides } from './layout-guides';
 import { validComponentTree, elementAt } from './component-tree';
 import { validLibraryComposition } from './sketch-library';
-import { validLinkWeight } from './link-stroke';
+import { validLinkDirection, validLinkWeight } from './link-stroke';
 import { validArrowPoints } from './free-arrow';
 
 export class DomainError extends Error {
@@ -434,6 +435,11 @@ export function validate(s: State): void {
     }
     for (const l of w.links) {
       ensure(
+        l.direction === undefined || validLinkDirection(l.direction),
+        'LINK_DIRECTION',
+        'Sentido de conexión inválido',
+      );
+      ensure(
         l.thickness === undefined || validLinkWeight(l.thickness),
         'LINK_STYLE',
         'Grosor de conexión inválido',
@@ -446,6 +452,11 @@ export function validate(s: State): void {
       );
       const a = w.nodes.find((n) => n.id === l.from),
         b = w.nodes.find((n) => n.id === l.to);
+      ensure(
+        l.detail === undefined || (validDetail(l.detail) && b?.data.kind === 'image'),
+        'LINK_DETAIL',
+        'La llamada necesita un punto válido de una imagen.',
+      );
       ensure(
         !!a && !!b && !a.owner && !b.owner && a.id !== b.id,
         'LINK',

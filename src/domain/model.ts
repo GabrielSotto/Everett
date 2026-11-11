@@ -182,6 +182,9 @@ export interface Link {
   to: string;
   fromAnchor: Anchor;
   toAnchor: Anchor;
+  direction?: import('./link-stroke').LinkDirection;
+  /** Destino preciso en una imagen, normalizado respecto a sus píxeles visibles. */
+  detail?: Point;
   thickness?: number;
   label?: string;
 }

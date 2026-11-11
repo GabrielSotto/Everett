@@ -70,6 +70,10 @@ export function reduce(state: State, command: Command): State {
     case 'image.replace':
     case 'node.style':
     case 'arrow.reshape':
+    case 'link.direction':
+    case 'graphic.callout':
+    case 'graphic.connect':
+    case 'graphic.insert':
     case 'link.thickness':
     case 'link.label':
     case 'link.reconnect':

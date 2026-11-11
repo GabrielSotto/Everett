@@ -14,7 +14,11 @@ import { validLinkPreview } from '../link-previews';
 import { resolveMedia } from '../resolved-media';
 import { validWireframe } from '../wireframes';
 import { editArrow, isArrow, restrokeArrow } from '../free-arrow';
-import { validLinkWeight } from '../link-stroke';
+import { connectVisualFlow } from '../visual-flow';
+import { validDetail } from '../cable-geometry';
+import { createImageCallout } from '../image-callout';
+import { insertGraphic } from '../visual-graphics';
+import { validLinkDirection, validLinkWeight } from '../link-stroke';
 import { validCanvasText } from '../canvas-text';
 import { compositionKinds, wireframeComposition } from '../wireframe-compositions';
 import { instantiateLibrary, validLibraryComposition } from '../sketch-library';
@@ -39,6 +43,10 @@ type CanvasCommand = Extract<
       | 'image.replace'
       | 'node.style'
       | 'arrow.reshape'
+      | 'link.direction'
+      | 'graphic.connect'
+      | 'graphic.callout'
+      | 'graphic.insert'
       | 'link.thickness'
       | 'link.label'
       | 'link.reconnect'
@@ -417,11 +425,24 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         [command.end === 'from' ? 'fromAnchor' : 'toAnchor']: command.anchor,
       };
       ensure(
+        command.detail === undefined ||
+          (command.end === 'to' &&
+            destination.data.kind === 'image' &&
+            validDetail(command.detail)),
+        'LINK_DETAIL',
+        'Elegí un punto dentro de la imagen.',
+      );
+      if (command.end === 'to') {
+        delete next.detail;
+        if (command.detail) next.detail = { ...command.detail };
+      }
+      ensure(
         !world.links.some((l) => l.id !== link.id && sameConnection(l, next)),
         'LINK',
         'Ya existe una conexión entre esos anclajes',
       );
       Object.assign(link, next);
+      if (!next.detail) delete link.detail;
       break;
     }
     case 'arrow.reshape': {
@@ -435,6 +456,29 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
       );
       if (isArrow(material))
         Object.assign(material, editArrow(material, command.handle, command.point));
+      break;
+    }
+    case 'graphic.callout':
+      createImageCallout(world, command.image, command.detail, command.text, uid);
+      break;
+    case 'graphic.connect':
+      connectVisualFlow(world, command.nodes, command.kind, uid);
+      break;
+    case 'graphic.insert':
+      insertGraphic(world, command.kind, command.center, uid);
+      break;
+    case 'link.direction': {
+      const link = need(
+        world.links.find((item) => item.id === command.id),
+        'Conexión inexistente',
+      );
+      ensure(
+        validLinkDirection(command.direction),
+        'LINK_DIRECTION',
+        'Sentido de conexión inválido',
+      );
+      if (command.direction === 'none') delete link.direction;
+      else link.direction = command.direction;
       break;
     }
     case 'link.thickness': {

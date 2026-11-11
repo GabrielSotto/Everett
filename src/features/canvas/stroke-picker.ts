@@ -1,3 +1,20 @@
+import { linkDirections, type LinkDirection } from '../../domain/link-stroke';
+
+const directionLabels = {
+  none: 'Sin flechas',
+  forward: 'Flecha al destino',
+  backward: 'Flecha al origen',
+  both: 'Flechas en ambos extremos',
+};
+export function directionPicker(current: LinkDirection = 'none') {
+  return `<div class="stroke-picker cable-directions" role="group" aria-label="Sentido de la conexión">${linkDirections
+    .map((value) => {
+      const from = value === 'backward' || value === 'both',
+        to = value === 'forward' || value === 'both';
+      return `<button type="button" data-action="link-direction" data-value="${value}" aria-pressed="${value === current}" aria-label="${directionLabels[value]}" title="${directionLabels[value]}"><svg width="20" height="18" viewBox="0 0 22 18" aria-hidden="true"><path d="M3 9h16${from ? 'M7 5 3 9l4 4' : ''}${to ? 'M15 5l4 4-4 4' : ''}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+    })
+    .join('')}</div>`;
+}
 /** Muestras visuales; los valores en píxeles quedan disponibles para teclado y lectores. */
 export function strokePicker(
   thickness: number,

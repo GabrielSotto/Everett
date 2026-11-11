@@ -1,5 +1,7 @@
 import { html } from './dom';
 const paths: Record<string, string> = {
+  'visual-graphic':
+    '<rect x="2" y="4" width="7" height="6" rx="1.5"/><rect x="15" y="14" width="7" height="6" rx="1.5"/><path d="M5.5 10v5a2 2 0 0 0 2 2H15M14 6h6m-6 3h4"/>',
   sticker:
     '<path d="M3 7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v6l-8 8H7a4 4 0 0 1-4-4zM13 21v-5a3 3 0 0 1 3-3h5"/>',
   sketch:

@@ -18,6 +18,7 @@ import {
   normalizedAngle,
 } from '../../domain/rotation';
 import { beginRotation, showRotation, controlLayer, syncControlBox } from './rotation-control';
+import { cableGeometry, imageDetailAt } from '../../domain/cable-geometry';
 import { drawRect, anchorPoint, linkPath } from '../../domain/geometry';
 import { html, target, preserveFocus, type View } from '../../ui/dom';
 import { btn, icon } from '../../ui/icons';
@@ -49,14 +50,14 @@ import {
   type ArrowHandle,
 } from '../../domain/free-arrow';
 import { arrowArt, arrowHandles, arrowHandlePoint } from './free-arrow';
-import { linkWeights } from '../../domain/link-stroke';
+import { validLinkDirection, linkWeights } from '../../domain/link-stroke';
 import { resizeText, textBounds } from './direct-text-layout';
 import { CanvasInteractions } from './interactions';
 import { proposalMarkup } from './proposals';
 import { sameConnection } from '../../domain/link-identity';
 import { materialsInRect } from '../../domain/material-selection';
 import { motion, reducedMotion } from '../../ui/motion';
-import { strokePicker } from './stroke-picker';
+import { directionPicker, strokePicker } from './stroke-picker';
 import { rgb } from './color';
 import {
   groupBounds,
@@ -1209,14 +1210,7 @@ export class CanvasView implements View {
       const to = this.ctx.world().nodes.find((node) => node.id === link?.to);
       const group = this.root.querySelector(`[data-link="${CSS.escape(d.id)}"]`);
       if (link && from && to && group) {
-        const path = linkPath(
-          d.end === 'from' ? point : anchorPoint(from, link.fromAnchor),
-          d.end === 'to' ? point : anchorPoint(to, link.toAnchor),
-          link.fromAnchor,
-          link.toAnchor,
-          from.rotation,
-          to.rotation,
-        );
+        const { path } = cableGeometry(link, from, to, { end: d.end, point });
         group
           .querySelectorAll('path')
           .forEach((pathElement) => pathElement.setAttribute('d', path));
@@ -1606,6 +1600,29 @@ export class CanvasView implements View {
           'reconectar extremo',
           'C08-LINK-01',
         );
+      else if (d.distance > 3 && d.end === 'to') {
+        const l = w.links.find((l) => l.id === d.id);
+        const imageId = document
+          .elementsFromPoint(e.clientX, e.clientY)
+          .map((el) => el.closest<HTMLElement>('.material.image')?.dataset.node)
+          .find(Boolean);
+        const image = w.nodes.find((n) => n.id === imageId && !n.owner);
+        const detail = image && imageDetailAt(image, this.point(e));
+        if (l?.detail && image && detail)
+          this.ctx.act(
+            {
+              type: 'link.reconnect',
+              world: w.id,
+              id: d.id,
+              end: 'to',
+              node: image.id,
+              anchor: l.toAnchor,
+              detail,
+            },
+            'reubicar llamada',
+            'C08-VIS-01',
+          );
+      }
       if (d.distance > 3) this.render();
       else {
         this.root.querySelector('.reconnecting')?.classList.remove('reconnecting');
@@ -1941,6 +1958,7 @@ export class CanvasView implements View {
         ctx.persist();
         break;
       }
+      case 'canvas-graphic':
       case 'canvas-illustrations':
       case 'canvas-examples':
         this.referenceMenu = false;
@@ -2052,6 +2070,25 @@ export class CanvasView implements View {
         this.select(null, null);
         this.render();
         break;
+      case 'link-direction': {
+        const direction = t.dataset.value,
+          id = ctx.ui.canvas.linkSelection;
+        if (
+          id &&
+          validLinkDirection(direction) &&
+          (w.links.find((l) => l.id === id)?.direction ?? 'none') !== direction
+        ) {
+          ctx.act(
+            { type: 'link.direction', world: w.id, id, direction },
+            'cambiar sentido de conexión',
+            'C08-LINK-02',
+          );
+          this.root
+            .querySelector<HTMLElement>(`[data-action=link-direction][data-value="${direction}"]`)
+            ?.focus({ preventScroll: true });
+        }
+        break;
+      }
       case 'link-thickness': {
         const link = w.links.find((l) => l.id === ctx.ui.canvas.linkSelection);
         const thickness = Number(t.dataset.value);
@@ -2201,11 +2238,16 @@ export class CanvasView implements View {
     const svg = this.root.querySelector('.canvas-links');
     if (!svg) return;
     const w = this.ctx.world();
-    svg.innerHTML = w.links
-      .map((link) =>
+    const behind: string[] = [],
+      above: string[] = [];
+    for (const link of w.links) {
+      (link.detail ? above : behind).push(
         connectionMarkup(link, w, link.id === this.ctx.ui.canvas.linkSelection, preview),
-      )
-      .join('');
+      );
+    }
+    svg.innerHTML = behind.join('');
+    const leaders = this.root.querySelector('.canvas-leaders');
+    if (leaders) leaders.innerHTML = above.join('');
     this.paintCableLabels();
     this.paintGroups(preview);
   }
@@ -2307,7 +2349,7 @@ export class CanvasView implements View {
         }),
     );
     const zoom = this.cam.current.z;
-    const measured = Array.from(svg.querySelectorAll<SVGGElement>('[data-link]'), (group) => {
+    const measured = Array.from(this.root.querySelectorAll<SVGGElement>('[data-link]'), (group) => {
       const path = group.querySelector<SVGPathElement>('.link-line'),
         text = group.querySelector<SVGTextElement>('.cable-label');
       if (!path || !text) return null;
@@ -2330,28 +2372,27 @@ export class CanvasView implements View {
       };
       const a = currentNode(link.from),
         b = currentNode(link.to);
-      const from = anchorPoint(a, link.fromAnchor),
-        to = anchorPoint(b, link.toAnchor);
-      path.setAttribute(
-        'd',
-        linkPath(from, to, link.fromAnchor, link.toAnchor, a.rotation, b.rotation),
-      );
+      const cable = cableGeometry(link, a, b),
+        { from, to } = cable;
+      path.setAttribute('d', cable.path);
       const length = path.getTotalLength(),
         original = path.getPointAtLength(length / 2);
       // Reservar espacio de lectura a escala de panorama sin recolocar el cable
       // al girar la rueda. La medida tipográfica se normaliza a coordenadas del Mundo.
       const size = { width: (text.getComputedTextLength() * zoom + 12) / 0.4, height: 14 / 0.4 };
-      const middle = labelPosition(original, size, obstacles);
-      const next = labeledPath(
-        from,
-        to,
-        link.fromAnchor,
-        link.toAnchor,
-        middle,
-        original,
-        a.rotation,
-        b.rotation,
-      );
+      const middle = link.detail ? original : labelPosition(original, size, obstacles);
+      const next = link.detail
+        ? cable.path
+        : labeledPath(
+            from,
+            to,
+            link.fromAnchor,
+            link.toAnchor,
+            middle,
+            original,
+            a.rotation,
+            b.rotation,
+          );
       group.querySelectorAll<SVGPathElement>('path').forEach((el) => el.setAttribute('d', next));
       obstacles.push({ x: middle.x - size.width / 2, y: middle.y - size.height / 2, ...size });
       return {
@@ -2360,6 +2401,8 @@ export class CanvasView implements View {
         middle,
         bounds: path.getBBox(),
         textWidth: text.getComputedTextLength(),
+        weight: link.thickness ?? 0,
+        hasTip: !!link.direction && link.direction !== 'none',
       };
     });
     for (const item of measured) {
@@ -2380,11 +2423,7 @@ export class CanvasView implements View {
         base = group.querySelector('.mask-base');
       if (mask && base) {
         // La región predeterminada depende del viewport SVG (1 × 1), no del cable.
-        const margin = Math.max(
-          16 / zoom,
-          (this.ctx.world().links.find((l) => l.id === group.dataset.link)?.thickness ?? 0) / 2 +
-            3 / zoom,
-        );
+        const margin = Math.max(16 / zoom, item.weight * (item.hasTip ? 4 : 0.5) + 3 / zoom);
         const region = {
           x: bounds.x - margin,
           y: bounds.y - margin,
@@ -2771,7 +2810,7 @@ export class CanvasView implements View {
     const world = this.ctx.world();
     const item = (action: string, symbol: string, name: string, attributes = ''): string =>
       `<button type="button" data-action="${action}" title="${html(name)}" ${attributes}>${icon(symbol, 14)}<span>${html(name)}</span>${action === 'canvas-illustrations' && this.ctx.ui.shortcuts.illustrations ? '<kbd aria-hidden="true">' + html(this.ctx.ui.shortcuts.illustrations) + '</kbd>' : ''}</button>`;
-    return `<div class="reference-menu" id="canvas-material-picker" role="dialog" aria-label="Incorporar materiales"><h4>Archivos y enlaces</h4>${item('canvas-import', 'image', 'Importar archivos locales')}${item('canvas-examples', 'image', 'Cargar ejemplos multimedia')}${item('canvas-link', 'link', 'Agregar enlace')}${item('canvas-illustrations', 'sticker', 'Ilustraciones', this.ctx.ui.shortcuts.illustrations ? `aria-keyshortcuts="${html(this.ctx.ui.shortcuts.illustrations)}"` : '')}<h4>Documentos de Docs</h4>${world.docs.map((doc) => item('reference-add', 'docs', doc.title, `data-kind="document" data-id="${doc.id}"`)).join('') || '<p>No hay documentos en este Mundo.</p>'}<h4>Archivos de Code</h4>${world.files.map((file) => item('reference-add', 'code', file.name, `data-kind="file" data-id="${file.id}"`)).join('') || '<p>No hay archivos de código.</p>'}<h4>Tareas de Board</h4>${world.tasks.map((task) => item('reference-add', 'board', task.title, `data-kind="task" data-id="${task.id}"`)).join('') || '<p>No hay tareas.</p>'}</div>`;
+    return `<div class="reference-menu" id="canvas-material-picker" role="dialog" aria-label="Incorporar materiales"><h4>Archivos y enlaces</h4>${item('canvas-import', 'image', 'Importar archivos locales')}${item('canvas-examples', 'image', 'Cargar ejemplos multimedia')}${item('canvas-link', 'link', 'Agregar enlace')}<h4>Composición visual</h4>${item('canvas-illustrations', 'sticker', 'Ilustraciones', this.ctx.ui.shortcuts.illustrations ? `aria-keyshortcuts="${html(this.ctx.ui.shortcuts.illustrations)}"` : '')}${item('canvas-graphic', 'visual-graphic', 'Gráfico explicativo…')}<h4>Documentos de Docs</h4>${world.docs.map((doc) => item('reference-add', 'docs', doc.title, `data-kind="document" data-id="${doc.id}"`)).join('') || '<p>No hay documentos en este Mundo.</p>'}<h4>Archivos de Code</h4>${world.files.map((file) => item('reference-add', 'code', file.name, `data-kind="file" data-id="${file.id}"`)).join('') || '<p>No hay archivos de código.</p>'}<h4>Tareas de Board</h4>${world.tasks.map((task) => item('reference-add', 'board', task.title, `data-kind="task" data-id="${task.id}"`)).join('') || '<p>No hay tareas.</p>'}</div>`;
   }
   private positionReferenceMenu(): void {
     const menu = this.root.querySelector<HTMLElement>('.reference-menu');
@@ -2934,7 +2973,7 @@ export class CanvasView implements View {
     if (cable && !this.shapesOpen && !holder.querySelector('.canvas-style')) {
       holder.insertAdjacentHTML(
         'beforeend',
-        `<div class="canvas-style" role="group" aria-label="Estilo de conexión">Grosor ${strokePicker(cable.thickness ?? 1.4, 'link-thickness', linkWeights)}</div>`,
+        `<div class="canvas-style" role="group" aria-label="Estilo de conexión">Grosor ${strokePicker(cable.thickness ?? 1.4, 'link-thickness', linkWeights)}${directionPicker(cable.direction)}</div>`,
       );
     }
     const dock = holder.querySelector<HTMLElement>('.canvas-tools')!;
@@ -3097,7 +3136,7 @@ export class CanvasView implements View {
           this.ctx.ui.canvas.tool === 'select',
         ),
       )
-      .join('')}${w.assignments
+      .join('')}<svg class="canvas-leaders" width="1" height="1"></svg>${w.assignments
       .filter((a) => a.phase !== 'working')
       .map((a) =>
         proposalMarkup(

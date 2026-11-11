@@ -1,3 +1,5 @@
+import { illustrationAssetPrefix } from '../../domain/illustration-asset';
+
 interface Drawing {
   id: string;
   name: string;
@@ -8,7 +10,7 @@ interface Drawing {
 export interface Illustration extends Drawing {
   colors?: ReadonlyMap<string, string>;
 }
-const prefix = 'fluent-flat-v1-';
+const prefix = illustrationAssetPrefix;
 let current: Map<string, Drawing> | undefined;
 export async function loadIllustrations(): Promise<Drawing[]> {
   const { default: items } = await import('../../assets/illustrations/fluent-flat.json');

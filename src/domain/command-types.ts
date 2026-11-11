@@ -81,6 +81,25 @@ export type Command =
       handle: import('./free-arrow').ArrowHandle;
       point: Point;
     }
+  | {
+      type: 'link.direction';
+      world: string;
+      id: string;
+      direction: import('./link-stroke').LinkDirection;
+    }
+  | {
+      type: 'graphic.connect';
+      world: string;
+      nodes: string[];
+      kind: import('./visual-flow').FlowKind;
+    }
+  | {
+      type: 'graphic.insert';
+      world: string;
+      kind: import('./visual-graphics').GraphicKind;
+      center: Point;
+    }
+  | { type: 'graphic.callout'; world: string; image: string; detail: Point; text: string }
   | { type: 'link.thickness'; world: string; id: string; thickness: number }
   | { type: 'link.label'; world: string; id: string; text: string }
   | {
@@ -88,6 +107,7 @@ export type Command =
       world: string;
       id: string;
       end: 'from' | 'to';
+      detail?: Point;
       node: string;
       anchor: Anchor;
     }

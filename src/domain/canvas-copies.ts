@@ -1,3 +1,4 @@
+import { validDetail } from './cable-geometry';
 import { validRotation } from './rotation';
 import {
   need,
@@ -13,7 +14,7 @@ import { ensure } from './invariants';
 import { referenceExcerpt } from './reference-anchors';
 import { validLocalContent } from './local-content';
 import { validWireframe } from './wireframes';
-import { validLinkWeight } from './link-stroke';
+import { validLinkDirection, validLinkWeight } from './link-stroke';
 import { validArrowPoints } from './free-arrow';
 import { validCanvasText } from './canvas-text';
 import { validNoteFont, validFontWeight, validNoteTypography } from './note-fonts';
@@ -161,6 +162,10 @@ export function parseCanvasClipboard(text: string): CanvasClipboard {
         l.from !== l.to &&
         ['north', 'east', 'south', 'west'].includes(String(l.fromAnchor)) &&
         ['north', 'east', 'south', 'west'].includes(String(l.toAnchor)) &&
+        (l.detail === undefined ||
+          (validDetail(l.detail) &&
+            parsed.nodes.find((n) => n.id === l.to)?.data.kind === 'image')) &&
+        (l.direction === undefined || validLinkDirection(l.direction)) &&
         (l.thickness === undefined || validLinkWeight(l.thickness)) &&
         (l.label === undefined || typeof l.label === 'string'),
     ),

@@ -7,7 +7,7 @@ import {
   type OrientedRect,
 } from '../../domain/rotation';
 import { selectionBounds } from '../../domain/alignment';
-import { anchorPoint, linkPath } from '../../domain/geometry';
+import { cableGeometry } from '../../domain/cable-geometry';
 
 function frame(nodes: readonly Material[]): OrientedRect {
   return nodes.length === 1 ? nodes[0]! : selectionBounds([...nodes]);
@@ -185,9 +185,7 @@ export function beginRotation(
       for (const { link, paths, ends, label, cut } of cables) {
         const a = byId.get(link.from)!,
           b = byId.get(link.to)!;
-        const from = anchorPoint(a, link.fromAnchor),
-          to = anchorPoint(b, link.toAnchor);
-        const d = linkPath(from, to, link.fromAnchor, link.toAnchor, a.rotation, b.rotation);
+        const { from, to, path: d } = cableGeometry(link, a, b);
         paths.forEach((p) => p.setAttribute('d', d));
         ends.forEach((el) => {
           const p = el.getAttribute('data-end') === 'from' ? from : to;
