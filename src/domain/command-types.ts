@@ -59,6 +59,7 @@ export type Command =
     }
   | { type: 'assignment.interrupt' | 'assignment.retry'; world: string; id: string }
   | { type: 'node.rename'; world: string; id: string; name: string }
+  | { type: 'image.replace'; world: string; id: string; asset: string; mime: string; ratio: number }
   | { type: 'node.duplicate'; world: string; id: string }
   | { type: 'nodes.duplicate'; world: string; nodes: string[]; offset: Point }
   | { type: 'nodes.paste'; world: string; clipboard: CanvasClipboard; offset: Point }

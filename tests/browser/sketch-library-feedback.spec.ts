@@ -69,6 +69,8 @@ test('C08-B163: símbolos reales buscables se insertan individualmente y conserv
     ).toBe(true);
     await capture(page, info, 'catalogo-simbolos');
     const search = options.getByRole('searchbox', { name: 'Buscar símbolo' });
+    await expect(search).toBeHidden();
+    await options.getByRole('button', { name: 'Buscar símbolo' }).click();
     await search.fill('notificacion');
     await expect(options.locator('[data-symbol]:visible')).toHaveCount(1);
     await expect(options.getByRole('button', { name: 'Notificación', exact: true })).toBeVisible();
@@ -84,6 +86,8 @@ test('C08-B163: símbolos reales buscables se insertan individualmente y conserv
       'true',
     );
     await capture(page, info, 'selector-simbolos');
+    await page.keyboard.press('Escape');
+    await expect(options.getByRole('searchbox')).toHaveCount(0);
     await page.keyboard.press('Escape');
     const nodes = await addLibrary(page, 'symbol');
     expect(nodes).toHaveLength(1);

@@ -156,3 +156,186 @@
 .chat-draft-area {
   flex-shrink: 0;
 }
+.canvas-context-form.illustration-picker {
+  width: min(268px, calc(100vw - 24px));
+  max-height: min(360px, calc(100dvh - 86px));
+  padding: 10px;
+  gap: 6px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.illustration-picker header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 5px;
+  font-size: 13px;
+}
+.illustration-picker .illustration-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 3px;
+  gap: 2px;
+}
+.illustration-grid button[data-illustration] {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+  padding: 5px 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+}
+.illustration-grid button[data-illustration]:is(:hover, :focus-visible) {
+  background: var(--surface);
+}
+.illustration-grid img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  pointer-events: none;
+}
+.illustration-picker [role='status'] {
+  margin: 0 4px;
+  font-size: 12px;
+}
+.illustration-picker [role='status']:empty {
+  display: none;
+}
+.illustration-grid button[hidden] {
+  display: none;
+}
+.illustration-grid button span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reference-menu kbd {
+  margin-left: auto;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+}
+:is(.illustration-picker, .library-symbol-options) header:has(.picker-search) {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+}
+:is(.illustration-picker, .library-symbol-options) header:has(.picker-search) > strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-right: 27px;
+}
+:is(.illustration-picker, .library-symbol-options) header:has(.picker-search.open) > strong {
+  visibility: hidden;
+}
+.picker-search {
+  position: absolute;
+  right: 32px;
+  width: 28px;
+  height: 30px;
+  overflow: clip;
+  border-radius: 5px;
+  transition: width 160ms var(--resize-ease);
+}
+.picker-search.open {
+  width: calc(100% - 34px);
+  background: var(--bg);
+}
+header .picker-search input {
+  position: absolute;
+  inset: 0 28px 0 0;
+  width: calc(100% - 28px);
+  padding: 4px 6px;
+  color: var(--text);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  min-width: 0;
+  font: inherit;
+}
+.picker-search input:disabled {
+  visibility: hidden;
+}
+.picker-search:has(input:focus-visible) {
+  box-shadow: inset 0 -2px var(--accent);
+}
+header .picker-search input:focus-visible {
+  outline: none;
+}
+header .picker-search button.icon-button,
+.illustration-picker header > .icon-button,
+.illustration-colors header > .icon-button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+}
+header .picker-search button.icon-button {
+  position: absolute;
+  right: 0;
+  top: 1px;
+}
+.canvas-context-form.illustration-colors {
+  width: min(250px, calc(100vw - 24px));
+  max-height: calc(100dvh - 86px);
+  overflow: auto;
+}
+.illustration-colors header,
+.illustration-colors footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.illustration-colors header strong {
+  font-size: 13px;
+}
+.illustration-colors > img {
+  width: 96px;
+  height: 96px;
+  justify-self: center;
+  object-fit: contain;
+}
+.ink-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ink-swatches label {
+  display: grid;
+  place-items: center;
+}
+.ink-swatches input[type='color'] {
+  height: 28px;
+  width: 28px;
+  padding: 2px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.ink-swatches input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.ink-swatches input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 3px;
+}
+.illustration-colors [role='status']:empty {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .picker-search {
+    transition: none;
+  }
+}

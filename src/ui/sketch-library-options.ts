@@ -6,13 +6,8 @@ import {
 import type { LibraryChoice } from '../features/canvas/library/render';
 import { html } from './dom';
 import { icon } from './icons';
+import { pickerSearch, searchKey } from './picker-search';
 import { librarySymbol } from '../features/canvas/library/symbols';
-
-const normalize = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase();
 
 /** Ajustes de la próxima inserción, sin otro visor ni formulario de tamaño. */
 export function libraryOptions(
@@ -24,7 +19,7 @@ export function libraryOptions(
   const controller = new AbortController(),
     { signal } = controller;
   let choice = { ...initial, options: { ...initial.options } };
-  let symbolQuery = '';
+  let search: ReturnType<typeof pickerSearch> | undefined;
   const panel = document.createElement('div');
   panel.className = 'library-choice-options';
   panel.role = 'dialog';
@@ -80,8 +75,23 @@ export function libraryOptions(
       if (selector) {
         const browser = document.createElement('div');
         browser.className = 'library-symbol-browser';
-        browser.innerHTML = `<input type="search" aria-label="Buscar símbolo" placeholder="Buscar símbolo…" value="${html(symbolQuery)}"><div class="library-symbol-grid" role="group" aria-label="Símbolos de Phosphor">${entry.variants.map((v) => `<button type="button" data-symbol="${v.id}" aria-label="${html(v.label)}" title="${html(v.label)}" aria-pressed="${v.id === choice.variant}" ${normalize(v.id + ' ' + v.label).includes(normalize(symbolQuery)) ? '' : 'hidden'}><img src="${librarySymbol(v.id)}" alt=""></button>`).join('')}</div><p class="library-symbol-empty" hidden>Sin coincidencias</p>`;
+        browser.innerHTML = `<div class="library-symbol-grid" role="group" aria-label="Símbolos de Phosphor">${entry.variants.map((v) => `<button type="button" data-symbol="${v.id}" aria-label="${html(v.label)}" title="${html(v.label)}" aria-pressed="${v.id === choice.variant}"><img src="${librarySymbol(v.id)}" alt=""></button>`).join('')}</div><p class="library-symbol-empty" hidden>Sin coincidencias</p>`;
         selector.replaceWith(browser);
+        const first = () => browser.querySelector<HTMLElement>('[data-symbol]:not([hidden])');
+        search = pickerSearch(
+          panel.querySelector('header')!,
+          'Buscar símbolo',
+          (value) => {
+            const query = searchKey(value);
+            for (const button of browser.querySelectorAll<HTMLButtonElement>('[data-symbol]'))
+              button.hidden = !searchKey(button.dataset.symbol + ' ' + button.title).includes(
+                query,
+              );
+            browser.querySelector<HTMLElement>('.library-symbol-empty')!.hidden = !!first();
+            browser.querySelector('.library-symbol-grid')!.scrollTop = 0;
+          },
+          first,
+        );
       }
     }
     const box = anchor.getBoundingClientRect();
@@ -100,23 +110,6 @@ export function libraryOptions(
     panel.style.top =
       Math.max(8, Math.min(window.innerHeight - panel.offsetHeight - 8, box.top)) + 'px';
   };
-  panel.addEventListener(
-    'input',
-    (event) => {
-      const input = event.target as HTMLInputElement;
-      if (input.type !== 'search') return;
-      symbolQuery = input.value;
-      let count = 0;
-      for (const button of panel.querySelectorAll<HTMLButtonElement>('[data-symbol]')) {
-        button.hidden = !normalize(button.dataset.symbol + ' ' + button.title).includes(
-          normalize(symbolQuery),
-        );
-        if (!button.hidden) count++;
-      }
-      panel.querySelector<HTMLElement>('.library-symbol-empty')!.hidden = count > 0;
-    },
-    { signal },
-  );
   panel.addEventListener(
     'change',
     (event) => {
@@ -173,12 +166,12 @@ export function libraryOptions(
       if (event.key !== 'Escape') return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      close();
+      if (!search?.collapse()) close();
     },
     { signal, capture: true },
   );
   window.addEventListener('resize', close, { signal });
   paint();
-  panel.querySelector<HTMLElement>('input[type=search], select, [data-library-state]')?.focus();
+  (search?.toggle ?? panel.querySelector<HTMLElement>('select, [data-library-state]'))?.focus();
   return close;
 }

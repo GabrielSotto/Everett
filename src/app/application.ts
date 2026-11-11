@@ -643,6 +643,12 @@ export class EverettApp implements Context {
       const action = Object.keys(this.ui.shortcuts).find(
         (key) => this.ui.shortcuts[key] && this.ui.shortcuts[key] === combination,
       );
+      if (
+        action === 'illustrations' &&
+        e.target instanceof Element &&
+        e.target.closest('[role=dialog],[role=menu]')
+      )
+        return;
       if (action && !e.repeat) {
         e.preventDefault();
         if (action === 'layoutGuides') {
@@ -653,6 +659,10 @@ export class EverettApp implements Context {
         }
         if (this.view instanceof CanvasView && action === 'duplicate') {
           this.view.duplicate();
+          return;
+        }
+        if (this.view instanceof CanvasView && action === 'illustrations') {
+          this.view.openIllustrations();
           return;
         }
         if (this.view instanceof CanvasView && action === 'comment') {

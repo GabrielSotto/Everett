@@ -40,6 +40,32 @@ test('C08-B200: una explicación ilustrada se ve, se edita y permanece separada 
   expect(caption.y - truckBox.y - truckBox.height).toBeLessThan(40);
   await expect(scene.locator('.material.note')).toHaveCount(2);
   await expect(scene.locator('.free-arrow')).toBeInViewport();
+  // La ruta pasa bajo el camión y termina junto a la nota, sin atravesar los rótulos.
+  const crossesLabel = await scene.evaluate((stage) => {
+    const path = stage.querySelector<SVGPathElement>('.arrow-ink')!;
+    const boxes = [
+      ...stage.querySelectorAll(
+        '[data-node=etapa-1] .canvas-text-run,[data-node=etapa-3] .canvas-text-run,[data-node=frio] .canvas-text-run',
+      ),
+    ].flatMap((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return [...range.getClientRects()];
+    });
+    const transform = path.getScreenCTM()!,
+      length = path.getTotalLength();
+    for (let distance = 0; distance <= length; distance += 2) {
+      const p = path.getPointAtLength(distance).matrixTransform(transform);
+      if (
+        boxes.some(
+          (r) => p.x >= r.left - 3 && p.x <= r.right + 3 && p.y >= r.top - 3 && p.y <= r.bottom + 3,
+        )
+      )
+        return true;
+    }
+    return false;
+  });
+  expect(crossesLabel).toBe(false);
   await capture(page, info, 'de-la-huerta-al-mercado');
   await label.dblclick();
   const editor = page.getByRole('textbox', { name: 'Texto en Canvas' });

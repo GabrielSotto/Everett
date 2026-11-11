@@ -4,4 +4,5 @@ dist/
 output/
 node_modules/
 design/wireframe-library/vendor/
+src/assets/illustrations/fluent-flat.json
 entregas/

@@ -67,6 +67,7 @@ export function reduce(state: State, command: Command): State {
     case 'assignment.interrupt':
     case 'assignment.retry':
     case 'node.rename':
+    case 'image.replace':
     case 'node.style':
     case 'arrow.reshape':
     case 'link.thickness':

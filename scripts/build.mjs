@@ -11,12 +11,16 @@ const packageInfo = JSON.parse(await readFile(resolve(root, 'package.json'), 'ut
 const template = await readFile(resolve(root, 'index.html'), 'utf8');
 const roughNotices = await readFile(resolve(root, 'src/assets/roughjs-notices.txt'), 'utf8');
 const yogaNotice = await readFile(resolve(root, 'src/assets/yoga-license.txt'), 'utf8');
+const illustrationNotice = await readFile(
+  resolve(root, 'src/assets/illustrations/LICENSE'),
+  'utf8',
+);
 const result = await build({
   absWorkingDir: root,
   entryPoints: ['src/main.ts', 'src/styles/main.css'],
   outdir: 'dist/assets',
   bundle: true,
-  banner: { js: `/*!\n${roughNotices}\n${yogaNotice}\n*/` },
+  banner: { js: `/*!\n${roughNotices}\n${yogaNotice}\n${illustrationNotice}\n*/` },
   format: 'iife',
   platform: 'browser',
   loader: { '.webp': 'dataurl', '.png': 'dataurl' },
@@ -70,6 +74,7 @@ const inputs = [
     'scripts/build.mjs',
     'src/assets/roughjs-notices.txt',
     'src/assets/yoga-license.txt',
+    'src/assets/illustrations/LICENSE',
     'scripts/preview.mjs',
     'scripts/local-server.mjs',
     ...serverInputs,

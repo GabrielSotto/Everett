@@ -86,8 +86,70 @@ import svg84 from '../../../../design/wireframe-library/vendor/lightning.svg?raw
 import svg85 from '../../../../design/wireframe-library/vendor/question.svg?raw';
 import svg86 from '../../../../design/wireframe-library/vendor/sun.svg?raw';
 import svg87 from '../../../../design/wireframe-library/vendor/moon.svg?raw';
-
-/** Recursos locales; disponibles también sin red. */
+import svg88 from '../../../../design/wireframe-library/vendor/airplane.svg?raw';
+import svg89 from '../../../../design/wireframe-library/vendor/bicycle.svg?raw';
+import svg90 from '../../../../design/wireframe-library/vendor/boat.svg?raw';
+import svg91 from '../../../../design/wireframe-library/vendor/bus.svg?raw';
+import svg92 from '../../../../design/wireframe-library/vendor/car.svg?raw';
+import svg93 from '../../../../design/wireframe-library/vendor/truck.svg?raw';
+import svg94 from '../../../../design/wireframe-library/vendor/train.svg?raw';
+import svg95 from '../../../../design/wireframe-library/vendor/compass.svg?raw';
+import svg96 from '../../../../design/wireframe-library/vendor/suitcase.svg?raw';
+import svg97 from '../../../../design/wireframe-library/vendor/mountains.svg?raw';
+import svg98 from '../../../../design/wireframe-library/vendor/tree.svg?raw';
+import svg99 from '../../../../design/wireframe-library/vendor/leaf.svg?raw';
+import svg100 from '../../../../design/wireframe-library/vendor/plant.svg?raw';
+import svg101 from '../../../../design/wireframe-library/vendor/flower.svg?raw';
+import svg102 from '../../../../design/wireframe-library/vendor/drop.svg?raw';
+import svg103 from '../../../../design/wireframe-library/vendor/flame.svg?raw';
+import svg104 from '../../../../design/wireframe-library/vendor/snowflake.svg?raw';
+import svg105 from '../../../../design/wireframe-library/vendor/wind.svg?raw';
+import svg106 from '../../../../design/wireframe-library/vendor/book-open.svg?raw';
+import svg107 from '../../../../design/wireframe-library/vendor/graduation-cap.svg?raw';
+import svg108 from '../../../../design/wireframe-library/vendor/student.svg?raw';
+import svg109 from '../../../../design/wireframe-library/vendor/music-notes.svg?raw';
+import svg110 from '../../../../design/wireframe-library/vendor/paint-brush.svg?raw';
+import svg111 from '../../../../design/wireframe-library/vendor/palette.svg?raw';
+import svg112 from '../../../../design/wireframe-library/vendor/scissors.svg?raw';
+import svg113 from '../../../../design/wireframe-library/vendor/ruler.svg?raw';
+import svg114 from '../../../../design/wireframe-library/vendor/shapes.svg?raw';
+import svg115 from '../../../../design/wireframe-library/vendor/pencil-ruler.svg?raw';
+import svg116 from '../../../../design/wireframe-library/vendor/grid-four.svg?raw';
+import svg117 from '../../../../design/wireframe-library/vendor/stack.svg?raw';
+import svg118 from '../../../../design/wireframe-library/vendor/git-branch.svg?raw';
+import svg119 from '../../../../design/wireframe-library/vendor/tree-structure.svg?raw';
+import svg120 from '../../../../design/wireframe-library/vendor/kanban.svg?raw';
+import svg121 from '../../../../design/wireframe-library/vendor/list-checks.svg?raw';
+import svg122 from '../../../../design/wireframe-library/vendor/flag.svg?raw';
+import svg123 from '../../../../design/wireframe-library/vendor/target.svg?raw';
+import svg124 from '../../../../design/wireframe-library/vendor/chart-pie.svg?raw';
+import svg125 from '../../../../design/wireframe-library/vendor/trend-up.svg?raw';
+import svg126 from '../../../../design/wireframe-library/vendor/package.svg?raw';
+import svg127 from '../../../../design/wireframe-library/vendor/warehouse.svg?raw';
+import svg128 from '../../../../design/wireframe-library/vendor/storefront.svg?raw';
+import svg129 from '../../../../design/wireframe-library/vendor/factory.svg?raw';
+import svg130 from '../../../../design/wireframe-library/vendor/buildings.svg?raw';
+import svg131 from '../../../../design/wireframe-library/vendor/hospital.svg?raw';
+import svg132 from '../../../../design/wireframe-library/vendor/first-aid.svg?raw';
+import svg133 from '../../../../design/wireframe-library/vendor/heartbeat.svg?raw';
+import svg134 from '../../../../design/wireframe-library/vendor/thermometer.svg?raw';
+import svg135 from '../../../../design/wireframe-library/vendor/flask.svg?raw';
+import svg136 from '../../../../design/wireframe-library/vendor/database.svg?raw';
+import svg137 from '../../../../design/wireframe-library/vendor/cpu.svg?raw';
+import svg138 from '../../../../design/wireframe-library/vendor/wifi-high.svg?raw';
+import svg139 from '../../../../design/wireframe-library/vendor/bluetooth.svg?raw';
+import svg140 from '../../../../design/wireframe-library/vendor/cloud-arrow-up.svg?raw';
+import svg141 from '../../../../design/wireframe-library/vendor/printer.svg?raw';
+import svg142 from '../../../../design/wireframe-library/vendor/game-controller.svg?raw';
+import svg143 from '../../../../design/wireframe-library/vendor/headphones.svg?raw';
+import svg144 from '../../../../design/wireframe-library/vendor/film-strip.svg?raw';
+import svg145 from '../../../../design/wireframe-library/vendor/broadcast.svg?raw';
+import svg146 from '../../../../design/wireframe-library/vendor/keyhole.svg?raw';
+import svg147 from '../../../../design/wireframe-library/vendor/fingerprint.svg?raw';
+import svg148 from '../../../../design/wireframe-library/vendor/translate.svg?raw';
+import svg149 from '../../../../design/wireframe-library/vendor/wheelchair.svg?raw';
+import svg150 from '../../../../design/wireframe-library/vendor/hands-clapping.svg?raw';
+import svg151 from '../../../../design/wireframe-library/vendor/handshake.svg?raw';
 const symbols: Record<string, string> = {
   'arrow-left': 'data:image/svg+xml,' + encodeURIComponent(svg0),
   'arrow-right': 'data:image/svg+xml,' + encodeURIComponent(svg1),
@@ -177,6 +239,70 @@ const symbols: Record<string, string> = {
   question: 'data:image/svg+xml,' + encodeURIComponent(svg85),
   sun: 'data:image/svg+xml,' + encodeURIComponent(svg86),
   moon: 'data:image/svg+xml,' + encodeURIComponent(svg87),
+  airplane: 'data:image/svg+xml,' + encodeURIComponent(svg88),
+  bicycle: 'data:image/svg+xml,' + encodeURIComponent(svg89),
+  boat: 'data:image/svg+xml,' + encodeURIComponent(svg90),
+  bus: 'data:image/svg+xml,' + encodeURIComponent(svg91),
+  car: 'data:image/svg+xml,' + encodeURIComponent(svg92),
+  truck: 'data:image/svg+xml,' + encodeURIComponent(svg93),
+  train: 'data:image/svg+xml,' + encodeURIComponent(svg94),
+  compass: 'data:image/svg+xml,' + encodeURIComponent(svg95),
+  suitcase: 'data:image/svg+xml,' + encodeURIComponent(svg96),
+  mountains: 'data:image/svg+xml,' + encodeURIComponent(svg97),
+  tree: 'data:image/svg+xml,' + encodeURIComponent(svg98),
+  leaf: 'data:image/svg+xml,' + encodeURIComponent(svg99),
+  plant: 'data:image/svg+xml,' + encodeURIComponent(svg100),
+  flower: 'data:image/svg+xml,' + encodeURIComponent(svg101),
+  drop: 'data:image/svg+xml,' + encodeURIComponent(svg102),
+  flame: 'data:image/svg+xml,' + encodeURIComponent(svg103),
+  snowflake: 'data:image/svg+xml,' + encodeURIComponent(svg104),
+  wind: 'data:image/svg+xml,' + encodeURIComponent(svg105),
+  'book-open': 'data:image/svg+xml,' + encodeURIComponent(svg106),
+  'graduation-cap': 'data:image/svg+xml,' + encodeURIComponent(svg107),
+  student: 'data:image/svg+xml,' + encodeURIComponent(svg108),
+  'music-notes': 'data:image/svg+xml,' + encodeURIComponent(svg109),
+  'paint-brush': 'data:image/svg+xml,' + encodeURIComponent(svg110),
+  palette: 'data:image/svg+xml,' + encodeURIComponent(svg111),
+  scissors: 'data:image/svg+xml,' + encodeURIComponent(svg112),
+  ruler: 'data:image/svg+xml,' + encodeURIComponent(svg113),
+  shapes: 'data:image/svg+xml,' + encodeURIComponent(svg114),
+  'pencil-ruler': 'data:image/svg+xml,' + encodeURIComponent(svg115),
+  'grid-four': 'data:image/svg+xml,' + encodeURIComponent(svg116),
+  stack: 'data:image/svg+xml,' + encodeURIComponent(svg117),
+  'git-branch': 'data:image/svg+xml,' + encodeURIComponent(svg118),
+  'tree-structure': 'data:image/svg+xml,' + encodeURIComponent(svg119),
+  kanban: 'data:image/svg+xml,' + encodeURIComponent(svg120),
+  'list-checks': 'data:image/svg+xml,' + encodeURIComponent(svg121),
+  flag: 'data:image/svg+xml,' + encodeURIComponent(svg122),
+  target: 'data:image/svg+xml,' + encodeURIComponent(svg123),
+  'chart-pie': 'data:image/svg+xml,' + encodeURIComponent(svg124),
+  'trend-up': 'data:image/svg+xml,' + encodeURIComponent(svg125),
+  package: 'data:image/svg+xml,' + encodeURIComponent(svg126),
+  warehouse: 'data:image/svg+xml,' + encodeURIComponent(svg127),
+  storefront: 'data:image/svg+xml,' + encodeURIComponent(svg128),
+  factory: 'data:image/svg+xml,' + encodeURIComponent(svg129),
+  buildings: 'data:image/svg+xml,' + encodeURIComponent(svg130),
+  hospital: 'data:image/svg+xml,' + encodeURIComponent(svg131),
+  'first-aid': 'data:image/svg+xml,' + encodeURIComponent(svg132),
+  heartbeat: 'data:image/svg+xml,' + encodeURIComponent(svg133),
+  thermometer: 'data:image/svg+xml,' + encodeURIComponent(svg134),
+  flask: 'data:image/svg+xml,' + encodeURIComponent(svg135),
+  database: 'data:image/svg+xml,' + encodeURIComponent(svg136),
+  cpu: 'data:image/svg+xml,' + encodeURIComponent(svg137),
+  'wifi-high': 'data:image/svg+xml,' + encodeURIComponent(svg138),
+  bluetooth: 'data:image/svg+xml,' + encodeURIComponent(svg139),
+  'cloud-arrow-up': 'data:image/svg+xml,' + encodeURIComponent(svg140),
+  printer: 'data:image/svg+xml,' + encodeURIComponent(svg141),
+  'game-controller': 'data:image/svg+xml,' + encodeURIComponent(svg142),
+  headphones: 'data:image/svg+xml,' + encodeURIComponent(svg143),
+  'film-strip': 'data:image/svg+xml,' + encodeURIComponent(svg144),
+  broadcast: 'data:image/svg+xml,' + encodeURIComponent(svg145),
+  keyhole: 'data:image/svg+xml,' + encodeURIComponent(svg146),
+  fingerprint: 'data:image/svg+xml,' + encodeURIComponent(svg147),
+  translate: 'data:image/svg+xml,' + encodeURIComponent(svg148),
+  wheelchair: 'data:image/svg+xml,' + encodeURIComponent(svg149),
+  'hands-clapping': 'data:image/svg+xml,' + encodeURIComponent(svg150),
+  handshake: 'data:image/svg+xml,' + encodeURIComponent(svg151),
 };
 export function librarySymbol(name: string): string {
   const source = symbols[name];

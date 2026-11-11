@@ -47,6 +47,7 @@ const reversible = new Set<Command['type']>([
   'reference.fragment',
   'node.create',
   'node.rename',
+  'image.replace',
   'node.duplicate',
   'nodes.duplicate',
   'nodes.paste',

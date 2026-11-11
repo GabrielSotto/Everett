@@ -36,6 +36,7 @@ type CanvasCommand = Extract<
       | 'assignment.interrupt'
       | 'assignment.retry'
       | 'node.rename'
+      | 'image.replace'
       | 'node.style'
       | 'arrow.reshape'
       | 'link.thickness'
@@ -506,6 +507,36 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         tree.rotation = pose.rotation;
         tree.origin = { x: pose.x - tree.root.x, y: pose.y - tree.root.y };
       }
+      break;
+    }
+    case 'image.replace': {
+      const material = node(command.id);
+      if (material.owner || material.data.kind !== 'image')
+        throw new DomainError('EDIT', 'Elegí una imagen disponible.');
+      ensure(
+        !!command.asset &&
+          command.mime.startsWith('image/') &&
+          Number.isFinite(command.ratio) &&
+          command.ratio > 0,
+        'ASSET',
+        'La imagen o sus dimensiones no son válidas.',
+      );
+      const center = centerOf(material);
+      const width = Math.min(material.width, material.height * command.ratio);
+      const height = width / command.ratio;
+      // Una imagen demasiado angosta para el marco conserva la dimensión mínima del Canvas.
+      const scale = Math.max(1, 4 / width, 4 / height);
+      material.width = width * scale;
+      material.height = height * scale;
+      material.x = center.x - material.width / 2;
+      material.y = center.y - material.height / 2;
+      material.data = {
+        kind: 'image',
+        title: material.data.title,
+        asset: command.asset,
+        mime: command.mime,
+        ratio: command.ratio,
+      };
       break;
     }
     case 'node.create':

@@ -56,6 +56,8 @@ export class LocalStorage {
     const state: State = { ...personal.state, ...shared, version: 1 };
     validate(state);
     const ui = personal.ui;
+    if (ui.shortcuts.illustrations === undefined)
+      ui.shortcuts.illustrations = Object.values(ui.shortcuts).includes('I') ? '' : 'I';
     if (ui.shortcuts.text === undefined)
       ui.shortcuts.text = Object.values(ui.shortcuts).includes('T') ? '' : 'T';
     if (ui.shortcuts.duplicate === undefined)

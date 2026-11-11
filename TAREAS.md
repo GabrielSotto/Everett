@@ -21,7 +21,9 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
-### Composición manual: texto, cables y flechas
+### Composición manual: ilustraciones, texto, cables y flechas
+
+La biblioteca de **Ilustraciones** abre desde Materiales o con **I** (configurable); los dibujos se pueden buscar, arrastrar, recolorear y reemplazar. Bosquejos incluye 152 símbolos del mismo trazo. Los ejemplos [Viaje](design/composicion-visual/index.html?escena=viaje) y [Comparación de etiquetas](design/composicion-visual/index.html?escena=etiquetas) tienen guardados separados; no sustituyen el Canvas de trabajo. La revisión visual del usuario sigue abierta.
 
 El menú de un texto suelto ofrece **Editar texto**. También se puede retomar con la herramienta
 Texto, doble clic o Enter. El campo de renombre queda acotado al nombre y no cambia el contenido.
@@ -35,7 +37,7 @@ El formato y los gestos del texto directo, el grosor de los cables y las flechas
 
 Texto independiente de Notas en el dock de Canvas: clic para rótulos, arrastre para párrafos; tipografía, peso, tamaño, color y alineación en el lugar. Corregido el bloqueo al recuperar párrafos con fuente remota y ancho fraccionario o menor que un grafema. Contrato: [C08-TEXT-01](docs/iteraciones/0.8.md#texto-directo--c08-text-01).
 
-La revisión de [De la huerta al mercado](design/composicion-visual/index.html), ejemplo editable con guardado propio, confirmó la alineación de las cifras. El [giro desde las esquinas inferiores](docs/iteraciones/0.8.md#giro-de-materiales--c08-rot-01) contempla el cruce de 0°, los cambios de tipografía y la flecha debajo del camión. La grabación al 64 % permitió reproducir el alcance excesivo del cursor y el desplazamiento de los indicadores. Corregidos y verificados con 147 pruebas unitarias y del arnés (`2026-11-10_23-29-14-727Z`) y 11 recorridos dirigidos en Vite (`2026-11-10_23-29-15-039Z`). Pendiente de revisión del usuario. El siguiente caso para evaluar composición es comparar dos diseños anotados y reconocer los cambios desde el panorama. El trabajo con agentes en zonas viene después.
+La revisión de [De la huerta al mercado](design/composicion-visual/index.html), ejemplo editable con guardado propio, confirmó la alineación de las cifras. El [giro desde las esquinas inferiores](docs/iteraciones/0.8.md#giro-de-materiales--c08-rot-01) contempla el cruce de 0°, los cambios de tipografía y la flecha debajo del camión. La grabación al 64 % permitió reproducir el alcance excesivo del cursor y el desplazamiento de los indicadores. Corregidos y verificados con 147 pruebas unitarias y del arnés (`2026-11-10_23-29-14-727Z`) y 11 recorridos dirigidos en Vite (`2026-11-10_23-29-15-039Z`). Pendiente de revisión del usuario. La comparación de dos diseños anotados ya está disponible como segundo ejemplo. El trabajo con agentes en zonas viene después.
 
 Tipado y formato aprobados. Evidencia verificada: 143 pruebas unitarias y del arnés
 (`output/pruebas/unitarias/2026-11-10_21-19-56-760Z`) y diez recorridos dirigidos de texto, dock
