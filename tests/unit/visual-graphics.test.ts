@@ -16,17 +16,44 @@ test('C08-U80: gráficos editables independientes en espacio libre, ciclo cerrad
       additions = after.nodes.filter((n) => !before.nodes.some((b) => b.id === n.id));
     const box = selectionBounds([...additions]);
     assert.ok([...before.nodes, ...before.zones].every((n) => !rectsCross(box, n)));
-    assert.ok(
-      additions.some((n) => n.data.kind === 'image') &&
-        additions.some((n) => n.data.kind === 'text'),
-    );
+    if (['sequence', 'cycle', 'comparison', 'anatomy', 'story'].includes(kind))
+      assert.ok(
+        additions.some((n) => n.data.kind === 'image') &&
+          additions.some((n) => n.data.kind === 'text'),
+      );
     assert.deepEqual(after.nodes.slice(0, before.nodes.length), before.nodes);
     const addedLinks = after.links.slice(before.links.length);
     if (kind === 'cycle') {
       assert.equal(addedLinks.length, 4);
       assert.deepEqual(addedLinks.map((l) => l.from).sort(), addedLinks.map((l) => l.to).sort());
     }
-    assert.equal(addedLinks.length, { sequence: 2, comparison: 0, cycle: 4, anatomy: 3 }[kind]);
+    assert.equal(
+      addedLinks.length,
+      {
+        sequence: 2,
+        comparison: 0,
+        cycle: 4,
+        anatomy: 3,
+        decision: 2,
+        timeline: 0,
+        priority: 0,
+        handoff: 2,
+        hierarchy: 6,
+        story: 0,
+        identity: 0,
+        bars: 0,
+      }[kind],
+    );
+    assert.ok(additions.length >= 4);
+    assert.equal(new Set(additions.map((n) => n.id)).size, additions.length);
+    for (const l of addedLinks) {
+      assert.ok(additions.some((n) => n.id === l.from) && additions.some((n) => n.id === l.to));
+    }
+    if (kind === 'decision')
+      assert.deepEqual(
+        addedLinks.map((l) => l.label),
+        ['Sí', 'No'],
+      );
     const clip = captureCanvasCopies(
       after,
       additions.map((n) => n.id),

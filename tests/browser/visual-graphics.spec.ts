@@ -34,7 +34,7 @@ test('C08-B214: crear y editar cuatro formatos, comparar lo mismo y deshacer la 
   await page.setViewportSize({ width: 800, height: 670 });
   for (const kind of pickerNames) {
     const panel = await palette(page);
-    await expect(panel.locator('.graphic-thumb svg')).toHaveCount(4);
+    await expect(panel.locator('.graphic-thumb svg')).toHaveCount(12);
     if (kind === 'sequence') await capture(page, info, 'menu-de-graficos');
     await panel.locator('[data-graphic=' + kind + ']').click();
     await expect(panel).toHaveCount(0);
@@ -246,4 +246,115 @@ test('C08-B216: señalar un punto propio; la llamada sigue la tinta durante movi
   const saved = await tip();
   expect(Math.hypot(saved.x - next.x, saved.y - next.y)).toBeLessThan(2.5);
   await capture(page, info, 'detalle-en-imagen-propia');
+});
+
+test('C08-B220: componer en el lugar con texto, ilustración y flecha sin pasar por una plantilla', async ({
+  page,
+}, info) => {
+  await start(page);
+  await page.setViewportSize({ width: 880, height: 680 });
+  const choose = async (name: string) =>
+    (await palette(page)).getByRole('button', { name, exact: true }).click();
+  await choose('Texto');
+  await page.mouse.click(180, 190);
+  const editor = page.getByRole('textbox', { name: 'Texto en Canvas' });
+  await editor.fill('Entrada por el parque');
+  await editor.press('Escape');
+  const graphics = await palette(page);
+  const illustrations = graphics.getByRole('button', { name: 'Ilustraciones', exact: true });
+  await expect(illustrations.locator('kbd')).toHaveText(/^i$/i);
+  await illustrations.click();
+  const pictures = page.getByRole('dialog', { name: 'Ilustraciones', exact: true });
+  await pictures.getByRole('button', { name: 'Camión', exact: true }).click();
+  await expect(pictures).toHaveCount(0);
+  await choose('Flecha curva');
+  await page.mouse.move(210, 340);
+  await page.mouse.down();
+  await page.mouse.move(355, 330, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator('.free-arrow')).toHaveCount(1);
+  const scene = await world(page);
+  expect(scene.nodes.map((n) => n.data.kind)).toEqual(['text', 'image', 'drawing']);
+  expect(scene.links).toHaveLength(0);
+  await page.reload();
+  expect((await world(page)).nodes).toEqual(scene.nodes);
+  await page.keyboard.press('i');
+  await expect(pictures).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('button', { name: 'Gráficos explicativos', exact: true }),
+  ).toBeFocused();
+  const openGraphics = await palette(page);
+  await openGraphics.getByRole('button', { name: 'Buscar plantilla' }).click();
+  const search = openGraphics.getByRole('searchbox');
+  await search.press('i');
+  await expect(search).toHaveValue('i');
+  await search.press('Escape');
+  await page.keyboard.press('i');
+  await expect(pictures).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Incorporar materiales' })
+      .getByRole('button', { name: 'Ilustraciones' }),
+  ).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await capture(page, info, 'composicion-libre');
+});
+
+test('C08-B221: buscar por propósito, insertar cada composición y volver al lienzo previo', async ({
+  page,
+}, info) => {
+  await start(page);
+  await page.setViewportSize({ width: 830, height: 670 });
+  const menu = await palette(page);
+  await menu.getByRole('button', { name: 'Buscar plantilla' }).click();
+  const field = menu.getByRole('searchbox');
+  await field.fill('inexistente');
+  await expect(menu.getByText('Sin coincidencias.')).toBeVisible();
+  await field.fill('logo');
+  await expect(menu.locator('[data-graphic]:visible')).toHaveCount(1);
+  await field.press('Enter');
+  await expect(menu.locator('[data-graphic=identity]')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(menu.locator('[data-graphic]:visible')).toHaveCount(12);
+  await page.keyboard.press('Escape');
+  for (const key of [
+    'decision',
+    'timeline',
+    'priority',
+    'handoff',
+    'hierarchy',
+    'story',
+    'identity',
+    'bars',
+  ]) {
+    const panel = await palette(page);
+    await panel.locator('[data-graphic="' + key + '"]').click();
+    await expect(panel).toHaveCount(0);
+    const scene = await world(page);
+    expect(scene.nodes.length).toBeGreaterThanOrEqual(4);
+    await expect(page.locator('.canvas-stage .material')).toHaveCount(scene.nodes.length);
+    const truncated = await page
+      .locator('.canvas-stage .material.note > :is(h3,p)')
+      .evaluateAll((parts) =>
+        parts.filter((el) => el.scrollHeight > el.clientHeight + 1).map((el) => el.textContent),
+      );
+    expect.soft(truncated, key).toEqual([]);
+    if (key === 'decision') {
+      await expect(page.locator('.cable-label')).toHaveText(['Sí', 'No']);
+    }
+    if (key === 'identity') {
+      const circle = scene.nodes.find(
+        (n) => n.data.kind === 'shape' && n.data.shape === 'ellipse',
+      )!;
+      const sail = scene.nodes.find((n) => n.data.kind === 'shape' && n.data.shape === 'triangle')!;
+      expect(circle.x).toBeLessThan(sail.x);
+      expect(circle.x + circle.width).toBeGreaterThan(sail.x + sail.width);
+    }
+    await capture(page, info, 'plantilla-' + key);
+    await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+    await expect(page.locator('.canvas-stage .material')).toHaveCount(0);
+  }
 });

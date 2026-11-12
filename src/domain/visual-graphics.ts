@@ -1,5 +1,6 @@
+import { graphicLayouts, type GraphicTextStyle } from './graphic-layouts';
 import { clearOrigin } from './visual-placement';
-import type { Anchor, Link, Material, Point, World } from './model';
+import type { Anchor, Link, Material, Point, Shape, World } from './model';
 import { newCanvasText } from './canvas-text';
 import { illustrationAssetPrefix } from './illustration-asset';
 import { ensure } from './invariants';
@@ -11,17 +12,11 @@ export const graphics = {
   cycle: { name: 'Ciclo', title: 'El viaje del agua' },
   comparison: { name: 'Comparación', title: 'Dos maneras de llegar' },
   anatomy: { name: 'Imagen anotada', title: 'Anatomía de una bicicleta' },
+  ...graphicLayouts,
 } as const;
 export type GraphicKind = keyof typeof graphics;
 const ink = '#f4eee4',
   muted = '#c1ccd0';
-type Style = {
-  weight?: number;
-  align?: 'center' | 'left' | 'right';
-  color?: string;
-  serif?: boolean;
-};
-
 export function graphicParts(kind: GraphicKind, uid: () => string) {
   ensure(Object.hasOwn(graphics, kind), 'GRAPHIC_KIND', 'Elegí una composición disponible.');
   const nodes: Material[] = [],
@@ -32,7 +27,7 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
     y: number,
     width: number,
     size: number,
-    style: Style = {},
+    style: GraphicTextStyle = {},
   ) => {
     const id = uid();
     nodes.push({
@@ -73,8 +68,65 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
     });
     return id;
   };
-  const connect = (from: string, to: string, fromAnchor: Anchor, toAnchor: Anchor) =>
-    links.push({ id: uid(), from, to, fromAnchor, toAnchor, thickness: 3, direction: 'forward' });
+  const shape = (
+    type: Shape,
+    title: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color: string,
+  ) => {
+    const id = uid();
+    nodes.push({
+      id,
+      owner: null,
+      x,
+      y,
+      width,
+      height,
+      data: { kind: 'shape', shape: type, title, color, fill: true, stroke: color, thickness: 1 },
+    });
+    return id;
+  };
+  const note = (
+    title: string,
+    body: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color: string,
+  ) => {
+    const id = uid();
+    nodes.push({
+      id,
+      owner: null,
+      x,
+      y,
+      width,
+      height,
+      data: { kind: 'note', title, text: body, color },
+    });
+    return id;
+  };
+  const connect = (
+    from: string,
+    to: string,
+    fromAnchor: Anchor,
+    toAnchor: Anchor,
+    label?: string,
+  ) =>
+    links.push({
+      id: uid(),
+      from,
+      to,
+      fromAnchor,
+      toAnchor,
+      thickness: 3,
+      direction: 'forward',
+      ...(label ? { label } : {}),
+    });
   const heading = (width: number) =>
     text(graphics[kind].title, 0, 0, width, 41, { weight: 700, serif: true });
   if (kind === 'sequence') {
@@ -130,7 +182,7 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
     ['Recorrido', 'Horario', 'Acceso'].forEach((v, j) =>
       text(v, 0, 240 + j * 57, 168, 19, { weight: 600, color: muted }),
     );
-  } else {
+  } else if (kind === 'anatomy') {
     heading(772);
     // Los tres destinos son puntos concretos del dibujo de bicicleta en su viewBox de 32 × 32.
     const x = 240,
@@ -163,6 +215,9 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
     detail('Manubrio', 'Orienta la rueda\ndelantera.', true, 104, 13.5, 9.3);
     detail('Sillín', 'Sostiene a quien\npedalea.', false, 94, 20, 12.7);
     detail('Transmisión', 'Lleva la fuerza del pedal\na la rueda trasera.', false, 284, 20, 23.5);
+  } else {
+    heading(790);
+    graphicLayouts[kind].compose({ text, shape, picture, note, connect });
   }
   return { nodes, links };
 }

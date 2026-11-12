@@ -1,3 +1,4 @@
+import type { GraphicTool } from '../features/canvas/state';
 import { exportDiagnostics } from '../platform/export-diagnostics';
 import { confirmRemoval } from '../ui/confirm-removal';
 import { WheelIntent } from '../spatial/wheel-intent';
@@ -305,6 +306,11 @@ export class EverettApp implements Context {
       intent?.source ?? 'wheel',
       intent?.interaction,
     );
+  }
+  activateGraphicTool(tool: GraphicTool): void {
+    if (!(this.view instanceof CanvasView)) return;
+    if (tool === 'illustrations') this.view.openIllustrations();
+    else this.view.activateTool(tool);
   }
   locateMaterial(world: string, id: string): void {
     const source = this.store.get().worlds.find((item) => item.id === world);

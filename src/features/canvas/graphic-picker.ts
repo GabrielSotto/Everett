@@ -1,3 +1,7 @@
+import { shortcutCombination } from '../../domain/shortcuts';
+import { shapeVertices } from '../../domain/geometry';
+import { pickerSearch, searchKey } from '../../ui/picker-search';
+import type { GraphicTool } from './state';
 import type { Context } from '../../app/context';
 import { selectionFlow } from '../../domain/visual-flow';
 import { graphicParts, graphics, type GraphicKind } from '../../domain/visual-graphics';
@@ -17,6 +21,33 @@ import {
   loadedIllustration,
 } from './illustrations';
 
+const tools: ReadonlyArray<[GraphicTool, string, string]> = [
+  ['illustrations', 'Ilustraciones', 'sticker'],
+  ['text', 'Texto', 'text'],
+  ['note', 'Nota', 'note'],
+  ['rectangle', 'Rectángulo', 'rectangle'],
+  ['ellipse', 'Elipse', 'ellipse'],
+  ['triangle', 'Triángulo', 'triangle'],
+  ['star', 'Estrella', 'star'],
+  ['drawing', 'Dibujo libre', 'draw'],
+  ['straight-arrow', 'Flecha recta', 'straight-arrow'],
+  ['curved-arrow', 'Flecha curva', 'curved-arrow'],
+  ['connect', 'Conector', 'link'],
+];
+const graphicKeywords: Record<GraphicKind, string> = {
+  sequence: 'proceso etapas pasos',
+  cycle: 'circular proceso bucle',
+  comparison: 'alternativas opciones',
+  anatomy: 'señalar partes detalle llamada',
+  decision: 'ramas sí no flujo',
+  timeline: 'tiempo hitos fechas historia',
+  priority: 'impacto esfuerzo cuadrantes',
+  handoff: 'responsabilidades flujo traspaso swimlane',
+  hierarchy: 'organigrama estructura organización',
+  story: 'guion viñetas relato escenas',
+  identity: 'logo logotipo símbolo paleta',
+  bars: 'gráfico datos encuesta cantidades',
+};
 function parts(kind: GraphicKind) {
   let i = 0;
   return graphicParts(kind, () => String(++i));
@@ -27,8 +58,7 @@ function drawingFor(asset: string) {
   return drawing;
 }
 /** La miniatura usa las mismas piezas y posiciones que van al Canvas. */
-function thumbnail(kind: GraphicKind) {
-  const { nodes, links } = parts(kind);
+function thumbnail({ nodes, links }: ReturnType<typeof parts>) {
   const content = nodes.slice(1);
   const b = selectionBounds(content);
   const leaders: string[] = [];
@@ -48,6 +78,31 @@ function thumbnail(kind: GraphicKind) {
       paths.push(
         `<image x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" href="${html(illustrationPreview(drawingFor(d.asset)))}"/>`,
       );
+    } else if (d.kind === 'note') {
+      paths.push(
+        `<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="7" fill="${d.color}"/>`,
+      );
+      for (const [i, length] of [d.title.length, d.text.length].entries()) {
+        paths.push(
+          `<rect x="${n.x + 13}" y="${n.y + 21 + i * 27}" width="${Math.min(n.width - 28, length * (i ? 5 : 8))}" height="${i ? 5 : 9}" rx="2" fill="#40505a"/>`,
+        );
+      }
+    } else if (d.kind === 'shape') {
+      const { x, y, width, height } = n;
+      if (d.shape === 'ellipse')
+        paths.push(
+          `<ellipse cx="${x + width / 2}" cy="${y + height / 2}" rx="${width / 2}" ry="${height / 2}" fill="${d.color}"/>`,
+        );
+      else if (d.shape === 'rectangle')
+        paths.push(
+          `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${d.color}"/>`,
+        );
+      else {
+        const points = shapeVertices(d.shape)
+          .map((p) => x + p.x * width + ',' + (y + p.y * height))
+          .join(' ');
+        paths.push(`<polygon points="${points}" fill="${d.color}"/>`);
+      }
     } else if (d.kind === 'text') {
       for (const [i, s] of d.text.split('\n').entries()) {
         const width = Math.min(n.width, s.length * d.size * 0.46);
@@ -93,7 +148,7 @@ export function openGraphicPicker(
   panel.id = 'canvas-graphics-menu';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-label', 'Gráficos explicativos');
-  panel.innerHTML = `<header><strong>Gráficos explicativos</strong><button class="icon-button" type="button" data-close aria-label="Cerrar">${icon('close', 18)}</button></header><div class="graphic-options"></div><p role="status"></p>`;
+  panel.innerHTML = `<header><strong>Gráficos explicativos</strong><button class="icon-button" type="button" data-close aria-label="Cerrar">${icon('close', 18)}</button></header><fieldset class="graphic-tools"><legend>Componer</legend><div class="graphic-materials"></div><div class="graphic-marks"></div></fieldset><h3>Plantillas <span data-count></span></h3><div class="graphic-options" role="group" aria-label="Plantillas"></div><p data-empty hidden>Sin coincidencias.</p><p role="status"></p>`;
   const grid = panel.querySelector<HTMLElement>('.graphic-options')!,
     status = panel.querySelector<HTMLElement>('[role=status]')!;
   const close = (focus = true) => {
@@ -104,18 +159,65 @@ export function openGraphicPicker(
     trigger()?.setAttribute('aria-expanded', 'false');
     if (focus) trigger()?.focus({ preventScroll: true });
   };
+  const pieces = panel.querySelector<HTMLElement>('.graphic-tools')!;
+  for (const [tool, name, symbol] of tools) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.graphicTool = tool;
+    const material = tool === 'illustrations' || tool === 'text' || tool === 'note';
+    button.title = name;
+    button.setAttribute('aria-label', name);
+    button.innerHTML = icon(symbol, 17) + (material ? '<span>' + name + '</span>' : '');
+    if (tool === 'illustrations' && ctx.ui.shortcuts.illustrations) {
+      const hint = document.createElement('kbd');
+      hint.setAttribute('aria-hidden', 'true');
+      hint.textContent = ctx.ui.shortcuts.illustrations;
+      button.append(hint);
+      button.title = name + ' · ' + ctx.ui.shortcuts.illustrations;
+      button.setAttribute('aria-keyshortcuts', ctx.ui.shortcuts.illustrations);
+    }
+    button.onclick = (event) => {
+      event.stopPropagation();
+      close(false);
+      ctx.activateGraphicTool(tool);
+    };
+    pieces.querySelector(material ? '.graphic-materials' : '.graphic-marks')!.append(button);
+  }
   const position = () => {
     const anchor = trigger()?.getBoundingClientRect();
     if (!anchor?.width || ctx.world().id !== worldId) return close(false);
     panel.style.left =
       Math.max(8, Math.min(anchor.left, innerWidth - panel.offsetWidth - 8)) + 'px';
+    panel.style.setProperty('--graphic-room', Math.max(0, innerHeight - anchor.bottom - 16) + 'px');
     panel.style.top = anchor.bottom + 8 + 'px';
   };
   parentSignal.addEventListener('abort', () => close(false), { once: true, signal });
+  const count = panel.querySelector<HTMLElement>('[data-count]')!;
+  const entries = Object.keys(graphics) as GraphicKind[];
+  count.textContent = String(entries.length);
+  const search = pickerSearch(
+    panel.querySelector('header')!,
+    'Buscar plantilla',
+    (value) => {
+      const words = searchKey(value).split(/\s+/);
+      let matches = 0;
+      for (const button of grid.querySelectorAll<HTMLButtonElement>('[data-graphic]')) {
+        button.hidden = !words.every((word) => button.dataset.terms!.includes(word));
+        if (!button.hidden) matches++;
+      }
+      count.textContent = String(matches);
+      grid.scrollTop = 0;
+      panel.querySelector<HTMLElement>('[data-empty]')!.hidden = matches > 0;
+    },
+    () => grid.querySelector('[data-graphic]:not([hidden])'),
+  );
   bindDismiss(
     signal,
     () => true,
-    (source) => close(source === 'keyboard'),
+    (source) => {
+      if (source === 'keyboard' && search.collapse()) return;
+      close(source === 'keyboard');
+    },
     '.graphic-picker,[data-action=canvas-graphics]',
   );
   panel.querySelector<HTMLButtonElement>('[data-close]')!.onclick = () => close();
@@ -123,7 +225,23 @@ export function openGraphicPicker(
   panel.addEventListener(
     'keydown',
     (event) => {
-      const buttons = [...panel.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')],
+      if (event.target instanceof HTMLInputElement) {
+        event.stopPropagation();
+        return;
+      }
+      if (
+        ctx.ui.shortcuts.illustrations &&
+        shortcutCombination(event) === ctx.ui.shortcuts.illustrations
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.repeat)
+          pieces.querySelector<HTMLButtonElement>('[data-graphic-tool=illustrations]')!.click();
+        return;
+      }
+      const buttons = [
+          ...panel.querySelectorAll<HTMLButtonElement>('button:not(:disabled):not([hidden])'),
+        ],
         i = buttons.indexOf(document.activeElement as HTMLButtonElement);
       if (
         event.key === 'Tab' &&
@@ -132,7 +250,10 @@ export function openGraphicPicker(
         close();
         return;
       }
-      const columns = document.activeElement?.closest('.graphic-options') ? 2 : 1;
+      const shelf = document.activeElement?.closest(
+        '.graphic-options,.graphic-marks,.graphic-materials',
+      );
+      const columns = shelf === grid ? 2 : 1;
       const step =
         (
           { ArrowRight: 1, ArrowLeft: -1, ArrowDown: columns, ArrowUp: -columns } as Record<
@@ -142,7 +263,7 @@ export function openGraphicPicker(
         )[event.key] ?? 0;
       if (step || event.key === 'Home' || event.key === 'End') {
         event.preventDefault();
-        const items = columns === 2 ? buttons.filter((button) => grid.contains(button)) : buttons;
+        const items = shelf ? buttons.filter((button) => shelf.contains(button)) : buttons;
         const current = items.indexOf(document.activeElement as HTMLButtonElement);
         items[
           event.key === 'Home'
@@ -156,11 +277,13 @@ export function openGraphicPicker(
     },
     { signal },
   );
-  const entries = Object.keys(graphics) as GraphicKind[];
   for (const k of entries) {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.graphic = k;
+    button.dataset.terms = searchKey(
+      [graphics[k].name, graphics[k].title, graphicKeywords[k]].join(' '),
+    );
     button.innerHTML = `<span class="graphic-thumb" aria-hidden="true"></span><strong>${graphics[k].name}</strong><small>${graphics[k].title}</small>`;
     grid.append(button);
     button.onclick = () => void insert(k);
@@ -189,17 +312,23 @@ export function openGraphicPicker(
     };
     flows.append(button);
   }
-  if (flows.childElementCount > 1) grid.before(flows);
+  if (flows.childElementCount > 1) panel.querySelector('h3')!.before(flows);
   async function load() {
-    await loadIllustrations();
-    if (!panel.isConnected) return;
-    for (const k of entries)
-      grid.querySelector(`[data-graphic="${k}"] .graphic-thumb`)!.innerHTML = thumbnail(k);
+    await Promise.all(
+      entries.map(async (kind) => {
+        const scene = parts(kind);
+        if (scene.nodes.some((n) => n.data.kind === 'image')) await loadIllustrations();
+        if (panel.isConnected)
+          grid.querySelector('[data-graphic="' + kind + '"] .graphic-thumb')!.innerHTML =
+            thumbnail(scene);
+      }),
+    );
   }
-  void load().catch(() => {
-    if (panel.isConnected)
-      status.textContent = 'No se cargaron las miniaturas. Elegí un gráfico para reintentar.';
-  });
+  const loadPreviews = () =>
+    void load().catch(() => {
+      if (panel.isConnected)
+        status.textContent = 'No se cargaron las miniaturas. Elegí un gráfico para reintentar.';
+    });
   async function insert(kind: GraphicKind) {
     if (panel.getAttribute('aria-busy') === 'true') return;
     panel.setAttribute('aria-busy', 'true');
@@ -208,12 +337,14 @@ export function openGraphicPicker(
       'No se cargó la biblioteca de ilustraciones. Volvé a elegir el gráfico para reintentar.';
     status.textContent = 'Preparando gráfico…';
     try {
-      if (!ctx.storage) throw Error('El guardado local no está disponible.');
-      await loadIllustrations();
-      if (!panel.isConnected || ctx.world().id !== world) return;
       const assets = new Set(
         parts(kind).nodes.flatMap((n) => (n.data.kind === 'image' ? [n.data.asset] : [])),
       );
+      if (assets.size) {
+        if (!ctx.storage) throw Error('El guardado local no está disponible.');
+        await loadIllustrations();
+        if (!panel.isConnected || ctx.world().id !== world) return;
+      }
       failure =
         'No se pudieron guardar las ilustraciones en este navegador. Revisá el espacio disponible y volvé a intentarlo.';
       await Promise.all(
@@ -263,10 +394,9 @@ export function openGraphicPicker(
     }
   }
   document.body.append(panel);
+  loadPreviews();
   trigger()?.setAttribute('aria-expanded', 'true');
   position();
-  panel
-    .querySelector<HTMLButtonElement>('.graphic-flows button,[data-graphic]')
-    ?.focus({ preventScroll: true });
+  panel.querySelector<HTMLButtonElement>('[data-graphic-tool]')?.focus({ preventScroll: true });
   return { close, position };
 }

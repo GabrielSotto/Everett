@@ -1964,7 +1964,6 @@ export class CanvasView implements View {
         ctx.persist();
         break;
       }
-      case 'canvas-illustrations':
       case 'canvas-examples':
         this.referenceMenu = false;
         this.renderDock();
@@ -1994,13 +1993,8 @@ export class CanvasView implements View {
           'connect',
           'drawing',
         ];
-        if (all.includes(tool as Tool)) {
-          if (tool !== 'select' && tool !== 'hand') this.select(null, null);
-          ctx.ui.canvas.tool = ctx.ui.canvas.tool === tool ? 'select' : (tool as Tool);
-          ctx.ui.canvas.linkStart = null;
-          this.shapesOpen = false;
-          this.render();
-        }
+        if (all.includes(tool as Tool))
+          this.activateTool(ctx.ui.canvas.tool === tool ? 'select' : (tool as Tool));
         break;
       }
       case 'zone-return': {
@@ -2793,8 +2787,17 @@ export class CanvasView implements View {
     const width = panel === 'inspector' ? 270 : (job?.output?.length ?? 1) > 1 ? 560 : 320;
     return innerWidth - Math.min(310, innerWidth - 76) < width + 48;
   }
+  activateTool(tool: Tool): void {
+    if (tool !== 'select' && tool !== 'hand') this.select(null, null);
+    this.ctx.ui.canvas.tool = tool;
+    this.ctx.ui.canvas.linkStart = null;
+    this.shapesOpen = this.referenceMenu = this.dockMore = false;
+    this.render();
+  }
   openIllustrations(): void {
-    const trigger = this.referenceTrigger()?.getBoundingClientRect();
+    const trigger = document
+      .querySelector<HTMLElement>('[data-action="canvas-graphics"]')
+      ?.getBoundingClientRect();
     this.dockMore = this.referenceMenu = false;
     this.renderDock();
     this.interactions.showIllustrations(
@@ -2814,8 +2817,8 @@ export class CanvasView implements View {
     if (!this.referenceMenu) return '';
     const world = this.ctx.world();
     const item = (action: string, symbol: string, name: string, attributes = ''): string =>
-      `<button type="button" data-action="${action}" title="${html(name)}" ${attributes}>${icon(symbol, 14)}<span>${html(name)}</span>${action === 'canvas-illustrations' && this.ctx.ui.shortcuts.illustrations ? '<kbd aria-hidden="true">' + html(this.ctx.ui.shortcuts.illustrations) + '</kbd>' : ''}</button>`;
-    return `<div class="reference-menu" id="canvas-material-picker" role="dialog" aria-label="Incorporar materiales"><h4>Archivos y enlaces</h4>${item('canvas-import', 'image', 'Importar archivos locales')}${item('canvas-examples', 'image', 'Cargar ejemplos multimedia')}${item('canvas-link', 'link', 'Agregar enlace')}<h4>Composición visual</h4>${item('canvas-illustrations', 'sticker', 'Ilustraciones', this.ctx.ui.shortcuts.illustrations ? `aria-keyshortcuts="${html(this.ctx.ui.shortcuts.illustrations)}"` : '')}<h4>Documentos de Docs</h4>${world.docs.map((doc) => item('reference-add', 'docs', doc.title, `data-kind="document" data-id="${doc.id}"`)).join('') || '<p>No hay documentos en este Mundo.</p>'}<h4>Archivos de Code</h4>${world.files.map((file) => item('reference-add', 'code', file.name, `data-kind="file" data-id="${file.id}"`)).join('') || '<p>No hay archivos de código.</p>'}<h4>Tareas de Board</h4>${world.tasks.map((task) => item('reference-add', 'board', task.title, `data-kind="task" data-id="${task.id}"`)).join('') || '<p>No hay tareas.</p>'}</div>`;
+      `<button type="button" data-action="${action}" title="${html(name)}" ${attributes}>${icon(symbol, 14)}<span>${html(name)}</span></button>`;
+    return `<div class="reference-menu" id="canvas-material-picker" role="dialog" aria-label="Incorporar materiales"><h4>Archivos y enlaces</h4>${item('canvas-import', 'image', 'Importar archivos locales')}${item('canvas-examples', 'image', 'Cargar ejemplos multimedia')}${item('canvas-link', 'link', 'Agregar enlace')}<h4>Documentos de Docs</h4>${world.docs.map((doc) => item('reference-add', 'docs', doc.title, `data-kind="document" data-id="${doc.id}"`)).join('') || '<p>No hay documentos en este Mundo.</p>'}<h4>Archivos de Code</h4>${world.files.map((file) => item('reference-add', 'code', file.name, `data-kind="file" data-id="${file.id}"`)).join('') || '<p>No hay archivos de código.</p>'}<h4>Tareas de Board</h4>${world.tasks.map((task) => item('reference-add', 'board', task.title, `data-kind="task" data-id="${task.id}"`)).join('') || '<p>No hay tareas.</p>'}</div>`;
   }
   private positionReferenceMenu(): void {
     const menu = this.root.querySelector<HTMLElement>('.reference-menu');

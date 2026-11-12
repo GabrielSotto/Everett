@@ -157,11 +157,12 @@
   flex-shrink: 0;
 }
 .canvas-context-form.graphic-picker {
-  width: min(280px, calc(100vw - 24px));
-  max-height: min(305px, calc(100dvh - 85px));
+  width: min(336px, calc(100vw - 16px));
+  max-height: min(410px, 67dvh, var(--graphic-room, calc(100dvh - 85px)));
   z-index: 62;
-  padding: 6px;
-  display: grid;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
   overflow: auto;
   overscroll-behavior: contain;
   gap: 4px;
@@ -178,6 +179,54 @@
 .graphic-picker header button {
   height: 32px;
 }
+.graphic-tools {
+  border: 0;
+  margin: 0;
+  padding: 2px;
+}
+.graphic-tools legend,
+.graphic-picker h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0;
+  padding: 3px;
+}
+.graphic-materials,
+.graphic-marks {
+  display: flex;
+  gap: 3px;
+}
+.graphic-marks {
+  margin-top: 4px;
+}
+.graphic-picker .graphic-tools button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 30px;
+  gap: 5px;
+  padding: 3px 2px;
+  flex: 1;
+  background: transparent;
+  font-size: 12px;
+}
+.graphic-picker .graphic-materials button:first-child {
+  flex: 1.5;
+}
+.graphic-picker .graphic-tools button:is(:hover, :focus-visible) {
+  background: var(--raised-hover, var(--panel));
+}
+.graphic-picker [data-count] {
+  margin-left: 3px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+.graphic-picker h3 {
+  border-top: 1px solid var(--line);
+  padding-top: 7px;
+}
 .graphic-picker .graphic-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -185,6 +234,12 @@
   overflow: auto;
   overscroll-behavior: contain;
   padding: 2px;
+}
+@media (max-height: 500px) {
+  .graphic-picker .graphic-options {
+    flex: none;
+    overflow: visible;
+  }
 }
 .graphic-picker [data-graphic] {
   min-width: 0;
@@ -195,6 +250,13 @@
   text-align: left;
   background: transparent;
   line-height: 1.3;
+}
+.graphic-picker [data-graphic][hidden] {
+  display: none;
+}
+.graphic-picker [data-empty] {
+  margin: 5px;
+  font-size: 12px;
 }
 .graphic-picker [data-graphic]:is(:hover, :focus-visible) {
   background: var(--raised-hover, var(--panel));
@@ -347,27 +409,25 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.reference-menu kbd {
-  margin-left: auto;
+.graphic-materials kbd {
+  padding: 0 3px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
   color: var(--muted);
   font:
-    600 12px/18px Consolas,
-    ui-monospace,
+    11px/15px Consolas,
     monospace;
-  min-width: 20px;
-  padding-inline: 3px;
-  text-align: center;
-  border: 1px solid var(--line);
-  border-radius: 4px;
 }
-:is(.illustration-picker, .library-symbol-options) header:has(.picker-search) {
+:is(.graphic-picker, .illustration-picker, .library-symbol-options) header:has(.picker-search) {
   position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
   min-height: 32px;
 }
-:is(.illustration-picker, .library-symbol-options) header:has(.picker-search) > strong {
+:is(.graphic-picker, .illustration-picker, .library-symbol-options)
+  header:has(.picker-search)
+  > strong {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -375,7 +435,9 @@
   text-overflow: ellipsis;
   padding-right: 27px;
 }
-:is(.illustration-picker, .library-symbol-options) header:has(.picker-search.open) > strong {
+:is(.graphic-picker, .illustration-picker, .library-symbol-options)
+  header:has(.picker-search.open)
+  > strong {
   visibility: hidden;
 }
 .picker-search {

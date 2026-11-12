@@ -727,7 +727,6 @@ export class CanvasInteractions {
             input.focus();
             break;
           }
-          case 'canvas-illustrations':
           case 'material-image-colors':
           case 'material-replace-image': {
             const anchor = button!.closest('.reference-menu,.canvas-context-menu') ?? button!;
@@ -2024,13 +2023,9 @@ export class CanvasInteractions {
         .querySelector<HTMLInputElement>(color === 'color' ? '#draw-color' : '#shape-border')
         ?.focus({ preventScroll: true });
     else if (insertingIllustration) {
-      const trigger = this.root.querySelector<HTMLElement>(
-        '.canvas-tools [data-action=references]',
-      );
-      (trigger?.offsetWidth
-        ? trigger
-        : this.root.querySelector<HTMLElement>('[data-action=dock-more]')
-      )?.focus({ preventScroll: true });
+      document
+        .querySelector<HTMLElement>('[data-action="canvas-graphics"]')
+        ?.focus({ preventScroll: true });
     } else if (active)
       this.root
         .querySelector<HTMLElement>(

@@ -14,6 +14,21 @@ export type Tool =
   | 'zone'
   | 'drawing'
   | 'comment';
+export type GraphicTool =
+  | Extract<
+      Tool,
+      | 'text'
+      | 'rectangle'
+      | 'ellipse'
+      | 'triangle'
+      | 'star'
+      | 'drawing'
+      | 'straight-arrow'
+      | 'curved-arrow'
+      | 'connect'
+      | 'note'
+    >
+  | 'illustrations';
 export interface CanvasUi {
   tool: Tool;
   selection: string | null;

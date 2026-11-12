@@ -23,11 +23,11 @@ test('C08-B213: mover la paleta y recorrer categorías deja libre el Canvas y co
   const point = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2 };
   await page.mouse.move(point.x, point.y);
   await page.mouse.down();
-  await page.mouse.move(point.x - 160, point.y - 120, { steps: 10 });
+  await page.mouse.move(point.x - 90, point.y + 120, { steps: 10 });
   await page.mouse.up();
   const moved = await bounds();
-  expect(moved.x).toBeCloseTo(original.x - 160, 0);
-  expect(moved.y).toBeCloseTo(original.y - 120, 0);
+  expect(moved.x).toBeCloseTo(original.x - 90, 0);
+  expect(moved.y).toBeCloseTo(original.y + 120, 0);
   await grip.press('ArrowRight');
   const remembered = await bounds();
   expect(remembered.x).toBeCloseTo(moved.x + 8, 0);
@@ -187,7 +187,7 @@ test('C08-B209: colocar ilustraciones y reemplazar una imagen girada conserva su
   page,
 }, info) => {
   await start(page);
-  const trigger = page.getByRole('button', { name: 'Incorporar materiales', exact: true });
+  const trigger = page.getByRole('button', { name: 'Gráficos explicativos', exact: true });
   const open = async () => {
     await trigger.click();
     await page.getByRole('button', { name: 'Ilustraciones', exact: true }).click();

@@ -1,3 +1,4 @@
+import type { GraphicTool } from '../features/canvas/state';
 import type { Camera, Route, WorldSnapshot } from '../domain/model';
 import type { Command } from '../domain/command-types';
 import type { Store } from './store';
@@ -29,6 +30,7 @@ export interface Context {
   ): boolean;
   go(r: Route, origin?: DOMRect, intent?: Intent): void;
   back(intent?: Intent): void;
+  activateGraphicTool(tool: GraphicTool): void;
   locateMaterial(world: string, id: string): void;
   render(): void;
   renderShell(): void;
