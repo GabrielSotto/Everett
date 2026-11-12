@@ -20,6 +20,17 @@ export const explanatoryLayouts = {
       shape('rectangle', 'Límite oeste', 0, 85, 4, 209, '#829497');
       shape('rectangle', 'Plaza de puestos', 245, 125, 195, 120, '#4c6666');
       text('Puestos', 266, 171, 152, 23, centered);
+      shape('rectangle', 'Escalera', 485, 155, 65, 68, '#97775e');
+      for (let i = 0; i < 4; i++)
+        shape('rectangle', 'Peldaño ' + (i + 1), 488, 162 + i * 15, 59, 4, sand);
+      text('Escalera', 466, 238, 101, 17, centered);
+      text(
+        'Acceso al recital   /   Desde la calle Sur, seguí el paso nivelado hasta la rampa.',
+        0,
+        531,
+        798,
+        20,
+      );
       const gate = picture('door', 'Entrada accesible', 26, 314, 67);
       text('Entrada accesible', 15, 398, 196, 19, bold);
       const turn = shape('ellipse', 'Giro junto a la plaza', 489, 343, 14, 14, sand);
@@ -37,7 +48,7 @@ export const explanatoryLayouts = {
   affinity: {
     name: 'Diagrama de afinidad',
     title: 'Qué se repite en las entrevistas',
-    compose({ note, group }) {
+    compose({ note, group, text }) {
       const topics = [
         {
           title: 'Encontrar el acceso',
@@ -46,6 +57,7 @@ export const explanatoryLayouts = {
           items: [
             ['E1 · Llegada', '“Di dos vueltas para encontrar la puerta.”'],
             ['E3 · Señales', '“Desde la plaza no se ve el cartel.”'],
+            ['E5 · Mapa', '“El plano marcaba la oficina, no la entrada.”'],
           ],
         },
         {
@@ -64,18 +76,36 @@ export const explanatoryLayouts = {
         );
         group(topic.title, ids);
       }
+      text('Aún sin patrón', 681, 140, 270, 22, bold);
+      note(
+        'E6 · Acompañante',
+        '“Tuve que reservar los dos asientos por separado.”',
+        681,
+        185,
+        281,
+        158,
+        blue,
+      );
+      text('Próxima entrevista', 681, 397, 285, 23, bold);
+      text(
+        'Preguntar cómo eligieron los asientos. Una sola mención no justifica agruparla con precio o acceso.',
+        681,
+        447,
+        277,
+        19,
+      );
     },
   },
   fishbone: {
     name: 'Causa y efecto',
     title: 'Por qué llegan cajas dañadas',
-    compose({ shape, note, connect }) {
+    compose({ shape, note, connect, text }) {
       const joint = (x: number) => shape('ellipse', 'Unión de causas', x, 270, 16, 16, sand);
       const first = joint(236),
         second = joint(487);
       const effect = note(
         'Efecto observado',
-        'Cajas aplastadas al recibir el pedido.',
+        '6 de 30 cajas llegaron aplastadas.',
         650,
         220,
         235,
@@ -91,7 +121,7 @@ export const explanatoryLayouts = {
           above: true,
           joint: first,
           name: 'Embalaje',
-          cause: 'Cartón de baja resistencia.',
+          cause: '¿Cedió el cartón del nuevo lote?',
         },
         {
           x: 42,
@@ -99,7 +129,7 @@ export const explanatoryLayouts = {
           above: false,
           joint: first,
           name: 'Manipulación',
-          cause: 'Apilado sin límite de altura.',
+          cause: '¿El peso supera la resistencia de la base?',
         },
         {
           x: 302,
@@ -107,7 +137,7 @@ export const explanatoryLayouts = {
           above: true,
           joint: second,
           name: 'Transporte',
-          cause: 'La carga se mueve en las curvas.',
+          cause: '¿Se desplazó la carga al doblar?',
         },
         {
           x: 343,
@@ -115,7 +145,7 @@ export const explanatoryLayouts = {
           above: false,
           joint: second,
           name: 'Humedad',
-          cause: 'El depósito moja la base.',
+          cause: '¿Perdió rigidez el cartón mojado?',
         },
       ];
       for (const b of branches) {
@@ -129,22 +159,46 @@ export const explanatoryLayouts = {
           line,
         );
       }
+      text('Inspección al llegar', 0, 575, 310, 24, bold);
+      text(
+        'Abajo: 6 dañadas de 10. Arriba: 0 de 20. Solo 2 de las 6 dañadas estaban mojadas.',
+        0,
+        625,
+        400,
+        20,
+      );
+      text('Siguiente despacho', 482, 575, 390, 24, bold);
+      text(
+        'Comparar dos pilas del mismo lote en el mismo viaje; limitar la altura de una y registrar los daños.',
+        482,
+        625,
+        395,
+        20,
+      );
     },
   },
   concepts: {
     name: 'Mapa conceptual',
     title: 'Cómo se conserva la humedad',
-    compose({ note, connect }) {
-      const trees = note('Árboles', 'Copa y raíces', 0, 208, 176, 146, mint);
+    compose({ note, connect, text }) {
+      const trees = note('Árboles', 'Copa y caída de hojas', 0, 208, 176, 146, mint);
       const shade = note('Sombra', 'Menos sol directo', 250, 76, 198, 146, blue);
-      const roots = note('Raíces', 'Poros en el suelo', 250, 353, 198, 146, sand);
+      const litter = note('Hojarasca', 'Capa de hojas secas', 250, 353, 198, 146, sand);
       const evap = note('Evaporación', 'Agua que pasa al aire', 572, 76, 216, 146, blue);
       const water = note('Humedad', 'Agua en el suelo', 572, 353, 216, 146, mint);
       connect(trees, shade, 'north', 'west', 'dan');
-      connect(trees, roots, 'south', 'west', 'tienen');
+      connect(trees, litter, 'south', 'west', 'aportan');
       connect(shade, evap, 'east', 'west', 'reduce');
-      connect(roots, water, 'east', 'west', 'retienen');
+      connect(litter, water, 'east', 'west', 'conserva', { path: 'straight' });
       connect(evap, water, 'south', 'north', 'disminuye');
+      text('Comparación en la huerta', 0, 554, 444, 23, bold);
+      text(
+        'Dos canteros reciben el mismo riego y sombra. Cubrí uno con hojas secas y compará cuánta humedad conserva cada uno al día siguiente.',
+        0,
+        608,
+        777,
+        20,
+      );
     },
   },
   exploded: {
@@ -160,21 +214,36 @@ export const explanatoryLayouts = {
         stroke: '#96cbd7',
         thickness: 3,
       });
-      const photo = picture('national-park', 'Fotografía', 434, 194, 145);
-      const back = shape('rectangle', 'Trasera de cartón', 657, 236, 135, 161, '#ac896c');
+      const mat = shape('rectangle', 'Ventana de paspartú', 426, 193, 124, 156, '#e2ceaa', {
+        fill: false,
+        stroke: '#e2ceaa',
+        thickness: 13,
+      });
+      const photo = picture('national-park', 'Fotografía', 625, 218, 140);
+      const back = shape('rectangle', 'Trasera de cartón', 826, 251, 135, 161, '#ac896c');
       connect(frame, glass, 'east', 'west', undefined, line);
-      connect(glass, photo, 'east', 'west', undefined, line);
+      connect(glass, mat, 'east', 'west', undefined, line);
+      connect(mat, photo, 'east', 'west', undefined, line);
       connect(photo, back, 'east', 'west', undefined, line);
       const labels = [
         ['Marco', 'Sujeta los bordes', 0],
         ['Vidrio', 'Protege la foto', 204],
-        ['Fotografía', 'Mira al vidrio', 424],
-        ['Trasera', 'Cierra el marco', 641],
+        ['Paspartú', 'Separa la foto del vidrio', 407],
+        ['Fotografía', 'Cara impresa hacia la ventana', 608],
+        ['Trasera', 'Cerrar las pestañas al final', 812],
       ] as const;
       labels.forEach(([title, detail, x]) => {
         text(title, x, 430, 176, 24, bold);
         text(detail, x, 475, 185, 18);
       });
+      text('Mesa de montaje', 0, 584, 240, 22, bold);
+      text(
+        'Apoyá el marco boca abajo. Centrá la foto en la ventana antes de cerrar la trasera.',
+        252,
+        584,
+        716,
+        20,
+      );
     },
   },
   journey: {
@@ -212,28 +281,52 @@ export const explanatoryLayouts = {
         note(i === 2 ? 'Ayuda' : 'Fricción', friction!, x, 296, 240, 178, i === 2 ? mint : sand);
         text(evidence!, x, 499, 249, 17);
       });
+      text('Cambio a probar', 0, 610, 132, 19, bold);
+      [
+        'Mostrar el recorrido sin escalones antes de elegir.',
+        'Reservar el asiento y el de la persona acompañante en una sola operación.',
+        'Imprimir ambos lugares y el acceso en el mismo pase.',
+      ].forEach((v, i) => text(v, 142 + i * 264, 610, 239, 18));
+      text(
+        'Criterio de éxito: completar la reserva de dos lugares contiguos sin llamar a boletería.',
+        0,
+        756,
+        917,
+        20,
+        { color: mint, weight: 650 },
+      );
     },
   },
   venn: {
     name: 'Diagrama de Venn',
-    title: 'Qué se repara y qué se recicla',
+    title: 'Quién puede retirar la carga',
     compose({ shape, text }) {
-      shape('ellipse', 'Reparables', 12, 120, 458, 330, '#76b4a742', {
-        stroke: mint,
-        thickness: 3,
-      });
-      shape('ellipse', 'Reciclables', 285, 120, 458, 330, '#86adc642', {
-        stroke: blue,
-        thickness: 3,
-      });
-      text('Reparables', 55, 75, 240, 25, { ...centered, color: mint });
-      text('Reciclables', 458, 75, 240, 25, { ...centered, color: blue });
-      text('Solo reparar', 47, 229, 202, 18, centered);
-      text('Calzado de cuero', 44, 278, 212, 20, centered);
-      text('Ambos', 313, 229, 131, 18, centered);
-      text('Bicicleta', 313, 278, 131, 20, centered);
-      text('Solo reciclar', 511, 229, 201, 18, centered);
-      text('Lata vacía', 511, 278, 201, 20, centered);
+      text(
+        'El depósito exige dos permisos: conducir el utilitario y firmar la salida de la carga.',
+        0,
+        74,
+        850,
+        20,
+      );
+      shape('ellipse', 'Conducir', 12, 200, 458, 300, '#76b4a742', { stroke: mint, thickness: 3 });
+      shape('ellipse', 'Firmar', 285, 200, 458, 300, '#86adc642', { stroke: blue, thickness: 3 });
+      text('Conducir', 43, 149, 236, 23, { ...centered, color: mint });
+      text('Firmar la salida', 451, 149, 260, 23, { ...centered, color: blue });
+      text('Solo conducir', 50, 305, 194, 18, centered);
+      text('Ana y Leo', 50, 352, 194, 23, centered);
+      text('Ambos', 313, 305, 131, 18, centered);
+      text('Bruno', 313, 352, 131, 23, centered);
+      text('Solo firmar', 511, 305, 201, 18, centered);
+      text('Carla', 511, 352, 201, 23, centered);
+      text('Sin permisos: Inés (en formación).', 20, 540, 701, 20);
+      text(
+        'Bruno falta el viernes. ¿Qué dos personas pueden cubrir juntas el retiro?',
+        20,
+        607,
+        735,
+        21,
+        bold,
+      );
     },
   },
   moodboard: {
@@ -270,6 +363,18 @@ export const explanatoryLayouts = {
         text(topic!, x, 286, 235, 25, bold);
         text(reason!, x, 337, 228, 19, { color: ink });
       });
+      text('Del tablero al sendero', 0, 500, 608, 26, bold);
+      shape('rectangle', 'Prototipo de cartel', 0, 570, 564, 131, '#324a3b');
+      picture('herb', 'Identificador botánico', 18, 593, 85);
+      text('Sendero de aromáticas', 122, 609, 343, 24, { color: '#f4d9a9', weight: 650 });
+      text('→', 465, 587, 90, 48, { color: '#f4d9a9', weight: 700 });
+      text(
+        'Prueba en el cruce: ¿se distingue la dirección antes de leer el nombre?',
+        595,
+        588,
+        203,
+        18,
+      );
     },
   },
 } satisfies Record<string, { name: string; title: string; compose(parts: GraphicParts): void }>;

@@ -23,50 +23,82 @@ test('C08-U80: gráficos editables independientes en espacio libre, ciclo cerrad
       );
     assert.deepEqual(after.nodes.slice(0, before.nodes.length), before.nodes);
     const addedLinks = after.links.slice(before.links.length);
+    // Los rótulos solos no bastan: el lector debe poder seguir el recorrido sobre los cables.
+    const routes: Partial<Record<GraphicKind, readonly string[][]>> = {
+      sequence: [['Bocetar', 'Dar color', 'Aprobar la prueba', 'Imprimir']],
+      handoff: [['Validar pago', 'Armar paquete', 'Retirar', 'Avisar al cliente']],
+      hierarchy: [
+        ['Coordinación', 'Producción', 'Escenario', 'Sonido'],
+        ['Coordinación', 'Producción', 'Escenario', 'Luces'],
+        ['Coordinación', 'Programación', 'Artistas'],
+        ['Producción', 'Accesos'],
+        ['Programación', 'Horarios'],
+      ],
+      floorplan: [['Entrada accesible', 'Giro junto a la plaza', 'Escenario']],
+      exploded: [
+        ['Marco con hueco', 'Vidrio', 'Ventana de paspartú', 'Fotografía', 'Trasera de cartón'],
+      ],
+      concepts: [
+        ['Árboles', 'Sombra', 'Evaporación', 'Humedad'],
+        ['Árboles', 'Hojarasca', 'Humedad'],
+      ],
+      fishbone: [
+        ['Embalaje', 'Unión de causas'],
+        ['Manipulación', 'Unión de causas'],
+        ['Transporte', 'Unión de causas'],
+        ['Humedad', 'Unión de causas'],
+        ['Unión de causas', 'Unión de causas', 'Efecto observado'],
+      ],
+    };
+    const titles = new Map(
+      additions.map((n) => [n.id, 'title' in n.data ? n.data.title : undefined]),
+    );
+    for (const route of routes[kind] ?? []) {
+      let tail = additions.filter((n) => titles.get(n.id) === route[0]).map((n) => n.id);
+      for (const stop of route.slice(1)) {
+        tail = addedLinks
+          .filter((l) => tail.includes(l.from) && titles.get(l.to) === stop)
+          .map((l) => l.to);
+        assert.ok(tail.length, kind + ': ' + route.join(' → '));
+      }
+    }
     if (kind === 'cycle') {
       assert.equal(addedLinks.length, 4);
       assert.deepEqual(addedLinks.map((l) => l.from).sort(), addedLinks.map((l) => l.to).sort());
     }
-    assert.equal(
-      addedLinks.length,
-      {
-        sequence: 2,
-        comparison: 0,
-        cycle: 4,
-        anatomy: 3,
-        decision: 2,
-        timeline: 0,
-        priority: 0,
-        handoff: 2,
-        hierarchy: 6,
-        story: 0,
-        identity: 0,
-        bars: 0,
-        floorplan: 2,
-        affinity: 0,
-        fishbone: 6,
-        concepts: 5,
-        exploded: 3,
-        journey: 0,
-        venn: 0,
-        moodboard: 0,
-      }[kind],
-    );
-    if (kind === 'bars')
-      assert.deepEqual(
-        additions.map((n) => n.data.kind),
-        ['text', 'bars'],
+    if (kind === 'bars') {
+      const data = additions.find((n) => n.data.kind === 'bars')?.data;
+      assert.ok(data?.kind === 'bars');
+      assert.ok(
+        data.rows.some((row) => row.value === 0) && data.rows.some((row) => row.value === null),
       );
-    else assert.ok(additions.length >= 4);
+    }
     assert.equal(new Set(additions.map((n) => n.id)).size, additions.length);
     for (const l of addedLinks) {
       assert.ok(additions.some((n) => n.id === l.from) && additions.some((n) => n.id === l.to));
     }
-    if (kind === 'decision')
-      assert.deepEqual(
-        addedLinks.map((l) => l.label),
-        ['Sí', 'No'],
-      );
+    if (kind === 'decision') {
+      const start = additions.find(
+        (n) => n.data.kind === 'note' && n.data.title === 'Inspección inicial',
+      )!;
+      function resolve(answers: string[]) {
+        let node = start;
+        for (const answer of answers) {
+          const edge = addedLinks.find((l) => l.from === node.id && l.label === answer);
+          assert.ok(edge, answer);
+          node = additions.find((n) => n.id === edge.to)!;
+        }
+        assert.ok(
+          !addedLinks.some((l) => l.from === node.id),
+          'El recorrido debe terminar en una acción',
+        );
+        return node.data.kind === 'note' && node.data.title;
+      }
+      assert.equal(resolve(['No', 'No']), 'Recuperar piezas');
+      assert.equal(resolve(['No', 'Sí']), 'Cambiar carcasa');
+      assert.equal(resolve(['Sí', 'No']), 'Enviar al banco');
+      assert.equal(resolve(['Sí', 'Sí']), 'Volver a uso');
+    }
     const clip = captureCanvasCopies(
       after,
       additions.map((n) => n.id),

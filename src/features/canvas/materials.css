@@ -197,6 +197,10 @@
   display: flex;
   gap: 3px;
 }
+.graphic-materials,
+.graphic-marks {
+  flex-wrap: wrap;
+}
 .graphic-marks {
   margin-top: 4px;
 }
@@ -211,6 +215,9 @@
   flex: 1;
   background: transparent;
   font-size: 12px;
+}
+.graphic-picker .graphic-materials button {
+  min-width: max-content;
 }
 .graphic-picker .graphic-materials button:first-child {
   flex: 1.5;
@@ -409,7 +416,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.graphic-materials kbd {
+.graphic-picker .graphic-marks button:has(kbd) {
+  flex: 0 1 auto;
+  padding-inline: 4px;
+}
+.graphic-tools kbd {
   padding: 0 3px;
   border: 1px solid var(--line);
   border-radius: 3px;

@@ -37,7 +37,7 @@ const tools: ReadonlyArray<[GraphicTool, string, string]> = [
 ];
 const graphicKeywords: Record<GraphicKind, string> = {
   sequence: 'proceso etapas pasos',
-  cycle: 'circular proceso bucle',
+  cycle: 'circular proceso bucle retorno vaso reutilizar',
   comparison: 'alternativas opciones',
   anatomy: 'señalar partes detalle llamada',
   decision: 'ramas sí no flujo',
@@ -46,9 +46,10 @@ const graphicKeywords: Record<GraphicKind, string> = {
   handoff: 'responsabilidades flujo traspaso swimlane',
   hierarchy: 'organigrama estructura organización',
   story: 'guion viñetas relato escenas',
-  identity: 'logo logotipo símbolo paleta',
+  identity: 'logo logotipo símbolo paleta tipografía identidad avatar marca',
   bars: 'gráfico datos encuesta cantidades',
-  floorplan: 'orientación plano acceso accesible entrada baños salida escenario cómo llegar',
+  floorplan:
+    'orientación plano acceso accesible entrada escaleras rampa salida escenario cómo llegar',
   affinity: 'agrupar comentarios patrones descubrir temas investigación observaciones hallazgos',
   fishbone: 'por qué falló una entrega causas problema diagnóstico espina de pescado ishikawa',
   concepts: 'explicar relaciones entre conceptos conectar ideas aprender enseñar',
@@ -180,13 +181,14 @@ export function openGraphicPicker(
     button.title = name;
     button.setAttribute('aria-label', name);
     button.innerHTML = icon(symbol, 17) + (material ? '<span>' + name + '</span>' : '');
-    if (tool === 'illustrations' && ctx.ui.shortcuts.illustrations) {
+    const shortcut = ctx.ui.shortcuts[tool];
+    if (shortcut) {
       const hint = document.createElement('kbd');
       hint.setAttribute('aria-hidden', 'true');
-      hint.textContent = ctx.ui.shortcuts.illustrations;
+      hint.textContent = shortcut;
       button.append(hint);
-      button.title = name + ' · ' + ctx.ui.shortcuts.illustrations;
-      button.setAttribute('aria-keyshortcuts', ctx.ui.shortcuts.illustrations);
+      button.title = name + ' · ' + shortcut;
+      button.setAttribute('aria-keyshortcuts', shortcut.replace(/^Ctrl\+/, 'Control+'));
     }
     button.onclick = (event) => {
       event.stopPropagation();
@@ -241,14 +243,13 @@ export function openGraphicPicker(
         event.stopPropagation();
         return;
       }
-      if (
-        ctx.ui.shortcuts.illustrations &&
-        shortcutCombination(event) === ctx.ui.shortcuts.illustrations
-      ) {
+      const key = shortcutCombination(event);
+      const tool = key && tools.find(([id]) => ctx.ui.shortcuts[id] === key)?.[0];
+      if (tool) {
         event.preventDefault();
         event.stopPropagation();
         if (!event.repeat)
-          pieces.querySelector<HTMLButtonElement>('[data-graphic-tool=illustrations]')!.click();
+          pieces.querySelector<HTMLButtonElement>('[data-graphic-tool="' + tool + '"]')!.click();
         return;
       }
       const buttons = [

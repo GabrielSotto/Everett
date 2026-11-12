@@ -15,6 +15,28 @@ async function palette(page: Page) {
   ).toHaveCount(0);
   return page.getByRole('dialog', { name: 'Gráficos explicativos', exact: true });
 }
+// Medir tinta por línea, no el cuadro editable o el espacio vacío tras un rótulo.
+async function checkReadable(page: Page, template: string) {
+  const collisions = await page.locator('.canvas-stage .canvas-text-run').evaluateAll((els) => {
+    const lines = els.flatMap((el, index) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return Array.from(range.getClientRects())
+        .filter((r) => r.width > 0 && r.height > 0)
+        .map((r) => ({ index, label: el.textContent, r }));
+    });
+    const result: string[] = [];
+    for (const [i, a] of lines.entries())
+      for (const b of lines.slice(i + 1)) {
+        if (a.index === b.index) continue;
+        const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+        const h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+        if (w > 1 && h > 1) result.push(a.label + ' / ' + b.label);
+      }
+    return [...new Set(result)];
+  });
+  expect.soft(collisions, template).toEqual([]);
+}
 const pickerNames = ['sequence', 'cycle', 'comparison', 'anatomy'] as const;
 test('C08-B214: crear y editar cuatro formatos, comparar lo mismo y deshacer la inserción sin tocar el trabajo anterior', async ({
   page,
@@ -42,7 +64,7 @@ test('C08-B214: crear y editar cuatro formatos, comparar lo mismo y deshacer la 
     await expect(panel).toHaveCount(0);
     const stage = page.locator('.canvas-stage');
     const imgs = stage.locator('.material.image img');
-    await expect(imgs).toHaveCount({ sequence: 3, cycle: 4, comparison: 2, anatomy: 1 }[kind]);
+    await expect(imgs).toHaveCount({ sequence: 4, cycle: 4, comparison: 2, anatomy: 1 }[kind]);
     await expect
       .poll(() =>
         imgs.evaluateAll((es) =>
@@ -257,7 +279,19 @@ test('C08-B220: componer en el lugar con texto, ilustración y flecha sin pasar 
   await page.setViewportSize({ width: 880, height: 680 });
   const choose = async (name: string) =>
     (await palette(page)).getByRole('button', { name, exact: true }).click();
-  await choose('Texto');
+  const initialPalette = await palette(page);
+  for (const [name, key] of [
+    ['Texto', 'T'],
+    ['Nota', 'N'],
+    ['Ilustraciones', 'I'],
+    ['Conector', 'L'],
+  ] as const) {
+    const button = initialPalette.getByRole('button', { name, exact: true });
+    await expect(button.locator('kbd')).toHaveText(key);
+    await expect(button).toHaveAttribute('aria-keyshortcuts', key);
+  }
+  await page.keyboard.press('t');
+  await expect(initialPalette).toHaveCount(0);
   await page.mouse.click(180, 190);
   const editor = page.getByRole('textbox', { name: 'Texto en Canvas' });
   await editor.fill('Entrada por el parque');
@@ -303,6 +337,19 @@ test('C08-B220: componer en el lugar con texto, ilustración y flecha sin pasar 
   ).toHaveCount(0);
   await page.keyboard.press('Escape');
   await capture(page, info, 'composicion-libre');
+  const { state, ui } = await snapshot(page);
+  ui.shortcuts.note = 'Shift+J';
+  await storedFixture(page, state, ui);
+  await page.reload();
+  const remapped = await palette(page);
+  const note = remapped.getByRole('button', { name: 'Nota', exact: true });
+  await expect(note.locator('kbd')).toHaveText('Shift+J');
+  await page.keyboard.press('n');
+  await expect(remapped).toBeVisible();
+  await page.keyboard.press('Shift+j');
+  await expect(remapped).toHaveCount(0);
+  await page.mouse.click(340, 230);
+  await expect(page.locator('.canvas-stage .material.note')).toHaveCount(1);
 });
 
 test('C08-B221: buscar por propósito, insertar cada composición y volver al lienzo previo', async ({
@@ -336,8 +383,7 @@ test('C08-B221: buscar por propósito, insertar cada composición y volver al li
     await panel.locator('[data-graphic="' + key + '"]').click();
     await expect(panel).toHaveCount(0);
     const scene = await world(page);
-    if (key === 'bars') expect(scene.nodes.map((n) => n.data.kind)).toEqual(['text', 'bars']);
-    else expect(scene.nodes.length).toBeGreaterThanOrEqual(4);
+    if (key === 'bars') await expect(page.locator('.canvas-stage [data-bar-row]')).toHaveCount(6);
     await expect(page.locator('.canvas-stage .material')).toHaveCount(scene.nodes.length);
     const truncated = await page
       .locator('.canvas-stage .material.note > :is(h3,p)')
@@ -346,7 +392,7 @@ test('C08-B221: buscar por propósito, insertar cada composición y volver al li
       );
     expect.soft(truncated, key).toEqual([]);
     if (key === 'decision') {
-      await expect(page.locator('.cable-label')).toHaveText(['Sí', 'No']);
+      await expect(page.locator('.cable-label')).toHaveText(['Sí', 'No', 'Sí', 'No', 'Sí', 'No']);
     }
     if (key === 'identity') {
       const circle = scene.nodes.find(
@@ -356,6 +402,7 @@ test('C08-B221: buscar por propósito, insertar cada composición y volver al li
       expect(circle.x).toBeLessThan(sail.x);
       expect(circle.x + circle.width).toBeGreaterThan(sail.x + sail.width);
     }
+    await checkReadable(page, key);
     await capture(page, info, 'plantilla-' + key);
     await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
     await expect(page.locator('.canvas-stage .material')).toHaveCount(0);
@@ -375,7 +422,9 @@ test('C08-B222: un valor edita la barra, la escala y el rótulo, incluso con cer
       .locator('[data-bar-mark]')
       .evaluateAll((rs) => rs.map((r) => Number(r.getAttribute('width'))));
   const initial = await widths();
-  expect(initial).toHaveLength(4);
+  await expect(rows).toHaveCount(6);
+  await expect(rows.last()).toContainText('Sin dato');
+  expect(initial).toHaveLength(5);
   await chart.dblclick();
   const form = page.getByRole('dialog', { name: 'Editar datos de barras' });
   await form.getByRole('spinbutton').first().fill('80');
@@ -401,7 +450,7 @@ test('C08-B222: un valor edita la barra, la escala y el rótulo, incluso con cer
   await form.getByRole('spinbutton').last().fill('4');
   await form.getByRole('button', { name: 'Aplicar' }).click();
   await page.reload();
-  await expect(rows).toHaveCount(5);
+  await expect(rows).toHaveCount(7);
   await expect(rows.nth(1)).toContainText('-12,5');
   await expect(rows.last()).toContainText('A caballo');
   await capture(page, info, 'barras-con-signo');
@@ -488,7 +537,7 @@ for (const [number, keys] of [
       ).toEqual([]);
       if (key === 'affinity') {
         expect(scene.canvasGroups?.map((g) => [g.name, g.nodes.length])).toEqual([
-          ['Encontrar el acceso', 2],
+          ['Encontrar el acceso', 3],
           ['Entender el precio', 2],
         ]);
       }
@@ -500,18 +549,18 @@ for (const [number, keys] of [
         const ellipses = stage.locator('.material.shape-material');
         const a = (await ellipses.nth(0).boundingBox())!,
           b = (await ellipses.nth(1).boundingBox())!;
-        const both = stage.locator('.canvas-text-run').filter({ hasText: 'Bicicleta' });
+        const both = stage.locator('.canvas-text-run').filter({ hasText: /^Bruno$/ });
         const r = (await both.boundingBox())!;
         expect(r.x + r.width / 2).toBeGreaterThan(b.x);
         expect(r.x + r.width / 2).toBeLessThan(a.x + a.width);
       }
-      if (key === 'moodboard') await expect(stage.locator('.material.image img')).toHaveCount(3);
+      if (key === 'moodboard') await expect(stage.locator('.material.image img')).toHaveCount(4);
       if (key === 'concepts')
         await expect(stage.locator('.cable-label')).toHaveText([
           'dan',
-          'tienen',
+          'aportan',
           'reduce',
-          'retienen',
+          'conserva',
           'disminuye',
         ]);
       if (key === 'floorplan' || key === 'fishbone' || key === 'exploded') {
@@ -533,6 +582,7 @@ for (const [number, keys] of [
           }
         }
       }
+      await checkReadable(page, key);
       await capture(page, info, 'plantilla-' + key);
       if (key === 'exploded' || key === 'fishbone') {
         const node = scene.nodes.find((n) =>
