@@ -73,6 +73,7 @@ export function reduce(state: State, command: Command): State {
     case 'link.direction':
     case 'graphic.callout':
     case 'graphic.connect':
+    case 'bars.edit':
     case 'graphic.insert':
     case 'link.thickness':
     case 'link.label':

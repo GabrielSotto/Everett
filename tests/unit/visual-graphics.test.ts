@@ -42,9 +42,22 @@ test('C08-U80: gráficos editables independientes en espacio libre, ciclo cerrad
         story: 0,
         identity: 0,
         bars: 0,
+        floorplan: 2,
+        affinity: 0,
+        fishbone: 6,
+        concepts: 5,
+        exploded: 3,
+        journey: 0,
+        venn: 0,
+        moodboard: 0,
       }[kind],
     );
-    assert.ok(additions.length >= 4);
+    if (kind === 'bars')
+      assert.deepEqual(
+        additions.map((n) => n.data.kind),
+        ['text', 'bars'],
+      );
+    else assert.ok(additions.length >= 4);
     assert.equal(new Set(additions.map((n) => n.id)).size, additions.length);
     for (const l of addedLinks) {
       assert.ok(additions.some((n) => n.id === l.from) && additions.some((n) => n.id === l.to));

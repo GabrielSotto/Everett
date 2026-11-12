@@ -99,6 +99,12 @@ export type Command =
       kind: import('./visual-graphics').GraphicKind;
       center: Point;
     }
+  | {
+      type: 'bars.edit';
+      world: string;
+      id: string;
+      rows: readonly import('./bar-chart').BarDatum[];
+    }
   | { type: 'graphic.callout'; world: string; image: string; detail: Point; text: string }
   | { type: 'link.thickness'; world: string; id: string; thickness: number }
   | {

@@ -1,6 +1,6 @@
 import { graphicLayouts, type GraphicTextStyle } from './graphic-layouts';
 import { clearOrigin } from './visual-placement';
-import type { Anchor, Link, Material, Point, Shape, World } from './model';
+import type { Anchor, CanvasGroup, Link, Material, Point, Shape, World } from './model';
 import { newCanvasText } from './canvas-text';
 import { illustrationAssetPrefix } from './illustration-asset';
 import { ensure } from './invariants';
@@ -20,7 +20,8 @@ const ink = '#f4eee4',
 export function graphicParts(kind: GraphicKind, uid: () => string) {
   ensure(Object.hasOwn(graphics, kind), 'GRAPHIC_KIND', 'Elegí una composición disponible.');
   const nodes: Material[] = [],
-    links: Link[] = [];
+    links: Link[] = [],
+    groups: CanvasGroup[] = [];
   const text = (
     value: string,
     x: number,
@@ -76,6 +77,7 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
     width: number,
     height: number,
     color: string,
+    appearance?: { fill?: boolean; stroke?: string; thickness?: number },
   ) => {
     const id = uid();
     nodes.push({
@@ -85,7 +87,16 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
       y,
       width,
       height,
-      data: { kind: 'shape', shape: type, title, color, fill: true, stroke: color, thickness: 1 },
+      data: {
+        kind: 'shape',
+        shape: type,
+        title,
+        color,
+        fill: true,
+        stroke: color,
+        thickness: 1,
+        ...appearance,
+      },
     });
     return id;
   };
@@ -116,6 +127,7 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
     fromAnchor: Anchor,
     toAnchor: Anchor,
     label?: string,
+    style?: Pick<Link, 'direction' | 'path'>,
   ) =>
     links.push({
       id: uid(),
@@ -125,6 +137,7 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
       toAnchor,
       thickness: 3,
       direction: 'forward',
+      ...style,
       ...(label ? { label } : {}),
     });
   const heading = (width: number) =>
@@ -217,9 +230,29 @@ export function graphicParts(kind: GraphicKind, uid: () => string) {
     detail('Transmisión', 'Lleva la fuerza del pedal\na la rueda trasera.', false, 284, 20, 23.5);
   } else {
     heading(790);
-    graphicLayouts[kind].compose({ text, shape, picture, note, connect });
+    graphicLayouts[kind].compose({
+      text,
+      shape,
+      picture,
+      note,
+      connect,
+      group(name, members) {
+        groups.push({ id: uid(), name, nodes: members });
+      },
+      bars(title, rows, x, y, width, height) {
+        nodes.push({
+          id: uid(),
+          owner: null,
+          x,
+          y,
+          width,
+          height,
+          data: { kind: 'bars', title, rows: structuredClone(rows) },
+        });
+      },
+    });
   }
-  return { nodes, links };
+  return { nodes, links, groups };
 }
 
 export function insertGraphic(world: World, kind: GraphicKind, center: Point, uid: () => string) {
@@ -228,7 +261,7 @@ export function insertGraphic(world: World, kind: GraphicKind, center: Point, ui
     'GEOMETRY',
     'La ubicación del gráfico no es válida.',
   );
-  const { nodes, links } = graphicParts(kind, uid);
+  const { nodes, links, groups } = graphicParts(kind, uid);
   const bounds = selectionBounds(nodes);
   const visible = new Map(world.nodes.filter((n) => !n.owner).map((n) => [n.id, n]));
   const origin = clearOrigin(
@@ -250,4 +283,5 @@ export function insertGraphic(world: World, kind: GraphicKind, center: Point, ui
   }
   world.nodes.push(...nodes);
   world.links.push(...links);
+  if (groups.length) (world.canvasGroups ??= []).push(...groups);
 }

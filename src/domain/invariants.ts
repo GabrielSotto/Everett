@@ -1,3 +1,4 @@
+import { validBarRows } from './bar-chart';
 import { validDetail } from './cable-geometry';
 import { validRotation } from './rotation';
 import { getWorld, need, type State } from './model';
@@ -305,6 +306,7 @@ export function validate(s: State): void {
           'reference',
           'local',
           'wireframe',
+          'bars',
           'text',
         ].includes(n.data.kind),
         'MATERIAL',
@@ -322,6 +324,12 @@ export function validate(s: State): void {
               (Number.isFinite(n.data.fontSize) && n.data.fontSize >= 12 && n.data.fontSize <= 32)),
           'NOTE_FORMAT',
           'Elegí una tipografía disponible y un tamaño de 12 a 32 px.',
+        );
+      if (n.data.kind === 'bars')
+        ensure(
+          typeof n.data.title === 'string' && validBarRows(n.data.rows),
+          'BAR_DATA',
+          'Cada fila necesita una categoría y un número finito o un valor vacío.',
         );
       if (n.data.kind === 'wireframe')
         ensure(
@@ -439,6 +447,11 @@ export function validate(s: State): void {
         l.labelPlacement === undefined || validLabelPlacement(l.labelPlacement),
         'LINK_LABEL_PLACEMENT',
         'Ubicación de etiqueta inválida',
+      );
+      ensure(
+        l.path === undefined || l.path === 'straight',
+        'LINK_PATH',
+        'Trazado de conexión inválido.',
       );
       ensure(
         l.direction === undefined || validLinkDirection(l.direction),

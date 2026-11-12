@@ -1,3 +1,4 @@
+import { validBarRows } from '../bar-chart';
 import { centerOf, rotatedPose } from '../rotation';
 import { selectionBounds } from '../alignment';
 import { noteTypography, validNoteTextStyle } from '../note-fonts';
@@ -48,6 +49,7 @@ type CanvasCommand = Extract<
       | 'graphic.connect'
       | 'graphic.callout'
       | 'graphic.insert'
+      | 'bars.edit'
       | 'link.thickness'
       | 'link.label'
       | 'link.reconnect'
@@ -465,6 +467,21 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
     case 'graphic.connect':
       connectVisualFlow(world, command.nodes, command.kind, uid);
       break;
+    case 'bars.edit': {
+      const material = node(command.id);
+      ensure(!material.owner, 'LOCKED', 'El agente está usando el material.');
+      if (material.data.kind !== 'bars')
+        throw new DomainError('BAR_KIND', 'Elegí un gráfico de barras.');
+      ensure(
+        validBarRows(command.rows),
+        'BAR_DATA',
+        'Completá las categorías y usá números finitos. Dejá vacío un dato desconocido.',
+      );
+      const oldCount = material.data.rows.length;
+      material.height = Math.max(4, (material.height * (command.rows.length + 1)) / (oldCount + 1));
+      material.data.rows = structuredClone(command.rows);
+      break;
+    }
     case 'graphic.insert':
       insertGraphic(world, command.kind, command.center, uid);
       break;

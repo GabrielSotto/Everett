@@ -1,4 +1,5 @@
 import { shortcutCombination } from '../../domain/shortcuts';
+import { barChartSvg } from './bar-chart';
 import { shapeVertices } from '../../domain/geometry';
 import { pickerSearch, searchKey } from '../../ui/picker-search';
 import type { GraphicTool } from './state';
@@ -47,6 +48,14 @@ const graphicKeywords: Record<GraphicKind, string> = {
   story: 'guion viñetas relato escenas',
   identity: 'logo logotipo símbolo paleta',
   bars: 'gráfico datos encuesta cantidades',
+  floorplan: 'orientación plano acceso accesible entrada baños salida escenario cómo llegar',
+  affinity: 'agrupar comentarios patrones descubrir temas investigación observaciones hallazgos',
+  fishbone: 'por qué falló una entrega causas problema diagnóstico espina de pescado ishikawa',
+  concepts: 'explicar relaciones entre conceptos conectar ideas aprender enseñar',
+  exploded: 'cómo encajan las piezas armar ensamblar montaje separar despiece',
+  journey: 'recorrido de usuario experiencia cliente abandono reserva fricciones evidencia',
+  venn: 'pertenece a ambos intersección conjuntos solapamiento elementos en común',
+  moodboard: 'referencias visuales inspiración moodboard dirección visual fotos materiales',
 };
 function parts(kind: GraphicKind) {
   let i = 0;
@@ -74,7 +83,11 @@ function thumbnail({ nodes, links }: ReturnType<typeof parts>) {
   });
   for (const n of content) {
     const d = n.data;
-    if (d.kind === 'image') {
+    if (d.kind === 'bars') {
+      paths.push(
+        `<svg x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}">${barChartSvg(d)}</svg>`,
+      );
+    } else if (d.kind === 'image') {
       paths.push(
         `<image x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" href="${html(illustrationPreview(drawingFor(d.asset)))}"/>`,
       );
@@ -89,19 +102,18 @@ function thumbnail({ nodes, links }: ReturnType<typeof parts>) {
       }
     } else if (d.kind === 'shape') {
       const { x, y, width, height } = n;
+      const paint = `fill="${d.fill === false ? 'none' : html(d.color)}" stroke="${html(d.stroke ?? d.color)}" stroke-width="${d.thickness ?? 1}"`;
       if (d.shape === 'ellipse')
         paths.push(
-          `<ellipse cx="${x + width / 2}" cy="${y + height / 2}" rx="${width / 2}" ry="${height / 2}" fill="${d.color}"/>`,
+          `<ellipse cx="${x + width / 2}" cy="${y + height / 2}" rx="${width / 2}" ry="${height / 2}" ${paint}/>`,
         );
       else if (d.shape === 'rectangle')
-        paths.push(
-          `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${d.color}"/>`,
-        );
+        paths.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" ${paint}/>`);
       else {
         const points = shapeVertices(d.shape)
           .map((p) => x + p.x * width + ',' + (y + p.y * height))
           .join(' ');
-        paths.push(`<polygon points="${points}" fill="${d.color}"/>`);
+        paths.push(`<polygon points="${points}" ${paint}/>`);
       }
     } else if (d.kind === 'text') {
       for (const [i, s] of d.text.split('\n').entries()) {

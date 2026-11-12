@@ -1,6 +1,8 @@
 import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
-import { start, capture, world, moveMaterial } from './canvas-utility-helpers';
+import { start, capture, world, moveMaterial, snapshot } from './canvas-utility-helpers';
+import { storedFixture } from './canvas-fixtures';
+import { newCanvasText } from '../../src/domain/canvas-text';
 
 async function palette(page: Page) {
   const tools = page.getByRole('toolbar', { name: 'Creación, organización y vista de Canvas' });
@@ -34,7 +36,7 @@ test('C08-B214: crear y editar cuatro formatos, comparar lo mismo y deshacer la 
   await page.setViewportSize({ width: 800, height: 670 });
   for (const kind of pickerNames) {
     const panel = await palette(page);
-    await expect(panel.locator('.graphic-thumb svg')).toHaveCount(12);
+    await expect(panel.locator('.graphic-thumb > svg')).toHaveCount(20);
     if (kind === 'sequence') await capture(page, info, 'menu-de-graficos');
     await panel.locator('[data-graphic=' + kind + ']').click();
     await expect(panel).toHaveCount(0);
@@ -318,7 +320,7 @@ test('C08-B221: buscar por propósito, insertar cada composición y volver al li
   await field.press('Enter');
   await expect(menu.locator('[data-graphic=identity]')).toBeFocused();
   await page.keyboard.press('Escape');
-  await expect(menu.locator('[data-graphic]:visible')).toHaveCount(12);
+  await expect(menu.locator('[data-graphic]:visible')).toHaveCount(20);
   await page.keyboard.press('Escape');
   for (const key of [
     'decision',
@@ -334,7 +336,8 @@ test('C08-B221: buscar por propósito, insertar cada composición y volver al li
     await panel.locator('[data-graphic="' + key + '"]').click();
     await expect(panel).toHaveCount(0);
     const scene = await world(page);
-    expect(scene.nodes.length).toBeGreaterThanOrEqual(4);
+    if (key === 'bars') expect(scene.nodes.map((n) => n.data.kind)).toEqual(['text', 'bars']);
+    else expect(scene.nodes.length).toBeGreaterThanOrEqual(4);
     await expect(page.locator('.canvas-stage .material')).toHaveCount(scene.nodes.length);
     const truncated = await page
       .locator('.canvas-stage .material.note > :is(h3,p)')
@@ -358,3 +361,201 @@ test('C08-B221: buscar por propósito, insertar cada composición y volver al li
     await expect(page.locator('.canvas-stage .material')).toHaveCount(0);
   }
 });
+
+test('C08-B222: un valor edita la barra, la escala y el rótulo, incluso con cero y datos ausentes', async ({
+  page,
+}, info) => {
+  await start(page);
+  await page.setViewportSize({ width: 720, height: 650 });
+  await (await palette(page)).locator('[data-graphic=bars]').click();
+  const chart = page.locator('.canvas-stage .material.bars'),
+    rows = chart.locator('[data-bar-row]');
+  const widths = () =>
+    rows
+      .locator('[data-bar-mark]')
+      .evaluateAll((rs) => rs.map((r) => Number(r.getAttribute('width'))));
+  const initial = await widths();
+  expect(initial).toHaveLength(4);
+  await chart.dblclick();
+  const form = page.getByRole('dialog', { name: 'Editar datos de barras' });
+  await form.getByRole('spinbutton').first().fill('80');
+  await form.getByRole('spinbutton').nth(2).fill('0');
+  await form.getByRole('spinbutton').nth(3).fill('');
+  await capture(page, info, 'editar-barras');
+  await form.getByRole('button', { name: 'Aplicar' }).click();
+  await expect(form).toHaveCount(0);
+  await expect(rows.nth(0)).toContainText('80');
+  await expect(rows.nth(3)).toContainText('Sin dato');
+  const updated = await widths();
+  expect(updated[1]).toBeCloseTo(initial[1]! / 2);
+  expect(updated[0]).toBe(initial[0]);
+  expect(updated[2]).toBe(0);
+  await expect(rows.nth(3).locator('rect')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+  expect(await widths()).toEqual(initial);
+  await chart.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Editar datos…' }).click();
+  await form.getByRole('spinbutton').nth(1).fill('-12.5');
+  await form.getByRole('button', { name: 'Agregar fila' }).click();
+  await form.getByRole('textbox').last().fill('A caballo');
+  await form.getByRole('spinbutton').last().fill('4');
+  await form.getByRole('button', { name: 'Aplicar' }).click();
+  await page.reload();
+  await expect(rows).toHaveCount(5);
+  await expect(rows.nth(1)).toContainText('-12,5');
+  await expect(rows.last()).toContainText('A caballo');
+  await capture(page, info, 'barras-con-signo');
+});
+
+test('C08-B225: crear un gráfico desde piezas históricas conserva el original y toma el número escrito', async ({
+  page,
+}) => {
+  await start(page);
+  const { state, ui } = await snapshot(page);
+  const project = state.worlds.find((w) => w.id === 'scout')!;
+  const base = (x: number, y: number, width: number) => ({
+    id: 'e-' + ++state.seq,
+    x,
+    y,
+    width,
+    height: 36,
+    owner: null,
+  });
+  function label(value: string, x: number, y: number, width: number) {
+    project.nodes.push({ ...base(x, y, width), data: { ...newCanvasText('wrap'), text: value } });
+  }
+  label('Cómo llega el público', 30, 20, 420);
+  label('Personas encuestadas', 30, 80, 360);
+  for (const [i, category] of ['A pie', 'Bicicleta', 'Colectivo', 'Auto'].entries()) {
+    const y = 138 + i * 58,
+      width = 400 - 100 * i;
+    label(category, 30, y, 130);
+    project.nodes.push({
+      ...base(180, y, width),
+      data: { kind: 'shape', shape: 'rectangle', color: '#b5d3e4', title: category },
+    });
+    label(String(i === 0 ? 80 : width / 10), 194 + width, y, 64);
+  }
+  await storedFixture(page, state, ui);
+  await page.reload();
+  const source = (await world(page)).nodes;
+  const firstBar = page.locator('[data-node="' + source[3]!.id + '"]');
+  await firstBar.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Crear copia con datos vinculados' }).click();
+  const form = page.getByRole('dialog', { name: 'Editar datos de barras' });
+  await expect(form.getByRole('spinbutton').first()).toHaveValue('80');
+  await form.getByRole('button', { name: 'Cerrar' }).click();
+  const chart = page.locator('.canvas-stage .material.bars');
+  const widths = await chart
+    .locator('[data-bar-mark]')
+    .evaluateAll((marks) => marks.map((m) => Number(m.getAttribute('width'))));
+  expect(widths[1]! / widths[0]!).toBeCloseTo(30 / 80);
+  expect((await world(page)).nodes.filter((n) => n.data.kind !== 'bars')).toEqual(source);
+  await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+  await expect(chart).toHaveCount(0);
+  expect((await world(page)).nodes).toEqual(source);
+});
+
+for (const [number, keys] of [
+  [223, ['floorplan', 'affinity', 'fishbone', 'concepts']],
+  [224, ['exploded', 'journey', 'venn', 'moodboard']],
+] as const) {
+  test(`C08-B${number}: leer y modificar las plantillas de ${keys.join(', ')}`, async ({
+    page,
+  }, info) => {
+    await start(page);
+    await page.setViewportSize({ width: 830, height: 670 });
+    for (const key of keys) {
+      const panel = await palette(page);
+      if (key === 'fishbone') {
+        await panel.getByRole('button', { name: 'Buscar plantilla' }).click();
+        await panel.getByRole('searchbox').fill('por qué falló una entrega');
+        await expect(panel.locator('[data-graphic]:visible')).toHaveCount(1);
+      }
+      await panel.locator('[data-graphic=' + key + ']').click();
+      await expect(panel).toHaveCount(0);
+      await page.mouse.move(2, 65);
+      const scene = await world(page);
+      const stage = page.locator('.canvas-stage');
+      await expect(stage.locator('.material')).toHaveCount(scene.nodes.length);
+      expect(
+        await stage
+          .locator('.material.note > :is(h3,p)')
+          .evaluateAll((parts) =>
+            parts.filter((el) => el.scrollHeight > el.clientHeight + 1).map((el) => el.textContent),
+          ),
+        key,
+      ).toEqual([]);
+      if (key === 'affinity') {
+        expect(scene.canvasGroups?.map((g) => [g.name, g.nodes.length])).toEqual([
+          ['Encontrar el acceso', 2],
+          ['Entender el precio', 2],
+        ]);
+      }
+      if (key === 'journey')
+        await expect(
+          stage.locator('.canvas-text-run').filter({ hasText: 'Abandonó al elegir la fila' }),
+        ).toBeVisible();
+      if (key === 'venn') {
+        const ellipses = stage.locator('.material.shape-material');
+        const a = (await ellipses.nth(0).boundingBox())!,
+          b = (await ellipses.nth(1).boundingBox())!;
+        const both = stage.locator('.canvas-text-run').filter({ hasText: 'Bicicleta' });
+        const r = (await both.boundingBox())!;
+        expect(r.x + r.width / 2).toBeGreaterThan(b.x);
+        expect(r.x + r.width / 2).toBeLessThan(a.x + a.width);
+      }
+      if (key === 'moodboard') await expect(stage.locator('.material.image img')).toHaveCount(3);
+      if (key === 'concepts')
+        await expect(stage.locator('.cable-label')).toHaveText([
+          'dan',
+          'tienen',
+          'reduce',
+          'retienen',
+          'disminuye',
+        ]);
+      if (key === 'floorplan' || key === 'fishbone' || key === 'exploded') {
+        const paths = stage.locator('.link-line');
+        for (const path of await paths.all())
+          expect(await path.getAttribute('d')).toMatch(/^M [^C]+ L /);
+        if (key === 'floorplan') {
+          // La ruta debe quedar visible y su etiqueta entre los extremos, aun dentro del contorno de un predio.
+          const north = (await stage
+            .getByRole('article', { name: 'Límite norte', exact: true })
+            .boundingBox())!;
+          const south = (await stage
+            .getByRole('article', { name: 'Límite sur', exact: true })
+            .boundingBox())!;
+          for (const label of await stage.locator('.cable-label').all()) {
+            const box = (await label.boundingBox())!;
+            expect(box.y).toBeGreaterThan(north.y);
+            expect(box.y + box.height).toBeLessThan(south.y);
+          }
+        }
+      }
+      await capture(page, info, 'plantilla-' + key);
+      if (key === 'exploded' || key === 'fishbone') {
+        const node = scene.nodes.find((n) =>
+          n.data.kind === 'note'
+            ? n.data.title === 'Humedad'
+            : n.data.kind === 'image' && n.data.title === 'Fotografía',
+        )!;
+        const link = scene.links.find((l) => l.from === node.id || l.to === node.id)!;
+        const path = stage.locator('[data-link="' + link.id + '"] .link-line');
+        const before = await path.getAttribute('d'),
+          rect = (await stage.locator('[data-node="' + node.id + '"]').boundingBox())!;
+        await moveMaterial(
+          page,
+          node.id,
+          rect.x + rect.width / 2 + 30,
+          rect.y + rect.height / 2 - 28,
+        );
+        await expect(path).not.toHaveAttribute('d', before!);
+        await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+        await expect(path).toHaveAttribute('d', before!);
+      }
+      await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+      await expect(stage.locator('.material')).toHaveCount(0);
+    }
+  });
+}

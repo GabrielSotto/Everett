@@ -4,6 +4,8 @@ import { localText } from './local-content';
 import { wireframeText } from './wireframes';
 export function materialText(world: WorldSnapshot, material: Material): string {
   const data = material.data;
+  if (data.kind === 'bars')
+    return data.rows.map((row) => row.label + ': ' + (row.value ?? 'Sin dato')).join('\n');
   if (data.kind === 'wireframe') return wireframeText(data.content);
   if (data.kind === 'local') return localText(data.content);
   if (data.kind === 'note' || data.kind === 'text') return data.text;

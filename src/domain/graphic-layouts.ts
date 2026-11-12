@@ -1,3 +1,4 @@
+import { explanatoryLayouts } from './explanatory-layouts';
 import type { Anchor, Shape } from './model';
 
 export interface GraphicTextStyle {
@@ -7,7 +8,15 @@ export interface GraphicTextStyle {
   serif?: boolean;
 }
 
-interface Parts {
+export interface GraphicParts {
+  bars(
+    title: string,
+    rows: readonly import('./bar-chart').BarDatum[],
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void;
   text(
     value: string,
     x: number,
@@ -25,6 +34,7 @@ interface Parts {
     width: number,
     height: number,
     color: string,
+    appearance?: { fill?: boolean; stroke?: string; thickness?: number },
   ): string;
   note(
     title: string,
@@ -35,7 +45,15 @@ interface Parts {
     height: number,
     color: string,
   ): string;
-  connect(from: string, to: string, fromAnchor: Anchor, toAnchor: Anchor, label?: string): void;
+  connect(
+    from: string,
+    to: string,
+    fromAnchor: Anchor,
+    toAnchor: Anchor,
+    label?: string,
+    style?: Pick<import('./model').Link, 'direction' | 'path'>,
+  ): void;
+  group(name: string, nodes: string[]): void;
 }
 
 const apricot = '#f5be86',
@@ -183,20 +201,21 @@ export const graphicLayouts = {
   bars: {
     name: 'Barras comparativas',
     title: 'Cómo llega el público',
-    compose({ text, shape }) {
-      text('Personas encuestadas', 0, 79, 530, 20, caption);
-      const series = [
-        ['A pie', 40],
-        ['Bicicleta', 30],
-        ['Colectivo', 20],
-        ['Auto', 10],
-      ] as const;
-      series.forEach(([label, value], i) => {
-        const y = 149 + i * 58;
-        text(label, 0, y, 134, 19);
-        shape('rectangle', label, 150, y, value * 10, 29, i === 0 ? apricot : blue);
-        text(String(value), 164 + value * 10, y, 65, 20, { weight: 650 });
-      });
+    compose({ bars }) {
+      bars(
+        'Personas encuestadas',
+        [
+          { label: 'A pie', value: 40 },
+          { label: 'Bicicleta', value: 30 },
+          { label: 'Colectivo', value: 20 },
+          { label: 'Auto', value: 10 },
+        ],
+        0,
+        85,
+        650,
+        252,
+      );
     },
   },
-} satisfies Record<string, { name: string; title: string; compose(parts: Parts): void }>;
+  ...explanatoryLayouts,
+} satisfies Record<string, { name: string; title: string; compose(parts: GraphicParts): void }>;

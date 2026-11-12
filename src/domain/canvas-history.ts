@@ -63,6 +63,7 @@ const reversible = new Set<Command['type']>([
   'graphic.connect',
   'graphic.callout',
   'graphic.insert',
+  'bars.edit',
   'link.thickness',
   'link.label',
   'link.reconnect',

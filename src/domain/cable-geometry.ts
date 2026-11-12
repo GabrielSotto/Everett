@@ -50,8 +50,9 @@ export function cableGeometry(
       from = { x: from.x + dx * inset, y: from.y + dy * inset };
     }
   }
-  const path = l.detail
-    ? `M ${from.x} ${from.y} L ${to.x} ${to.y}`
-    : linkPath(from, to, l.fromAnchor, l.toAnchor, a.rotation, b.rotation);
+  const path =
+    l.detail || l.path === 'straight'
+      ? `M ${from.x} ${from.y} L ${to.x} ${to.y}`
+      : linkPath(from, to, l.fromAnchor, l.toAnchor, a.rotation, b.rotation);
   return { from, to, path };
 }

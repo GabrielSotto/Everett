@@ -1,3 +1,4 @@
+import { validBarRows } from './bar-chart';
 import { validDetail } from './cable-geometry';
 import { validRotation } from './rotation';
 import {
@@ -34,6 +35,8 @@ const point = (v: unknown): boolean => record(v) && Number.isFinite(v.x) && Numb
 function validData(v: unknown): v is NodeData {
   if (!record(v) || typeof v.title !== 'string') return false;
   switch (v.kind) {
+    case 'bars':
+      return validBarRows(v.rows);
     case 'text':
       return validCanvasText(v);
     case 'wireframe':
@@ -163,6 +166,7 @@ export function parseCanvasClipboard(text: string): CanvasClipboard {
         l.from !== l.to &&
         ['north', 'east', 'south', 'west'].includes(String(l.fromAnchor)) &&
         ['north', 'east', 'south', 'west'].includes(String(l.toAnchor)) &&
+        (l.path === undefined || l.path === 'straight') &&
         (l.detail === undefined ||
           (validDetail(l.detail) &&
             parsed.nodes.find((n) => n.id === l.to)?.data.kind === 'image')) &&

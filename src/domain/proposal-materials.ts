@@ -66,6 +66,7 @@ export function proposalSummary(world: WorldSnapshot, job: DeepReadonly<Assignme
   if (kind === 'image' || kind === 'video' || kind === 'pdf')
     return 'Organizar este archivo junto a la zona. Se conserva su contenido completo; la simulación no interpreta ni modifica sus bytes.';
   if (
+    kind === 'bars' ||
     kind === 'shape' ||
     kind === 'drawing' ||
     kind === 'link' ||

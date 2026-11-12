@@ -22,6 +22,7 @@ const kinds = {
   video: ['Video', 'play'],
   pdf: ['PDF', 'docs'],
   link: ['Enlace', 'link'],
+  bars: ['Gráfico de barras', 'canvas'],
   wireframe: ['Bosquejo', 'canvas'],
   document: ['Documento', 'docs'],
   file: ['Archivo', 'code'],

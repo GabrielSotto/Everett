@@ -9,6 +9,7 @@ import {
   statusNames,
 } from '../../domain/model';
 import { localText, localNames } from '../../domain/local-content';
+import { barChartSvg } from './bar-chart';
 import { wireframeMarkup } from './wireframe-markup';
 import { wireframeText } from '../../domain/wireframes';
 import { isArrow } from '../../domain/free-arrow';
@@ -69,7 +70,8 @@ export function materialMarkup(
 ): string {
   const d = material.data;
   let content: string;
-  if (d.kind === 'wireframe') content = wireframeMarkup(material, w);
+  if (d.kind === 'bars') content = barChartSvg(d);
+  else if (d.kind === 'wireframe') content = wireframeMarkup(material, w);
   else if (d.kind === 'local') {
     content = `<small class="local-copy-label">Solo en Canvas</small><div class="reference-type">${icon(d.content.kind === 'file' ? 'code' : d.content.kind === 'task' ? 'board' : d.content.kind === 'agent' ? 'agents' : 'docs', 17)}</div><h3>${html(d.title)}</h3><${d.content.kind === 'file' ? 'pre' : 'p'}>${html(localText(d.content))}</${d.content.kind === 'file' ? 'pre' : 'p'}>`;
     if (d.content.kind === 'task') {
@@ -115,9 +117,10 @@ export function materialMarkup(
   } else content = '';
   const comment = w.comments.find((c) => c.node === material.id && !c.resolved);
   const ports = connect ? connectionPorts(material) : '';
-  return `<article class="material ${isArrow(material) ? 'free-arrow' : ''} ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'note' ? noteFontAttributes(d) : d.kind === 'text' ? textFontAttributes(d) : ''} ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}${material.rotation ? 'rotate:' + material.rotation + 'deg;--label-counter-angle:' + -material.rotation + 'deg;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? noteStyle(d) : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-label-space"><div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ wireframe: 'Bosquejo', text: 'Texto', note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div></div>${selected && resize && !connect ? (isArrow(material) ? arrowHandles(material) : resizeHandles('node', material.id, d.kind === 'text')) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
+  return `<article class="material ${isArrow(material) ? 'free-arrow' : ''} ${d.kind === 'shape' ? 'shape-material' : d.kind === 'local' ? 'reference local-copy' : d.kind} ${selected ? 'selected' : ''}" tabindex="0" aria-label="${html(nodeTitle(w, material))}" data-node="${material.id}" ${d.kind === 'note' ? noteFontAttributes(d) : d.kind === 'text' ? textFontAttributes(d) : ''} ${d.kind === 'reference' ? `data-reference-kind="${d.ref.kind}"` : d.kind === 'local' ? `data-reference-kind="${d.content.kind}" data-local-copy="true"` : ''} style="${d.kind === 'shape' ? '--shape-thickness:' + (d.thickness ?? 1) + 'px;' : ''}${material.rotation ? 'rotate:' + material.rotation + 'deg;--label-counter-angle:' + -material.rotation + 'deg;' : ''}left:${material.x}px;top:${material.y}px;width:${material.width}px;height:${material.height}px;${d.kind === 'note' ? noteStyle(d) : ''}">${content}${d.kind === 'shape' ? '<svg class="material-selection-frame" aria-hidden="true"><rect width="100%" height="100%"/></svg>' : ''}<div class="material-label-space"><div class="material-identification"><button type="button" data-action="material-rename" data-id="${material.id}" title="${html(nodeTitle(w, material))}">${html(nodeTitle(w, material))}</button><span>${{ bars: 'Gráfico', wireframe: 'Bosquejo', text: 'Texto', note: 'Nota', shape: 'Forma', drawing: 'Dibujo', image: 'Imagen', video: 'Video', pdf: 'PDF', link: 'Enlace', local: d.kind === 'local' ? localNames[d.content.kind] + ' · copia local' : 'Copia local', reference: d.kind === 'reference' ? { document: 'Documento', file: 'Archivo', task: 'Tarea de Board', agent: 'Agente' }[d.ref.kind] : 'Referencia' }[d.kind]}</span></div></div>${selected && resize && !connect ? (isArrow(material) ? arrowHandles(material) : resizeHandles('node', material.id, d.kind === 'text')) : ''}${ports}${comment ? `<button type="button" data-action="material-comments" data-id="${material.id}" class="comment-marker" aria-label="Comentario de ${html(comment.author)}">${icon('bubble', 14)}<span class="comment-preview" role="tooltip"><strong>${html(comment.author)}</strong><span>${html(comment.text)}</span></span></button>` : ''}</article>`;
 }
 const materialKinds: Record<string, { label: string; icon: Parameters<typeof icon>[0] }> = {
+  bars: { label: 'Gráficos', icon: 'canvas' },
   wireframe: { label: 'Bosquejos', icon: 'canvas' },
   text: { label: 'Textos', icon: 'text' },
   note: { label: 'Notas', icon: 'note' },
@@ -133,6 +136,8 @@ const materialKinds: Record<string, { label: string; icon: Parameters<typeof ico
   link: { label: 'Enlaces', icon: 'link' },
 };
 export function assignedPreview(w: WorldSnapshot, n: Material): string {
+  if (n.data.kind === 'bars')
+    return `<div class="assigned-preview" data-assigned-id="${html(n.id)}">${barChartSvg(n.data)}</div>`;
   if (n.data.kind === 'link')
     return `<div class="assigned-preview assigned-link" data-assigned-id="${n.id}">${linkCardMarkup(n.data, n.id)}</div>`;
   const d = n.data,

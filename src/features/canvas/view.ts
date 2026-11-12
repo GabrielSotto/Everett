@@ -2379,8 +2379,9 @@ export class CanvasView implements View {
       // Reservar espacio de lectura a escala de panorama sin recolocar el cable
       // al girar la rueda. La medida tipográfica se normaliza a coordenadas del Mundo.
       const size = { width: (text.getComputedTextLength() * zoom + 12) / 0.4, height: 14 / 0.4 };
-      const middle = link.detail ? original : labelPosition(original, size, obstacles);
-      const next = link.detail
+      const fixedPath = link.detail || link.path === 'straight';
+      const middle = fixedPath ? original : labelPosition(original, size, obstacles);
+      const next = fixedPath
         ? cable.path
         : labeledPath(
             from,

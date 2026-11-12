@@ -1,3 +1,5 @@
+import { legacyBars, linkedBarCopy } from '../../domain/legacy-bars';
+import { barEditor } from './bar-chart';
 import type { Context } from '../../app/context';
 import {
   nodeTitle,
@@ -244,6 +246,10 @@ export class CanvasInteractions {
           !event.target.closest('.material-identification,button')
             ? event.target.closest<HTMLElement>('[data-node]')?.dataset.node
             : null;
+        if (nodeId && this.editBars(nodeId)) {
+          event.preventDefault();
+          return;
+        }
         if (
           nodeId &&
           ctx.world().nodes.find((node) => node.id === nodeId)?.data.kind === 'wireframe'
@@ -383,7 +389,7 @@ export class CanvasInteractions {
         } else if (event.key === ' ' || event.key === 'Enter') {
           event.preventDefault();
           event.stopPropagation();
-          if (event.key === 'Enter' && editText(id)) return;
+          if (event.key === 'Enter' && (this.editBars(id) || editText(id))) return;
           if (
             event.key === 'Enter' &&
             ctx.world().nodes.find((node) => node.id === id)?.data.kind === 'wireframe'
@@ -599,6 +605,28 @@ export class CanvasInteractions {
           }
           case 'context-duplicate':
             this.duplicate();
+            break;
+          case 'bars-copy': {
+            const copy = linkedBarCopy(ctx.world(), id, 'material-' + crypto.randomUUID());
+            if (
+              copy &&
+              ctx.act(
+                { type: 'node.create', world: ctx.world().id, node: copy },
+                'crear barras con los valores guardados',
+                'C08-VIS-01',
+              )
+            ) {
+              this.close();
+              ctx.ui.canvas.selection = copy.id;
+              ctx.ui.canvas.selections = [copy.id];
+              ctx.render();
+              frameCanvas(ctx, true, { maximumZoom: 1.15 });
+              this.editBars(copy.id);
+            }
+            break;
+          }
+          case 'bars-edit':
+            this.editBars(id);
             break;
           case 'wireframe-edit':
             this.editWireframe(id);
@@ -1301,12 +1329,14 @@ export class CanvasInteractions {
       ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="image-callout" data-u="${detail.x}" data-v="${detail.y}">Señalar un detalle…</button>`
       : '';
     const editAction =
-      node.data.kind === 'text' && !component && this.ctx.ui.canvas.selections.length === 1
-        ? '<button type="button" role="menuitem" data-action="material-edit-text" data-id="' +
-          id +
-          '">Editar texto <kbd aria-hidden="true">Enter</kbd></button>'
-        : '';
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}">${editAction}${callout}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 && isLibraryAsset(node.data.asset) ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-image-colors">Editar colores…</button>` : ''}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-replace-image">Reemplazar imagen…</button>` : ''}<button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'wireframe' ? `<button type="button" role="menuitem" data-action="wireframe-edit" data-id="${id}">Editar contenido</button>` : ''}${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-rotate">Girar…</button><button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
+      node.data.kind === 'bars' && this.ctx.ui.canvas.selections.length === 1
+        ? `<button type="button" role="menuitem" data-action="bars-edit" data-id="${html(id)}">Editar datos…</button>`
+        : node.data.kind === 'text' && !component && this.ctx.ui.canvas.selections.length === 1
+          ? '<button type="button" role="menuitem" data-action="material-edit-text" data-id="' +
+            id +
+            '">Editar texto <kbd aria-hidden="true">Enter</kbd></button>'
+          : '';
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}">${editAction}${this.ctx.ui.canvas.selections.length === 1 && (node.data.kind === 'shape' || node.data.kind === 'text') && legacyBars(this.ctx.world(), id) ? `<button type="button" role="menuitem" data-action="bars-copy" data-id="${html(id)}">Crear copia con datos vinculados</button>` : ''}${callout}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 && isLibraryAsset(node.data.asset) ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-image-colors">Editar colores…</button>` : ''}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-replace-image">Reemplazar imagen…</button>` : ''}<button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'wireframe' ? `<button type="button" role="menuitem" data-action="wireframe-edit" data-id="${id}">Editar contenido</button>` : ''}${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-rotate">Girar…</button><button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
@@ -1660,6 +1690,38 @@ export class CanvasInteractions {
     this.ctx.ui.canvas.selections = [id];
     this.ctx.render();
     return id;
+  }
+  private editBars(id: string): boolean {
+    const world = this.ctx.world().id;
+    const node = this.ctx.world().nodes.find((n) => n.id === id);
+    if (!node || node.owner || node.data.kind !== 'bars') return false;
+    this.close();
+    const close = () => {
+      this.close();
+      this.root
+        .querySelector<HTMLElement>('[data-node="' + CSS.escape(id) + '"]')
+        ?.focus({ preventScroll: true });
+    };
+    const form = barEditor(
+      node.data,
+      (rows) => {
+        if (
+          this.ctx.act(
+            { type: 'bars.edit', world, id, rows },
+            'editar datos del gráfico',
+            'C08-VIS-01',
+          )
+        )
+          close();
+      },
+      close,
+      () => this.fitOverlay(),
+    );
+    form.style.cssText = this.position(this.materialPoint(id));
+    this.overlay.replaceChildren(form);
+    this.fitOverlay();
+    form.querySelector('input')?.focus();
+    return true;
   }
   private editWireframe(id: string): void {
     if (

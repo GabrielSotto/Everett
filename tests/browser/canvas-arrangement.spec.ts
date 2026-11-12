@@ -337,7 +337,7 @@ test('C08-B131: creación, organización y vista abren directamente y conservan 
           menu.getByRole('menuitem', { name: /Alinear|Ajustar|Preferencias/ }),
         ).toHaveCount(0);
       } else if (name === 'Gráficos explicativos') {
-        await expect(menu.locator('[data-graphic]')).toHaveCount(12);
+        await expect(menu.locator('[data-graphic]')).toHaveCount(20);
         await expect(menu.getByRole('button', { name: 'En secuencia', exact: true })).toBeVisible();
       } else if (name === 'Alinear selección') {
         await expect(

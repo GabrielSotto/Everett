@@ -116,6 +116,7 @@ export interface CanvasClipboard {
   groups: CanvasGroup[];
 }
 export type NodeData =
+  | import('./bar-chart').BarChart
   | import('./canvas-text').CanvasText
   | { kind: 'wireframe'; title: string; content: import('./wireframes').WireframeContent }
   | { kind: 'local'; title: string; content: LocalContent }
@@ -182,6 +183,7 @@ export interface Link {
   to: string;
   fromAnchor: Anchor;
   toAnchor: Anchor;
+  path?: 'straight';
   direction?: import('./link-stroke').LinkDirection;
   /** Destino preciso en una imagen, normalizado respecto a sus píxeles visibles. */
   detail?: Point;
