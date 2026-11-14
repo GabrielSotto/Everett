@@ -21,6 +21,16 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ## Desarrollo continuo de Canvas
 
+### Bosquejos — observaciones del rodaje de Nightly (13 de noviembre)
+
+Pendiente de diseño. Al redistribuir cinco pantallas, se movieron sus fondos y el contenido quedó en las posiciones anteriores. Los conjuntos ya permiten trasladar sus miembros juntos. El caso pide distinguir qué pertenece a una pantalla antes de arrastrarla por el título, incluso cuando una tarjeta sobresale de su borde. El fondo también debe poder editarse por separado.
+
+En Explorar, una tarjeta combina foto importada, título de texto libre y fondo. Hoy tanto la acción **Crear componente** como el guardado en **Mis composiciones** exigen piezas de Bosquejos compatibles. La actualización manual de una instancia reconstruye sus materiales desde la composición guardada. Para reutilizar tarjetas de eventos interesa poder personalizar foto y título por instancia y conservarlos al actualizar su diseño.
+
+Prueba propuesta con **Prisma DJ Set** y **After Hours**. Armar ambas tarjetas desde una misma composición y cambiar foto y título en la segunda. Ajustar el espaciado común, actualizar una copia vinculada y comprobar que sigue representando su evento. Reubicar Explorar desde su título con una tarjeta parcialmente visible, otra pantalla al lado y un objeto suelto superpuesto. Se deben distinguir los miembros antes de moverlos y conservar el encuadre, los destinos y la posición de los objetos ajenos. Verificar Deshacer y recarga.
+
+Otros obstáculos del mismo rodaje fueron seleccionar el fondo bajo un icono, agarrar una línea corta entre tiradores, recortar en vivo una tarjeta mixta dentro del catálogo o del feed, aplicar la familia tipográfica al rótulo de una pieza y alternar un símbolo entre contorno y sólido. En Alinear ya existen centrado, distribución, separación numérica y retículas. Queda por evaluar cómo mostrar la selección afectada y la referencia de cada operación.
+
 ### Composición manual: ilustraciones, texto, cables y flechas
 
 La paleta móvil de **Ilustraciones** abre desde Gráficos o con **I** (configurable); las 319 ilustraciones se pueden filtrar por 14 categorías, buscar, arrastrar, recolorear y reemplazar. Bosquejos incluye 152 símbolos del mismo trazo. Los ejemplos [Viaje](design/composicion-visual/index.html?escena=viaje) y [Comparación de etiquetas](design/composicion-visual/index.html?escena=etiquetas) tienen guardados separados; la comparación aísla el peso de la indicación de frío. La [versión anterior](design/composicion-visual/index.html?escena=etiquetas&revision=anterior) conserva su guardado. El usuario revisó la paleta y las dos etiquetas y aprobó pasar a la expansión de las explicaciones visuales.
