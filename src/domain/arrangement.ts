@@ -33,17 +33,22 @@ export function arrangementUnits(world: WorldSnapshot, ids: readonly string[]): 
   return units;
 }
 
-export function arrangementMoves(
-  units: readonly ArrangementUnit[],
+export function arrangementOffsets<T extends Rect>(
+  units: readonly T[],
   action: Arrangement,
   spacing?: number,
-): { id: string; point: Point }[] {
+  reference?: Rect,
+): { item: T; delta: Point }[] {
   if (spacing !== undefined && (!Number.isFinite(spacing) || spacing < 0 || spacing > 10000))
     return [];
-  if (units.length < (action.startsWith('space') && spacing === undefined ? 3 : 2)) return [];
+  if (
+    units.length <
+    (action.startsWith('space') ? (spacing === undefined ? 3 : 2) : reference ? 1 : 2)
+  )
+    return [];
   const axis = ['left', 'center-x', 'right', 'space-x'].includes(action) ? 'x' : 'y';
   const size = axis === 'x' ? 'width' : 'height';
-  const positions = new Map<ArrangementUnit, number>();
+  const positions = new Map<T, number>();
   if (action.startsWith('space') && spacing !== undefined) {
     const ordered = [...units].sort((a, b) => a[axis] - b[axis]);
     let cursor = ordered[0]![axis];
@@ -60,7 +65,7 @@ export function arrangementMoves(
     // Con solapamiento, repartir centros mantiene un orden estable incluso si
     // una pantalla contiene otras piezas mucho más pequeñas.
     const centers = gap < 0;
-    const coordinate = (item: ArrangementUnit) => item[axis] + (centers ? item[size] / 2 : 0);
+    const coordinate = (item: T) => item[axis] + (centers ? item[size] / 2 : 0);
     const sorted = centers ? [...units].sort((a, b) => coordinate(a) - coordinate(b)) : ordered;
     const first = sorted[0]!,
       last = sorted.at(-1)!;
@@ -94,7 +99,7 @@ export function arrangementMoves(
       }
     }
   } else {
-    const bounds = selectionBounds([...units]);
+    const bounds = reference ?? selectionBounds([...units]);
     const factor = action.startsWith('center') ? 0.5 : ['right', 'bottom'].includes(action) ? 1 : 0;
     for (const item of units)
       positions.set(item, bounds[axis] + (bounds[size] - item[size]) * factor);
@@ -103,9 +108,19 @@ export function arrangementMoves(
     const delta = positions.get(item)! - item[axis];
     return Math.abs(delta) < 0.000001
       ? []
-      : item.nodes.map((node) => ({
-          id: node.id,
-          point: { x: node.x + (axis === 'x' ? delta : 0), y: node.y + (axis === 'y' ? delta : 0) },
-        }));
+      : [{ item, delta: { x: axis === 'x' ? delta : 0, y: axis === 'y' ? delta : 0 } }];
   });
+}
+
+export function arrangementMoves(
+  units: readonly ArrangementUnit[],
+  action: Arrangement,
+  spacing?: number,
+): { id: string; point: Point }[] {
+  return arrangementOffsets(units, action, spacing).flatMap(({ item, delta }) =>
+    item.nodes.map((node) => ({
+      id: node.id,
+      point: { x: node.x + delta.x, y: node.y + delta.y },
+    })),
+  );
 }

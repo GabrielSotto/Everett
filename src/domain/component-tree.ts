@@ -187,12 +187,16 @@ export function treeFromMaterials(
     },
   };
 }
-export function writeTreeGeometry(world: World, group: CanvasGroup): void {
+export function writeTreeGeometry(
+  world: World,
+  group: CanvasGroup,
+  materials?: ReadonlySet<string>,
+): void {
   const tree = group.structure!;
   const nodes = new Map(world.nodes.map((n) => [n.id, n]));
   const poses = componentPoses(tree);
   for (const e of componentElements(tree.root)) {
-    if (!e.material) continue;
+    if (!e.material || (materials && !materials.has(e.material))) continue;
     const { x, y, width, height } = poses.get(e.id)!;
     Object.assign(nodes.get(e.material)!, { x, y, width, height });
   }

@@ -155,3 +155,46 @@ test('C08-U89: enmarcar conserva grupos enteros, coordenadas y enlaces y respeta
   store.dispatch({ type: 'canvas.undo', world }, intent);
   assert.deepEqual(project(store).canvasGroups, before.canvasGroups);
 });
+
+test('C08-U90: alinear dentro de un marco girado usa límites locales y conserva las otras capas', async () => {
+  await prepareComponentLayout();
+  const { store, worldId: world } = setup();
+  store.dispatch({ type: 'node.create', world, node: background('Mesa', 250, 40) }, intent);
+  store.dispatch(
+    { type: 'frame.create', world, background: 'Mesa', members: ['note-a', 'note-b'] },
+    intent,
+  );
+  const group = project(store).canvasGroups![0]!;
+  const root = group.structure!.root;
+  const part = root.children.find((c) => c.material === 'note-a')!;
+  const before = project(store).nodes;
+  const align = (ids: string[]) =>
+    store.dispatch(
+      {
+        type: 'component.edit',
+        world,
+        id: group.id,
+        edit: { kind: 'arrange', elements: ids, action: 'center-x' },
+      },
+      intent,
+    );
+  align([part.id]);
+  const after = project(store).canvasGroups![0]!.structure!.root.children.find(
+    (c) => c.id === part.id,
+  )!;
+  assert.ok(Math.abs(after.x + after.width / 2 - root.width / 2) < 0.001);
+  assert.equal(after.y, part.y);
+  assert.deepEqual(
+    project(store).nodes.find((n) => n.id === 'note-b'),
+    before.find((n) => n.id === 'note-b'),
+  );
+  store.dispatch({ type: 'canvas.undo', world }, intent);
+  assert.deepEqual(project(store).nodes, before);
+  for (const ids of [
+    [part.id, part.id],
+    [root.children.find((c) => c.background)!.id],
+    ['missing'],
+  ])
+    assert.throws(() => align(ids), /mismo contenedor/);
+  assert.deepEqual(project(store).nodes, before);
+});

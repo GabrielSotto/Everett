@@ -134,6 +134,10 @@ y distingue la previsualización por puntero de la edición. C08-B236 comprueba 
 por teclado, el orden real y su restauración, y la edición con el inspector a ancho móvil.
 C08-B237 exige que, en un marco con más de sesenta capas, cerrar la búsqueda revele la fila
 elegida o devuelva el desplazamiento anterior cuando se consulta sin seleccionar.
+C08-B238 cruza tipo y nombre y comprueba que ocultar la fila no cambia lo seleccionado.
+C08-B239 contrasta la posición real después de alinear al marco y entre capas, deshace la
+operación y prueba la distribución de los hijos en ambos ejes. C08-U90 comprueba la
+referencia local en un marco girado y el rechazo de selecciones incompatibles.
 
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
    por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles

@@ -60,7 +60,7 @@ test('C08-B226: componer una pantalla, moverla desde el título y conservar una 
   await header.focus();
   await header.getByRole('button', { name: /Editar marco/ }).click();
   const panel = page.locator('.component-inspector');
-  await panel.locator('summary').filter({ hasText: 'Incorporar o sustituir' }).click();
+  await panel.locator('summary').filter({ hasText: 'Incorporar piezas' }).click();
   await panel.locator('[data-adopt]').selectOption(photo.id);
   await panel.getByRole('button', { name: 'Incorporar al contenedor' }).click();
   await panel.locator('[data-adopt]').selectOption('member');

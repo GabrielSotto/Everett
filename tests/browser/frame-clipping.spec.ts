@@ -436,3 +436,100 @@ test('C08-B229: elegir el fondo bajo un icono por puntero y teclado, y mover una
     expect(after.x).toBeGreaterThan(before.x);
   }
 });
+
+test('C08-B238: el filtro de tipos combina búsqueda y conserva selección y ancestros', async ({
+  page,
+}, info) => {
+  const { panel } = await scene(page);
+  const layer = (name: string) => panel.getByRole('treeitem', { name, exact: true });
+  await layer('Inicio').click();
+  const original = await world(page);
+  const filter = panel.getByRole('button', { name: /Filtrar capas por tipo/ });
+  await filter.click();
+  await panel.getByRole('button', { name: 'Imágenes', exact: true }).click();
+  await expect(layer('Explorar')).toBeVisible();
+  await expect(layer('link-cover.png')).toBeVisible();
+  await expect(layer('Inicio')).toHaveCount(0);
+  await expect(panel.getByLabel('Nombre', { exact: true })).toHaveValue('Inicio');
+  await panel.getByRole('button', { name: 'Buscar capas', exact: true }).click();
+  const search = panel.getByRole('searchbox');
+  await search.fill('evento');
+  await expect(panel.getByRole('status')).toHaveText('Ninguna capa coincide con el filtro.');
+  await filter.press('Enter');
+  await panel.getByRole('button', { name: 'Todas las capas' }).click();
+  await expect(search).toHaveValue('evento');
+  await expect(layer('Evento')).toBeVisible();
+  await search.press('Escape');
+  await filter.click();
+  const text = panel.getByRole('button', { name: 'Texto', exact: true });
+  await expect(panel.getByRole('button', { name: 'Todas las capas' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(text).toBeHidden();
+  await expect(filter).toBeFocused();
+  await expect(layer('Inicio')).toHaveAttribute('aria-selected', 'true');
+  expect(await world(page)).toEqual(original);
+  await filter.press('Enter');
+  await capture(page, info, 'filtro-de-tipos');
+});
+
+test('C08-B239: las propiedades responden al marco, a una capa y a una selección real', async ({
+  page,
+}, info) => {
+  const { panel } = await scene(page);
+  const props = panel.getByRole('region', { name: 'Propiedades', exact: true });
+  const layer = (name: string) => panel.getByRole('treeitem', { name, exact: true });
+  const node = async (id: string) => (await world(page)).nodes.find((n) => n.id === id)!;
+  await expect(props.getByText('Escala proporcional', { exact: true })).toBeVisible();
+  await expect(props.getByRole('heading', { name: 'Disposición interna' })).toBeVisible();
+  await layer('Inicio').click();
+  const initial = await node('home');
+  const frame = await node('paper');
+  await expect(props.getByText('Escala proporcional')).toHaveCount(0);
+  await expect(props.getByLabel('Distribución', { exact: true })).toHaveCount(0);
+  await props.getByRole('button', { name: 'Centrar horizontalmente' }).click();
+  expect((await node('home')).x).toBeCloseTo(frame.x + (frame.width - initial.width) / 2);
+  const x = props.getByLabel('Posición X');
+  await x.fill('18');
+  await x.press('Enter');
+  expect((await node('home')).x).toBeCloseTo(frame.x + 18);
+  await layer('Evento').click({ modifiers: ['Control'] });
+  await expect(props.getByRole('heading', { name: 'Alinear selección' })).toBeVisible();
+  const left = Math.min((await node('home')).x, (await node('title')).x);
+  await props.getByRole('button', { name: 'Alinear a la izquierda' }).click();
+  expect((await node('home')).x).toBeCloseTo(left);
+  expect((await node('title')).x).toBeCloseTo(left);
+  await expect(props.getByRole('button', { name: 'Espaciar horizontalmente' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+  expect((await node('title')).x).not.toBeCloseTo(left);
+  await layer('Inicio').click();
+  await layer('Evento').click({ modifiers: ['Control'] });
+  await layer('Separador').click({ modifiers: ['Control'] });
+  await props.getByRole('button', { name: 'Espaciar horizontalmente' }).click();
+  const distributed = await Promise.all(['home', 'title', 'line'].map(node));
+  const [first, middle, last] = distributed.sort((a, b) => a.x - b.x);
+  expect(middle!.x - first!.x - first!.width).toBeCloseTo(last!.x - middle!.x - middle!.width);
+
+  await layer('Explorar').click();
+  const direction = props.getByLabel('Distribución', { exact: true });
+  await direction.selectOption('column');
+  await props.getByRole('combobox', { name: 'Horizontal', exact: true }).selectOption('center');
+  await props.getByRole('combobox', { name: 'Vertical', exact: true }).selectOption('end');
+  expect((await world(page)).canvasGroups![0]!.structure!.root.layout).toMatchObject({
+    direction: 'column',
+    align: 'center',
+    justify: 'end',
+  });
+  const alignedHome = await node('home');
+  expect(alignedHome.x + alignedHome.width / 2).toBeCloseTo(frame.x + frame.width / 2);
+  await capture(page, info, 'disposicion-del-marco');
+  await layer('Inicio').click();
+  await expect(props.getByRole('button', { name: 'Centrar horizontalmente' })).toHaveCount(0);
+  await expect(props.getByLabel('Posición X')).toHaveCount(0);
+  await layer('Explorar').click();
+  await direction.selectOption('free');
+  await layer('Evento').click();
+  await capture(page, info, 'propiedades-de-texto');
+  await page.setViewportSize({ width: 390, height: 760 });
+  expect(await props.evaluate((e) => e.clientWidth >= e.scrollWidth - 1)).toBe(true);
+  await capture(page, info, 'propiedades-en-ancho-movil');
+});

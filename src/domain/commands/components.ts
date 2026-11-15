@@ -30,8 +30,12 @@ import {
 } from '../canvas-frames';
 import { componentPoses, localPose } from '../component-geometry';
 import { flatLayers, restackLayer } from '../component-layers';
+import type { Arrangement } from '../arrangement';
+import { arrangedLayerPositions } from '../component-arrangement';
 
 export type ComponentEdit =
+  | { kind: 'position'; element: string; axis: 'x' | 'y'; value: number }
+  | { kind: 'arrange'; elements: string[]; action: Arrangement }
   | { kind: 'stack'; element: string; target: string; side: 'above' | 'below' | 'inside' }
   | { kind: 'clip'; element: string; enabled: boolean }
   | { kind: 'initialize' }
@@ -56,6 +60,32 @@ export type ComponentEdit =
   | { kind: 'adopt'; parent: string; materials: string[] }
   | { kind: 'nest'; parent: string; group: string }
   | { kind: 'resize'; rect: Rect; scale: boolean };
+
+/** Una traslación libre no debe redondear ni recalcular las capas ajenas al gesto. */
+function placeChildren(
+  world: World,
+  group: CanvasGroup,
+  positions: { id: string; x: number; y: number }[],
+) {
+  if (!positions.length) return;
+  const tree = group.structure!;
+  const parent = parentOf(tree.root, positions[0]!.id)!;
+  const children = new Map(parent.children.map((child) => [child.id, child]));
+  const moved = new Set<string>();
+  let needsLayout = false;
+  for (const { id, x, y } of positions) {
+    const child = children.get(id)!;
+    if (x === child.x && y === child.y) continue;
+    needsLayout ||=
+      (x !== child.x && (child.widthMode === 'fill' || parent.widthMode === 'hug')) ||
+      (y !== child.y && (child.heightMode === 'fill' || parent.heightMode === 'hug'));
+    child.x = x;
+    child.y = y;
+    for (const material of elementMaterials(child)) moved.add(material);
+  }
+  if (needsLayout) layoutComponent(tree.root);
+  writeTreeGeometry(world, group, needsLayout ? undefined : moved);
+}
 
 function nestGroup(
   world: World,
@@ -372,6 +402,15 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     const parent = need(elementAt(tree.root, edit.parent), 'Contenedor no disponible');
     adoptMaterials(world, group, parent, edit.materials, uid);
     layoutComponent(tree.root);
+  } else if (edit.kind === 'arrange') {
+    const positions = arrangedLayerPositions(tree.root, edit.elements, edit.action);
+    ensure(
+      positions !== undefined,
+      'COMPONENT_ARRANGEMENT',
+      'Elegí capas que se puedan mover en el mismo contenedor libre.',
+    );
+    placeChildren(world, group, positions!);
+    return;
   } else if (edit.kind === 'container') {
     ensure(
       edit.elements.length > 0 && new Set(edit.elements).size === edit.elements.length,
@@ -451,7 +490,26 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
       restackLayer(world, destination, element, target, edit.side);
       return;
     }
-    if (edit.kind === 'clip') {
+    if (edit.kind === 'position') {
+      ensure(
+        (edit.axis === 'x' || edit.axis === 'y') && Number.isFinite(edit.value),
+        'COMPONENT_POSITION',
+        'Ingresá una coordenada válida.',
+      );
+      if (element === tree.root) tree.origin[edit.axis] = edit.value - element[edit.axis];
+      else {
+        const parent = parentOf(tree.root, element.id);
+        ensure(
+          parent?.layout.direction === 'free' && !element.background,
+          'COMPONENT_POSITION',
+          'La posición de esta capa la determina su contenedor.',
+        );
+        placeChildren(world, group, [
+          { id: element.id, x: element.x, y: element.y, [edit.axis]: edit.value },
+        ]);
+        return;
+      }
+    } else if (edit.kind === 'clip') {
       ensure(
         element.frame === true && typeof edit.enabled === 'boolean',
         'FRAME_CLIP',

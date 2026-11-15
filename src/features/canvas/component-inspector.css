@@ -398,3 +398,95 @@
   stroke: var(--accent);
   stroke-width: calc(2px / var(--canvas-zoom));
 }
+
+.layer-filter-menu {
+  position: fixed;
+  inset: auto;
+  width: 172px;
+  max-height: min(220px, 45dvh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 6px 18px #0003;
+}
+.layer-filter-menu button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 5px 8px;
+  min-height: 30px;
+  text-align: start;
+}
+.layer-filter-menu [aria-pressed='true'],
+.component-inspector [data-layer-filter][data-active] {
+  background: var(--hover);
+  color: var(--accent);
+}
+.component-properties .property-heading {
+  display: grid;
+  gap: 2px;
+}
+.property-heading .inspector-properties-title {
+  font-weight: 500;
+  color: var(--muted);
+}
+.property-heading input[data-prop='name'] {
+  font-weight: 650;
+  font-size: 15px;
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 4px;
+}
+.property-heading input[data-prop='name']:is(:hover, :focus) {
+  border-color: var(--line);
+  background: var(--hover);
+}
+.property-section {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.property-section h4 {
+  font-size: inherit;
+  margin: 0;
+  font-weight: 650;
+}
+.component-inspector .property-coordinate {
+  display: flex;
+  align-items: center;
+  padding-inline-start: 8px;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--hover);
+}
+.property-coordinate span {
+  color: var(--muted);
+}
+.property-coordinate input {
+  border: 0;
+  background: transparent;
+}
+.property-dimensions > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.property-alignment {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 3px;
+}
+.property-alignment button {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  background: var(--hover);
+}

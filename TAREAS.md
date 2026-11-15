@@ -23,6 +23,8 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ### Bosquejos — observaciones del rodaje de Nightly (13 de noviembre)
 
+- Implementado para revisión: propiedades contextuales de marcos y capas, alineación según la selección y filtro por tipo en el árbol.
+
 La conversión de una pantalla existente incorpora materiales interiores y grupos completos con Ctrl+Alt+G. En un marco anterior, el inspector permite recuperar esas capas en una acción. El inspector del Canvas muestra las capas al seleccionar un marco, un conjunto o un componente estructurado, y las propiedades de zona al seleccionar una zona. El árbol permite buscar capas anidadas, desplegar ramas conservando la selección, seleccionar rangos y mover capas entre contenedores. En escritorio, las propiedades quedan al lado opuesto del Canvas. El marco puede recortar su contenido en vivo. El menú contextual permite elegir una pieza debajo de otra en el punto señalado. [Uso y dependencias](docs/iteraciones/0.8.md#marcos-componentes-mixtos-y-alineación).
 
 La tarjeta de Explorar combina foto importada, texto libre y fondo. El marco admite esos materiales; guardar una composición reutilizable todavía exige piezas de Bosquejos. Las copias vinculadas se reconstruyen al actualizar. Queda pendiente guardar composiciones mixtas, conservar cambios locales por propiedad y ofrecer contorno y sólido para el mismo símbolo. El comportamiento tipográfico de texto libre, notas y editor de piezas está confirmado.

@@ -60,12 +60,48 @@ function layerIcon(world: WorldSnapshot, part: Part, index: ReadonlyMap<string, 
   return data && ['image', 'text', 'note', 'link'].includes(data.kind) ? data.kind : 'rectangle';
 }
 
+function layerType(world: WorldSnapshot, part: Part, index: ReadonlyMap<string, number>): string {
+  if (!part.material) return part.frame ? 'Marcos' : 'Contenedores';
+  const data = world.nodes[index.get(part.material)!]?.data;
+  switch (data?.kind) {
+    case 'wireframe':
+      if (data.content.piece?.symbol) return 'Símbolos';
+      if (data.content.type === 'text') return 'Texto';
+      if (data.content.type === 'image') return 'Imágenes';
+      if (data.content.type === 'video') return 'Videos';
+      return 'Bosquejos';
+    case 'text':
+      return 'Texto';
+    case 'shape':
+      return 'Formas';
+    case 'image':
+      return 'Imágenes';
+    case 'video':
+      return 'Videos';
+    case 'note':
+      return 'Notas';
+    case 'link':
+      return 'Enlaces';
+    case 'drawing':
+      return 'Trazos';
+    case 'pdf':
+      return 'PDF';
+    case 'bars':
+      return 'Gráficos';
+    default:
+      return 'Otros materiales';
+  }
+}
+
 /** Búsqueda, foco y ramas abiertas pertenecen al inspector, nunca al documento. */
 export class InspectorLayerBrowser {
   readonly pane = document.createElement('section');
   private tree: HTMLElement;
   private search: HTMLInputElement;
   private toggle: HTMLButtonElement;
+  private filter = '';
+  private filterToggle: HTMLButtonElement;
+  private filterMenu: HTMLElement;
   private collect: HTMLButtonElement;
   private view?: LayerView;
   private expanded = new Set<string>();
@@ -77,13 +113,65 @@ export class InspectorLayerBrowser {
   private children = new WeakMap<Part, Part[]>();
   constructor() {
     this.pane.className = 'inspector-layer-pane';
-    this.pane.innerHTML = `<header><strong>Capas</strong><button type="button" class="icon-button" data-layer-search aria-expanded="false" aria-label="Buscar capas" title="Buscar capas">${icon('search', 16)}</button><button type="button" class="icon-button" data-component-action="close" aria-label="Terminar edición" title="Cerrar inspector">${icon('close', 16)}</button></header>
+    const menuId = 'layer-filter-' + crypto.randomUUID();
+    this.pane.innerHTML = `<header><strong>Capas</strong><button type="button" class="icon-button" data-layer-search aria-expanded="false" aria-label="Buscar capas" title="Buscar capas">${icon('search', 16)}</button><button type="button" class="icon-button" data-layer-filter aria-label="Filtrar capas por tipo" title="Filtrar capas por tipo" popovertarget="${menuId}">${icon('filter', 16)}</button><button type="button" class="icon-button" data-component-action="close" aria-label="Terminar edición" title="Cerrar inspector">${icon('close', 16)}</button></header>
+      <div id="${menuId}" class="layer-filter-menu" role="group" aria-label="Tipo de capa" popover></div>
       <input type="search" class="layer-search" aria-label="Buscar capas por nombre" placeholder="Buscar capas…" hidden>
       <div class="component-children" role="tree" aria-label="Capas" aria-multiselectable="true"></div>
       <button type="button" class="frame-collect" data-component-action="collect-interior" hidden>Incorporar capas interiores <span></span></button>`;
     this.tree = this.pane.querySelector('[role=tree]')!;
     this.search = this.pane.querySelector('input')!;
     this.toggle = this.pane.querySelector('[data-layer-search]')!;
+    this.filterToggle = this.pane.querySelector('[data-layer-filter]')!;
+    this.filterMenu = this.pane.querySelector('[popover]')!;
+    this.filterMenu.addEventListener('beforetoggle', (event) => {
+      if ((event as ToggleEvent).newState !== 'open' || !this.view) return;
+      const types = new Set<string>();
+      const visit = (part: Part) => {
+        types.add(layerType(this.view!.world, part, this.levels));
+        part.children.forEach(visit);
+      };
+      visit(this.view.root);
+      if (this.filter) types.add(this.filter);
+      this.filterMenu.innerHTML = ['', ...[...types].sort((a, b) => a.localeCompare(b, 'es'))]
+        .map(
+          (type) =>
+            `<button type="button" data-type="${html(type)}" aria-pressed="${this.filter === type}">${type || 'Todas las capas'}${this.filter === type ? icon('check', 14) : ''}</button>`,
+        )
+        .join('');
+      const rect = this.filterToggle.getBoundingClientRect();
+      this.filterMenu.style.left = Math.max(8, rect.right - 172) + 'px';
+      this.filterMenu.style.top =
+        Math.min(
+          rect.bottom + 4,
+          window.innerHeight - Math.min(220, this.filterMenu.children.length * 32 + 10) - 8,
+        ) + 'px';
+    });
+    this.filterMenu.addEventListener('toggle', (event) => {
+      if (
+        (event as ToggleEvent).newState === 'open' &&
+        document.activeElement === this.filterToggle
+      )
+        this.filterMenu
+          .querySelector<HTMLButtonElement>('[aria-pressed=true]')
+          ?.focus({ preventScroll: true });
+    });
+    this.filterToggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.filterMenu.matches(':popover-open')) {
+        event.stopPropagation();
+        this.filterMenu.hidePopover();
+      }
+    });
+    this.filterMenu.addEventListener('keydown', (e) => e.stopPropagation());
+    this.filterMenu.onclick = (e) => {
+      const item = (e.target as Element).closest<HTMLElement>('[data-type]');
+      if (!item) return;
+      this.setFilter(item.dataset.type ?? '');
+      this.filterMenu.hidePopover();
+      this.filterToggle.focus({ preventScroll: true });
+      this.tree.scrollTop = 0;
+      this.paint();
+    };
     this.collect = this.pane.querySelector('[data-component-action=collect-interior]')!;
     this.toggle.onclick = () => this.searching(this.search.hidden === true);
     this.search.oninput = () => {
@@ -121,6 +209,12 @@ export class InspectorLayerBrowser {
     });
     this.tree.addEventListener('keydown', (e) => this.keydown(e));
   }
+  private setFilter(type: string) {
+    this.filter = type;
+    this.filterToggle.toggleAttribute('data-active', !!type);
+    this.filterToggle.title = type ? `Filtrar capas por tipo · ${type}` : 'Filtrar capas por tipo';
+    this.filterToggle.setAttribute('aria-label', this.filterToggle.title);
+  }
   private searching(open: boolean) {
     this.search.hidden = !open;
     this.toggle.setAttribute('aria-expanded', String(open));
@@ -156,6 +250,8 @@ export class InspectorLayerBrowser {
       this.children = new WeakMap();
     }
     if (view.group !== this.view?.group) {
+      if (this.filterMenu.matches(':popover-open')) this.filterMenu.hidePopover();
+      this.setFilter('');
       this.expanded = new Set([view.root.id]);
       this.search.value = '';
       this.search.hidden = true;
@@ -205,14 +301,18 @@ export class InspectorLayerBrowser {
     const view = this.view;
     if (!view) return;
     const query = normalized(this.search.value.trim());
+    const filtered = !!(query || this.filter);
+    const directMatch = (p: Part) =>
+      normalized(p.name).includes(query) &&
+      (!this.filter || layerType(view.world, p, this.levels) === this.filter);
     const matches = new Set<string>();
     const match = (p: Part): boolean => {
-      let found = normalized(p.name).includes(query);
+      let found = directMatch(p);
       for (const child of p.children) if (match(child)) found = true;
       if (found) matches.add(p.id);
       return found;
     };
-    if (query) match(view.root);
+    if (filtered) match(view.root);
     const render = (
       p: Part,
       parent: Part | undefined,
@@ -227,8 +327,8 @@ export class InspectorLayerBrowser {
         children = layersFrontFirst(p, this.levels);
         this.children.set(p, children);
       }
-      const shown = query ? children.filter((c) => matches.has(c.id)) : children;
-      const open = query ? shown.length > 0 : this.expanded.has(p.id);
+      const shown = filtered ? children.filter((c) => matches.has(c.id)) : children;
+      const open = filtered ? shown.length > 0 : this.expanded.has(p.id);
       const id = html(p.id),
         name = html(p.name);
       const background = !!(parent?.frame && p.background);
@@ -246,15 +346,17 @@ export class InspectorLayerBrowser {
         return `<button type="button" class="icon-button" data-stack="${up ? 'above' : 'below'}" data-neighbor="${html(neighbor?.id ?? '')}" aria-label="${label}" title="${label}" ${enabled ? '' : 'disabled'}>${icon(up ? 'chevron-up' : 'down', 12)}</button>`;
       };
       const row = `<div role="none" class="component-row inspector-layer ${isRoot ? 'inspector-root' : ''}" data-layer="${id}" ${parent ? `data-parent="${html(parent.id)}"` : ''} data-background="${!!(parent?.frame && p.background)}" style="--depth:${depth}">
-        ${container && p.children.length ? `<button type="button" class="icon-button layer-disclosure" tabindex="-1" data-expand="${id}" aria-expanded="${open}" aria-label="${open ? 'Contraer' : 'Desplegar'} ${name}" ${query ? 'disabled' : ''}>${icon(open ? 'down' : 'chevron', 12)}</button>` : ''}
-        <button type="button" role="treeitem" data-item="${id}" ${query && normalized(p.name).includes(query) ? 'data-match="true"' : ''} ${isRoot ? `data-enter="${id}"` : `data-part="${id}"`} tabindex="${p.id === this.focusId ? 0 : -1}" aria-level="${depth + 1}" aria-posinset="${i + 1}" aria-setsize="${siblings.length}" ${container ? `aria-expanded="${open}"` : ''} aria-selected="${view.selected.has(p.id)}" aria-label="${accessibleName}" draggable="${movable}" title="${name}">${icon(layerIcon(view.world, p, this.levels), 14)}<span>${name}</span>${caption ? `<small>${caption}</small>` : ''}</button>
+        ${container && p.children.length ? `<button type="button" class="icon-button layer-disclosure" tabindex="-1" data-expand="${id}" aria-expanded="${open}" aria-label="${open ? 'Contraer' : 'Desplegar'} ${name}" ${filtered ? 'disabled' : ''}>${icon(open ? 'down' : 'chevron', 12)}</button>` : ''}
+        <button type="button" role="treeitem" data-item="${id}" ${filtered && directMatch(p) ? 'data-match="true"' : ''} ${isRoot ? `data-enter="${id}"` : `data-part="${id}"`} tabindex="${p.id === this.focusId ? 0 : -1}" aria-level="${depth + 1}" aria-posinset="${i + 1}" aria-setsize="${siblings.length}" ${container ? `aria-expanded="${open}"` : ''} aria-selected="${view.selected.has(p.id)}" aria-label="${accessibleName}" draggable="${movable}" title="${name}">${icon(layerIcon(view.world, p, this.levels), 14)}<span>${name}</span>${caption ? `<small>${caption}</small>` : ''}</button>
         ${!isRoot && p.id === view.active && view.selected.size === 1 ? step(true) + step(false) : ''}</div>`;
       return (
         row +
         (open
           ? children
               .map((child, index) =>
-                !query || matches.has(child.id) ? render(child, p, depth + 1, children, index) : '',
+                !filtered || matches.has(child.id)
+                  ? render(child, p, depth + 1, children, index)
+                  : '',
               )
               .join('')
           : '')
@@ -266,8 +368,8 @@ export class InspectorLayerBrowser {
       ? focused?.closest<HTMLElement>('[data-item]')?.dataset.item
       : undefined;
     this.tree.innerHTML =
-      query && !matches.size
-        ? '<p role="status">Sin capas con ese nombre.</p>'
+      filtered && !matches.size
+        ? `<p role="status">${this.filter ? 'Ninguna capa coincide con el filtro.' : 'Sin capas con ese nombre.'}</p>`
         : render(view.root, undefined, 0, [view.root], 0);
     this.tree.scrollTop = scroll;
     const first = this.items()[0];

@@ -10,12 +10,20 @@ import { corners, frameMasks, visiblePolygon } from '../../domain/frame-clipping
 import { componentPoses } from '../../domain/component-geometry';
 import { highlightLayer } from './layer-highlight';
 import { html, editable } from '../../ui/dom';
+import { materialTypeName } from '../../ui/material-type';
 import { icon } from '../../ui/icons';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { nodeTitle, type Camera, type WorldSnapshot } from '../../domain/model';
 import { InspectorLayerBrowser, bindLayerDrag, selectedLayerIds } from './inspector-layers';
 import { frameInterior } from '../../domain/canvas-frames';
 import { flatLayers } from '../../domain/component-layers';
+import {
+  alignmentProperties,
+  geometryProperties,
+  layoutProperties,
+  option,
+} from './inspector-properties';
+import { arrangements, type Arrangement } from '../../domain/arrangement';
 import type { CanvasUi } from './state';
 
 /** Inspector contextual: Enter y Escape recorren los niveles del árbol de capas. */
@@ -555,10 +563,6 @@ export class ComponentInspector {
     const expanded = [...this.panel.querySelectorAll('details[open] summary')].map(
       (e) => e.textContent,
     );
-    const option = (value: string, label: string, current: string) =>
-      `<option value="${html(value)}" ${value === current ? 'selected' : ''}>${html(label)}</option>`;
-    const size = (axis: 'width' | 'height', label: string) =>
-      `<label>${label}<input data-prop="${axis}" type="number" min="4" max="10000" value="${Math.round(selected[axis] * 100) / 100}" aria-label="${label}"><select data-prop="${axis}Mode" aria-label="Comportamiento del ${label.toLowerCase()}">${option('fixed', 'Fijo', selected[`${axis}Mode`])}${!selected.material ? option('hug', 'Contenido', selected[`${axis}Mode`]) : ''}${selected !== group.structure!.root ? option('fill', 'Rellenar', selected[`${axis}Mode`]) : ''}</select></label>`;
     const flow = this.ctx
       .world()
       .screenFlows?.find(
@@ -612,21 +616,41 @@ export class ComponentInspector {
     if (this.layers.pane.parentElement !== this.panel) this.panel.replaceChildren(this.layers.pane);
     if (this.properties.parentElement !== this.panel) this.panel.append(this.properties);
     this.properties.className = 'inspector-properties-pane';
+    this.properties.setAttribute('aria-label', 'Propiedades');
+    const alignment = alignmentProperties(root, rows);
     if (rows.size > 1) {
       const canGroup =
         chosen.length > 1 && chosen.flatMap(elementMaterials).length === selectedIds.size;
-      this.properties.innerHTML = `<h3 class="inspector-properties-title">${rows.size} capas seleccionadas</h3>${canGroup ? '<button type="button" data-component-action="container">Agrupar selección en contenedor</button>' : ''}`;
+      const sharedParent = elements.find((e) =>
+        [...rows].every((id) => e.children.some((c) => c.id === id)),
+      );
+      const hint =
+        sharedParent && sharedParent.layout.direction !== 'free'
+          ? `La ${sharedParent.layout.direction === 'row' ? 'fila' : 'columna'} «${html(sharedParent.name)}» determina la posición de estas capas.`
+          : 'Para alinear, elegí capas móviles del mismo contenedor libre.';
+      this.properties.innerHTML = `<div class="component-properties"><h3 class="inspector-properties-title">${rows.size} capas seleccionadas</h3>${alignment || `<p>${hint}</p>`}${canGroup ? '<button type="button" data-component-action="container">Agrupar selección en contenedor</button>' : ''}</div>`;
       return;
     }
-    this.properties.innerHTML = `      <div class="component-properties"><h3 class="inspector-properties-title">Propiedades · ${html(selected.name)}</h3><label>Nombre<input data-prop="name" value="${html(selected.name)}" maxlength="200"></label><div class="component-sizes">${size('width', 'Ancho')}${size('height', 'Alto')}</div>
-      ${!selected.material ? `<label>Distribución<select data-layout="direction" aria-label="Distribución">${option('free', 'Libre', selected.layout.direction)}${option('row', 'Fila', selected.layout.direction)}${option('column', 'Columna', selected.layout.direction)}</select></label>${selected.layout.direction !== 'free' ? `<div class="component-sizes"><label>Espacio<input data-layout="gap" type="number" min="0" max="10000" value="${selected.layout.gap}"></label><label>Margen interno<input data-layout="padding" type="number" min="0" max="10000" value="${selected.layout.padding}"></label></div><label>Alineación<select data-layout="align" aria-label="Alineación">${option('start', 'Inicio', selected.layout.align)}${option('center', 'Centro', selected.layout.align)}${option('end', 'Final', selected.layout.align)}${option('stretch', 'Estirar', selected.layout.align)}</select></label>` : `<label>Margen interno<input data-layout="padding" type="number" min="0" max="10000" value="${selected.layout.padding}"></label>`}` : ''}
-      ${selected.frame ? `<label class="frame-clip-option"><input type="checkbox" data-frame-clip ${selected.clipContent ? 'checked' : ''}>Recortar contenido</label>` : ''}
-      ${selected.layout.insets ? `<details><summary>Márgenes por lado</summary><div class="component-sizes">${['Superior', 'Derecho', 'Inferior', 'Izquierdo'].map((name, i) => `<label>${name}<input type="number" min="0" max="10000" data-layout-edge="${i}" value="${Math.round(selected.layout.insets![i]! * 100) / 100}"></label>`).join('')}</div></details>` : ''}
+    const parent = elements.find((e) => e.children.some((c) => c.id === selected.id));
+    const type = selected.frame
+      ? 'Marco'
+      : !selected.material
+        ? selected === root
+          ? 'Componente'
+          : 'Contenedor'
+        : selected.background
+          ? 'Fondo'
+          : selectedNode
+            ? materialTypeName(selectedNode.data)
+            : 'Capa';
+    this.properties.innerHTML = `<div class="component-properties">
+      <header class="property-heading"><h3 class="inspector-properties-title" aria-label="Propiedades · ${html(selected.name)}">${type}</h3><input aria-label="Nombre" data-prop="name" value="${html(selected.name)}" maxlength="200"></header>
+      ${alignment}${geometryProperties(selected, parent, group.structure.origin)}${layoutProperties(selected)}
       ${editableContent ? '<button type="button" data-component-action="content">Editar contenido y apariencia</button>' : ''}
       ${selected.material ? `<label class="component-check"><input type="checkbox" data-prop="background" ${selected.background ? 'checked' : ''}>Fondo del contenedor</label>` : ''}
       ${
         selected.id !== group.structure.root.id
-          ? `<label>Contenedor<select data-reparent aria-label="Contenedor">${elements
+          ? `<details><summary>Organizar capa</summary><label>Contenedor<select data-reparent aria-label="Contenedor">${elements
               .filter(
                 (e) =>
                   !e.material &&
@@ -642,15 +666,16 @@ export class ComponentInspector {
               )
               .join(
                 '',
-              )}</select></label><div class="component-actions">${elements.some((e) => e.layout.direction !== 'free' && e.children.some((c) => c.id === selected.id)) ? `<button type="button" data-component-action="earlier" title="Mover antes en la distribución" aria-label="Mover antes en la distribución">${icon('chevron-left', 14)}</button><button type="button" data-component-action="later" title="Mover después en la distribución" aria-label="Mover después en la distribución">${icon('chevron', 14)}</button>` : ''}<button type="button" data-component-action="duplicate">Duplicar</button><button type="button" data-component-action="detach">Separar</button></div>`
+              )}</select></label><div class="component-actions">${elements.some((e) => e.layout.direction !== 'free' && e.children.some((c) => c.id === selected.id)) ? `<button type="button" data-component-action="earlier" title="Mover antes en la distribución" aria-label="Mover antes en la distribución">${icon('chevron-left', 14)}</button><button type="button" data-component-action="later" title="Mover después en la distribución" aria-label="Mover después en la distribución">${icon('chevron', 14)}</button>` : ''}<button type="button" data-component-action="duplicate">Duplicar</button><button type="button" data-component-action="detach">Separar</button></div></details>`
           : ''
       }
 
       ${otherFrames.length && selected !== group.structure.root && elementMaterials(selected).length < group.nodes.length ? `<details><summary>Mover a otro marco</summary><label>Marco de destino<select data-frame-target>${otherFrames.map((g) => option(g.id, g.name, '')).join('')}</select></label><button type="button" data-component-action="transfer">Mover al marco</button></details>` : ''}
-      <details><summary>Incorporar o sustituir piezas</summary>${loose.length ? `<label>Pieza del Canvas<select data-adopt aria-label="Pieza del Canvas">${materialOptions(loose)}</select></label><button type="button" data-component-action="adopt">Incorporar al contenedor</button>` : '<p>No hay materiales sueltos para incorporar.</p>'}${selected.material && available.length ? `<label>Reemplazo<select data-replace aria-label="Reemplazo">${materialOptions(available)}</select></label><button type="button" data-component-action="replace">Sustituir contenido de la pieza</button>` : ''}</details>
-      ${nestable.length ? `<details><summary>Anidar un componente</summary><label>Componente del Canvas<select data-nest aria-label="Componente del Canvas">${nestable.map((g) => `<option value="${html(g.id)}">${html(g.name)}</option>`).join('')}</select></label><button type="button" data-component-action="nest">Anidar en este contenedor</button></details>` : ''}
-      <details><summary>Escala proporcional</summary><label>Porcentaje<input data-scale type="number" min="1" max="1000" value="100"></label><button type="button" data-component-action="scale">Escalar composición</button></details>
-      <details><summary>Reutilizar</summary>${unsupported ? `<p>«${html(nodeTitle(world, unsupported))}» todavía no se puede guardar en una composición de Bosquejos.</p>` : `<label>Nombre<input data-save-name value="${html(group.name)}" maxlength="200"></label><button type="button" data-component-action="save">Guardar composición</button>${group.recipe ? `<button type="button" data-component-action="update">Actualizar esta copia desde biblioteca</button><button type="button" data-component-action="publish">Actualizar composición guardada</button>` : ''}<p>Las copias son independientes. Las vinculadas se actualizan solo cuando lo pedís.</p>`}</details>
+      ${!selected.material && loose.length ? `<details><summary>Incorporar piezas</summary><label>Pieza del Canvas<select data-adopt aria-label="Pieza del Canvas">${materialOptions(loose)}</select></label><button type="button" data-component-action="adopt">Incorporar al contenedor</button></details>` : ''}
+      ${selected.material && available.length ? `<details><summary>Sustituir pieza</summary><label>Reemplazo<select data-replace aria-label="Reemplazo">${materialOptions(available)}</select></label><button type="button" data-component-action="replace">Sustituir contenido de la pieza</button></details>` : ''}
+      ${!selected.material && nestable.length ? `<details><summary>Anidar un componente</summary><label>Componente del Canvas<select data-nest aria-label="Componente del Canvas">${nestable.map((g) => `<option value="${html(g.id)}">${html(g.name)}</option>`).join('')}</select></label><button type="button" data-component-action="nest">Anidar en este contenedor</button></details>` : ''}
+      ${selected === root ? `<details><summary>Escala proporcional</summary><label>Porcentaje<input data-scale type="number" min="1" max="1000" value="100"></label><button type="button" data-component-action="scale">Escalar composición</button></details>` : ''}
+      ${selected === root ? `<details><summary>Reutilizar</summary>${unsupported ? `<p>«${html(nodeTitle(world, unsupported))}» todavía no se puede guardar en una composición de Bosquejos.</p>` : `<label>Nombre<input data-save-name value="${html(group.name)}" maxlength="200"></label><button type="button" data-component-action="save">Guardar composición</button>${group.recipe ? `<button type="button" data-component-action="update">Actualizar esta copia desde biblioteca</button><button type="button" data-component-action="publish">Actualizar composición guardada</button>` : ''}<p>Las copias son independientes. Las vinculadas se actualizan solo cuando lo pedís.</p>`}</details>` : ''}
       <details><summary>Recorrido</summary><label>Ir a<select data-flow aria-label="Ir a">${option('', 'Sin destino', flow?.to ?? '')}${this.ctx
         .world()
         .canvasGroups?.filter((g) => g.id !== group.id)
@@ -760,6 +785,23 @@ export class ComponentInspector {
       elements = componentElements(group.structure!.root),
       selected = elements.find((e) => e.id === editing.selected)!,
       parent = elements.find((e) => e.children.some((c) => c.id === selected.id));
+    if (action === 'arrange') {
+      const root = group.structure!.root;
+      const rows = selectedLayerIds(
+        root,
+        new Set(this.ctx.ui.canvas.selections),
+        selected.id,
+        this.selectedContainers,
+      );
+      const value = target.closest<HTMLElement>('[data-arrange]')?.dataset.arrange as Arrangement;
+      if (arrangements.includes(value)) {
+        this.apply({ kind: 'arrange', elements: [...rows], action: value });
+        this.properties
+          .querySelector<HTMLButtonElement>(`[data-arrange="${value}"]`)
+          ?.focus({ preventScroll: true });
+      }
+      return;
+    }
     if (action === 'collect-interior') {
       if (this.apply({ kind: 'collect-interior' })) this.enterElement(group.structure!.root.id);
       this.panel
@@ -811,7 +853,7 @@ export class ComponentInspector {
     if (action === 'adopt')
       this.apply({
         kind: 'adopt',
-        parent: editing.element,
+        parent: selected.id,
         materials: [this.panel.querySelector<HTMLSelectElement>('[data-adopt]')!.value],
       });
     if (action === 'transfer' && parent) {
@@ -828,7 +870,7 @@ export class ComponentInspector {
     if (action === 'nest')
       this.apply({
         kind: 'nest',
-        parent: editing.element,
+        parent: selected.id,
         group: this.panel.querySelector<HTMLSelectElement>('[data-nest]')!.value,
       });
     if (action === 'scale') {
@@ -897,6 +939,16 @@ export class ComponentInspector {
       this.panel
         .querySelector<HTMLInputElement>('[data-frame-clip]')
         ?.focus({ preventScroll: true });
+      return;
+    }
+    if (field.dataset.position === 'x' || field.dataset.position === 'y') {
+      if (field instanceof HTMLInputElement && field.value.trim() && field.reportValidity())
+        this.apply({
+          kind: 'position',
+          element: selected.id,
+          axis: field.dataset.position,
+          value: field.valueAsNumber,
+        });
       return;
     }
     if (field.dataset.prop) {
