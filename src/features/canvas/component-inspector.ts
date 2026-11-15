@@ -5,12 +5,15 @@ import {
   elementMaterials,
   type ComponentLayout,
 } from '../../domain/component-tree';
-import { componentFor } from '../../domain/manual-groups';
+import { componentFor, groupBounds } from '../../domain/manual-groups';
+import { corners, frameMasks, visiblePolygon } from '../../domain/frame-clipping';
+import { componentPoses } from '../../domain/component-geometry';
+import { highlightLayer } from './layer-highlight';
 import { html, editable } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { nodeTitle, type Camera, type WorldSnapshot } from '../../domain/model';
-import { inspectorLayers, bindLayerDrag } from './inspector-layers';
+import { InspectorLayerBrowser, bindLayerDrag, selectedLayerIds } from './inspector-layers';
 import { frameInterior } from '../../domain/canvas-frames';
 import { flatLayers } from '../../domain/component-layers';
 import type { CanvasUi } from './state';
@@ -20,9 +23,10 @@ export class ComponentInspector {
   private panel = document.createElement('section');
   private contextual: CanvasUi['componentEditing'];
   private dismissed: string | undefined;
-  private expanded = new Set<string>();
-  private flat: { group: string; leaf?: string } | undefined;
-  private rootCollapsed = false;
+  private layers = new InspectorLayerBrowser();
+  private selectedContainers = new Set<string>();
+  private properties = document.createElement('section');
+  private flat: { group: string; leaf?: string | undefined } | undefined;
   private lastInterior?: { world: WorldSnapshot; frame: string; count: number };
   private interiorCount(
     world: WorldSnapshot,
@@ -35,7 +39,6 @@ export class ComponentInspector {
     this.lastInterior = { world, frame: frame.id, count };
     return count;
   }
-  private lastScope: string | undefined;
   get visible(): boolean {
     return !this.panel.hidden;
   }
@@ -61,6 +64,16 @@ export class ComponentInspector {
     this.panel.hidden = true;
     this.panel.tabIndex = -1;
     root.querySelector('#canvas-inspector')!.append(this.panel);
+    this.layers.pane.addEventListener(
+      'pointerover',
+      (event) => {
+        const row = (event.target as Element).closest<HTMLElement>('[data-layer]');
+        if (row && event.relatedTarget instanceof Node && row.contains(event.relatedTarget)) return;
+        this.preview(row?.dataset.layer);
+      },
+      { signal },
+    );
+    this.layers.pane.addEventListener('pointerleave', () => this.preview(), { signal });
     bindLayerDrag(this.panel, signal, (edit) => {
       if (this.flat) {
         this.stackFlat(edit);
@@ -121,10 +134,6 @@ export class ComponentInspector {
             this.panel.focus();
           } else this.back();
         }
-        if (e.key === 'Enter' && (e.target as Element).closest('[data-part]'))
-          this.enterElement(
-            (e.target as HTMLElement).closest<HTMLElement>('[data-part]')!.dataset.part!,
-          );
       },
       { signal },
     );
@@ -149,7 +158,12 @@ export class ComponentInspector {
           }
           return;
         }
-        if (editable(e.target) || (e.target as Element).closest('.canvas-context-layer')) return;
+        if (
+          this.panel.contains(e.target as Node) ||
+          editable(e.target) ||
+          (e.target as Element).closest('.canvas-context-layer')
+        )
+          return;
         if (e.key === 'Escape' && (this.presentation || ctx.ui.canvas.componentEditing)) {
           e.preventDefault();
           e.stopImmediatePropagation();
@@ -229,10 +243,30 @@ export class ComponentInspector {
       { once: true },
     );
   }
+  private preview(id?: string) {
+    const world = this.ctx.world();
+    const group = id && world.canvasGroups?.find((g) => g.id === this.panel.dataset.group);
+    if (!group) {
+      highlightLayer(this.root, undefined, 'inspector');
+      return;
+    }
+    const tree = group.structure;
+    const part = tree && componentElements(tree.root).find((item) => item.id === id);
+    const material = part?.material ?? (!tree ? id : undefined);
+    const node = material && world.nodes.find((n) => n.id === material);
+    let polygon;
+    if (node) polygon = visiblePolygon(node, frameMasks(world).get(node.id));
+    else if (tree && part) {
+      const pose = componentPoses(tree).get(part.id);
+      if (pose) polygon = corners(pose);
+    } else if (!tree) polygon = corners(groupBounds(world, group));
+    highlightLayer(this.root, polygon, 'inspector');
+  }
   open(id: string): boolean {
     const group =
       this.ctx.world().canvasGroups?.find((g) => g.id === id) ?? componentFor(this.ctx.world(), id);
     if (!group) return false;
+    this.selectedContainers.clear();
     this.dismissed = undefined;
     if (
       !group.structure &&
@@ -280,6 +314,7 @@ export class ComponentInspector {
   }
   selectLayer(id: string): void {
     if (!this.ctx.world().nodes.some((n) => n.id === id && !n.owner)) return;
+    this.selectedContainers.clear();
     const group = componentFor(this.ctx.world(), id);
     if (group && !group.structure && !this.open(group.id)) return;
     const tree = group && this.ctx.world().canvasGroups?.find((g) => g.id === group.id)?.structure;
@@ -311,6 +346,7 @@ export class ComponentInspector {
     const element =
       group?.structure && componentElements(group.structure.root).find((e) => e.id === id);
     if (!element) return;
+    this.selectedContainers.clear();
     editing.selected = id;
     if (!element.material) editing.element = id;
     this.ctx.ui.canvas.selections = elementMaterials(element);
@@ -367,10 +403,18 @@ export class ComponentInspector {
     );
     this.selectFlat(edit.element);
   }
-  private selectFlat(id: string) {
-    this.flat!.leaf = id;
+  private selectFlat(id: string, event?: MouseEvent) {
     this.root.dataset.pickedLayer = id;
-    Object.assign(this.ctx.ui.canvas, { selection: id, selections: [id] });
+    const ids = this.layers.range(id, event?.shiftKey === true);
+    const current = this.ctx.ui.canvas.selections;
+    const next =
+      (event?.ctrlKey || event?.metaKey) && this.flat?.leaf
+        ? current.includes(id)
+          ? current.filter((key) => key !== id)
+          : [...current, id]
+        : ids;
+    this.flat!.leaf = next.includes(id) ? id : next.at(-1);
+    Object.assign(this.ctx.ui.canvas, { selection: this.flat!.leaf ?? null, selections: next });
     this.ctx.render();
     this.ctx.persist();
     this.panel
@@ -410,8 +454,10 @@ export class ComponentInspector {
       !ui.zoneSelection &&
       !ui.linkSelection &&
       this.flat?.leaf === ui.selection &&
-      ui.selections.length === 1
-        ? groups?.find((g) => g.id === this.flat?.group && g.nodes.includes(ui.selection!))
+      ui.selections.length > 0
+        ? groups?.find(
+            (g) => g.id === this.flat?.group && ui.selections.every((id) => g.nodes.includes(id)),
+          )
         : undefined);
     if (
       !ui.componentEditing &&
@@ -419,7 +465,10 @@ export class ComponentInspector {
       !inspectedFlat.structure &&
       inspectedFlat.id !== this.dismissed
     ) {
-      const leaf = selectedGroup ? undefined : this.flat?.leaf;
+      const leaf =
+        this.flat?.group === inspectedFlat.id && ui.selection === this.flat?.leaf
+          ? this.flat?.leaf
+          : undefined;
       this.flat = { group: inspectedFlat.id, ...(leaf ? { leaf } : {}) };
       this.contextual = undefined;
       const world = this.ctx.world();
@@ -427,6 +476,7 @@ export class ComponentInspector {
       const key = JSON.stringify([
         this.flat,
         inspectedFlat.name,
+        ui.selections,
         root.children.map((c) => [c.id, c.name]),
       ]);
       if (key !== this.key) {
@@ -434,7 +484,18 @@ export class ComponentInspector {
         this.panel.hidden = false;
         this.panel.dataset.group = inspectedFlat.id;
         this.panel.parentElement!.setAttribute('aria-label', 'Inspector de conjunto');
-        this.panel.innerHTML = `<header><strong>${html(inspectedFlat.name)}</strong><button type="button" class="icon-button" data-component-action="close" aria-label="Cerrar inspector">${icon('close', 16)}</button></header><h3 class="inspector-layers-title">Capas</h3><div class="component-children" role="group" aria-label="Capas">${inspectorLayers(world, root, this.expanded, new Set(leaf ? [leaf] : []), leaf ?? '')}</div>`;
+        this.layers.update({
+          group: inspectedFlat.id,
+          world,
+          root,
+          type: 'Conjunto',
+          selected: new Set(leaf ? ui.selections : [root.id]),
+          active: leaf ?? root.id,
+          scope: root.id,
+        });
+        this.properties.remove();
+        if (this.layers.pane.parentElement !== this.panel)
+          this.panel.replaceChildren(this.layers.pane);
       }
       return;
     }
@@ -448,6 +509,7 @@ export class ComponentInspector {
     const group = editing && groups?.find((g) => g.id === editing.group);
     if (!editing || !group?.structure) {
       delete this.ctx.ui.canvas.componentEditing;
+      if (!this.panel.hidden) this.preview();
       this.panel.hidden = true;
       this.key = '';
       return;
@@ -468,13 +530,11 @@ export class ComponentInspector {
         : 0;
     const key = JSON.stringify([
       group,
-      this.rootCollapsed,
       interiorCount,
       this.ctx
         .world()
         .nodes.filter((n) => group.nodes.includes(n.id))
         .map((n) => n.id),
-      [...this.expanded],
       loose.map((n) => [n.id, nodeTitle(world, n)]),
       world.canvasGroups?.map((g) => [g.id, g.name, g.nodes, g.structure?.root.frame]),
       editing,
@@ -485,15 +545,8 @@ export class ComponentInspector {
     if (key === this.key) return;
     this.key = key;
     this.panel.hidden = false;
-    const sameGroup = this.panel.dataset.group === group.id;
-    const scrollTop = sameGroup
-      ? (this.panel.querySelector('.component-children')?.scrollTop ?? 0)
-      : 0;
-    if (!sameGroup) {
-      this.rootCollapsed = false;
-      this.expanded.clear();
-      this.lastScope = undefined;
-    }
+    if (this.panel.dataset.group !== group.id || selected.id === group.structure.root.id)
+      this.selectedContainers.clear();
     this.panel.dataset.group = group.id;
     this.panel.parentElement!.setAttribute(
       'aria-label',
@@ -502,18 +555,6 @@ export class ComponentInspector {
     const expanded = [...this.panel.querySelectorAll('details[open] summary')].map(
       (e) => e.textContent,
     );
-    const path = [scope];
-    let ancestor = elements.find((e) => e.children.some((c) => c.id === scope.id));
-    while (ancestor) {
-      path.unshift(ancestor);
-      const id = ancestor.id;
-      ancestor = elements.find((e) => e.children.some((c) => c.id === id));
-    }
-    if (this.lastScope !== scope.id) {
-      for (const e of path.slice(1)) this.expanded.add(e.id);
-      if (scope !== group.structure.root) this.rootCollapsed = false;
-      this.lastScope = scope.id;
-    }
     const option = (value: string, label: string, current: string) =>
       `<option value="${html(value)}" ${value === current ? 'selected' : ''}>${html(label)}</option>`;
     const size = (axis: 'width' | 'height', label: string) =>
@@ -557,12 +598,28 @@ export class ComponentInspector {
         .map((n) => `<option value="${html(n.id)}">${html(nodeTitle(world, n))}</option>`)
         .join('');
     const root = group.structure.root;
-    this.panel.innerHTML = `<header><strong>Capas</strong><button type="button" class="icon-button" data-component-action="close" aria-label="Terminar edición">${icon('close', 16)}</button></header>
-      <div class="component-children" role="group" aria-label="Capas"><nav class="inspector-root" aria-label="Jerarquía del componente"><button type="button" class="icon-button" data-toggle-root aria-expanded="${!this.rootCollapsed}" aria-label="${this.rootCollapsed ? 'Desplegar' : 'Contraer'} capas">${icon(this.rootCollapsed ? 'chevron' : 'down', 12)}</button><button type="button" data-enter="${html(root.id)}" aria-pressed="${selected === root}" title="${html(group.name)}" aria-label="${html(group.name)}">${icon(root.frame ? 'frame' : 'folder', 14)}<span>${html(group.name)}</span><small>${root.frame ? 'Marco' : 'Componente'}</small></button></nav>
-      ${this.rootCollapsed ? '' : inspectorLayers(world, root, this.expanded, new Set(selected === root ? [] : chosen.map((e) => e.id)), selected.id) || '<p>El contenedor está vacío.</p>'}</div>
-      ${interiorCount ? `<button type="button" class="frame-collect" data-component-action="collect-interior">Incorporar capas interiores <span>${interiorCount}</span></button>` : ''}
-      <div class="component-properties"><h3 class="inspector-properties-title">Propiedades · ${html(selected.name)}</h3><label>Nombre<input data-prop="name" value="${html(selected.name)}" maxlength="200"></label><div class="component-sizes">${size('width', 'Ancho')}${size('height', 'Alto')}</div>
-      ${!selected.material ? `<label>Distribución<select data-layout="direction" aria-label="Distribución">${option('free', 'Libre', selected.layout.direction)}${option('row', 'Fila', selected.layout.direction)}${option('column', 'Columna', selected.layout.direction)}</select></label><div class="component-sizes"><label>Espacio<input ${selected.layout.direction === 'free' ? 'disabled' : ''} data-layout="gap" type="number" min="0" max="10000" value="${selected.layout.gap}"></label><label>Margen interno<input data-layout="padding" type="number" min="0" max="10000" value="${selected.layout.padding}"></label></div><label>Alineación<select ${selected.layout.direction === 'free' ? 'disabled' : ''} data-layout="align" aria-label="Alineación">${option('start', 'Inicio', selected.layout.align)}${option('center', 'Centro', selected.layout.align)}${option('end', 'Final', selected.layout.align)}${option('stretch', 'Estirar', selected.layout.align)}</select></label>` : ''}
+    const rows = selectedLayerIds(root, selectedIds, selected.id, this.selectedContainers);
+    this.layers.update({
+      group: group.id,
+      world,
+      root,
+      type: root.frame ? 'Marco' : 'Componente',
+      selected: rows,
+      active: selected.id,
+      scope: scope.id,
+      interior: interiorCount,
+    });
+    if (this.layers.pane.parentElement !== this.panel) this.panel.replaceChildren(this.layers.pane);
+    if (this.properties.parentElement !== this.panel) this.panel.append(this.properties);
+    this.properties.className = 'inspector-properties-pane';
+    if (rows.size > 1) {
+      const canGroup =
+        chosen.length > 1 && chosen.flatMap(elementMaterials).length === selectedIds.size;
+      this.properties.innerHTML = `<h3 class="inspector-properties-title">${rows.size} capas seleccionadas</h3>${canGroup ? '<button type="button" data-component-action="container">Agrupar selección en contenedor</button>' : ''}`;
+      return;
+    }
+    this.properties.innerHTML = `      <div class="component-properties"><h3 class="inspector-properties-title">Propiedades · ${html(selected.name)}</h3><label>Nombre<input data-prop="name" value="${html(selected.name)}" maxlength="200"></label><div class="component-sizes">${size('width', 'Ancho')}${size('height', 'Alto')}</div>
+      ${!selected.material ? `<label>Distribución<select data-layout="direction" aria-label="Distribución">${option('free', 'Libre', selected.layout.direction)}${option('row', 'Fila', selected.layout.direction)}${option('column', 'Columna', selected.layout.direction)}</select></label>${selected.layout.direction !== 'free' ? `<div class="component-sizes"><label>Espacio<input data-layout="gap" type="number" min="0" max="10000" value="${selected.layout.gap}"></label><label>Margen interno<input data-layout="padding" type="number" min="0" max="10000" value="${selected.layout.padding}"></label></div><label>Alineación<select data-layout="align" aria-label="Alineación">${option('start', 'Inicio', selected.layout.align)}${option('center', 'Centro', selected.layout.align)}${option('end', 'Final', selected.layout.align)}${option('stretch', 'Estirar', selected.layout.align)}</select></label>` : `<label>Margen interno<input data-layout="padding" type="number" min="0" max="10000" value="${selected.layout.padding}"></label>`}` : ''}
       ${selected.frame ? `<label class="frame-clip-option"><input type="checkbox" data-frame-clip ${selected.clipContent ? 'checked' : ''}>Recortar contenido</label>` : ''}
       ${selected.layout.insets ? `<details><summary>Márgenes por lado</summary><div class="component-sizes">${['Superior', 'Derecho', 'Inferior', 'Izquierdo'].map((name, i) => `<label>${name}<input type="number" min="0" max="10000" data-layout-edge="${i}" value="${Math.round(selected.layout.insets![i]! * 100) / 100}"></label>`).join('')}</div></details>` : ''}
       ${editableContent ? '<button type="button" data-component-action="content">Editar contenido y apariencia</button>' : ''}
@@ -588,7 +645,7 @@ export class ComponentInspector {
               )}</select></label><div class="component-actions">${elements.some((e) => e.layout.direction !== 'free' && e.children.some((c) => c.id === selected.id)) ? `<button type="button" data-component-action="earlier" title="Mover antes en la distribución" aria-label="Mover antes en la distribución">${icon('chevron-left', 14)}</button><button type="button" data-component-action="later" title="Mover después en la distribución" aria-label="Mover después en la distribución">${icon('chevron', 14)}</button>` : ''}<button type="button" data-component-action="duplicate">Duplicar</button><button type="button" data-component-action="detach">Separar</button></div>`
           : ''
       }
-      <button type="button" data-component-action="container" ${chosen.length < 2 ? 'disabled' : ''}>Agrupar selección en contenedor</button>
+
       ${otherFrames.length && selected !== group.structure.root && elementMaterials(selected).length < group.nodes.length ? `<details><summary>Mover a otro marco</summary><label>Marco de destino<select data-frame-target>${otherFrames.map((g) => option(g.id, g.name, '')).join('')}</select></label><button type="button" data-component-action="transfer">Mover al marco</button></details>` : ''}
       <details><summary>Incorporar o sustituir piezas</summary>${loose.length ? `<label>Pieza del Canvas<select data-adopt aria-label="Pieza del Canvas">${materialOptions(loose)}</select></label><button type="button" data-component-action="adopt">Incorporar al contenedor</button>` : '<p>No hay materiales sueltos para incorporar.</p>'}${selected.material && available.length ? `<label>Reemplazo<select data-replace aria-label="Reemplazo">${materialOptions(available)}</select></label><button type="button" data-component-action="replace">Sustituir contenido de la pieza</button>` : ''}</details>
       ${nestable.length ? `<details><summary>Anidar un componente</summary><label>Componente del Canvas<select data-nest aria-label="Componente del Canvas">${nestable.map((g) => `<option value="${html(g.id)}">${html(g.name)}</option>`).join('')}</select></label><button type="button" data-component-action="nest">Anidar en este contenedor</button></details>` : ''}
@@ -601,7 +658,6 @@ export class ComponentInspector {
         .join(
           '',
         )}</select></label><label>Acción<input data-flow-label value="${html(flow?.label ?? 'Continuar')}" maxlength="100"></label><button type="button" data-component-action="present">Consultar recorrido</button></details></div>`;
-    this.panel.querySelector('.component-children')!.scrollTop = scrollTop;
     this.panel.querySelectorAll('details').forEach((e) => {
       e.open = expanded.includes(e.querySelector('summary')?.textContent ?? '');
     });
@@ -610,29 +666,6 @@ export class ComponentInspector {
     const target = event.target as Element,
       enter = target.closest<HTMLElement>('[data-enter]'),
       row = target.closest<HTMLElement>('[data-part]');
-    if (target.closest('[data-toggle-root]')) {
-      this.rootCollapsed = !this.rootCollapsed;
-      this.key = '';
-      this.render();
-      this.panel.querySelector<HTMLElement>('[data-toggle-root]')?.focus({ preventScroll: true });
-      return;
-    }
-    const disclosure = target.closest<HTMLElement>('[data-expand]');
-    if (disclosure) {
-      const id = disclosure.dataset.expand!;
-      if (this.expanded.has(id)) {
-        this.expanded.delete(id);
-        this.key = '';
-        this.render();
-      } else {
-        this.expanded.add(id);
-        this.enterElement(id);
-      }
-      this.panel
-        .querySelector<HTMLElement>(`[data-expand="${CSS.escape(id)}"]`)
-        ?.focus({ preventScroll: true });
-      return;
-    }
     const stack = target.closest<HTMLElement>('[data-stack]');
     if (stack) {
       const id = stack.closest<HTMLElement>('[data-layer]')!.dataset.layer!;
@@ -650,31 +683,61 @@ export class ComponentInspector {
       return;
     }
     if (this.flat) {
-      if (row) this.selectFlat(row.dataset.part!);
-      else if (target.closest('[data-component-action=close]')) this.back();
+      if (row) this.selectFlat(row.dataset.part!, event);
+      else if (enter) {
+        const group = this.ctx.world().canvasGroups!.find((g) => g.id === this.flat!.group)!;
+        delete this.flat.leaf;
+        Object.assign(this.ctx.ui.canvas, {
+          selections: [...group.nodes],
+          selection: group.nodes[0],
+        });
+        this.ctx.render();
+      } else if (target.closest('[data-component-action=close]')) this.back();
       return;
     }
     if (enter) {
       this.enterElement(enter.dataset.enter!);
       return;
     }
+    const action = target.closest<HTMLElement>('[data-component-action]')?.dataset.componentAction;
+    if (!row && !action && !this.presentation) return;
     const editing = this.activate();
     if (row && editing) {
-      editing.selected = row.dataset.part!;
       const group = this.ctx.world().canvasGroups!.find((g) => g.id === editing.group)!;
-      const selected = componentElements(group.structure!.root).find(
-        (e) => e.id === editing.selected,
-      )!;
-      const ids = elementMaterials(selected);
-      editing.element = row.closest<HTMLElement>('[data-parent]')!.dataset.parent!;
+      const root = group.structure!.root;
+      const parts = componentElements(root);
+      const part = parts.find((p) => p.id === row.dataset.part)!;
+      const ids = elementMaterials(part);
+      const ui = this.ctx.ui.canvas;
+      const previous = editing.selected === root.id ? [] : ui.selections;
+      const items = new Set(this.layers.range(part.id, event.shiftKey));
+      const picked = parts.filter((p) => items.has(p.id));
+      const range = picked.flatMap(elementMaterials);
+      const toggle = event.ctrlKey || event.metaKey;
+      if (!toggle) this.selectedContainers.clear();
+      const remove = toggle && ids.every((id) => previous.includes(id));
+      for (const entry of picked)
+        if (!entry.material) {
+          if (remove) this.selectedContainers.delete(entry.id);
+          else this.selectedContainers.add(entry.id);
+        }
+      ui.selections = toggle
+        ? remove
+          ? previous.filter((id) => !ids.includes(id))
+          : [...new Set([...previous, ...range])]
+        : [...new Set(range)];
+      ui.selection = ui.selections.includes(ids[0]!) ? ids[0]! : (ui.selections.at(-1) ?? null);
+      const selected =
+        ui.selection && !ui.selections.includes(ids[0]!)
+          ? (parts.find((p) => p.material === ui.selection) ?? part)
+          : part;
+      editing.selected = selected.id;
+      editing.element =
+        selected.material || ui.selections.some((id) => !ids.includes(id))
+          ? parts.find((p) => p.children.some((c) => c.id === selected.id))!.id
+          : selected.id;
       if (selected.material) this.root.dataset.pickedLayer = selected.material;
-      this.ctx.ui.canvas.selections =
-        event.ctrlKey || event.metaKey || event.shiftKey
-          ? ids.every((id) => this.ctx.ui.canvas.selections.includes(id))
-            ? this.ctx.ui.canvas.selections.filter((id) => !ids.includes(id))
-            : [...new Set([...this.ctx.ui.canvas.selections, ...ids])]
-          : ids;
-      this.ctx.ui.canvas.selection = this.ctx.ui.canvas.selections[0] ?? null;
+      if (!ui.selection) delete ui.componentEditing;
       this.ctx.render();
       this.render();
       this.panel
@@ -682,7 +745,6 @@ export class ComponentInspector {
         ?.focus({ preventScroll: true });
       return;
     }
-    const action = target.closest<HTMLElement>('[data-component-action]')?.dataset.componentAction;
     if (this.presentation) {
       if (action === 'end') this.stopPresentation();
       if (action === 'previous') {
@@ -705,7 +767,7 @@ export class ComponentInspector {
         ?.focus({ preventScroll: true });
       return;
     }
-    if (action === 'back') this.back();
+
     if (action === 'close') {
       this.dismissed = group.id;
       delete this.ctx.ui.canvas.componentEditing;
@@ -913,6 +975,7 @@ export class ComponentInspector {
     });
   }
   private renderPresentation(): void {
+    this.preview();
     const p = this.presentation!;
     this.panel.hidden = false;
     const group = this.ctx.world().canvasGroups?.find((g) => g.id === p.group);

@@ -63,7 +63,7 @@ test('C08-B184: componer desde piezas, convertir, anidar e incorporar otra pieza
   let group = (await world(page)).canvasGroups![0]!;
   const child = group.structure!.root.children[0]!;
   expect(child.children).toHaveLength(2);
-  await panel.locator(`.component-children [data-enter="${child.id}"]`).click();
+  await panel.locator(`.component-children [data-part="${child.id}"]`).click();
   await panel.getByLabel('Distribución', { exact: true }).selectOption('column');
   await panel.getByLabel('Espacio', { exact: true }).fill('24');
   await panel.getByLabel('Espacio', { exact: true }).press('Enter');
@@ -123,7 +123,7 @@ test('C08-B186: borrar partes y deshacer niveles permite seguir editando; retira
   const nested = (await world(page)).canvasGroups![0]!.structure!.root.children.find(
     (e) => e.children.length,
   )!;
-  await panel.locator(`.component-children [data-enter="${nested.id}"]`).click();
+  await panel.locator(`.component-children [data-part="${nested.id}"]`).click();
   await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
   expect((await snapshot(page)).ui.canvas.componentEditing?.element).toBe(root.id);
   await panel.getByLabel('Distribución', { exact: true }).selectOption('column');
@@ -384,7 +384,7 @@ for (const [index, entry] of [
       parent = elements.find((e) => e.children.some((c) => c.id === id));
     }
     for (const part of path.slice(1, -1))
-      await panel.locator(`.component-children [data-enter="${part.id}"]`).click();
+      await panel.locator(`.component-children [data-expand="${part.id}"]`).click();
     await panel.locator(`[data-part="${leaf.id}"]`).click();
     await panel.getByRole('button', { name: 'Editar contenido y apariencia' }).click();
     const label = page.getByRole('textbox', { name: 'Contenido del bosquejo', exact: true });
@@ -406,7 +406,7 @@ for (const [index, entry] of [
       if (!intersects(original, previous))
         expect(intersects(refined, other), `El contenido editado invade ${other.id}`).toBe(false);
     }
-    await panel.locator(`nav [data-enter="${group.structure!.root.id}"]`).click();
+    await panel.locator(`.inspector-root [data-enter="${group.structure!.root.id}"]`).click();
     const before = await world(page),
       fonts = before.nodes.map((n) =>
         n.data.kind === 'wireframe' ? n.data.content.piece?.style.fontSize : undefined,

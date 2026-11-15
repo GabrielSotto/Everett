@@ -128,7 +128,12 @@ La selección bajo el puntero se prueba con mouse y teclado. Una línea de 10 ×
 desde su centro al 60, 100 y 200 %. C08-U89 comprueba la incorporación en un marco girado
 con un grupo entero y otro que cruza el borde. C08-B233 y B234 cubren una pantalla con foto
 importada, texto libre y navegación agrupada, la conversión por atajo, la recuperación de un
-marco anterior, la selección de capas hijas, la persistencia y Deshacer.
+marco anterior, la selección de capas hijas, la persistencia y Deshacer. C08-B235 busca una
+capa de una rama cerrada, comprueba la selección y las propiedades antes y después de buscar,
+y distingue la previsualización por puntero de la edición. C08-B236 comprueba el rango
+por teclado, el orden real y su restauración, y la edición con el inspector a ancho móvil.
+C08-B237 exige que, en un marco con más de sesenta capas, cerrar la búsqueda revele la fila
+elegida o devuelva el desplazamiento anterior cuando se consulta sin seleccionar.
 
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
    por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles

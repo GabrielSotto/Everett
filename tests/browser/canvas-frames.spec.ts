@@ -241,10 +241,10 @@ for (const legacy of [false, true]) {
         await page.keyboard.press('Control+Alt+g');
       }
       await expect(
-        panel.getByRole('button', { name: 'Navegación inferior', exact: true }),
+        panel.getByRole('treeitem', { name: 'Navegación inferior', exact: true }),
       ).toBeVisible();
       await panel.getByRole('button', { name: 'Desplegar Navegación inferior' }).click();
-      await panel.getByRole('button', { name: 'Buscar', exact: true }).click();
+      await panel.getByRole('treeitem', { name: 'Buscar', exact: true }).click();
       await expect(panel.getByRole('heading', { name: 'Propiedades · Buscar' })).toBeVisible();
       await expect(panel.getByLabel('Nombre', { exact: true })).toHaveValue('Buscar');
       await capture(page, info, legacy ? 'recuperar-explorar' : 'enmarcar-explorar');

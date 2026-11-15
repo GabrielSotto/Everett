@@ -657,10 +657,13 @@ body[data-canvas-motion='reduced']
 .dock-more-menu button:focus-visible {
   background: var(--surface);
 }
+.scene {
+  --canvas-docked-chat-width: min(310px, calc(100vw - 76px));
+}
 .canvas-chat.docked {
   bottom: 0;
   height: auto;
-  width: min(310px, calc(100vw - 76px));
+  width: var(--canvas-docked-chat-width);
 }
 .scene:has(.canvas-chat) .chat-launch {
   visibility: hidden;

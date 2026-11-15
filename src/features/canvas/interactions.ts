@@ -1,6 +1,7 @@
 import { legacyBars, linkedBarCopy } from '../../domain/legacy-bars';
 import { barEditor } from './bar-chart';
-import { highlightLayer, layerMenu, layersAt, type LayerHits } from './layer-picker';
+import { layerMenu, layersAt, type LayerHits } from './layer-picker';
+import { highlightLayer } from './layer-highlight';
 import { paintFrameClips } from './frame-clipping';
 import { frameMasks, visiblePolygon } from '../../domain/frame-clipping';
 import type { Context } from '../../app/context';

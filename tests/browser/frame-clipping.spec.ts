@@ -23,7 +23,7 @@ const shape = (
   owner: null,
   data: { kind: 'shape', shape: 'rectangle', title, color, fill: true },
 });
-async function scene(page: Page, edit = true) {
+async function scene(page: Page, edit = true, extraLayers = 0, dockedChat = false) {
   await start(page);
   await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
   await page.locator('#canvas-file-import').setInputFiles('tests/fixtures/link-cover.png');
@@ -46,6 +46,8 @@ async function scene(page: Page, edit = true) {
   };
   const line = shape('line', 'Separador', -80, 60, 10, 4, '#374268');
   const members = [bg, photo, card, symbol, title, line];
+  for (let i = 1; i <= extraLayers; i++)
+    members.push(shape('extra-' + i, 'Pieza ' + i, 0, 0, 12, 12, '#eee'));
   const tree = treeFromMaterials(members, 'Explorar');
   Object.assign(tree.root, { frame: true, width: bg.width, height: bg.height });
   tree.root.children[0]!.background = true;
@@ -64,6 +66,7 @@ async function scene(page: Page, edit = true) {
   };
   w.nodes = [...members, shape('aside', 'Referencia externa', 155, 40, 40, 35, '#ce9254'), note];
   Object.assign(input.ui.canvas, { selection: null, selections: [] });
+  if (dockedChat) input.ui.chat.chatMode = 'docked';
   await storedFixture(page, input.state, input.ui);
   await page.reload();
   const heading = page.locator('.group-heading[data-group=screen]');
@@ -95,7 +98,7 @@ test('C08-B230: un inspector contextual permite encuadrar, recuperar capas ocult
   await page.locator('.group-heading[data-group=screen]').focus();
   await page.getByRole('button', { name: 'Mover marco Explorar' }).click();
   await expect(inspector).toHaveAccessibleName('Inspector de marco');
-  await expect(panel.getByRole('group', { name: 'Capas' })).toBeVisible();
+  await expect(panel.getByRole('tree', { name: 'Capas' })).toBeVisible();
   const row = (title: string) => panel.locator('[data-part]').filter({ hasText: title });
   const before = (await world(page)).nodes;
   await row('Fondo de navegación').click();
@@ -111,7 +114,7 @@ test('C08-B230: un inspector contextual permite encuadrar, recuperar capas ocult
   await expect
     .poll(async () => (await hits(65, 100)).filter((id) => id === 'card' || id === 'home')[0])
     .toBe('card');
-  await panel.getByRole('navigation').getByRole('button', { name: 'Explorar' }).click();
+  await panel.getByRole('treeitem', { name: 'Explorar', exact: true }).click();
   await panel.getByRole('checkbox', { name: 'Recortar contenido' }).check();
   await row('link-cover.png').click();
   const p = at(220, 70);
@@ -129,7 +132,7 @@ test('C08-B230: un inspector contextual permite encuadrar, recuperar capas ocult
   await row('link-cover.png').click();
   await expect(panel.getByLabel('Nombre', { exact: true })).toHaveValue('link-cover.png');
   await capture(page, info, 'inspector-con-capa-fuera-del-marco');
-  await panel.getByRole('navigation').getByRole('button', { name: 'Explorar' }).click();
+  await panel.getByRole('treeitem', { name: 'Explorar', exact: true }).click();
   await panel.getByRole('checkbox', { name: 'Recortar contenido' }).uncheck();
   expect(await hits(350, 70)).toContain(photo);
   await page.locator('[data-node=memo]').click();
@@ -172,6 +175,115 @@ test('C08-B231: desplegar un contenedor, trasladar una capa entre niveles y recu
   expect(await currentParent()).toBeUndefined();
   await page.reload();
   expect(await currentParent()).toBeUndefined();
+});
+
+test('C08-B235: explorar y buscar capas anidadas conserva la edición y revela la pieza sobre el Canvas', async ({
+  page,
+}, info) => {
+  const { panel } = await scene(page, true, 0, true);
+  const layer = (name: string) => panel.getByRole('treeitem', { name, exact: true });
+  const activeName = panel.getByRole('textbox', { name: 'Nombre', exact: true });
+  await layer('Inicio').click();
+  await layer('Fondo de navegación').click({ modifiers: ['Shift'] });
+  await panel.getByRole('button', { name: 'Agrupar selección en contenedor' }).click();
+  await layer('Evento').click();
+  const saved = await world(page);
+  const disclosure = panel.getByRole('button', { name: 'Desplegar Contenedor' });
+  await disclosure.click();
+  await expect(activeName).toHaveValue('Evento');
+  await layer('Inicio').hover();
+  await expect(page.locator('.layer-highlight[data-origin=inspector] polygon')).toHaveCount(1);
+  await expect(layer('Evento')).toHaveAttribute('aria-selected', 'true');
+  await panel.getByRole('button', { name: 'Contraer Contenedor' }).click();
+  await expect(layer('Inicio')).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Buscar capas', exact: true }).click();
+  const search = panel.getByRole('searchbox');
+  await search.fill('navegacion');
+  await expect(layer('Contenedor')).toBeVisible();
+  await expect(layer('Fondo de navegación')).toBeVisible();
+  await expect(layer('Inicio')).toHaveCount(0);
+  await search.fill('inexistente');
+  await expect(panel.getByRole('status')).toHaveText('Sin capas con ese nombre.');
+  await expect(panel.getByRole('treeitem')).toHaveCount(0);
+  await search.press('Escape');
+  await expect(disclosure).toBeVisible();
+  await expect(activeName).toHaveValue('Evento');
+  await panel.getByRole('button', { name: 'Buscar capas', exact: true }).click();
+  await search.fill('INICIO');
+  await search.press('ArrowDown');
+  await expect(layer('Inicio')).toBeFocused();
+  await layer('Inicio').press('Enter');
+  await expect(activeName).toHaveValue('Inicio');
+  await layer('Inicio').press('Escape');
+  await expect(layer('Inicio')).toBeVisible();
+  await expect(search).toBeHidden();
+  expect((await snapshot(page)).ui.canvas.selections).toEqual(['home']);
+  expect(await world(page)).toEqual(saved);
+  const tree = (await panel.getByRole('tree').boundingBox())!;
+  const prop = (await activeName.boundingBox())!;
+  const chat = (await page.getByRole('region', { name: 'Chat del Canvas' }).boundingBox())!;
+  expect(chat.x + chat.width).toBeLessThan(tree.x);
+  expect(tree.x + tree.width).toBeLessThan(prop.x);
+  await capture(page, info, 'buscar-y-revelar-una-capa');
+});
+
+test('C08-B236: seleccionar un rango, reordenar con teclado y editar a ancho móvil', async ({
+  page,
+}, info) => {
+  const { panel } = await scene(page);
+  const layer = (name: string) => panel.getByRole('treeitem', { name, exact: true });
+  await layer('Separador').click();
+  await layer('Separador').press('Shift+ArrowDown');
+  await layer('Evento').press('Shift+ArrowDown');
+  expect(new Set((await snapshot(page)).ui.canvas.selections)).toEqual(
+    new Set(['line', 'title', 'home']),
+  );
+  await expect(panel.getByRole('heading', { name: '3 capas seleccionadas' })).toBeVisible();
+  await expect(panel.getByRole('textbox', { name: 'Nombre', exact: true })).toHaveCount(0);
+  await layer('Evento').click({ modifiers: ['Control'] });
+  expect(new Set((await snapshot(page)).ui.canvas.selections)).toEqual(new Set(['home', 'line']));
+  await layer('Inicio').click();
+  const before = (await world(page)).nodes.map((n) => n.id);
+  await layer('Inicio').press('Control+ArrowUp');
+  const ordered = (await world(page)).nodes.map((n) => n.id);
+  expect(ordered.indexOf('home')).toBeGreaterThan(ordered.indexOf('title'));
+  await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+  expect((await world(page)).nodes.map((n) => n.id)).toEqual(before);
+  await page.setViewportSize({ width: 390, height: 760 });
+  await layer('Evento').click();
+  const name = panel.getByRole('textbox', { name: 'Nombre', exact: true });
+  await name.fill('Próximo evento');
+  await name.press('Enter');
+  await expect(layer('Próximo evento')).toHaveAttribute('aria-selected', 'true');
+  await expect(panel.getByRole('button', { name: 'Buscar capas', exact: true })).toBeInViewport();
+  const left = await panel.getByRole('tree').boundingBox();
+  const right = await panel.locator('.inspector-properties-pane').boundingBox();
+  expect(left!.x).toBeCloseTo(right!.x, 0);
+  expect(await panel.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  await capture(page, info, 'capas-y-propiedades-en-movil');
+});
+
+test('C08-B237: al salir de la búsqueda en un marco con muchas capas, la pieza elegida queda a la vista', async ({
+  page,
+}) => {
+  const { panel } = await scene(page, true, 60);
+  const tree = panel.getByRole('tree');
+  const row = tree.getByRole('treeitem', { name: 'Inicio', exact: true });
+  await expect(row).not.toBeInViewport();
+  const toggle = panel.getByRole('button', { name: 'Buscar capas', exact: true });
+  await toggle.click();
+  await panel.getByRole('searchbox').fill('inicio');
+  await row.click();
+  await toggle.click();
+  await expect(row).toBeInViewport({ ratio: 0.99 });
+  await expect(row).toHaveAttribute('aria-selected', 'true');
+  expect(await tree.evaluate((e) => e.scrollTop)).toBeGreaterThan(0);
+  const scroll = await tree.evaluate((e) => e.scrollTop);
+  await toggle.click();
+  await panel.getByRole('searchbox').fill('Pieza 54');
+  await panel.getByRole('searchbox').press('Escape');
+  expect(await tree.evaluate((e) => e.scrollTop)).toBeCloseTo(scroll);
+  await expect(panel.getByRole('textbox', { name: 'Nombre', exact: true })).toHaveValue('Inicio');
 });
 
 test('C08-B232: un conjunto manual comparte el inspector y conserva el tipo de grupo al ordenar y deshacer', async ({

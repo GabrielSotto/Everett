@@ -17,8 +17,12 @@
 }
 #canvas-inspector[hidden],
 .component-inspector[hidden],
-.component-inspector nav[hidden] {
+.component-inspector .frame-collect[hidden],
+.component-inspector .layer-search[hidden] {
   display: none;
+}
+#canvas-inspector:has(.zone-inspector) {
+  width: min(270px, calc(100vw - 24px));
 }
 .component-inspector {
   padding: 12px;
@@ -43,21 +47,6 @@
   place-items: center;
   flex-shrink: 0;
 }
-.component-inspector nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  overflow-x: auto;
-  margin: 8px 0;
-}
-.component-inspector nav button {
-  max-width: 150px;
-  flex-shrink: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 4px;
-}
 .component-inspector button {
   font-size: inherit;
   border-radius: 6px;
@@ -76,57 +65,105 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-.component-children {
-  max-height: clamp(150px, 36dvh, 370px);
-  overflow: auto;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 8px;
+.inspector-layer-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 6px;
 }
-.component-children button {
+.inspector-layer-pane header {
+  padding: 0 2px;
+}
+.inspector-layer-pane header strong {
+  font-size: 14px;
+}
+.component-children {
+  min-height: 0;
+  max-height: clamp(125px, 30dvh, 370px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.component-children button[role='treeitem'] {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 5px 6px;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  padding: 4px;
   text-align: left;
 }
-.component-children button span {
-  flex: 1;
-  min-width: 0;
+.component-children [data-item] span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.component-children button[aria-pressed='true'] {
-  background: var(--hover);
-}
-.inspector-layers-title {
-  margin: 8px 0 4px;
-  font-size: 12px;
-  color: var(--muted);
-}
 .inspector-layer {
-  padding-inline-start: min(calc(12px + var(--depth) * 14px), 68px);
+  border-radius: 5px;
+  padding-inline-start: min(calc(var(--depth) * 12px), 65px);
 }
-.inspector-layer:not(:has(.layer-disclosure)) > [data-part] {
-  margin-inline-start: 29px;
+.inspector-layer:not(:has(.layer-disclosure)) > [data-item] {
+  margin-inline-start: 22px;
 }
-.component-inspector .inspector-root {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  margin: 0;
-  gap: 1px;
-  background: var(--panel);
+.component-inspector .inspector-layer > .layer-disclosure {
+  width: 22px;
+  flex: 0 0 22px;
 }
-.inspector-root button[data-enter] {
-  min-width: 0;
-  max-width: none;
-  flex: 1;
+.inspector-layer:has([data-item][aria-selected='true']) {
+  background: color-mix(in srgb, var(--accent) 19%, var(--panel));
 }
-.inspector-root small {
+.inspector-layer:focus-within [data-item]:focus-visible {
+  outline-offset: -2px;
+}
+.inspector-root [data-item] {
+  font-weight: 600;
+}
+.inspector-layer small {
+  margin-inline-start: auto;
   font-size: 11px;
+  font-weight: normal;
   color: var(--muted);
+}
+.inspector-properties-pane {
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+@media (min-width: 1080px) {
+  .scene:has(.canvas-chat.docked):not([data-chat-obscured='true']) {
+    --canvas-layers-left: calc(var(--canvas-docked-chat-width) + 12px);
+  }
+  .inspector-layer-pane {
+    position: fixed;
+    top: 82px;
+    left: var(--canvas-layers-left, 12px);
+    width: clamp(220px, 19vw, 272px);
+    max-height: calc(100dvh - 168px);
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+  }
+  .component-children {
+    max-height: none;
+  }
+  .inspector-properties-pane {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  #canvas-inspector:has(.component-inspector:not([hidden]) > .inspector-layer-pane:only-child) {
+    left: var(--canvas-layers-left, 12px);
+    right: auto;
+    width: clamp(220px, 19vw, 272px);
+  }
+  .inspector-layer-pane:only-child {
+    position: static;
+    width: auto;
+    max-height: calc(100dvh - 196px);
+    border: 0;
+    padding: 0;
+  }
 }
 .component-inspector .frame-collect {
   display: flex;
@@ -164,7 +201,6 @@
 .component-properties {
   display: grid;
   gap: 10px;
-  padding-top: 12px;
 }
 .component-inspector label {
   display: grid;
@@ -211,6 +247,22 @@
 .consulting-flow #canvas-inspector {
   max-height: calc(100dvh - 110px);
 }
+@media (max-width: 1079px) {
+  .component-inspector:not([hidden]):has(> .inspector-layer-pane) {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 170px);
+  }
+  .inspector-properties-pane {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .inspector-layer-pane {
+    flex: 0 0 auto;
+  }
+}
 @media (max-width: 699px) {
   #canvas-inspector {
     top: auto;
@@ -221,6 +273,12 @@
     top: auto;
     bottom: 12px;
     max-height: 180px;
+  }
+  .component-inspector:not([hidden]):has(> .inspector-layer-pane) {
+    max-height: min(calc(40dvh - 2px), 298px);
+  }
+  .inspector-layer-pane:not(:only-child) .component-children {
+    max-height: clamp(68px, 13dvh, 104px);
   }
 }
 .component-sizes {

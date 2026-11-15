@@ -1,10 +1,4 @@
-import {
-  containsPoint,
-  corners,
-  frameMasks,
-  visiblePolygon,
-  type Polygon,
-} from '../../domain/frame-clipping';
+import { containsPoint, corners, frameMasks, visiblePolygon } from '../../domain/frame-clipping';
 import { nodeTitle, type Point, type WorldSnapshot } from '../../domain/model';
 import type { ComponentElement } from '../../domain/component-tree';
 import type { DeepReadonly } from '../../domain/readonly';
@@ -45,15 +39,4 @@ export function layerMenu(hits: LayerHits, position: string) {
   return `<div class="canvas-context-menu layer-picker" role="menu" aria-label="Seleccionar capa" style="${position}">
     <button type="button" role="menuitem" data-action="layer-back">${icon('chevron-left', 14)}Seleccionar capa</button>
     ${hits.map((hit) => `<button type="button" role="menuitem" data-action="layer-select" data-id="${html(hit.id)}"><span>${html(hit.name)}</span><small>${html(hit.path)}</small></button>`).join('')}</div>`;
-}
-export function highlightLayer(root: HTMLElement, polygon?: Polygon) {
-  root.querySelector('.layer-highlight')?.remove();
-  if (!polygon?.length) return;
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.classList.add('layer-highlight');
-  svg.setAttribute('aria-hidden', 'true');
-  const shape = document.createElementNS(svg.namespaceURI!, 'polygon');
-  shape.setAttribute('points', polygon.map((p) => p.x + ',' + p.y).join(' '));
-  svg.append(shape);
-  root.querySelector('#canvas-plane')?.append(svg);
 }
