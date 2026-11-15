@@ -145,6 +145,12 @@ que coincide temporalmente con la definición y debe seguir siendo local hasta r
 C08-B241 descarga un respaldo tras borrar la última tarjeta, verifica los bytes de la foto
 y vuelve a insertar la composición en un contexto de navegador limpio.
 
+C08-U93 y C08-U94 comprueban la geometría bilateral, la prioridad local a varias escalas y las
+referencias dentro de un marco recortado. C08-U95 combina dos vecinas, huecos iguales y una
+retícula girada a 35°. C08-B243 y C08-B244 arrastran una tarjeta entre dos
+vecinas en fila y columna, capturan los extremos de ambas guías, contrastan los huecos con
+las posiciones guardadas y recuperan el origen con Deshacer.
+
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
    por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles
    pertenecen al marco. Moverlo por el título. La tarjeta debe conservar su posición relativa,

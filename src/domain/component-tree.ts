@@ -71,7 +71,15 @@ export function elementAt(root: ComponentElement, id: string): ComponentElement 
     if (found) return found;
   }
 }
-export function parentOf(root: ComponentElement, id: string): ComponentElement | undefined {
+export function parentOf(root: ComponentElement, id: string): ComponentElement | undefined;
+export function parentOf(
+  root: DeepReadonly<ComponentElement>,
+  id: string,
+): DeepReadonly<ComponentElement> | undefined;
+export function parentOf(
+  root: DeepReadonly<ComponentElement>,
+  id: string,
+): DeepReadonly<ComponentElement> | undefined {
   if (root.children.some((c) => c.id === id)) return root;
   for (const child of root.children) {
     const found = parentOf(child, id);

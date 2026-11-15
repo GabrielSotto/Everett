@@ -345,7 +345,7 @@ Para los gestos de edición, contrastar Figma o FigJam y Penpot, y sumar otro Ca
 
 La consulta seleccionada reutiliza Panzoom (MIT); el paso local baja de 0,3 a 0,1 y la rueda espacial consulta el modificador de Atajos. Los recorridos anterior/siguiente no cambian la selección de Canvas ni los archivos. La lectura recuerda el recorrido seguido y conserva sus assets en las copias de emergencia personales.
 
-Para alineación se evaluaron Konva y Moveable. Incorporar otro renderer o su sistema completo de gestos duplicaría los existentes. Se adapta el cálculo de proximidad de `checkSnap` de Moveable (MIT), fuente `packages/react-moveable/src/ables/snappable/snap.ts`, blob `ca9b728fab1680315e6ddff7093f96a88db66dda`; su aviso MIT completo permanece en `src/vendor/snap-axis.ts` y en el HTML generado. No se incorpora código MPL de Penpot. Las guías comparan bordes y centros con una tolerancia de cinco píxeles de pantalla. Ctrl o Meta durante el arrastre suspende temporalmente el ajuste.
+La primera implementación de alineación adaptó `checkSnap` de Moveable (MIT), fuente `packages/react-moveable/src/ables/snappable/snap.ts`, blob `ca9b728fab1680315e6ddff7093f96a88db66dda`. El cálculo actual de referencias vecinas, bordes, centros y huecos es propio de Everett. [Alineación en el dominio](../src/domain/alignment.ts). Ctrl o Meta durante el arrastre suspende temporalmente el ajuste.
 
 ### Comprobación pública de consulta
 

@@ -2,6 +2,7 @@ import { incompatibleMaterial } from '../../domain/composition-materials';
 import type { Context, Tool } from '../../app/context';
 import {
   materialRoute,
+  type WorldSnapshot,
   type Material,
   type Point,
   type Rect,
@@ -75,9 +76,9 @@ import {
   labeledPath,
   overlaps,
 } from '../../domain/cable-labels';
-import { alignRect, selectionBounds, type SnapMemory } from '../../domain/alignment';
-import { alignmentTargets } from '../../domain/alignment-targets';
-import { layoutFrames } from '../../domain/layout-guides';
+import { alignRect, type SnapMemory } from '../../domain/alignment';
+import { alignmentScene, alignmentLayoutFrames } from '../../domain/alignment-targets';
+import { paintAlignmentGuides } from './alignment-guides';
 import { paintLayoutGuides } from './layout-guides';
 import { resizedComponent } from '../../domain/component-resize';
 import { frameMasks } from '../../domain/frame-clipping';
@@ -111,6 +112,10 @@ type Drag =
       origins?: { id: string; point: Point }[];
       additive?: boolean;
       snap?: SnapMemory;
+      alignment?: ReturnType<typeof alignmentScene> & {
+        world: WorldSnapshot;
+        frames: ReturnType<typeof alignmentLayoutFrames>;
+      };
     }
   | {
       kind: 'resize';
@@ -1386,7 +1391,6 @@ export class CanvasView implements View {
         id: item.id,
         point: { x: item.point.x + point.x - d.start.x, y: item.point.y + point.y - d.start.y },
       })) ?? [{ id: d.id, point: { ...d.point } }];
-      this.root.querySelector('.alignment-guides')?.remove();
       const shell = this.ctx.ui.shell;
       if (
         d.distance > 3 &&
@@ -1394,43 +1398,49 @@ export class CanvasView implements View {
         !e.ctrlKey &&
         !e.metaKey
       ) {
-        const items =
-          d.kind === 'node'
-            ? this.ctx.world().nodes.filter((n) => !n.owner)
-            : this.ctx.world().zones;
-        const selected = new Set(positions.map((item) => item.id));
-        const moving = positions.flatMap((item) => {
-          const original = items.find((node) => node.id === item.id);
-          return original ? [{ ...original, ...item.point }] : [];
-        });
-        if (moving.length) {
-          const viewport = this.root.getBoundingClientRect();
+        const world = this.ctx.world();
+        if (!d.alignment || d.alignment.world !== world) {
+          const selected = new Set(positions.map((item) => item.id));
+          const scene =
+            d.kind === 'node'
+              ? alignmentScene(world, selected, this.ctx.ui.canvas.componentEditing)
+              : {
+                  moving: world.zones.find((zone) => zone.id === d.id),
+                  targets: world.zones.filter((zone) => !selected.has(zone.id)),
+                };
+          d.alignment = {
+            ...scene,
+            world,
+            frames:
+              d.kind === 'node'
+                ? alignmentLayoutFrames(world, selected, this.ctx.ui.canvas.componentEditing)
+                : [],
+          };
+        }
+        const { moving, targets, frames } = d.alignment;
+        if (moving) {
+          const viewport = this.rect();
           const a = toWorld({ x: viewport.left, y: viewport.top }, this.cam.current, viewport);
           const b = toWorld({ x: viewport.right, y: viewport.bottom }, this.cam.current, viewport);
           const snap = alignRect(
-            selectionBounds(moving),
-            (shell.canvasAlignmentGuides
-              ? d.kind === 'node'
-                ? alignmentTargets(this.ctx.world(), selected, this.ctx.ui.canvas.componentEditing)
-                : items
-              : []
-            ).filter(
-              (item) =>
-                (!item.id || !selected.has(item.id)) &&
-                item.x + item.width >= a.x &&
-                item.x <= b.x &&
-                item.y + item.height >= a.y &&
-                item.y <= b.y,
-            ),
+            {
+              ...moving,
+              x: moving.x + d.point.x - d.origin.x,
+              y: moving.y + d.point.y - d.origin.y,
+            },
+            shell.canvasAlignmentGuides
+              ? targets.filter(
+                  (item) =>
+                    item.x + item.width >= a.x &&
+                    item.x <= b.x &&
+                    item.y + item.height >= a.y &&
+                    item.y <= b.y,
+                )
+              : [],
             this.cam.current.z,
             {
               ...(d.snap ? { previous: d.snap } : {}),
-              frames:
-                d.kind === 'node' && shell.canvasLayoutSnap
-                  ? layoutFrames(this.ctx.world()).filter(
-                      (f) => !f.members.some((id) => selected.has(id)),
-                    )
-                  : [],
+              frames: shell.canvasLayoutSnap ? frames : [],
             },
           );
           d.snap = snap.memory;
@@ -1439,27 +1449,12 @@ export class CanvasView implements View {
             item.point.y += snap.correction.y;
           }
           d.point = { x: d.point.x + snap.correction.x, y: d.point.y + snap.correction.y };
-          if (snap.guides.length) {
-            const layer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            layer.classList.add('alignment-guides');
-            layer.setAttribute('aria-hidden', 'true');
-            layer.innerHTML = snap.guides
-              .map(
-                (guide) =>
-                  `<g${guide.transform ? ` transform="rotate(${guide.transform.degrees} ${guide.transform.pivot.x} ${guide.transform.pivot.y})"` : ''}><line data-snap-target="${html(guide.target ?? '')}" data-snap-source="${guide.source}" x1="${guide.axis === 'x' ? guide.position : guide.from}" y1="${guide.axis === 'y' ? guide.position : guide.from}" x2="${guide.axis === 'x' ? guide.position : guide.to}" y2="${guide.axis === 'y' ? guide.position : guide.to}"/>${guide.markers
-                    .map((p) => {
-                      const x = guide.axis === 'x' ? guide.position : p,
-                        y = guide.axis === 'y' ? guide.position : p,
-                        d = 3 / this.cam.current.z;
-                      return `<path d="M${x - d} ${y - d}l${2 * d} ${2 * d}m0 ${-2 * d}l${-2 * d} ${2 * d}"/>`;
-                    })
-                    .join('')}</g>`,
-              )
-              .join('');
-            this.root.querySelector('#canvas-plane')?.append(layer);
-          }
-        }
-      } else delete d.snap;
+          paintAlignmentGuides(this.root, snap.guides, this.cam.current.z);
+        } else paintAlignmentGuides(this.root, [], this.cam.current.z);
+      } else {
+        delete d.snap;
+        paintAlignmentGuides(this.root, [], this.cam.current.z);
+      }
       for (const item of positions) {
         const element = this.root.querySelector<HTMLElement>(
           `[data-${d.kind}="${CSS.escape(item.id)}"]`,

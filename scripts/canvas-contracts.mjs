@@ -1,6 +1,11 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
   { id: 'C08-U91', layer: 'unit', contracts: ['C08-COMPONENT-02'] },
+  { id: 'C08-U93', layer: 'unit', contracts: ['C08-ALIGN-01'] },
+  { id: 'C08-U94', layer: 'unit', contracts: ['C08-ALIGN-01', 'C08-LAYOUT-01'] },
+  { id: 'C08-U95', layer: 'unit', contracts: ['C08-ALIGN-01', 'C08-LAYOUT-01'] },
+  { id: 'C08-B243', layer: 'browser', contracts: ['C08-ALIGN-01'] },
+  { id: 'C08-B244', layer: 'browser', contracts: ['C08-ALIGN-01'] },
   { id: 'C08-U92', layer: 'unit', contracts: ['C08-COMPONENT-02'] },
   { id: 'C08-B240', layer: 'browser', contracts: ['C08-COMPONENT-02'] },
   { id: 'C08-B242', layer: 'browser', contracts: ['C08-COMPONENT-02'] },

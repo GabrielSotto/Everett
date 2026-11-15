@@ -312,7 +312,7 @@ test('C08-B172: arrastre elige vecino real, conserva destino, suspende y cancela
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + 60, y, { steps: 12 });
-  await expect(page.locator('.alignment-guides line[data-snap-target=near]')).toHaveCount(1);
+  await expect(page.locator('.alignment-guides line[data-snap-target=near]')).toHaveCount(2);
   await expect(page.locator('[data-node=moving]')).toHaveCSS('left', '-96px');
   await capture(page, info, 'referencia-cercana');
   await page.mouse.move(x + 58, y);
@@ -323,7 +323,7 @@ test('C08-B172: arrastre elige vecino real, conserva destino, suspende y cancela
   await expect(page.locator('[data-node=moving]')).toHaveCSS('left', '-103px');
   await page.keyboard.up('Control');
   await page.mouse.move(x + 60, y);
-  await expect(page.locator('.alignment-guides line[data-snap-target=near]')).toHaveCount(1);
+  await expect(page.locator('.alignment-guides line[data-snap-target=near]')).toHaveCount(2);
   await page.keyboard.press('Escape');
   await page.mouse.up();
   expect((await world(page)).nodes[0]!.x).toBe(-160);

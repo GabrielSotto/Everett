@@ -29,7 +29,7 @@ La conversión de una pantalla existente incorpora materiales interiores y grupo
 
 La tarjeta de Explorar se puede guardar en Mis composiciones con su foto importada, texto libre y fondo. Las copias independientes y las vinculadas se editan por separado. Al actualizar una vinculada, incluso dentro de un marco, conserva sus cambios de contenido por propiedad y recibe el diseño publicado. El respaldo incluye las imágenes de las composiciones guardadas. Quedan pendientes las variantes de contorno y sólido para el mismo símbolo. El comportamiento tipográfico de texto libre, notas y editor de piezas está confirmado.
 
-Se reprodujeron dos fallos de autoalineación al 100 %. Con tres tarjetas iguales en fila, desplazar la del medio 3 px corrige la altura pero dibuja una guía hacia un solo vecino. En columna ocurre lo mismo. Con dos referencias sobre el mismo lado a 10 y 37 px de distancia, gana la segunda si requiere corregir 1 px y la primera 3 px. Con la segunda a 320 px gana la primera. El menú Alinear ya calcula centrado, distribución y separación numérica. Falta indicar qué se moverá al usarlo. [Recorridos para aceptar la mejora](docs/validacion-prototipo.md#marcos-y-materiales-mixtos).
+Al mover una tarjeta entre dos vecinas, el autoalineado muestra las coincidencias con ambas en fila o columna y marca los dos espacios cuando se igualan. La vecina compatible a 10 px tiene prioridad sobre otra a 37 px aunque la segunda requiera menos corrección. En el menú Alinear queda pendiente indicar qué se moverá al aplicar centrado, distribución o separación numérica. [Recorridos para aceptar la mejora](docs/validacion-prototipo.md#marcos-y-materiales-mixtos).
 
 ### Composición manual: ilustraciones, texto, cables y flechas
 
@@ -526,7 +526,7 @@ Gate completo aprobado: 95 pruebas unitarias/de herramientas y 181 de navegador,
 
 La revisión de 0.8.17 terminó y el usuario autorizó implementar. Alcance: contrato global de rueda local y modificador espacial configurable en Atajos (Alt por defecto), zoom de imagen gradual, galería acotada a las imágenes seleccionadas, reanudación de lectura, estados útiles para aplicaciones web y fallos de red, sugerencia local aceptable con Tab, renombrado fiable con Enter, encuadre contextual y guías de alineación. Preservar los comportamientos confirmados. La base es 0.8.17. La regresión actual verifica los cambios; la comprobación pública mantiene abierto el gesto del iframe enfocado.
 
-La galería de selección queda autorizada en 0.8 por el último feedback; no añade otra superficie de biblioteca. Las guías reutilizan el cálculo de proximidad de Moveable (MIT), adaptado al modelo de coordenadas existente, sin incorporar su framework de arrastre ni código de Penpot.
+La galería de selección queda autorizada en 0.8 por el último feedback; no añade otra superficie de biblioteca. La primera implementación de las guías utilizó el cálculo de proximidad de Moveable (MIT), adaptado al modelo de coordenadas existente.
 
 - Lectura web: la portada de YouTube no ofrece una consulta útil. Distinguir aplicaciones/índices de artículos o videos concretos y resolver un estado accionable; el lector actual no es un navegador de aplicaciones completo.
 - Retomar una lectura: poder regresar a la última página consultada dentro de una referencia (ejemplo: Introduction de Godot) sin recorrer de nuevo la portada. Conservar el historial de regreso y distinguir posición de lectura de identidad de la referencia.
