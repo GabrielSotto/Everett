@@ -1577,27 +1577,20 @@ body:not(.labels) .sample .dark .label:after {
   display: grid;
   gap: 20px;
 }
-.frame-examples {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.screen-frame {
   width: 100%;
-  justify-content: center;
-}
-.frame-examples > div {
-  height: 100px;
-  width: 47px;
+  aspect-ratio: 16 / 9;
   border: 1px solid #a8b4c0;
   border-radius: 5px;
   background: white;
 }
-.frame-examples > div:nth-child(2) {
-  width: 68px;
-  height: 90px;
+.screen-frame.tablet {
+  aspect-ratio: 4 / 3;
 }
-.frame-examples > div:nth-child(3) {
-  width: 100px;
-  height: 70px;
+.screen-frame.phone {
+  width: 56%;
+  margin-inline: auto;
+  aspect-ratio: 9 / 16;
 }
 .clip-example {
   display: flex;

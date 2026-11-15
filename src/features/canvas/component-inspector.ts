@@ -9,7 +9,7 @@ import { componentFor } from '../../domain/manual-groups';
 import { html, editable } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { frameCanvas } from '../../ui/canvas-frame';
-import type { Camera } from '../../domain/model';
+import { nodeTitle, type Camera } from '../../domain/model';
 
 /** Inspector contextual: Enter y Escape recorren la misma jerarquía que las migas. */
 export class ComponentInspector {
@@ -280,8 +280,13 @@ export class ComponentInspector {
     // La selección y los comandos deben usar el mismo contenedor que muestra el panel.
     editing.element = scope.id;
     editing.selected = selected.id;
+    const world = this.ctx.world();
+    const groupedIds = new Set(world.canvasGroups?.flatMap((g) => g.nodes));
+    const loose = world.nodes.filter((n) => !n.owner && !groupedIds.has(n.id));
     const key = JSON.stringify([
       group,
+      loose.map((n) => [n.id, nodeTitle(world, n)]),
+      world.canvasGroups?.map((g) => [g.id, g.name, g.nodes, g.structure?.root.frame]),
       editing,
       this.ctx.ui.canvas.selections,
       this.ctx.world().compositions,
@@ -317,6 +322,12 @@ export class ComponentInspector {
         elementMaterials(e).length &&
         elementMaterials(e).every((id) => this.ctx.ui.canvas.selections.includes(id)),
     );
+    const selectedNode = world.nodes.find((n) => n.id === selected.material);
+    const editableContent =
+      selectedNode?.data.kind === 'wireframe' || selectedNode?.data.kind === 'text';
+    const unsupported = world.nodes.find(
+      (n) => group.nodes.includes(n.id) && (n.data.kind !== 'wireframe' || !n.data.content.piece),
+    );
     const available = this.ctx
       .world()
       .nodes.filter(
@@ -326,21 +337,16 @@ export class ComponentInspector {
           n.data.content.piece &&
           !group.nodes.includes(n.id),
       );
-    const loose = available.filter(
-      (n) => !this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(n.id)),
-    );
+    const locked = new Set(world.nodes.filter((n) => n.owner).map((n) => n.id));
     const nestable =
       this.ctx
         .world()
-        .canvasGroups?.filter(
-          (g) => g.id !== group.id && g.nodes.every((id) => available.some((n) => n.id === id)),
-        ) ?? [];
+        .canvasGroups?.filter((g) => g.id !== group.id && !g.nodes.some((id) => locked.has(id))) ??
+      [];
+    const otherFrames = nestable.filter((g) => g.structure?.root.frame);
     const materialOptions = (items: typeof available) =>
       items
-        .map(
-          (n) =>
-            `<option value="${html(n.id)}">${html(n.data.kind === 'wireframe' ? n.data.title : 'Pieza')}</option>`,
-        )
+        .map((n) => `<option value="${html(n.id)}">${html(nodeTitle(world, n))}</option>`)
         .join('');
     this.panel.innerHTML = `<header><button type="button" class="icon-button" data-component-action="back" aria-label="Subir un nivel">${icon('chevron-left', 16)}</button><strong>${html(group.name)}</strong><button type="button" class="icon-button" data-component-action="close" aria-label="Terminar edición">${icon('close', 16)}</button></header>
       <nav aria-label="Jerarquía del componente">${path.map((e) => `<button type="button" data-enter="${html(e.id)}" title="${html(e.name)}">${html(e.name)}</button>`).join('<span aria-hidden="true">/</span>')}</nav>
@@ -348,7 +354,8 @@ export class ComponentInspector {
       <div class="component-properties"><label>Nombre<input data-prop="name" value="${html(selected.name)}" maxlength="200"></label><div class="component-sizes">${size('width', 'Ancho')}${size('height', 'Alto')}</div>
       ${!selected.material ? `<label>Distribución<select data-layout="direction" aria-label="Distribución">${option('free', 'Libre', selected.layout.direction)}${option('row', 'Fila', selected.layout.direction)}${option('column', 'Columna', selected.layout.direction)}</select></label><div class="component-sizes"><label>Espacio<input ${selected.layout.direction === 'free' ? 'disabled' : ''} data-layout="gap" type="number" min="0" max="10000" value="${selected.layout.gap}"></label><label>Margen interno<input data-layout="padding" type="number" min="0" max="10000" value="${selected.layout.padding}"></label></div><label>Alineación<select ${selected.layout.direction === 'free' ? 'disabled' : ''} data-layout="align" aria-label="Alineación">${option('start', 'Inicio', selected.layout.align)}${option('center', 'Centro', selected.layout.align)}${option('end', 'Final', selected.layout.align)}${option('stretch', 'Estirar', selected.layout.align)}</select></label>` : ''}
       ${selected.layout.insets ? `<details><summary>Márgenes por lado</summary><div class="component-sizes">${['Superior', 'Derecho', 'Inferior', 'Izquierdo'].map((name, i) => `<label>${name}<input type="number" min="0" max="10000" data-layout-edge="${i}" value="${Math.round(selected.layout.insets![i]! * 100) / 100}"></label>`).join('')}</div></details>` : ''}
-      ${selected.material ? `<button type="button" data-component-action="content">Editar contenido y apariencia</button><label class="component-check"><input type="checkbox" data-prop="background" ${selected.background ? 'checked' : ''}>Fondo del contenedor</label>` : ''}
+      ${editableContent ? '<button type="button" data-component-action="content">Editar contenido y apariencia</button>' : ''}
+      ${selected.material ? `<label class="component-check"><input type="checkbox" data-prop="background" ${selected.background ? 'checked' : ''}>Fondo del contenedor</label>` : ''}
       ${
         selected.id !== group.structure.root.id
           ? `<label>Contenedor<select data-reparent aria-label="Contenedor">${elements
@@ -371,10 +378,11 @@ export class ComponentInspector {
           : ''
       }
       <button type="button" data-component-action="container" ${chosen.length < 2 ? 'disabled' : ''}>Agrupar selección en contenedor</button>
-      <details><summary>Incorporar o sustituir piezas</summary>${loose.length ? `<label>Pieza del Canvas<select data-adopt aria-label="Pieza del Canvas">${materialOptions(loose)}</select></label><button type="button" data-component-action="adopt">Incorporar al contenedor</button>` : '<p>Agregá una pieza desde Bosquejos para incorporarla aquí.</p>'}${selected.material && available.length ? `<label>Reemplazo<select data-replace aria-label="Reemplazo">${materialOptions(available)}</select></label><button type="button" data-component-action="replace">Sustituir contenido de la pieza</button>` : ''}</details>
+      ${otherFrames.length && selected !== group.structure.root && elementMaterials(selected).length < group.nodes.length ? `<details><summary>Mover a otro marco</summary><label>Marco de destino<select data-frame-target>${otherFrames.map((g) => option(g.id, g.name, '')).join('')}</select></label><button type="button" data-component-action="transfer">Mover al marco</button></details>` : ''}
+      <details><summary>Incorporar o sustituir piezas</summary>${loose.length ? `<label>Pieza del Canvas<select data-adopt aria-label="Pieza del Canvas">${materialOptions(loose)}</select></label><button type="button" data-component-action="adopt">Incorporar al contenedor</button>` : '<p>No hay materiales sueltos para incorporar.</p>'}${selected.material && available.length ? `<label>Reemplazo<select data-replace aria-label="Reemplazo">${materialOptions(available)}</select></label><button type="button" data-component-action="replace">Sustituir contenido de la pieza</button>` : ''}</details>
       ${nestable.length ? `<details><summary>Anidar un componente</summary><label>Componente del Canvas<select data-nest aria-label="Componente del Canvas">${nestable.map((g) => `<option value="${html(g.id)}">${html(g.name)}</option>`).join('')}</select></label><button type="button" data-component-action="nest">Anidar en este contenedor</button></details>` : ''}
       <details><summary>Escala proporcional</summary><label>Porcentaje<input data-scale type="number" min="1" max="1000" value="100"></label><button type="button" data-component-action="scale">Escalar composición</button></details>
-      <details><summary>Reutilizar</summary><label>Nombre<input data-save-name value="${html(group.name)}" maxlength="200"></label><button type="button" data-component-action="save">Guardar composición</button>${group.recipe ? `<button type="button" data-component-action="update">Actualizar esta copia desde biblioteca</button><button type="button" data-component-action="publish">Actualizar composición guardada</button>` : ''}<p>Las copias son independientes. Las vinculadas se actualizan solo cuando lo pedís.</p></details>
+      <details><summary>Reutilizar</summary>${unsupported ? `<p>«${html(nodeTitle(world, unsupported))}» todavía no se puede guardar en una composición de Bosquejos.</p>` : `<label>Nombre<input data-save-name value="${html(group.name)}" maxlength="200"></label><button type="button" data-component-action="save">Guardar composición</button>${group.recipe ? `<button type="button" data-component-action="update">Actualizar esta copia desde biblioteca</button><button type="button" data-component-action="publish">Actualizar composición guardada</button>` : ''}<p>Las copias son independientes. Las vinculadas se actualizan solo cuando lo pedís.</p>`}</details>
       <details><summary>Recorrido</summary><label>Ir a<select data-flow aria-label="Ir a">${option('', 'Sin destino', flow?.to ?? '')}${this.ctx
         .world()
         .canvasGroups?.filter((g) => g.id !== group.id)
@@ -475,6 +483,11 @@ export class ComponentInspector {
         parent: editing.element,
         materials: [this.panel.querySelector<HTMLSelectElement>('[data-adopt]')!.value],
       });
+    if (action === 'transfer' && parent) {
+      const frame = this.panel.querySelector<HTMLSelectElement>('[data-frame-target]')!.value;
+      if (this.apply({ kind: 'transfer', element: selected.id, frame }))
+        this.enterElement(parent.id);
+    }
     if (action === 'replace')
       this.apply({
         kind: 'replace',

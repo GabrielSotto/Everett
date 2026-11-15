@@ -33,6 +33,7 @@ interface Timeline {
   future: Entry[];
 }
 const reversible = new Set<Command['type']>([
+  'frame.create',
   'component.edit',
   'composition.save',
   'composition.insert',

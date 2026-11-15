@@ -861,7 +861,8 @@ body[data-canvas-motion='reduced']
     transition: none;
   }
 }
-.material.component-part :is(.material-identification, .resize-handle) {
+.material.component-part :is(.material-identification, .resize-handle),
+.material.frame-background .material-identification {
   display: none;
 }
 .material.component-part {

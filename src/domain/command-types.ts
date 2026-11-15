@@ -24,6 +24,7 @@ import type { MaterialOrder } from './material-order';
 import type { NoteFont, NoteTypographyEdit } from './note-fonts';
 
 export type Command =
+  | { type: 'frame.create'; world: string; background: string; members: string[] }
   | {
       type: 'component.edit';
       world: string;

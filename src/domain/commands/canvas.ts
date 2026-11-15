@@ -1,4 +1,5 @@
 import { validBarRows } from '../bar-chart';
+import { adoptMaterials } from '../canvas-frames';
 import { centerOf, rotatedPose } from '../rotation';
 import { selectionBounds } from '../alignment';
 import { noteTypography, validNoteTextStyle } from '../note-fonts';
@@ -305,7 +306,19 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
           });
         for (const group of world.canvasGroups ?? [])
           group.nodes = group.nodes.filter((id) => !detached.includes(id));
-        if (destination) destination.nodes = [...new Set([...destination.nodes, ...ids])];
+        if (destination?.structure?.root.frame) {
+          ensure(
+            destination.nodes.every((id) => !node(id).owner),
+            'LOCKED',
+            'El agente está usando partes de este marco.',
+          );
+          ensure(
+            destination.structure.root.layout.direction === 'free',
+            'FRAME_LAYOUT',
+            'Usá el inspector para incorporar materiales en una fila o columna.',
+          );
+          adoptMaterials(world, destination, destination.structure.root, ids, uid);
+        } else if (destination) destination.nodes = [...new Set([...destination.nodes, ...ids])];
         if (world.canvasGroups)
           world.canvasGroups = world.canvasGroups.filter((g) => g.nodes.length > 0);
       } else if (command.type === 'nodes.delete')

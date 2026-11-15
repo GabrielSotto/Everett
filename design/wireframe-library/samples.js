@@ -203,8 +203,7 @@ base(
   'frame',
   'Pantalla y marco',
   'Estructura · ancho y alto libres',
-  () =>
-    '<div class="frame-examples"><div data-part="marco"></div><div data-part="marco"></div><div data-part="marco"></div></div>',
+  (c) => `<div class="screen-frame ${c.variant}" data-part="Fondo"></div>`,
 );
 base(
   'clip',

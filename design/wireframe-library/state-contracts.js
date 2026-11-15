@@ -57,6 +57,11 @@ const defs = {};
 const define = (id, states, variants) => {
   defs[id] = { states, variants };
 };
+define('frame', [base('Marco')], [
+  variant('desktop', 'Escritorio', 'Marco horizontal.'),
+  variant('tablet', 'Tablet', 'Marco de proporción 4:3.'),
+  variant('phone', 'Teléfono', 'Marco vertical.'),
+]);
 define('button', [
   base('Botón'),
   ...interaction('Botón', ['hover', 'focus', 'pressed', 'disabled']),

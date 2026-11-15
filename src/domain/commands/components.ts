@@ -2,10 +2,10 @@ import { getWorld, need, type State, type Rect } from '../model';
 import type { Command } from '../command-types';
 import { ensure } from '../invariants';
 import {
+  componentElements,
   elementAt,
   parentOf,
   elementMaterials,
-  elementRect,
   treeFromMaterials,
   writeTreeGeometry,
   validComponentTree,
@@ -19,6 +19,14 @@ import { captureComposition } from '../component-recipes';
 import { instantiateLibrary, validLibraryComposition, libraryBounds } from '../sketch-library';
 import { resizedComponent } from '../component-resize';
 import { groupBounds } from '../manual-groups';
+import {
+  adoptMaterials,
+  frameFromMaterial,
+  orderFrameBackgrounds,
+  restoreFrameGuides,
+  transferFramePart,
+} from '../canvas-frames';
+import { componentPoses, localPose } from '../component-geometry';
 
 export type ComponentEdit =
   | { kind: 'initialize' }
@@ -36,6 +44,7 @@ export type ComponentEdit =
   | { kind: 'reparent'; element: string; parent: string; index: number }
   | { kind: 'container'; elements: string[]; name: string }
   | { kind: 'detach'; element: string }
+  | { kind: 'transfer'; element: string; frame: string }
   | { kind: 'duplicate'; element: string }
   | { kind: 'replace'; element: string; material: string }
   | { kind: 'adopt'; parent: string; materials: string[] }
@@ -46,6 +55,7 @@ type ComponentCommand = Extract<
   Command,
   {
     type:
+      | 'frame.create'
       | 'component.edit'
       | 'composition.save'
       | 'composition.insert'
@@ -56,6 +66,21 @@ type ComponentCommand = Extract<
 export function applyComponentCommand(state: State, c: ComponentCommand): void {
   const world = getWorld(state, c.world),
     uid = () => `e-${++state.seq}`;
+  if (c.type === 'frame.create') {
+    const background = need(
+      world.nodes.find((n) => n.id === c.background),
+      'El fondo ya no está disponible.',
+    );
+    ensure(
+      !world.canvasGroups?.some((g) => g.nodes.includes(background.id)),
+      'FRAME_MEMBERSHIP',
+      'Separá el fondo de su contenedor antes de crear otro marco.',
+    );
+    const frame = frameFromMaterial(world, background, uid());
+    (world.canvasGroups ??= []).push(frame);
+    if (c.members.length) adoptMaterials(world, frame, frame.structure!.root, c.members, uid);
+    return;
+  }
   if (c.type === 'composition.insert') {
     const saved = need(
       world.compositions?.find((s) => s.id === c.id),
@@ -160,7 +185,7 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
       if (oldId) remap.set(material, oldId);
     }
     for (const node of result.nodes) node.id = remap.get(node.id) ?? node.id;
-    for (const element of mutableElements(result.group!.structure!.root))
+    for (const element of componentElements(result.group!.structure!.root))
       if (element.material) element.material = remap.get(element.material) ?? element.material;
     result.group!.nodes = result.nodes.map((n) => n.id);
     const replaced = new Set(result.group!.nodes),
@@ -261,10 +286,10 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     ensure(
       source.nodes.every((id) => {
         const n = world.nodes.find((n) => n.id === id);
-        return n && !n.owner && n.data.kind === 'wireframe' && !!n.data.content.piece;
+        return n && !n.owner;
       }),
       'COMPONENT_CONTENT',
-      'Elegí un componente de piezas disponibles.',
+      'Devolvé los materiales del agente antes de anidar este conjunto.',
     );
     ensure(
       !world.screenFlows?.some((f) => f.from === source.id || f.to === source.id),
@@ -278,52 +303,21 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
           source.name,
         ),
     );
-    const position = elementRect(tree, parent.id)!;
-    nested.root.x += nested.origin.x - position.x;
-    nested.root.y += nested.origin.y - position.y;
-    for (const e of mutableElements(nested.root)) e.id = uid();
+    const placement = localPose(
+      componentPoses(tree).get(parent.id)!,
+      componentPoses(nested).get(nested.root.id)!,
+    );
+    Object.assign(nested.root, placement);
+    for (const e of componentElements(nested.root)) e.id = uid();
     parent.children.push(nested.root);
+    orderFrameBackgrounds(world, tree.root);
+    restoreFrameGuides(world, source);
     group.nodes.push(...source.nodes);
     world.canvasGroups = world.canvasGroups!.filter((g) => g.id !== source.id);
     layoutComponent(tree.root);
   } else if (edit.kind === 'adopt') {
     const parent = need(elementAt(tree.root, edit.parent), 'Contenedor no disponible');
-    ensure(
-      !parent.material &&
-        edit.materials.length > 0 &&
-        new Set(edit.materials).size === edit.materials.length,
-      'COMPONENT_PARENT',
-      'Elegí un contenedor y piezas distintas.',
-    );
-    const origin = elementRect(tree, parent.id)!;
-    for (const id of edit.materials) {
-      const node = need(
-        world.nodes.find((n) => n.id === id),
-        'Pieza no disponible',
-      );
-      ensure(
-        !node.owner &&
-          node.data.kind === 'wireframe' &&
-          !!node.data.content.piece &&
-          !world.canvasGroups?.some((g) => g.nodes.includes(id)),
-        'COMPONENT_MEMBERSHIP',
-        'La pieza debe estar libre antes de incorporarla.',
-      );
-      parent.children.push({
-        id: uid(),
-        name: node.data.kind === 'wireframe' ? node.data.title : 'Pieza',
-        material: id,
-        x: node.x - origin.x,
-        y: node.y - origin.y,
-        width: node.width,
-        height: node.height,
-        widthMode: 'fixed',
-        heightMode: 'fixed',
-        layout: freeLayout(),
-        children: [],
-      });
-      group.nodes.push(id);
-    }
+    adoptMaterials(world, group, parent, edit.materials, uid);
     layoutComponent(tree.root);
   } else if (edit.kind === 'container') {
     ensure(
@@ -429,14 +423,18 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
           'COMPONENT_ORDER',
           'Posición no válida.',
         );
-        const previous = elementRect(tree, element.id)!,
-          next = elementRect(tree, destination.id)!;
+        const poses = componentPoses(tree);
+        const placement = localPose(poses.get(destination.id)!, poses.get(element.id)!);
         parent.children = parent.children.filter((e) => e !== element);
         destination.children.splice(edit.index, 0, element);
-        element.x = previous.x - next.x;
-        element.y = previous.y - next.y;
+        element.x = placement.x;
+        element.y = placement.y;
+        if (!element.material && placement.rotation !== undefined)
+          element.rotation = placement.rotation;
         delete element.margin;
         layoutComponent(tree.root);
+      } else if (edit.kind === 'transfer') {
+        transferFramePart(world, group, parent, element, edit.frame, uid);
       } else if (edit.kind === 'detach') {
         const ids = elementMaterials(element);
         parent.children = parent.children.filter((e) => e !== element);
@@ -472,11 +470,8 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
   }
   writeTreeGeometry(world, group);
 }
-function mutableElements(root: ComponentElement): ComponentElement[] {
-  return [root, ...root.children.flatMap(mutableElements)];
-}
 function elementMaterialsById(root: ComponentElement): [string, string][] {
-  return mutableElements(root).flatMap((e) =>
+  return componentElements(root).flatMap((e) =>
     e.material ? [[e.id, e.material] as [string, string]] : [],
   );
 }

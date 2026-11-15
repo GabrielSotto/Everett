@@ -20,6 +20,7 @@ import { reconcileComponentTrees, elementAt } from './component-tree';
 export function reduce(state: State, command: Command): State {
   const next = structuredClone(state);
   switch (command.type) {
+    case 'frame.create':
     case 'component.edit':
     case 'composition.save':
     case 'composition.insert':

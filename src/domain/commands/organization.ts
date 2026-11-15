@@ -1,6 +1,7 @@
 import type { Command } from '../command-types';
 import { getWorld, need, type State } from '../model';
 import { ensure } from '../invariants';
+import { restoreFrameGuides } from '../canvas-frames';
 import { referenceSource } from '../reference-anchors';
 import { layoutFrame, layoutGuideError } from '../layout-guides';
 
@@ -70,7 +71,10 @@ export function applyOrganizationCommand(state: State, c: OrganizationCommand): 
       );
       group.nodes = group.nodes.filter((id) => !c.nodes.includes(id));
       world.canvasGroups = world.canvasGroups!.filter((g) => g.nodes.length > 0);
-    } else world.canvasGroups = world.canvasGroups!.filter((g) => g.id !== c.id);
+    } else {
+      restoreFrameGuides(world, group);
+      world.canvasGroups = world.canvasGroups!.filter((g) => g.id !== c.id);
+    }
   } else {
     const node = need(
       world.nodes.find((n) => n.id === c.id),

@@ -2,7 +2,8 @@ import { visualBounds } from './rotation';
 import type { WorldSnapshot } from './model';
 import { isComponent } from './manual-groups';
 import { selectionBounds, type SnapTarget } from './alignment';
-import { componentElements, elementMaterials, elementRect, treePosition } from './component-tree';
+import { componentElements, elementMaterials, elementRect } from './component-tree';
+import { componentPoses } from './component-geometry';
 
 /** Un componente intacto aporta su límite, no cada detalle decorativo interno. */
 export function alignmentTargets(
@@ -13,16 +14,19 @@ export function alignmentTargets(
   const structure = world.canvasGroups?.find((g) => g.id === editing?.group)?.structure;
   if (structure) {
     const scope = componentElements(structure.root).find((e) => e.id === editing?.element);
-    if (scope)
+    if (scope) {
+      const poses = componentPoses(structure);
+      const nodes = new Map(world.nodes.map((n) => [n.id, n]));
       return scope.children
         .filter((e) => !e.background && !elementMaterials(e).some((id) => selected.has(id)))
         .map((e) => ({
           ...visualBounds({
-            ...treePosition(structure, elementRect(structure, e.id)!),
-            rotation: structure.rotation,
+            ...poses.get(e.id)!,
+            rotation: e.material ? nodes.get(e.material)?.rotation : poses.get(e.id)!.rotation,
           }),
           id: e.id,
         }));
+    }
   }
   const grouped = new Set<string>();
   const targets: SnapTarget[] = [];

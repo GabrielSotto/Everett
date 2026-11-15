@@ -1,7 +1,7 @@
-import { validRotation } from './rotation';
 import type { CanvasGroup, Material, Point, Rect, World, WorldSnapshot } from './model';
 import type { DeepReadonly } from './readonly';
-import { centerOf, rotatedPose } from './rotation';
+import { validRotation, rotateVector, type OrientedRect } from './rotation';
+import { childPose, componentPoses, localPose } from './component-geometry';
 import { layoutComponent } from './component-layout';
 
 export type Sizing = 'fixed' | 'hug' | 'fill';
@@ -17,6 +17,9 @@ export interface ComponentLayout {
 export interface ComponentElement extends Rect {
   id: string;
   name: string;
+  /** Marco editable con límites propios, incluso con materiales que sobresalen. */
+  frame?: boolean;
+  rotation?: number;
   material?: string;
   background?: boolean;
   margin?: [number, number, number, number];
@@ -37,6 +40,10 @@ export const freeLayout = (): ComponentLayout => ({
   padding: 0,
   align: 'start',
 });
+export function componentElements(root: ComponentElement): ComponentElement[];
+export function componentElements(
+  root: DeepReadonly<ComponentElement>,
+): DeepReadonly<ComponentElement>[];
 export function componentElements(
   root: DeepReadonly<ComponentElement>,
 ): DeepReadonly<ComponentElement>[] {
@@ -111,6 +118,9 @@ export function validComponentTree(
     )
       return false;
     ids.add(e.id);
+    if (!validRotation(e.rotation)) return false;
+    if (e.frame !== undefined && (typeof e.frame !== 'boolean' || e.material !== undefined))
+      return false;
     if (e.material !== undefined) {
       if (
         typeof e.material !== 'string' ||
@@ -174,23 +184,15 @@ export function treeFromMaterials(
     },
   };
 }
-export function treeCenter(tree: DeepReadonly<ComponentTree>): Point {
-  return centerOf({ ...tree.root, x: tree.origin.x + tree.root.x, y: tree.origin.y + tree.root.y });
-}
-export function treePosition(tree: DeepReadonly<ComponentTree>, rect: Rect): Rect {
-  if (!tree.rotation) return rect;
-  const { x, y } = rotatedPose(rect, treeCenter(tree), tree.rotation);
-  return { ...rect, x, y };
-}
 export function writeTreeGeometry(world: World, group: CanvasGroup): void {
   const tree = group.structure!;
   const nodes = new Map(world.nodes.map((n) => [n.id, n]));
-  const visit = (e: ComponentElement, parent: Point) => {
-    const rect = { x: parent.x + e.x, y: parent.y + e.y, width: e.width, height: e.height };
-    if (e.material) Object.assign(nodes.get(e.material)!, treePosition(tree, rect));
-    e.children.forEach((c) => visit(c, rect));
-  };
-  visit(tree.root, tree.origin);
+  const poses = componentPoses(tree);
+  for (const e of componentElements(tree.root)) {
+    if (!e.material) continue;
+    const { x, y, width, height } = poses.get(e.id)!;
+    Object.assign(nodes.get(e.material)!, { x, y, width, height });
+  }
 }
 /** Los gestos existentes conservan la jerarquía; trasladar la unidad mueve su origen. */
 export function reconcileComponentTrees(before: WorldSnapshot, after: World): void {
@@ -241,18 +243,15 @@ export function reconcileComponentTrees(before: WorldSnapshot, after: World): vo
       })
     )
       continue;
-    if (tree.rotation) {
-      const pivot = treeCenter(tree),
-        prior = treeCenter(previous.structure);
-      for (const id of members) {
-        const n = nodes.get(id)!,
-          old = oldNodes.get(id);
-        nodes.set(id, { ...n, ...rotatedPose(n, pivot, -tree.rotation) });
-        if (old) oldNodes.set(id, { ...old, ...rotatedPose(old, prior, -tree.rotation) });
-      }
-    }
+    const rootPose = {
+      x: tree.origin.x + tree.root.x,
+      y: tree.origin.y + tree.root.y,
+      width: tree.root.width,
+      height: tree.root.height,
+      rotation: tree.rotation,
+    };
     if (!translated) {
-      const moveContainer = (e: ComponentElement) => {
+      const moveContainer = (e: ComponentElement, parent: OrientedRect) => {
         const ids = elementMaterials(e).filter((id) => members.includes(id));
         const first = ids[0],
           a = first ? oldNodes.get(first) : undefined,
@@ -273,32 +272,38 @@ export function reconcileComponentTrees(before: WorldSnapshot, after: World): vo
               );
             })
           ) {
-            e.x += x;
-            e.y += y;
+            const delta = rotateVector({ x, y }, -(parent.rotation ?? 0));
+            e.x += delta.x;
+            e.y += delta.y;
             return;
           }
         }
-        e.children.forEach(moveContainer);
+        const pose = childPose(parent, e);
+        e.children.forEach((c) => moveContainer(c, pose));
       };
-      tree.root.children.forEach(moveContainer);
+      tree.root.children.forEach((c) => moveContainer(c, rootPose));
     }
-    const sync = (e: ComponentElement, parent: Point) => {
+    const sync = (e: ComponentElement, pose: OrientedRect) => {
       e.children = e.children.filter((c) => !c.material || members.includes(c.material));
-      if (e.material) {
-        const n = nodes.get(e.material)!;
-        const old = oldNodes.get(e.material);
+      for (const child of e.children) {
+        if (!child.material) {
+          sync(child, childPose(pose, child));
+          continue;
+        }
+        const n = nodes.get(child.material)!;
+        const old = oldNodes.get(child.material);
         if ('title' in n.data && old && 'title' in old.data && n.data.title !== old.data.title)
-          e.name = n.data.title || 'Pieza';
-        Object.assign(e, {
-          x: n.x - parent.x,
-          y: n.y - parent.y,
+          child.name = n.data.title || 'Pieza';
+        const point = localPose(pose, n);
+        Object.assign(child, {
+          x: point.x,
+          y: point.y,
           width: n.width,
           height: n.height,
         });
       }
-      e.children.forEach((c) => sync(c, { x: parent.x + e.x, y: parent.y + e.y }));
     };
-    sync(tree.root, tree.origin);
+    sync(tree.root, rootPose);
     // Un arrastre dentro de una fila/columna cambia el orden, nunca rompe su espaciado.
     let reordered = false;
     const order = (e: ComponentElement): void => {

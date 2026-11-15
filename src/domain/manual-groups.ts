@@ -1,4 +1,4 @@
-import { visualBounds } from './rotation';
+import { around, centerOf, visualBounds } from './rotation';
 import type { CanvasGroup, Material, Rect, WorldSnapshot, Point } from './model';
 import type { DeepReadonly } from './readonly';
 import { componentElements, elementMaterials } from './component-tree';
@@ -120,24 +120,36 @@ export function groupDropTarget(
   if (!positions.length) return null;
   const ids = positions.map((p) => p.id),
     groups = world.canvasGroups ?? [];
+  if (!groups.length) return null;
   if (groups.some((g) => g.nodes.every((id) => ids.includes(id)))) return null;
   const nodes = positions.map((p) => {
     const node = world.nodes.find((n) => n.id === p.id && !n.owner);
     return node ? { ...node, ...p.point } : null;
   });
   if (nodes.some((n) => n === null)) return null;
+  const locked = new Set(world.nodes.filter((n) => n.owner).map((n) => n.id));
   const targets = groups.filter((g) => {
-    if (isComponent(world, g)) return false;
+    const isFrame = g.structure?.root.frame;
+    if (
+      isFrame &&
+      (g.structure!.root.layout.direction !== 'free' || g.nodes.some((id) => locked.has(id)))
+    )
+      return false;
+    if (isComponent(world, g) && !isFrame) return false;
     if (g.nodes.some((id) => ids.includes(id))) return false;
     const bounds = groupBounds(world, g);
-    return nodes.every(
-      (n) =>
-        n &&
-        n.x + n.width / 2 > bounds.x &&
-        n.x + n.width / 2 < bounds.x + bounds.width &&
-        n.y + n.height / 2 > bounds.y &&
-        n.y + n.height / 2 < bounds.y + bounds.height,
-    );
+    const inside = (n: Rect) => {
+      const p = around(centerOf(n), centerOf(bounds), -(g.structure?.rotation ?? 0));
+      return (
+        p.x > bounds.x &&
+        p.x < bounds.x + bounds.width &&
+        p.y > bounds.y &&
+        p.y < bounds.y + bounds.height
+      );
+    };
+    // Un material suelto ya superpuesto conserva su independencia al moverlo dentro del marco.
+    if (isFrame && ids.every((id) => inside(world.nodes.find((n) => n.id === id)!))) return false;
+    return nodes.every((n) => n && inside(n));
   });
   return targets.length === 1 ? targets[0]!.id : null;
 }

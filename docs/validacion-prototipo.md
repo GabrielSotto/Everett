@@ -116,7 +116,12 @@ destructiva, recolocar cada pieza manualmente ni reconstruir componentes para ca
 
 #### Marcos y materiales mixtos
 
-Recorridos pendientes para el [diseño de marcos, componentes mixtos y alineación](iteraciones/0.8.md#marcos-componentes-mixtos-y-alineación).
+Recorridos de aceptación del [diseño de marcos, componentes mixtos y alineación](iteraciones/0.8.md#marcos-componentes-mixtos-y-alineación).
+El primer bloque cubre pertenencia y geometría con C08-U86 y C08-B226–B227. Incluye un
+traslado entre marcos girados con recorrido de navegación y una pantalla con PNG importado,
+texto libre y una anotación superpuesta externa. Comprueba un fondo creado después de su
+contenido, movimiento desde el título, edición del fondo, Deshacer y recarga. La fracción
+visible del contenido en el primer recorrido se verificará al incorporar recorte.
 
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
    por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles

@@ -2256,7 +2256,9 @@ export class CanvasView implements View {
     if (!layer) return;
     const world = this.ctx.world();
     const destination =
-      this.drag?.kind === 'node' && this.drag.distance > 3 ? groupDropTarget(world, preview) : null;
+      !this.ctx.ui.canvas.componentEditing && this.drag?.kind === 'node' && this.drag.distance > 3
+        ? groupDropTarget(world, preview)
+        : null;
     const nodes = world.nodes.map((n) => ({
       ...n,
       ...(preview.find((p) => p.id === n.id)?.point ?? {}),
@@ -2275,9 +2277,9 @@ export class CanvasView implements View {
           bounds.width * zoom >= 240 ? 'full' : bounds.width * zoom >= 64 ? 'compact' : 'hidden';
         const headingSide = groupHeadingSide({ ...world, nodes }, group);
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div ${isComponent(world, group) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px;${group.structure?.rotation ? 'rotate:' + group.structure.rotation + 'deg' : ''}"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="group-rename" data-id="${group.id}" title="${html(group.name)}" aria-label="Renombrar conjunto ${html(group.name)}">${html(group.name)}</button>${
+        return `<div ${isComponent(world, group) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px;${group.structure?.rotation ? 'rotate:' + group.structure.rotation + 'deg' : ''}"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="${group.structure?.root.frame ? 'group-select' : 'group-rename'}" data-id="${group.id}" title="${html(group.name)}" aria-label="${group.structure?.root.frame ? 'Mover marco' : 'Renombrar conjunto'} ${html(group.name)}">${html(group.name)}</button>${
           isComponent(world, group)
-            ? `<button type="button" data-action="component-edit" data-id="${group.id}" aria-label="Editar componente ${html(group.name)}">Editar</button>`
+            ? `<button type="button" data-action="component-edit" data-id="${group.id}" aria-label="${group.structure?.root.frame ? 'Editar marco' : 'Editar componente'} ${html(group.name)}">Editar</button>`
             : group.nodes.every((id) => {
                   const n = world.nodes.find((n) => n.id === id);
                   return n?.data.kind === 'wireframe' && !!n.data.content.piece;
@@ -2528,6 +2530,12 @@ export class CanvasView implements View {
     const indexes = new Map(w.nodes.map((n) => [n.id, n]));
     const selectedIds = new Set(ui.canvas.selections);
     const componentIndex = new Map<string, NonNullable<typeof w.canvasGroups>[number]>();
+    const editingGroup = w.canvasGroups?.find((g) => g.id === ui.canvas.componentEditing?.group);
+    const frameBackgrounds = new Set(
+      editingGroup?.structure?.root.frame
+        ? editingGroup.structure.root.children.filter((c) => c.background).map((c) => c.material)
+        : [],
+    );
     for (const group of w.canvasGroups ?? [])
       if (isComponent(w, group, indexes))
         for (const id of group.nodes) componentIndex.set(id, group);
@@ -2546,6 +2554,7 @@ export class CanvasView implements View {
       const component = componentIndex.get(node.id);
       const editing = component?.id === ui.canvas.componentEditing?.group;
       element.classList.toggle('component-part', !!component && !editing);
+      element.classList.toggle('frame-background', frameBackgrounds.has(node.id));
       element.classList.toggle('primary-selection', node.id === ui.canvas.selection);
       let layer = layers.get(node.id);
       if (

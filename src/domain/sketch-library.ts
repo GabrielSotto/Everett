@@ -105,7 +105,7 @@ export function instantiateLibrary(
   }
   return {
     nodes,
-    ...(nodes.length > 1 || forceGroup
+    ...(nodes.length > 1 || forceGroup || structure.root.frame
       ? {
           group: {
             id: `${id}-group`,

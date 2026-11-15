@@ -371,6 +371,28 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
       height: bounds.height,
     });
     captureStructureLayout(treeRoot, frameStyles);
+    if (choice.entry.id === 'frame') {
+      treeRoot.frame = true;
+      treeRoot.layout = freeLayout();
+      treeRoot.widthMode = treeRoot.heightMode = 'fixed';
+      const background = componentElements(treeRoot).find((e) => e.material !== undefined)!;
+      treeRoot.children = [
+        {
+          id: background.id,
+          material: background.material!,
+          name: 'Fondo',
+          x: 0,
+          y: 0,
+          width: bounds.width,
+          height: bounds.height,
+          widthMode: 'fixed',
+          heightMode: 'fixed',
+          layout: freeLayout(),
+          background: true,
+          children: [],
+        },
+      ];
+    }
     const structure: ComponentTree = { version: 1, origin: { x: 0, y: 0 }, root: treeRoot };
     const result = {
       name:
