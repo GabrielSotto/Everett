@@ -650,7 +650,7 @@ export class EverettApp implements Context {
         (key) => this.ui.shortcuts[key] && this.ui.shortcuts[key] === combination,
       );
       if (
-        action === 'illustrations' &&
+        (action === 'illustrations' || action === 'frame') &&
         e.target instanceof Element &&
         e.target.closest('[role=dialog],[role=menu]')
       )
@@ -661,6 +661,10 @@ export class EverettApp implements Context {
           this.ui.shell.canvasLayoutGuides = !this.ui.shell.canvasLayoutGuides;
           this.persist();
           this.render();
+          return;
+        }
+        if (this.view instanceof CanvasView && action === 'frame') {
+          this.view.useAsFrame();
           return;
         }
         if (this.view instanceof CanvasView && action === 'duplicate') {

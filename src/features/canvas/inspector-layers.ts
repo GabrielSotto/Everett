@@ -27,13 +27,15 @@ export function inspectorLayers(
           open = expanded.has(part.id);
         const movable = !(parent.frame && part.background);
         const node = part.material && world.nodes[levels.get(part.material)!];
-        const symbol = container
-          ? 'folder'
-          : node && node.data.kind === 'image'
-            ? 'image'
-            : node && node.data.kind === 'text'
-              ? 'text'
-              : 'rectangle';
+        const data = node && node.data;
+        let symbol = part.frame ? 'frame' : container ? 'folder' : 'rectangle';
+        if (data && data.kind === 'shape') symbol = data.shape;
+        else if (data && data.kind === 'wireframe') {
+          const content = data.content;
+          if (content.piece?.symbol) symbol = 'shapes';
+          else if (content.type === 'text' || content.piece?.label) symbol = 'text';
+          else if (content.type === 'image') symbol = 'image';
+        } else if (data && ['image', 'text', 'note'].includes(data.kind)) symbol = data.kind;
         const step = (above: boolean) => {
           const neighbor = children[i + (above ? -1 : 1)];
           const allowed = movable && neighbor && !(parent.frame && neighbor.background && !above);

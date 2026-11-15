@@ -7,16 +7,60 @@ import {
   type ComponentElement,
 } from './component-tree';
 import { componentPoses, localPose } from './component-geometry';
+import { corners, containsPoint } from './frame-clipping';
+import type { OrientedRect } from './rotation';
+import type { DeepReadonly } from './readonly';
 import { layoutComponent } from './component-layout';
 import { ensure } from './invariants';
-import { need, nodeTitle, type CanvasGroup, type Material, type World } from './model';
+import {
+  need,
+  nodeTitle,
+  type CanvasGroup,
+  type Material,
+  type World,
+  type WorldSnapshot,
+} from './model';
 
-export function canBeFrame(node: Pick<Material, 'data' | 'owner'>): boolean {
+export function canBeFrame(node: DeepReadonly<Pick<Material, 'data' | 'owner'>>): boolean {
   return (
     !node.owner &&
     ((node.data.kind === 'shape' && node.data.shape === 'rectangle') ||
       (node.data.kind === 'wireframe' && ['screen', 'block'].includes(node.data.content.type)))
   );
+}
+
+/** La pertenencia se resuelve al enmarcar. Mover una pieza sobre un marco no cambia su padre. */
+export function frameInterior(world: WorldSnapshot, frame: DeepReadonly<CanvasGroup>) {
+  const tree = frame.structure!;
+  const bounds: OrientedRect = {
+    x: tree.origin.x + tree.root.x,
+    y: tree.origin.y + tree.root.y,
+    width: tree.root.width,
+    height: tree.root.height,
+    rotation: tree.rotation,
+  };
+  const polygon = corners(bounds);
+  const inside = (box: OrientedRect) => corners(box).every((p) => containsPoint(polygon, p));
+  const enclosed = new Set(world.nodes.filter((n) => !n.owner && inside(n)).map((n) => n.id));
+  const groups = world.canvasGroups ?? [];
+  const grouped = new Set(groups.flatMap((g) => g.nodes));
+  const routed = new Set(world.screenFlows?.flatMap((route) => [route.from, route.to]));
+  return {
+    materials: [...enclosed].filter((id) => !grouped.has(id)),
+    groups: groups
+      .filter(
+        (g) =>
+          g.id !== frame.id &&
+          !g.structure?.root.frame &&
+          !g.recipe &&
+          !g.layoutGuides &&
+          !routed.has(g.id) &&
+          g.nodes.length > 0 &&
+          g.nodes.every((id) => enclosed.has(id)) &&
+          (!g.structure || inside(componentPoses(g.structure).get(g.structure.root.id)!)),
+      )
+      .map((g) => g.id),
+  };
 }
 
 /** El fondo conserva su material, editor, cables y coordenadas al convertirse en marco. */

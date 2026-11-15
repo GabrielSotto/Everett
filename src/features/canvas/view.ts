@@ -390,6 +390,9 @@ export class CanvasView implements View {
   rename(): void {
     this.interactions.rename();
   }
+  useAsFrame(): void {
+    this.interactions.useAsFrame();
+  }
   duplicate(): void {
     this.interactions.duplicate();
   }

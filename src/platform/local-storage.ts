@@ -1,6 +1,7 @@
 import type { State } from '../domain/model';
 import type { Ui } from '../app/ui-state';
 import { validate } from '../domain/invariants';
+import { canvasDefaults } from '../domain/shortcuts';
 import { spatialModifier } from '../domain/spatial-shortcut';
 
 interface Personal {
@@ -56,14 +57,10 @@ export class LocalStorage {
     const state: State = { ...personal.state, ...shared, version: 1 };
     validate(state);
     const ui = personal.ui;
-    if (ui.shortcuts.illustrations === undefined)
-      ui.shortcuts.illustrations = Object.values(ui.shortcuts).includes('I') ? '' : 'I';
-    if (ui.shortcuts.text === undefined)
-      ui.shortcuts.text = Object.values(ui.shortcuts).includes('T') ? '' : 'T';
-    if (ui.shortcuts.duplicate === undefined)
-      ui.shortcuts.duplicate = Object.values(ui.shortcuts).includes('Ctrl+D') ? '' : 'Ctrl+D';
-    if (ui.shortcuts.layoutGuides === undefined)
-      ui.shortcuts.layoutGuides = Object.values(ui.shortcuts).includes('Shift+G') ? '' : 'Shift+G';
+    for (const [action, binding] of Object.entries(canvasDefaults)) {
+      if (ui.shortcuts[action] === undefined)
+        ui.shortcuts[action] = Object.values(ui.shortcuts).includes(binding) ? '' : binding;
+    }
     ui.spatialModifier = spatialModifier(ui.spatialModifier);
     ui.shell.showSurfaceMenu = ui.shell.showSurfaceMenu === true;
     ui.shell.canvasDockOrientation =

@@ -103,3 +103,55 @@ test('C08-U86: dos marcos girados conservan pose, selección explícita y rutas 
   store.dispatch({ type: 'group.ungroup', world, id: b!.id }, intent);
   assert.deepEqual(project(store).nodes.find((n) => n.id === 'Agenda')!.layoutGuides, guides);
 });
+test('C08-U89: enmarcar conserva grupos enteros, coordenadas y enlaces y respeta el borde girado', () => {
+  const { store, worldId: world } = setup();
+  const screen = background('marco', 1000, 30);
+  const pixel = (id: string, x: number, y: number, width = 8): Material => ({
+    ...note(id),
+    x,
+    y,
+    width,
+    height: 8,
+  });
+  for (const node of [
+    screen,
+    pixel('foto', 1140, 115),
+    pixel('icono', 1110, 150),
+    pixel('texto', 1120, 150),
+    pixel('esquina', 1001, 21),
+    pixel('dentro', 1112, 110),
+    pixel('fuera', 1500, 30),
+  ])
+    store.dispatch({ type: 'node.create', world, node }, intent);
+  for (const [name, nodes] of [
+    ['Navegación', ['icono', 'texto']],
+    ['Cruza', ['dentro', 'fuera']],
+  ] as const)
+    store.dispatch({ type: 'group.create', world, name, nodes: [...nodes] }, intent);
+  const before = project(store);
+  store.dispatch(
+    { type: 'frame.create', world, background: 'marco', members: [], includeInterior: true },
+    intent,
+  );
+  const after = project(store);
+  const frame = after.canvasGroups!.find((g) => g.structure?.root.frame)!;
+  assert.deepEqual(new Set(frame.nodes), new Set(['marco', 'foto', 'icono', 'texto']));
+  assert.deepEqual(
+    frame
+      .structure!.root.children.find((p) => p.name === 'Navegación')!
+      .children.map((p) => p.material),
+    ['icono', 'texto'],
+  );
+  assert.deepEqual(
+    after.canvasGroups!.find((g) => g.name === 'Cruza'),
+    before.canvasGroups!.find((g) => g.name === 'Cruza'),
+  );
+  for (const n of before.nodes)
+    assert.deepEqual(
+      after.nodes.find((o) => o.id === n.id),
+      n,
+    );
+  assert.deepEqual(after.links, before.links);
+  store.dispatch({ type: 'canvas.undo', world }, intent);
+  assert.deepEqual(project(store).canvasGroups, before.canvasGroups);
+});

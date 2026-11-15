@@ -8,6 +8,7 @@ export const canvasDefaults: Record<string, string> = {
   connect: 'L',
   rename: '',
   duplicate: 'Ctrl+D',
+  frame: 'Ctrl+Alt+G',
   layoutGuides: 'Shift+G',
 };
 export const shortcutNames: Record<string, string> = {
@@ -20,6 +21,7 @@ export const shortcutNames: Record<string, string> = {
   connect: 'Conectar',
   rename: 'Renombrar',
   duplicate: 'Duplicar selección',
+  frame: 'Usar como marco',
   layoutGuides: 'Mostrar u ocultar retículas',
 };
 export const reservedShortcuts = new Set([
@@ -36,14 +38,24 @@ export const reservedShortcuts = new Set([
   'Backspace',
 ]);
 export function shortcutCombination(
-  event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey'>,
+  event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey'> & {
+    code?: string;
+  },
 ): string {
   if (['Control', 'Meta', 'Alt', 'Shift'].includes(event.key)) return '';
+  // Con Option, macOS puede entregar «©» como key de la combinación ⌘⌥G.
+  const key =
+    event.metaKey &&
+    event.altKey &&
+    !/^[a-z]$/i.test(event.key) &&
+    /^Key[A-Z]$/.test(event.code ?? '')
+      ? event.code!.slice(3)
+      : event.key;
   return [
     event.ctrlKey || event.metaKey ? 'Ctrl' : '',
     event.altKey ? 'Alt' : '',
     event.shiftKey ? 'Shift' : '',
-    event.key.length === 1 ? event.key.toUpperCase() : event.key,
+    key.length === 1 ? key.toUpperCase() : key,
   ]
     .filter(Boolean)
     .join('+');

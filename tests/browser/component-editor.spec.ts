@@ -154,14 +154,15 @@ test('C08-B186: borrar partes y deshacer niveles permite seguir editando; retira
   await expect(panel).toBeVisible();
 });
 
-test('C08-B185: nombres se representan como texto y el encabezado coincide con el inspector', async ({
+test('C08-B185: nombres se representan como texto y la raíz de capas coincide con el inspector', async ({
   page,
 }) => {
   const panel = await fixture(page);
   const name = 'Acceso <img src=x onerror="window.badName=1"> & registro';
   await panel.getByRole('textbox', { name: 'Nombre', exact: true }).fill(name);
   await panel.getByRole('textbox', { name: 'Nombre', exact: true }).press('Enter');
-  await expect(panel.locator('header strong')).toHaveText(name);
+  await expect(panel.locator('.inspector-root [data-enter]')).toHaveAccessibleName(name);
+  await expect(panel.locator('.inspector-root [data-enter] span')).toHaveText(name);
   await panel.locator('[data-part=part-0]').click();
   await expect(
     panel.getByLabel('Contenedor', { exact: true }).locator('option').first(),

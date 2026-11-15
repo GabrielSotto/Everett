@@ -125,7 +125,10 @@ C08-B228–B232 cubren máscaras giradas y anidadas, píxeles y selección a amb
 recorte, desplazamiento y resize antes de soltar, recuperación de una foto oculta desde
 el inspector, orden visible en conjuntos y marcos y cambio de contenedor con Deshacer.
 La selección bajo el puntero se prueba con mouse y teclado. Una línea de 10 × 4 se mueve
-desde su centro al 60, 100 y 200 %.
+desde su centro al 60, 100 y 200 %. C08-U89 comprueba la incorporación en un marco girado
+con un grupo entero y otro que cruza el borde. C08-B233 y B234 cubren una pantalla con foto
+importada, texto libre y navegación agrupada, la conversión por atajo, la recuperación de un
+marco anterior, la selección de capas hijas, la persistencia y Deshacer.
 
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
    por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles

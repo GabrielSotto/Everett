@@ -3,7 +3,7 @@ import test from 'node:test';
 import { setup, project, intent } from './fixtures';
 import { AgentService } from '../../src/app/agent-service';
 import { Store } from '../../src/app/store';
-import { shortcutConflict, canvasDefaults } from '../../src/domain/shortcuts';
+import { shortcutCombination, shortcutConflict, canvasDefaults } from '../../src/domain/shortcuts';
 import { uiState } from '../../src/app/ui-state';
 import { conversationDraft } from '../../src/domain/conversations';
 import { materialRoute, materialTitle } from '../../src/domain/model';
@@ -451,6 +451,18 @@ test('C08-U04: trazo y etiquetas se restauran sin perder anclajes y rechazan des
 test('C08-U05: atajos detectan conflictos y comentarios exigen un material completo', () => {
   assert.equal(canvasDefaults.rename, '');
   assert.equal(shortcutConflict(canvasDefaults, 'rename', 'N'), 'note');
+  assert.equal(shortcutConflict(canvasDefaults, 'select', 'Ctrl+Alt+G'), 'frame');
+  assert.equal(
+    shortcutCombination({
+      metaKey: true,
+      altKey: true,
+      ctrlKey: false,
+      shiftKey: false,
+      key: '©',
+      code: 'KeyG',
+    }),
+    canvasDefaults.frame,
+  );
   assert.equal(shortcutConflict(canvasDefaults, 'rename', 'Control+Z'), null);
   assert.equal(shortcutConflict(canvasDefaults, 'rename', 'Ctrl+Z'), 'global');
   const { store } = setup();

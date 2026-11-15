@@ -1,3 +1,5 @@
+import type { Material } from '../../src/domain/model';
+import { frameFromMaterial } from '../../src/domain/canvas-frames';
 import { test, expect } from './fixtures';
 import { start, snapshot, world, capture } from './canvas-utility-helpers';
 import { addLibrary } from './sketch-library-helpers';
@@ -165,3 +167,98 @@ test('C08-B227: convertir una pantalla existente, incorporar por arrastre y move
   expect(updated.nodes.find((n) => n.id === 'floating')).toMatchObject({ x: child.x, y: child.y });
   expect(updated.canvasGroups![0]!.structure!.origin).toEqual(frame.structure!.origin);
 });
+// Coordenadas relativas de Explorar según el registro de Nightly. La navegación es un grupo previo.
+for (const legacy of [false, true]) {
+  test(
+    legacy
+      ? 'C08-B234: recuperar las capas de un marco antiguo de Nightly'
+      : 'C08-B233: enmarcar Explorar con el atajo y recorrer su navegación agrupada',
+    async ({ page }, info) => {
+      await start(page);
+      await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
+      await page.locator('#canvas-file-import').setInputFiles('tests/fixtures/link-cover.png');
+      await expect(page.locator('.material.image img')).toBeVisible();
+      const input = await snapshot(page);
+      const project = input.state.worlds.find((w) => w.id === 'scout')!;
+      const photo = project.nodes[0]!;
+      Object.assign(photo, {
+        x: -160,
+        y: -60,
+        width: 124,
+        height: (124 * photo.height) / photo.width,
+      });
+      const rect = (
+        id: string,
+        title: string,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+      ): Material => ({
+        id,
+        x,
+        y,
+        width,
+        height,
+        owner: null,
+        data: { kind: 'shape', shape: 'rectangle', title, color: '#ddd', fill: true },
+      });
+      const bg = rect('nightly', 'Explorar', -190, -380, 390, 844);
+      const nav = rect('nav', 'Fondo de navegación', -170, 390, 350, 60);
+      const symbol = rect('symbol', 'Buscar', -8, 406, 28, 28);
+      const title = {
+        ...rect('heading', '', -110, -360, 107, 44),
+        data: { ...newCanvasText('wrap'), title: 'Título', text: 'EXPLORAR' },
+      };
+      project.nodes = [
+        bg,
+        photo,
+        nav,
+        symbol,
+        title,
+        rect('outside', 'Otra pantalla', 400, -380, 390, 844),
+      ];
+      project.canvasGroups = [
+        { id: 'navigation', name: 'Navegación inferior', nodes: ['nav', 'symbol'] },
+      ];
+      if (legacy) project.canvasGroups.push(frameFromMaterial(project, bg, 'old-frame'));
+      delete input.ui.shortcuts.frame;
+      input.state.camera.z = 0.6;
+      await storedFixture(page, input.state, input.ui);
+      await page.reload();
+      await snapshot(page);
+      const panel = page.locator('.component-inspector');
+      if (legacy) {
+        await page.locator('.group-heading[data-group=old-frame]').focus();
+        await page.getByRole('button', { name: 'Mover marco Explorar' }).click();
+        await expect(panel.locator('[data-part]')).toHaveCount(1);
+        const collect = panel.getByRole('button', { name: 'Incorporar capas interiores 3' });
+        await collect.click();
+        await expect(collect).toHaveCount(0);
+      } else {
+        const screen = page.locator('[data-node=nightly]');
+        await screen.click({ position: { x: 4, y: 30 } });
+        await page.keyboard.press('Control+Alt+g');
+      }
+      await expect(
+        panel.getByRole('button', { name: 'Navegación inferior', exact: true }),
+      ).toBeVisible();
+      await panel.getByRole('button', { name: 'Desplegar Navegación inferior' }).click();
+      await panel.getByRole('button', { name: 'Buscar', exact: true }).click();
+      await expect(panel.getByRole('heading', { name: 'Propiedades · Buscar' })).toBeVisible();
+      await expect(panel.getByLabel('Nombre', { exact: true })).toHaveValue('Buscar');
+      await capture(page, info, legacy ? 'recuperar-explorar' : 'enmarcar-explorar');
+      const frame = (await world(page)).canvasGroups!.find((g) => g.structure?.root.frame)!;
+      expect(new Set(frame.nodes)).toEqual(
+        new Set(['nightly', photo.id, 'nav', 'symbol', 'heading']),
+      );
+      await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+      const restored = await world(page);
+      expect(restored.canvasGroups).toEqual(project.canvasGroups);
+      expect(restored.nodes).toEqual(project.nodes);
+      await page.getByRole('button', { name: /Rehacer · Ctrl/ }).click();
+      await page.reload();
+      expect((await world(page)).canvasGroups!.find((g) => g.id === frame.id)).toEqual(frame);
+    },
+  );
+}

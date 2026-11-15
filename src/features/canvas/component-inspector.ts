@@ -9,18 +9,32 @@ import { componentFor } from '../../domain/manual-groups';
 import { html, editable } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { frameCanvas } from '../../ui/canvas-frame';
-import { nodeTitle, type Camera } from '../../domain/model';
+import { nodeTitle, type Camera, type WorldSnapshot } from '../../domain/model';
 import { inspectorLayers, bindLayerDrag } from './inspector-layers';
+import { frameInterior } from '../../domain/canvas-frames';
 import { flatLayers } from '../../domain/component-layers';
 import type { CanvasUi } from './state';
 
-/** Inspector contextual: Enter y Escape recorren la misma jerarquía que las migas. */
+/** Inspector contextual: Enter y Escape recorren los niveles del árbol de capas. */
 export class ComponentInspector {
   private panel = document.createElement('section');
   private contextual: CanvasUi['componentEditing'];
   private dismissed: string | undefined;
   private expanded = new Set<string>();
   private flat: { group: string; leaf?: string } | undefined;
+  private rootCollapsed = false;
+  private lastInterior?: { world: WorldSnapshot; frame: string; count: number };
+  private interiorCount(
+    world: WorldSnapshot,
+    frame: NonNullable<WorldSnapshot['canvasGroups']>[number],
+  ): number {
+    if (this.lastInterior?.world === world && this.lastInterior.frame === frame.id)
+      return this.lastInterior.count;
+    const { materials, groups } = frameInterior(world, frame);
+    const count = materials.length + groups.length;
+    this.lastInterior = { world, frame: frame.id, count };
+    return count;
+  }
   private lastScope: string | undefined;
   get visible(): boolean {
     return !this.panel.hidden;
@@ -448,8 +462,14 @@ export class ComponentInspector {
     const world = this.ctx.world();
     const groupedIds = new Set(world.canvasGroups?.flatMap((g) => g.nodes));
     const loose = world.nodes.filter((n) => !n.owner && !groupedIds.has(n.id));
+    const interiorCount =
+      group.structure.root.frame && selected === group.structure.root
+        ? this.interiorCount(world, group)
+        : 0;
     const key = JSON.stringify([
       group,
+      this.rootCollapsed,
+      interiorCount,
       this.ctx
         .world()
         .nodes.filter((n) => group.nodes.includes(n.id))
@@ -465,7 +485,12 @@ export class ComponentInspector {
     if (key === this.key) return;
     this.key = key;
     this.panel.hidden = false;
-    if (this.panel.dataset.group !== group.id) {
+    const sameGroup = this.panel.dataset.group === group.id;
+    const scrollTop = sameGroup
+      ? (this.panel.querySelector('.component-children')?.scrollTop ?? 0)
+      : 0;
+    if (!sameGroup) {
+      this.rootCollapsed = false;
       this.expanded.clear();
       this.lastScope = undefined;
     }
@@ -486,6 +511,7 @@ export class ComponentInspector {
     }
     if (this.lastScope !== scope.id) {
       for (const e of path.slice(1)) this.expanded.add(e.id);
+      if (scope !== group.structure.root) this.rootCollapsed = false;
       this.lastScope = scope.id;
     }
     const option = (value: string, label: string, current: string) =>
@@ -530,10 +556,12 @@ export class ComponentInspector {
       items
         .map((n) => `<option value="${html(n.id)}">${html(nodeTitle(world, n))}</option>`)
         .join('');
-    this.panel.innerHTML = `<header>${scope !== group.structure.root ? `<button type="button" class="icon-button" data-component-action="back" aria-label="Subir un nivel">${icon('chevron-left', 16)}</button>` : ''}<strong>${html(group.name)}</strong><button type="button" class="icon-button" data-component-action="close" aria-label="Terminar edición">${icon('close', 16)}</button></header>
-      <nav aria-label="Jerarquía del componente" ${selected === group.structure.root ? 'hidden' : ''}>${path.map((e) => `<button type="button" data-enter="${html(e.id)}" title="${html(e.name)}">${html(e.name)}</button>`).join('<span aria-hidden="true">/</span>')}</nav>
-      <h3 class="inspector-layers-title">Capas</h3><div class="component-children" role="group" aria-label="Capas">${inspectorLayers(world, group.structure.root, this.expanded, new Set(selected === group.structure.root ? [] : chosen.map((e) => e.id)), selected.id) || '<p>El contenedor está vacío.</p>'}</div>
-      <div class="component-properties"><label>Nombre<input data-prop="name" value="${html(selected.name)}" maxlength="200"></label><div class="component-sizes">${size('width', 'Ancho')}${size('height', 'Alto')}</div>
+    const root = group.structure.root;
+    this.panel.innerHTML = `<header><strong>Capas</strong><button type="button" class="icon-button" data-component-action="close" aria-label="Terminar edición">${icon('close', 16)}</button></header>
+      <div class="component-children" role="group" aria-label="Capas"><nav class="inspector-root" aria-label="Jerarquía del componente"><button type="button" class="icon-button" data-toggle-root aria-expanded="${!this.rootCollapsed}" aria-label="${this.rootCollapsed ? 'Desplegar' : 'Contraer'} capas">${icon(this.rootCollapsed ? 'chevron' : 'down', 12)}</button><button type="button" data-enter="${html(root.id)}" aria-pressed="${selected === root}" title="${html(group.name)}" aria-label="${html(group.name)}">${icon(root.frame ? 'frame' : 'folder', 14)}<span>${html(group.name)}</span><small>${root.frame ? 'Marco' : 'Componente'}</small></button></nav>
+      ${this.rootCollapsed ? '' : inspectorLayers(world, root, this.expanded, new Set(selected === root ? [] : chosen.map((e) => e.id)), selected.id) || '<p>El contenedor está vacío.</p>'}</div>
+      ${interiorCount ? `<button type="button" class="frame-collect" data-component-action="collect-interior">Incorporar capas interiores <span>${interiorCount}</span></button>` : ''}
+      <div class="component-properties"><h3 class="inspector-properties-title">Propiedades · ${html(selected.name)}</h3><label>Nombre<input data-prop="name" value="${html(selected.name)}" maxlength="200"></label><div class="component-sizes">${size('width', 'Ancho')}${size('height', 'Alto')}</div>
       ${!selected.material ? `<label>Distribución<select data-layout="direction" aria-label="Distribución">${option('free', 'Libre', selected.layout.direction)}${option('row', 'Fila', selected.layout.direction)}${option('column', 'Columna', selected.layout.direction)}</select></label><div class="component-sizes"><label>Espacio<input ${selected.layout.direction === 'free' ? 'disabled' : ''} data-layout="gap" type="number" min="0" max="10000" value="${selected.layout.gap}"></label><label>Margen interno<input data-layout="padding" type="number" min="0" max="10000" value="${selected.layout.padding}"></label></div><label>Alineación<select ${selected.layout.direction === 'free' ? 'disabled' : ''} data-layout="align" aria-label="Alineación">${option('start', 'Inicio', selected.layout.align)}${option('center', 'Centro', selected.layout.align)}${option('end', 'Final', selected.layout.align)}${option('stretch', 'Estirar', selected.layout.align)}</select></label>` : ''}
       ${selected.frame ? `<label class="frame-clip-option"><input type="checkbox" data-frame-clip ${selected.clipContent ? 'checked' : ''}>Recortar contenido</label>` : ''}
       ${selected.layout.insets ? `<details><summary>Márgenes por lado</summary><div class="component-sizes">${['Superior', 'Derecho', 'Inferior', 'Izquierdo'].map((name, i) => `<label>${name}<input type="number" min="0" max="10000" data-layout-edge="${i}" value="${Math.round(selected.layout.insets![i]! * 100) / 100}"></label>`).join('')}</div></details>` : ''}
@@ -573,6 +601,7 @@ export class ComponentInspector {
         .join(
           '',
         )}</select></label><label>Acción<input data-flow-label value="${html(flow?.label ?? 'Continuar')}" maxlength="100"></label><button type="button" data-component-action="present">Consultar recorrido</button></details></div>`;
+    this.panel.querySelector('.component-children')!.scrollTop = scrollTop;
     this.panel.querySelectorAll('details').forEach((e) => {
       e.open = expanded.includes(e.querySelector('summary')?.textContent ?? '');
     });
@@ -581,6 +610,13 @@ export class ComponentInspector {
     const target = event.target as Element,
       enter = target.closest<HTMLElement>('[data-enter]'),
       row = target.closest<HTMLElement>('[data-part]');
+    if (target.closest('[data-toggle-root]')) {
+      this.rootCollapsed = !this.rootCollapsed;
+      this.key = '';
+      this.render();
+      this.panel.querySelector<HTMLElement>('[data-toggle-root]')?.focus({ preventScroll: true });
+      return;
+    }
     const disclosure = target.closest<HTMLElement>('[data-expand]');
     if (disclosure) {
       const id = disclosure.dataset.expand!;
@@ -662,6 +698,13 @@ export class ComponentInspector {
       elements = componentElements(group.structure!.root),
       selected = elements.find((e) => e.id === editing.selected)!,
       parent = elements.find((e) => e.children.some((c) => c.id === selected.id));
+    if (action === 'collect-interior') {
+      if (this.apply({ kind: 'collect-interior' })) this.enterElement(group.structure!.root.id);
+      this.panel
+        .querySelector<HTMLElement>('.inspector-root [data-enter]')
+        ?.focus({ preventScroll: true });
+      return;
+    }
     if (action === 'back') this.back();
     if (action === 'close') {
       this.dismissed = group.id;

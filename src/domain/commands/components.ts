@@ -1,4 +1,4 @@
-import { getWorld, need, type State, type Rect } from '../model';
+import { getWorld, need, type State, type Rect, type CanvasGroup, type World } from '../model';
 import type { Command } from '../command-types';
 import { ensure } from '../invariants';
 import {
@@ -23,6 +23,7 @@ import { groupBounds } from '../manual-groups';
 import {
   adoptMaterials,
   frameFromMaterial,
+  frameInterior,
   orderFrameBackgrounds,
   restoreFrameGuides,
   transferFramePart,
@@ -34,6 +35,7 @@ export type ComponentEdit =
   | { kind: 'stack'; element: string; target: string; side: 'above' | 'below' | 'inside' }
   | { kind: 'clip'; element: string; enabled: boolean }
   | { kind: 'initialize' }
+  | { kind: 'collect-interior' }
   | {
       kind: 'properties';
       element: string;
@@ -54,6 +56,68 @@ export type ComponentEdit =
   | { kind: 'adopt'; parent: string; materials: string[] }
   | { kind: 'nest'; parent: string; group: string }
   | { kind: 'resize'; rect: Rect; scale: boolean };
+
+function nestGroup(
+  world: World,
+  group: CanvasGroup,
+  parent: ComponentElement,
+  sourceId: string,
+  uid: () => string,
+) {
+  const source = need(
+    world.canvasGroups?.find((g) => g.id === sourceId),
+    'Componente no disponible',
+  );
+  ensure(
+    source !== group && !parent.material,
+    'COMPONENT_CYCLE',
+    'Elegí otro componente para anidar.',
+  );
+  ensure(
+    source.nodes.every((id) => {
+      const n = world.nodes.find((n) => n.id === id);
+      return n && !n.owner;
+    }),
+    'COMPONENT_CONTENT',
+    'Devolvé los materiales del agente antes de anidar este conjunto.',
+  );
+  ensure(
+    !world.screenFlows?.some((f) => f.from === source.id || f.to === source.id),
+    'COMPONENT_FLOW',
+    'Este componente tiene recorridos de pantalla. Retiralos antes de anidarlo.',
+  );
+  const nested = structuredClone(
+    source.structure ??
+      treeFromMaterials(
+        world.nodes.filter((n) => source.nodes.includes(n.id)),
+        source.name,
+      ),
+  );
+  const placement = localPose(
+    componentPoses(group.structure!).get(parent.id)!,
+    componentPoses(nested).get(nested.root.id)!,
+  );
+  Object.assign(nested.root, placement);
+  for (const e of componentElements(nested.root)) e.id = uid();
+  parent.children.push(nested.root);
+  orderFrameBackgrounds(world, group.structure!.root);
+  restoreFrameGuides(world, source);
+  group.nodes.push(...source.nodes);
+  world.canvasGroups = world.canvasGroups!.filter((g) => g.id !== source.id);
+}
+
+/** Una sola transacción conserva los materiales y la jerarquía de cada grupo incorporado. */
+function collectInterior(world: World, frame: CanvasGroup, uid: () => string) {
+  const root = frame.structure!.root;
+  ensure(root.frame === true, 'FRAME_TARGET', 'Elegí un marco para incorporar sus capas.');
+  const interior = frameInterior(world, frame);
+  if (interior.materials.length) adoptMaterials(world, frame, root, interior.materials, uid);
+  for (const id of interior.groups) nestGroup(world, frame, root, id, uid);
+  if (root.layout.direction !== 'free' && (interior.groups.length || interior.materials.length)) {
+    layoutComponent(root);
+    writeTreeGeometry(world, frame);
+  }
+}
 
 type ComponentCommand = Extract<
   Command,
@@ -82,7 +146,8 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     );
     const frame = frameFromMaterial(world, background, uid());
     (world.canvasGroups ??= []).push(frame);
-    if (c.members.length) adoptMaterials(world, frame, frame.structure!.root, c.members, uid);
+    if (c.includeInterior) collectInterior(world, frame, uid);
+    else if (c.members.length) adoptMaterials(world, frame, frame.structure!.root, c.members, uid);
     return;
   }
   if (c.type === 'composition.insert') {
@@ -235,6 +300,10 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
   group.component = true;
   const tree = group.structure,
     edit = c.edit;
+  if (edit.kind === 'collect-interior') {
+    collectInterior(world, group, uid);
+    return;
+  }
   if (edit.kind === 'initialize') {
     ensure(
       group.nodes.every((id) => {
@@ -297,46 +366,7 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     tree.origin = { x: edit.rect.x - tree.root.x, y: edit.rect.y - tree.root.y };
   } else if (edit.kind === 'nest') {
     const parent = need(elementAt(tree.root, edit.parent), 'Contenedor no disponible');
-    const source = need(
-      world.canvasGroups?.find((g) => g.id === edit.group),
-      'Componente no disponible',
-    );
-    ensure(
-      source !== group && !parent.material,
-      'COMPONENT_CYCLE',
-      'Elegí otro componente para anidar.',
-    );
-    ensure(
-      source.nodes.every((id) => {
-        const n = world.nodes.find((n) => n.id === id);
-        return n && !n.owner;
-      }),
-      'COMPONENT_CONTENT',
-      'Devolvé los materiales del agente antes de anidar este conjunto.',
-    );
-    ensure(
-      !world.screenFlows?.some((f) => f.from === source.id || f.to === source.id),
-      'COMPONENT_FLOW',
-      'Este componente tiene recorridos de pantalla. Retiralos antes de anidarlo.',
-    );
-    const nested = structuredClone(
-      source.structure ??
-        treeFromMaterials(
-          world.nodes.filter((n) => source.nodes.includes(n.id)),
-          source.name,
-        ),
-    );
-    const placement = localPose(
-      componentPoses(tree).get(parent.id)!,
-      componentPoses(nested).get(nested.root.id)!,
-    );
-    Object.assign(nested.root, placement);
-    for (const e of componentElements(nested.root)) e.id = uid();
-    parent.children.push(nested.root);
-    orderFrameBackgrounds(world, tree.root);
-    restoreFrameGuides(world, source);
-    group.nodes.push(...source.nodes);
-    world.canvasGroups = world.canvasGroups!.filter((g) => g.id !== source.id);
+    nestGroup(world, group, parent, edit.group, uid);
     layoutComponent(tree.root);
   } else if (edit.kind === 'adopt') {
     const parent = need(elementAt(tree.root, edit.parent), 'Contenedor no disponible');

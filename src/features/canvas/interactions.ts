@@ -551,20 +551,9 @@ export class CanvasInteractions {
             );
             break;
           }
-          case 'frame-create': {
-            const members = ctx.ui.canvas.selections.filter((n) => n !== id);
-            if (
-              ctx.act(
-                { type: 'frame.create', world: ctx.world().id, background: id, members },
-                'crear marco',
-                'C08-ORG-01',
-              )
-            ) {
-              this.close();
-              this.components.open(id);
-            }
+          case 'frame-create':
+            this.useAsFrame(id);
             break;
-          }
           case 'group-rename':
             this.groupRename(id);
             break;
@@ -1423,7 +1412,7 @@ export class CanvasInteractions {
     const makeFrame =
       canBeFrame(node) &&
       !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((member) => selectedIds.has(member)))
-        ? `<button type="button" role="menuitem" data-action="frame-create" data-id="${html(id)}">${selectedIds.size > 1 ? 'Crear marco con la selección' : 'Usar como marco'}</button>`
+        ? `<button type="button" role="menuitem" data-action="frame-create" data-id="${html(id)}">${selectedIds.size > 1 ? 'Crear marco con la selección' : 'Usar como marco'}${this.ctx.ui.shortcuts.frame ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.frame)}</kbd>` : ''}</button>`
         : '';
     const editAction =
       node.data.kind === 'bars' && this.ctx.ui.canvas.selections.length === 1
@@ -1466,6 +1455,43 @@ export class CanvasInteractions {
       return;
     }
     this.openComment(ui.selection);
+  }
+  useAsFrame(id?: string): void {
+    const world = this.ctx.world(),
+      ui = this.ctx.ui.canvas;
+    const selected = new Set(ui.selections);
+    const grouped = new Set(world.canvasGroups?.flatMap((g) => g.nodes));
+    const candidates = world.nodes.filter(
+      (n) => selected.has(n.id) && !grouped.has(n.id) && canBeFrame(n),
+    );
+    const background = id
+      ? candidates.find((n) => n.id === id)
+      : candidates.sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    if (!background || ui.selections.some((member) => grouped.has(member))) {
+      this.ctx.notice('Seleccioná una pantalla o un rectángulo libre para usarlo como marco.');
+      return;
+    }
+    const members = ui.selections.filter((member) => member !== background.id);
+    if (
+      !this.ctx.act(
+        {
+          type: 'frame.create',
+          world: world.id,
+          background: background.id,
+          members,
+          includeInterior: members.length === 0,
+        },
+        'crear marco',
+        'C08-ORG-01',
+        id ? 'pointer' : 'keyboard',
+      )
+    )
+      return;
+    const frame = componentFor(this.ctx.world(), background.id)!;
+    ui.selections = [...frame.nodes];
+    ui.selection = background.id;
+    this.close();
+    this.components.open(frame.id);
   }
   openComment(id: string): void {
     if (!this.ctx.world().nodes.some((n) => n.id === id)) return;
