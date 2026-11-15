@@ -114,6 +114,44 @@ traducidas a comprobaciones del resultado; un detector limpio no acredita usabil
 de aceptar la ampliación, verificar que los recorridos se completan sin desagrupar de forma
 destructiva, recolocar cada pieza manualmente ni reconstruir componentes para cambios ordinarios.
 
+#### Marcos y materiales mixtos
+
+Recorridos pendientes para el [diseño de marcos, componentes mixtos y alineación](iteraciones/0.8.md#marcos-componentes-mixtos-y-alineación).
+
+1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
+   por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles
+   pertenecen al marco. Moverlo por el título. La tarjeta debe conservar su posición relativa,
+   los destinos de navegación y la fracción visible. La anotación y la pantalla vecina quedan
+   en su sitio. Repetir con un panel anidado y girado en una interfaz de escritorio. Pasar la
+   tarjeta entre marcos libres y volver con Deshacer. Cargar una escena antigua y comprobar que
+   sigue siendo posible mover solo un fondo. La superposición accidental debe seguir siendo libre.
+2. **Publicar dos eventos y actualizar el diseño.** Guardar una tarjeta con foto, fondo y título,
+   insertar dos copias vinculadas y una independiente. Personalizar una como **After Hours** y la
+   otra como **Prisma DJ Set**. Cambiar el espaciado y el orden de las partes en la definición.
+   Actualizar una copia. Comprobar el título, foto, espaciado y destino en cada tarjeta, incluidos
+   los de las dos copias que no se actualizaron. Retirar una parte personalizada con comentario,
+   actualizar, identificarla y recuperar su estado con Deshacer. Borrar las tarjetas del Canvas,
+   generar un respaldo y abrirlo en almacenamiento limpio. Insertar la composición desde la
+   biblioteca y comprobar que abre la foto original.
+3. **Ajustar el catálogo y su navegación.** Elegir el fondo bajo un icono por puntero y teclado.
+   Redimensionarlo y comprobar que el icono conserva su tamaño. Desplazar una línea de 10 × 4
+   sin redimensionarla. Mover el contenido mixto dentro de la ventana y verificar que solo su
+   porción visible admite selección sobre el Canvas. Desactivar el recorte y recuperar la
+   imagen y el texto completos. Cambiar Inicio a sólido en una copia, comparar con otra en
+   contorno y comprobar identidad del símbolo, tinta, caja y estado después de recargar.
+4. **Alinear una fila y una columna sin adivinar la referencia.** Arrastrar la pieza central de
+   tres tarjetas con vecinos a ambos lados. Si coinciden los dos bordes paralelos, ambas guías
+   deben llegar a los dos vecinos. Variar los tamaños hasta que coincida solo un borde o solo
+   el centro. Alejar la pieza un píxel de la igualdad de huecos y comprobar que la indicación
+   de distancias corresponde a la geometría final. Repetir en columna, invertir el sentido
+   del gesto e incluir un tercero lejano, retícula en marco girado y referencias de otra
+   pantalla. Verificar corrección, referencias y marcas visibles a distintos zooms. En el
+   menú Alinear, contrastar lo destacado con las piezas que efectivamente se mueven.
+
+Registrar por separado el resultado visible durante el gesto, la geometría guardada al soltar
+y su recuperación después de Deshacer/Rehacer y recarga. Contrastar los tiempos de arrastre
+antes y después con la misma escena de 50 componentes y 4.000 piezas y el mismo zoom.
+
 #### Regresiones de la integración existente
 
 La integración del catálogo añade C08-U50–U51 y C08-B143–B153. Recorrer la biblioteca desde Bosquejos,
