@@ -55,8 +55,15 @@ test('C08-B245: dos marcos a 21 % conservan el centro y se pueden medir sin move
         parseFloat(getComputedStyle(line).strokeWidth) * line.getScreenCTM()!.a,
     );
   expect(visibleStroke).toBeCloseTo(1, 3);
+  const live = page.locator('.alignment-guides text');
+  await expect(live).toHaveText('96 px');
   await capture(page, info, 'centro-entre-marcos');
+  await page.mouse.move(sx - 359 * 0.21, sy + 21);
+  await expect(live).toHaveText('196 px');
+  await page.mouse.move(sx - 359 * 0.21, sy);
+  await expect(live).toHaveText('96 px');
   await page.mouse.up();
+  await expect(live).toHaveCount(0);
   const geometry = (await world(page)).nodes;
   const moved = geometry.find((n) => n.id === 'Evento')!;
   expect(moved.x).toBeCloseTo(-420, 7);

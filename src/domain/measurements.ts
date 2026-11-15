@@ -14,7 +14,8 @@ export interface Measurement {
 
 const tolerance = 1e-6;
 const numbers = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
-export const dimensionText = (d: Dimension) => numbers.format(Math.abs(d.to - d.from)) + ' px';
+export const dimensionText = (d: Pick<Dimension, 'from' | 'to'>) =>
+  numbers.format(Math.abs(d.to - d.from)) + ' px';
 
 /** Las cotas se calculan en unidades del Canvas sobre los límites visuales de cada pieza. */
 export function measureBounds(a: Rect, b: Rect): Measurement {

@@ -1885,7 +1885,8 @@ body[data-canvas-motion='reduced']
   stroke-width: calc(1px / var(--canvas-zoom, 1));
   fill: none;
 }
-.canvas-measurement text {
+.canvas-measurement text,
+.alignment-guides text {
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;

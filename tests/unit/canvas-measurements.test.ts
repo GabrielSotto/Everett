@@ -75,7 +75,7 @@ test('C08-U96: las cotas distinguen espacio, contacto, solape y márgenes en uni
       [500, offset, 'y', 422],
     ] as const) {
       const guides = alignRect({ ...frame, x, y }, [frame], zoom).guides.filter(
-        (g) => g.axis === axis,
+        (g) => g.axis === axis && g.source === 'object',
       );
       assert.deepEqual(
         guides.map((g) => Math.round(g.position)),
@@ -86,8 +86,32 @@ test('C08-U96: las cotas distinguen espacio, contacto, solape y márgenes en uni
     }
     const half = alignRect({ ...frame, x: 195 + offset, y: 940 }, [frame], zoom);
     assert.deepEqual(
-      half.guides.filter((g) => g.axis === 'x').map((g) => Math.round(g.position)),
+      half.guides
+        .filter((g) => g.axis === 'x' && g.source === 'object')
+        .map((g) => Math.round(g.position)),
       [195, 390],
     );
   }
+});
+
+test('C08-U97: mide durante el movimiento con una referencia visible por lado sin alterar la posición', () => {
+  const moving = { x: 0, y: 0, width: 100, height: 80 };
+  const right = { x: 140, y: 20, width: 90, height: 95, id: 'cerca' };
+  const targets = [
+    right,
+    { ...right, x: 270, id: 'detrás' },
+    { ...right, x: 128, y: 157, id: 'otra-fila' },
+  ];
+  for (const x of [-1.5, 12.25, 19]) {
+    const actual = alignRect({ ...moving, x }, targets, 1);
+    assert.deepEqual(actual.correction, { x: 0, y: 0 });
+    assert.deepEqual(
+      actual.guides.map((g) => [g.source, g.target, g.to - g.from]),
+      [['distance', 'cerca', 40 - x]],
+    );
+  }
+  const touching = alignRect({ ...moving, x: 40 }, [right], 1);
+  assert.equal(dimensionText(touching.guides.find((g) => g.source === 'distance')!), '0 px');
+  const overlapping = alignRect({ ...moving, x: 55 }, [right], 1);
+  assert.equal(overlapping.guides.filter((g) => g.source === 'distance').length, 0);
 });

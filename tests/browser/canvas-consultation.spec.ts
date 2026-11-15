@@ -295,8 +295,9 @@ test('C08-B113: guías alinean en varias escalas, Ctrl suspende, cancelar y Undo
     await page.mouse.move(box.x + box.width / 2 + 370 * zoom + 3, box.y + box.height / 2, {
       steps: 10,
     });
-    await expect(page.locator('.alignment-guides line')).toHaveCount(1);
-    await expect(page.locator('.alignment-guides line')).toHaveAttribute('x1', '120');
+    const alignment = page.locator('.alignment-guides line[data-snap-source=object]');
+    await expect(alignment).toHaveCount(1);
+    await expect(alignment).toHaveAttribute('x1', '120');
     await page.mouse.up();
     expect((await world(page)).nodes.find((n) => n.id === 'moving')!.x).toBeCloseTo(120, 4);
     await page.keyboard.press('Control+z');
@@ -390,7 +391,10 @@ test('C08-B115: conjunto se alinea como una pieza y conserva distancias, miembro
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
   await page.mouse.down();
   await page.mouse.move(grip.x + grip.width / 2 + 453, grip.y + grip.height / 2, { steps: 15 });
-  await expect(page.locator('.alignment-guides line')).toHaveAttribute('x1', '120');
+  await expect(page.locator('.alignment-guides line[data-snap-source=object]')).toHaveAttribute(
+    'x1',
+    '120',
+  );
   await capture(page, info, 'guias-de-conjunto');
   await page.mouse.up();
   const after = (await world(page)).nodes;

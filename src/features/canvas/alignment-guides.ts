@@ -1,5 +1,7 @@
 import type { AlignmentGuide } from '../../domain/alignment';
 import { html } from '../../ui/dom';
+import { dimensionText } from '../../domain/measurements';
+import { measurementLabel } from './measurement-label';
 const lastDrawing = new WeakMap<SVGSVGElement, string>();
 
 /** Las marcas mantienen un tamaño constante en pantalla durante el gesto. */
@@ -23,6 +25,7 @@ export function paintAlignmentGuides(
   const markup = guides
     .map((g) => {
       const vertical = g.axis === 'x';
+      const measured = g.source === 'gap' || g.source === 'distance';
       const line = vertical
         ? [g.position, g.from, g.position, g.to]
         : [g.from, g.position, g.to, g.position];
@@ -30,7 +33,7 @@ export function paintAlignmentGuides(
         .map((p) => {
           const x = vertical ? g.position : p,
             y = vertical ? p : g.position;
-          if (g.source === 'gap')
+          if (measured)
             return vertical
               ? `<path d="M${x - radius} ${y}h${radius * 2}"/>`
               : `<path d="M${x} ${y - radius}v${radius * 2}"/>`;
@@ -40,7 +43,18 @@ export function paintAlignmentGuides(
       const transform = g.transform
         ? ` transform="rotate(${g.transform.degrees} ${g.transform.pivot.x} ${g.transform.pivot.y})"`
         : '';
-      return `<g${transform}><line data-snap-target="${html(g.target ?? '')}" data-snap-source="${g.source}" x1="${line[0]}" y1="${line[1]}" x2="${line[2]}" y2="${line[3]}"/>${markers}</g>`;
+      const mid = (g.from + g.to) / 2;
+      const label = measured
+        ? measurementLabel(
+            vertical ? g.position : mid,
+            vertical ? mid : g.position,
+            dimensionText(g),
+            !vertical,
+            zoom,
+            g.transform?.degrees,
+          )
+        : '';
+      return `<g${transform}><line data-snap-target="${html(g.target ?? '')}" data-snap-source="${g.source}" x1="${line[0]}" y1="${line[1]}" x2="${line[2]}" y2="${line[3]}"/>${markers}${label}</g>`;
     })
     .join('');
   if (lastDrawing.get(layer) !== markup) {

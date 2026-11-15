@@ -3,13 +3,12 @@ import type { Point, Rect } from '../../domain/model';
 import { alignmentScene } from '../../domain/alignment-targets';
 import { componentFor, componentSelection } from '../../domain/manual-groups';
 import { dimensionText, measureBounds } from '../../domain/measurements';
+import { measurementLabel } from './measurement-label';
 
 function paintDistance(layer: SVGSVGElement, a: Rect, b: Rect, zoom: number) {
   const measurement = measureBounds(a, b);
   const labels = measurement.dimensions.map((d) => d.label + ' ' + dimensionText(d));
   layer.setAttribute('aria-label', [measurement.kind, ...labels].join(', '));
-  const label = (x: number, y: number, text: string, horizontal: boolean) =>
-    `<g transform="translate(${x} ${y}) scale(${1 / zoom})"><text x="${horizontal ? 0 : 7}" y="${horizontal ? -7 : 4}" text-anchor="${horizontal ? 'middle' : 'start'}">${text}</text></g>`;
   const outline = `<rect x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"/>`;
   layer.innerHTML =
     outline +
@@ -24,11 +23,11 @@ function paintDistance(layer: SVGSVGElement, a: Rect, b: Rect, zoom: number) {
           ? `M${d.from} ${y}H${d.to} M${d.from} ${y - cap}v${2 * cap} M${d.to} ${y - cap}v${2 * cap}`
           : `M${x} ${d.from}V${d.to} M${x - cap} ${d.from}h${2 * cap} M${x - cap} ${d.to}h${2 * cap}`;
         const caption = (measurement.kind === 'Solapamiento' ? 'Solape · ' : '') + dimensionText(d);
-        return `<path d="${path}"/>` + label(x, y, caption, h);
+        return `<path d="${path}"/>` + measurementLabel(x, y, caption, h, zoom);
       })
       .join('') +
     (measurement.kind === 'Coinciden'
-      ? label(b.x + b.width / 2, b.y, 'Coinciden · 0 px', true)
+      ? measurementLabel(b.x + b.width / 2, b.y, 'Coinciden · 0 px', true, zoom)
       : '');
 }
 

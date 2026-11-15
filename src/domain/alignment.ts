@@ -11,7 +11,7 @@ export interface AlignmentGuide {
   markers: number[];
   transform?: { degrees: number; pivot: Point };
   target?: string;
-  source?: 'object' | 'layout' | 'gap';
+  source?: 'object' | 'layout' | 'gap' | 'distance';
 }
 export interface SnapTarget extends SnapBounds {
   id?: string;
@@ -151,13 +151,11 @@ function objectGuides(
 }
 
 interface Gap {
-  before: SnapTarget;
-  after: SnapTarget;
   key: string;
   offset: number;
 }
 
-function betweenNeighbors(moving: Rect, targets: SnapTarget[], axis: Axis): Gap | undefined {
+function sideNeighbors(moving: Rect, targets: SnapTarget[], axis: Axis) {
   const other = cross(axis);
   let before: SnapTarget | undefined, after: SnapTarget | undefined;
   for (const t of targets) {
@@ -177,40 +175,54 @@ function betweenNeighbors(moving: Rect, targets: SnapTarget[], axis: Axis): Gap 
     )
       after = t;
   }
+  return { before, after };
+}
+
+function betweenNeighbors(moving: Rect, targets: SnapTarget[], axis: Axis): Gap | undefined {
+  const { before, after } = sideNeighbors(moving, targets, axis);
   if (!before || !after || after[axis] - end(before, axis) <= moving[extent(axis)]) return;
+  const other = cross(axis);
   if (
     Math.max(before[other], after[other], moving[other]) >=
     Math.min(end(before, other), end(after, other), end(moving, other))
   )
     return;
   return {
-    before,
-    after,
     key: JSON.stringify(['gap', axis, identity(before), identity(after)]),
     offset: (after[axis] - end(moving, axis) - (moving[axis] - end(before, axis))) / 2,
   };
 }
 
-function gapGuides(moving: Rect, axis: Axis, gap: Gap): AlignmentGuide[] {
-  const { before, after } = gap,
-    other = cross(axis);
-  const low = Math.max(moving[other], before[other], after[other]),
-    high = Math.min(end(moving, other), end(before, other), end(after, other));
-  const left = moving[axis] - end(before, axis),
-    right = after[axis] - end(moving, axis);
-  if (high <= low || left <= 0 || Math.abs(left - right) > epsilon) return [];
-  const spans: [number, number][] = [
-    [end(before, axis), moving[axis]],
-    [end(moving, axis), after[axis]],
-  ];
-  return spans.map(([from, to]) => ({
-    axis: other,
-    position: (low + high) / 2,
-    from,
-    to,
-    markers: [from, to],
-    source: 'gap',
-  }));
+/** Medir desde la posición final permite seguir un hueco aun cuando el gesto no activa un ajuste. */
+function spacingGuides(moving: Rect, targets: SnapTarget[], axis: Axis): AlignmentGuide[] {
+  const { before, after } = sideNeighbors(moving, targets, axis);
+  const other = cross(axis);
+  let common: number | undefined;
+  if (before && after) {
+    const low = Math.max(moving[other], before[other], after[other]);
+    const high = Math.min(end(moving, other), end(before, other), end(after, other));
+    const first = moving[axis] - end(before, axis);
+    const second = after[axis] - end(moving, axis);
+    if (first > 0 && high > low && Math.abs(first - second) <= epsilon) common = (low + high) / 2;
+  }
+  const guides: AlignmentGuide[] = [];
+  for (const target of [before, after]) {
+    if (!target) continue;
+    const from = target === before ? end(target, axis) : end(moving, axis);
+    const to = target === before ? moving[axis] : target[axis];
+    const low = Math.max(moving[other], target[other]);
+    const high = Math.min(end(moving, other), end(target, other));
+    guides.push({
+      axis: other,
+      position: common ?? (low + high) / 2,
+      from,
+      to,
+      markers: [from, to],
+      source: common === undefined ? 'distance' : 'gap',
+      ...(target.id !== undefined ? { target: target.id } : {}),
+    });
+  }
+  return guides;
 }
 
 export function selectionBounds(input: Rect[]): Rect {
@@ -254,6 +266,7 @@ export function alignRect(
       (a, b) => a.width * a.height - b.width * b.height || a.target.id.localeCompare(b.target.id),
     )[0];
   const inside = frame ? targets.filter((t) => contains(frame, t)) : targets;
+  let rotatedDistances: AlignmentGuide[] | undefined;
   if (frame?.rotation) {
     // Evaluar los bordes en los ejes de la retícula y devolver el desplazamiento al Mundo.
     const pivot = centerOf(frame),
@@ -267,12 +280,14 @@ export function alignRect(
       ...options,
       frames: [{ ...frame, rotation: 0 }],
     });
-    if (snapped.guides.length)
+    const projected = snapped.guides.map((g) => ({ ...g, transform: { degrees, pivot } }));
+    if (snapped.guides.some((g) => g.source !== 'distance'))
       return {
         correction: rotateVector(snapped.correction, degrees),
-        guides: snapped.guides.map((g) => ({ ...g, transform: { degrees, pivot } })),
+        guides: projected,
         memory: snapped.memory,
       };
+    rotatedDistances = projected;
   }
   // Dentro de un marco se intenta primero con referencias de ese contexto. La retícula
   // sigue disponible aunque estén ocultas las guías de objetos.
@@ -367,8 +382,12 @@ export function alignRect(
         target: target.id!,
       });
     }
-    const gap = betweenNeighbors(final, inside, axis);
-    if (gap) guides.push(...gapGuides(final, axis, gap));
+  }
+  // Si la retícula girada solo aporta una medida, sigue siendo posible ajustar contra el Mundo.
+  if (rotatedDistances && !guides.length && !appliedGaps.size) {
+    guides.push(...rotatedDistances);
+  } else {
+    for (const axis of axes) guides.push(...spacingGuides(final, inside, axis));
   }
   return { correction, guides, memory };
 }

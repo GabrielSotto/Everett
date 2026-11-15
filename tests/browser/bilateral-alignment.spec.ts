@@ -51,6 +51,7 @@ for (const [id, vertical] of [
       const gaps = guides.locator('line[data-snap-source=gap]');
       await expect(edges).toHaveCount(3);
       await expect(gaps).toHaveCount(2);
+      await expect(guides.locator('text')).toHaveText(['40 px', '40 px']);
       const along = vertical ? 'y' : 'x',
         perp = vertical ? 'x' : 'y';
       for (const [i, p] of [0, vertical ? 65 : 30, vertical ? 130 : 60].entries()) {
@@ -71,6 +72,11 @@ for (const [id, vertical] of [
       await move(12, -3);
       await expect(gaps).toHaveCount(0);
       await expect(edges).toHaveCount(3);
+      await expect(guides.locator('text')).toHaveText(['52 px', '28 px']);
+      await expect(guides.locator('[data-snap-source=distance]').first()).toHaveAttribute(
+        'data-snap-target',
+        'before',
+      );
       await move(-1, -3);
       await expect(gaps).toHaveCount(2);
       await page.mouse.up();

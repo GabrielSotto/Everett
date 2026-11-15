@@ -232,8 +232,11 @@ test('C08-B135: guías identifican la referencia visible y no ajustan contra un 
     if (visible) {
       const line = page.locator('.alignment-guides line').first();
       await expect(line).toHaveAttribute('x1', '100');
-      await expect(page.locator('.alignment-guides line[data-snap-target=near]')).toHaveCount(3);
-      await expect(page.locator('.alignment-guides path')).toHaveCount(6);
+      const matches = page.locator(
+        '.alignment-guides g:has(> line[data-snap-source=object][data-snap-target=near])',
+      );
+      await expect(matches).toHaveCount(3);
+      await expect(matches.locator('path')).toHaveCount(6);
       const points = await line.evaluate((el) => [
         Number(el.getAttribute('y1')),
         Number(el.getAttribute('y2')),

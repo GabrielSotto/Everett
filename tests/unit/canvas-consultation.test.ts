@@ -54,7 +54,12 @@ test('C08-U35: guías comparan bordes y centros con cinco píxeles de pantalla s
     );
   }
   assert.deepEqual(target, before);
-  assert.deepEqual(alignRect({ x: 110, y: 800, width: 100, height: 60 }, [target], 1).guides, []);
+  const free = alignRect({ x: 110, y: 800, width: 100, height: 60 }, [target], 1);
+  assert.deepEqual(free.correction, { x: 0, y: 0 });
+  assert.deepEqual(
+    free.guides.map((g) => [g.source, g.to - g.from]),
+    [['distance', 940]],
+  );
   const center = alignRect({ x: 178, y: 800, width: 40, height: 60 }, [target], 1);
   assert.equal(center.correction.x, 2);
   const group = selectionBounds([

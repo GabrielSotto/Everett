@@ -65,7 +65,7 @@ test('C08-U93: fila y columna muestran solo las coincidencias finales con los ve
   ] as const) {
     const r = alignRect(moving, [near], 1);
     assert.deepEqual(
-      r.guides.filter((g) => g.axis === 'y').map((g) => g.position),
+      r.guides.filter((g) => g.axis === 'y' && g.source === 'object').map((g) => g.position),
       positions,
     );
   }
@@ -184,4 +184,10 @@ test('C08-U95: una retícula girada conserva las coincidencias de ambos vecinos 
     assert.equal(Math.round(edge.to), Math.round(edge.position) === 70 ? 280 : 320);
   }
   assert.equal(actual.guides.filter((g) => g.source === 'gap').length, 2);
+  const free = alignRect(orient('b', 143, 76), [orient('a', 40, 51)], 6, { frames: [frame] });
+  assert.deepEqual(free.correction, { x: 0, y: 0 });
+  const readout = free.guides.filter((g) => g.source === 'distance');
+  assert.equal(readout.length, 1);
+  assert.equal(readout[0]!.transform?.degrees, frame.rotation);
+  assert(Math.abs(readout[0]!.to - readout[0]!.from - 23) < 1e-6);
 });

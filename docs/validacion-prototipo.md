@@ -151,6 +151,9 @@ retícula girada a 35°. C08-B243 y C08-B244 arrastran una tarjeta entre dos
 vecinas en fila y columna, capturan los extremos de ambas guías, contrastan los huecos con
 las posiciones guardadas y recuperan el origen con Deshacer. C08-U96 y C08-B245 comprueban la
 medición de borde a borde en píxeles, incluido el caso de dos marcos de teléfono al 21 %.
+Durante un solo arrastre B245 aleja y vuelve a acercar el marco (96, 196 y 96 px).
+B243 y B244 comprueban los dos valores con separación desigual y al igualarse.
+C08-U97 cubre movimiento libre, referencia más cercana, contacto y superposición.
 C08-B246 verifica los cuatro botones de la barra desde 320 hasta 1440 px.
 
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
