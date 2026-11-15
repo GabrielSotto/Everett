@@ -9,6 +9,7 @@ import {
 import { selectionBounds } from '../../domain/alignment';
 import { labelDistance } from '../../domain/cable-labels';
 import { cableGeometry } from '../../domain/cable-geometry';
+import { paintFrameClips } from './frame-clipping';
 
 function frame(nodes: readonly Material[]): OrientedRect {
   return nodes.length === 1 ? nodes[0]! : selectionBounds([...nodes]);
@@ -205,6 +206,12 @@ export function beginRotation(
         }
       }
       position(layer, { ...box, rotation: base + latest });
+      paintFrameClips(root, w, [...selected], byId, {
+        transform: (f, g) =>
+          g.nodes.every((id) => selected.has(id))
+            ? { ...f.pose, ...rotatedPose(f.pose, pivot, latest) }
+            : f.pose,
+      });
       root.style.setProperty(
         '--active-rotation-cursor',
         layer.style.getPropertyValue(

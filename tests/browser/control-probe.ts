@@ -15,8 +15,14 @@ export function installControlProbe(): void {
       type,
       (event) => {
         const spacing = event.target instanceof HTMLInputElement && !!event.target.dataset.spacing;
+        const submenu =
+          event instanceof KeyboardEvent &&
+          event.key === 'ArrowRight' &&
+          event.target instanceof HTMLElement &&
+          event.target.dataset.action === 'layer-list';
         if (
           type !== 'click' &&
+          !submenu &&
           (!spacing ||
             !event.target.validity.valid ||
             !event.target.value.trim() ||

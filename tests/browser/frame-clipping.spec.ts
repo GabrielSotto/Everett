@@ -1,0 +1,326 @@
+import type { Page } from '@playwright/test';
+import { test, expect } from './fixtures';
+import { capture, start, snapshot, world } from './canvas-utility-helpers';
+import { storedFixture } from './canvas-fixtures';
+import { treeFromMaterials } from '../../src/domain/component-tree';
+import { newCanvasText } from '../../src/domain/canvas-text';
+import type { Material } from '../../src/domain/model';
+
+const shape = (
+  id: string,
+  title: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: string,
+): Material => ({
+  id,
+  x,
+  y,
+  width,
+  height,
+  owner: null,
+  data: { kind: 'shape', shape: 'rectangle', title, color, fill: true },
+});
+async function scene(page: Page, edit = true) {
+  await start(page);
+  await page.getByRole('button', { name: 'Incorporar materiales', exact: true }).click();
+  await page.locator('#canvas-file-import').setInputFiles('tests/fixtures/link-cover.png');
+  await expect(page.locator('.material.image img')).toBeVisible();
+  const input = await snapshot(page),
+    w = input.state.worlds.find((w) => w.id === 'scout')!;
+  const photo = w.nodes.find((n) => n.data.kind === 'image')!;
+  Object.assign(photo, { x: 60, y: -58, width: 160, height: 90 });
+  const bg = shape('paper', 'Explorar', -140, -100, 280, 200, '#eeeeee');
+  const card = shape('card', 'Fondo de navegación', -110, -25, 110, 60, '#abaac5');
+  const symbol = shape('home', 'Inicio', -90, -14, 35, 35, '#252938');
+  const title: Material = {
+    id: 'title',
+    x: 100,
+    y: 55,
+    width: 150,
+    height: 32,
+    owner: null,
+    data: { ...newCanvasText('wrap'), text: 'Prisma DJ Set', title: 'Evento', color: '#247349' },
+  };
+  const line = shape('line', 'Separador', -80, 60, 10, 4, '#374268');
+  const members = [bg, photo, card, symbol, title, line];
+  const tree = treeFromMaterials(members, 'Explorar');
+  Object.assign(tree.root, { frame: true, width: bg.width, height: bg.height });
+  tree.root.children[0]!.background = true;
+  w.canvasGroups = [
+    {
+      id: 'screen',
+      name: 'Explorar',
+      component: true,
+      nodes: members.map((n) => n.id),
+      structure: tree,
+    },
+  ];
+  const note: Material = {
+    ...shape('memo', 'Nota suelta', -285, -90, 112, 65, '#eeeeee'),
+    data: { kind: 'note', title: 'Nota suelta', text: 'Referencia', color: '#eee4b1' },
+  };
+  w.nodes = [...members, shape('aside', 'Referencia externa', 155, 40, 40, 35, '#ce9254'), note];
+  Object.assign(input.ui.canvas, { selection: null, selections: [] });
+  await storedFixture(page, input.state, input.ui);
+  await page.reload();
+  const heading = page.locator('.group-heading[data-group=screen]');
+  if (edit) {
+    await heading.focus();
+    await heading.getByRole('button', { name: 'Editar marco Explorar' }).click();
+  }
+  const panel = page.locator('.component-inspector');
+  const box = (await page.locator('[data-node=paper]').boundingBox())!;
+  const at = (x: number, y: number) => ({ x: box.x + x, y: box.y + y });
+  const hits = (x: number, y: number) =>
+    page.evaluate(
+      (p) =>
+        document
+          .elementsFromPoint(p.x, p.y)
+          .map((el) => el.closest<HTMLElement>('[data-node]')?.dataset.node)
+          .filter(Boolean),
+      at(x, y),
+    );
+  return { panel, box, at, hits, photo: photo.id };
+}
+
+test('C08-B230: un inspector contextual permite encuadrar, recuperar capas ocultas y reordenar la pila real', async ({
+  page,
+}, info) => {
+  const { panel, hits, at, photo } = await scene(page, false);
+  const inspector = page.locator('#canvas-inspector');
+  await expect(inspector).toBeHidden();
+  await page.locator('.group-heading[data-group=screen]').focus();
+  await page.getByRole('button', { name: 'Mover marco Explorar' }).click();
+  await expect(inspector).toHaveAccessibleName('Inspector de marco');
+  await expect(panel.getByRole('group', { name: 'Capas' })).toBeVisible();
+  const row = (title: string) => panel.locator('[data-part]').filter({ hasText: title });
+  const before = (await world(page)).nodes;
+  await row('Fondo de navegación').click();
+  await panel.getByRole('button', { name: 'Subir capa' }).press('Enter');
+  expect((await hits(65, 100)).filter((id) => id === 'card' || id === 'home')[0]).toBe('card');
+  const after = (await world(page)).nodes;
+  for (const material of before) expect(after.find((n) => n.id === material.id)).toEqual(material);
+  await row('Inicio').dragTo(row('Fondo de navegación'), { targetPosition: { x: 36, y: 3 } });
+  await expect
+    .poll(async () => (await hits(65, 100)).filter((id) => id === 'card' || id === 'home')[0])
+    .toBe('home');
+  await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+  await expect
+    .poll(async () => (await hits(65, 100)).filter((id) => id === 'card' || id === 'home')[0])
+    .toBe('card');
+  await panel.getByRole('navigation').getByRole('button', { name: 'Explorar' }).click();
+  await panel.getByRole('checkbox', { name: 'Recortar contenido' }).check();
+  await row('link-cover.png').click();
+  const p = at(220, 70);
+  await page.mouse.move(p.x, p.y);
+  await page.mouse.down();
+  await page.keyboard.down('Control');
+  await page.mouse.move(p.x + 110, p.y, { steps: 8 });
+  await page.mouse.up();
+  await page.keyboard.up('Control');
+  await expect
+    .poll(async () => (await world(page)).nodes.find((n) => n.id === photo)!.x)
+    .toBeCloseTo(170);
+  expect(await hits(350, 70)).not.toContain(photo);
+  await expect(page.locator(`[data-node="${photo}"]`)).toHaveAttribute('inert', '');
+  await row('link-cover.png').click();
+  await expect(panel.getByLabel('Nombre', { exact: true })).toHaveValue('link-cover.png');
+  await capture(page, info, 'inspector-con-capa-fuera-del-marco');
+  await panel.getByRole('navigation').getByRole('button', { name: 'Explorar' }).click();
+  await panel.getByRole('checkbox', { name: 'Recortar contenido' }).uncheck();
+  expect(await hits(350, 70)).toContain(photo);
+  await page.locator('[data-node=memo]').click();
+  await expect(inspector).toBeHidden();
+  await expect(page.locator('[role=menu]')).toHaveCount(0);
+});
+
+test('C08-B231: desplegar un contenedor, trasladar una capa entre niveles y recuperar la pertenencia con Deshacer', async ({
+  page,
+}) => {
+  const { panel } = await scene(page);
+  const row = (name: string) => panel.locator('[data-part]').filter({ hasText: name });
+  await row('Fondo de navegación').click();
+  await row('Inicio').click({ modifiers: ['Shift'] });
+  await panel.getByRole('button', { name: 'Agrupar selección en contenedor' }).click();
+  const original = await world(page);
+  const container = original.canvasGroups![0]!.structure!.root.children.find(
+    (c) => c.children.length,
+  )!;
+  const folder = panel.locator(`[data-part="${container.id}"]`);
+  const layer = original.canvasGroups![0]!.structure!.root.children.find(
+    (c) => c.material === 'title',
+  )!;
+  await row('Evento').dragTo(folder);
+  const currentParent = async () =>
+    (await world(page)).canvasGroups![0]!.structure!.root.children.find((c) =>
+      c.children.some((p) => p.id === layer.id),
+    )?.id;
+  await expect.poll(currentParent).toBe(container.id);
+  await expect(row('Evento')).toBeVisible();
+  expect((await world(page)).nodes.find((n) => n.id === 'title')).toEqual(
+    original.nodes.find((n) => n.id === 'title'),
+  );
+  const disclosure = panel.locator(`[data-expand="${container.id}"]`);
+  await disclosure.click();
+  await expect(row('Evento')).toHaveCount(0);
+  await disclosure.click();
+  await expect(row('Evento')).toBeVisible();
+  await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+  expect(await currentParent()).toBeUndefined();
+  await page.reload();
+  expect(await currentParent()).toBeUndefined();
+});
+
+test('C08-B232: un conjunto manual comparte el inspector y conserva el tipo de grupo al ordenar y deshacer', async ({
+  page,
+}) => {
+  const { panel } = await scene(page, false);
+  const input = await snapshot(page),
+    w = input.state.worlds.find((w) => w.id === 'scout')!;
+  const group = w.canvasGroups![0]!;
+  delete group.structure;
+  delete group.component;
+  await storedFixture(page, input.state, input.ui);
+  await page.reload();
+  const grip = page.getByRole('button', { name: 'Conjunto: Explorar', exact: true });
+  await page.locator('.group-heading[data-group=screen]').focus();
+  await grip.click();
+  await expect(page.locator('#canvas-inspector')).toHaveAccessibleName('Inspector de conjunto');
+  const bg = panel.locator('[data-part=card]');
+  await bg.click();
+  await panel.getByRole('button', { name: 'Subir capa' }).click();
+  const stacked = await world(page);
+  expect(stacked.nodes.findIndex((n) => n.id === 'card')).toBeGreaterThan(
+    stacked.nodes.findIndex((n) => n.id === 'home'),
+  );
+  expect(stacked.canvasGroups![0]).toEqual(group);
+  await page.getByRole('button', { name: 'Deshacer · Ctrl+Z', exact: true }).click();
+  expect((await world(page)).nodes.map((n) => n.id)).toEqual(w.nodes.map((n) => n.id));
+  await page.locator('[data-node=memo]').click();
+  await expect(page.locator('#canvas-inspector')).toBeHidden();
+});
+
+test('C08-B228: encuadrar foto y texto en vivo, redimensionar el marco, persistir y recuperar el original', async ({
+  page,
+}, info) => {
+  const { panel, at, hits, photo } = await scene(page);
+  const clip = panel.getByRole('checkbox', { name: 'Recortar contenido' });
+  expect(await hits(300, 68)).toContain(photo);
+  expect(await hits(300, 162)).toContain('title');
+  const sample = at(300, 68);
+  const pixel = () => page.screenshot({ clip: { ...sample, width: 4, height: 4 } });
+  const originalPixel = await pixel();
+  await clip.check();
+  expect(await pixel()).not.toEqual(originalPixel);
+  expect(await hits(300, 68)).not.toContain(photo);
+  expect(await hits(270, 68)).toContain(photo);
+  expect(await hits(300, 162)).not.toContain('title');
+  expect(await hits(310, 150)).toContain('aside');
+  await capture(page, info, 'encuadre-con-referencia-externa');
+  await panel.locator('[data-part]').filter({ hasText: 'link-cover.png' }).click();
+  const initial = (await world(page)).nodes.find((n) => n.id === photo)!;
+  const p = at(225, 76);
+  await page.mouse.move(p.x, p.y);
+  await page.mouse.down();
+  await page.keyboard.down('Control');
+  await page.mouse.move(p.x - 56, p.y, { steps: 5 });
+  expect(await hits(175, 80)).toContain(photo);
+  expect(await hits(289, 80)).not.toContain(photo);
+  expect((await world(page)).nodes.find((n) => n.id === photo)!.x).toBe(initial.x);
+  await page.mouse.up();
+  await page.keyboard.up('Control');
+  await expect
+    .poll(async () => (await world(page)).nodes.find((n) => n.id === photo)!.x)
+    .toBeCloseTo(initial.x - 56);
+  await panel.getByRole('button', { name: 'Terminar edición' }).click();
+  await page.locator('.group-heading[data-group=screen]').focus();
+  await page.getByRole('button', { name: 'Mover marco Explorar' }).click();
+  const handle = page.locator('[data-resize=group][data-corner=se][data-id=screen]');
+  const h = (await handle.boundingBox())!;
+  await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(h.x + h.width / 2 - 48, h.y + h.height / 2, { steps: 5 });
+  expect(await hits(250, 68)).not.toContain(photo);
+  expect(await hits(218, 68)).toContain(photo);
+  await page.mouse.up();
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => hits(250, 68)).toContain(photo);
+  await page.reload();
+  await expect
+    .poll(async () => (await world(page)).canvasGroups![0]!.structure!.root.clipContent)
+    .toBe(true);
+  expect(await hits(289, 80)).not.toContain(photo);
+  await page.locator('.group-heading[data-group=screen]').focus();
+  await page.getByRole('button', { name: 'Editar marco Explorar' }).click();
+  await clip.uncheck();
+  expect(await hits(289, 80)).toContain(photo);
+  const restored = (await world(page)).nodes.find((n) => n.id === photo)!;
+  expect(restored.data).toEqual(initial.data);
+  expect(restored.width).toEqual(initial.width);
+});
+
+test('C08-B229: elegir el fondo bajo un icono por puntero y teclado, y mover una línea corta', async ({
+  page,
+}, info) => {
+  const { panel, at } = await scene(page, false);
+  const p = at(65, 100);
+  await page.mouse.click(p.x, p.y, { button: 'right' });
+  await page.getByRole('menuitem', { name: 'Seleccionar capa' }).click();
+  const menu = page.getByRole('menu', { name: 'Seleccionar capa' });
+  await expect(page.locator('#canvas-inspector')).toBeHidden();
+  await expect(menu.getByRole('button', { name: 'Subir capa' })).toHaveCount(0);
+  const choices = menu.locator('[data-action=layer-select]');
+  expect(await choices.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.id))).toEqual(
+    ['home', 'card', 'paper'],
+  );
+  const choice = menu.getByRole('menuitem', { name: /Fondo de navegación/ });
+  await choice.hover();
+  await expect(page.locator('.layer-highlight polygon')).toBeVisible();
+  await capture(page, info, 'elegir-fondo-bajo-inicio');
+  await choice.click();
+  expect((await snapshot(page)).ui.canvas.selections).toEqual(['card']);
+  await expect(panel.getByLabel('Nombre', { exact: true })).toHaveValue('Fondo de navegación');
+  const handle = page.locator('[data-controls-for=card] [data-corner=se]');
+  await handle.focus();
+  await handle.press('Shift+ArrowRight');
+  const nodes = (await world(page)).nodes;
+  expect(nodes.find((n) => n.id === 'card')!.width).toBeGreaterThan(110);
+  expect(nodes.find((n) => n.id === 'home')!.width).toBe(35);
+  await page.locator('[data-node=home]').focus();
+  await page.keyboard.press('Shift+F10');
+  await page.getByRole('menuitem', { name: 'Seleccionar capa' }).press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  expect((await snapshot(page)).ui.canvas.selections).toEqual(['card']);
+  const row = panel.locator('[data-part]').filter({ hasText: 'Separador' });
+  await row.click();
+  for (const zoom of [60, 100, 200]) {
+    await page.getByRole('button', { name: /Zoom de Canvas/ }).click();
+    const input = page.getByRole('spinbutton', { name: /Porcentaje/ });
+    await input.fill(String(zoom));
+    await input.press('Enter');
+    const b = (await page.locator('[data-node=line]').boundingBox())!;
+    const x = b.x + b.width / 2,
+      y = b.y + b.height / 2;
+    expect(
+      await page.evaluate(
+        ({ x, y }) => document.elementFromPoint(x, y)?.closest('[data-resize]') !== null,
+        { x, y },
+      ),
+    ).toBe(false);
+    const before = (await world(page)).nodes.find((n) => n.id === 'line')!;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.keyboard.down('Control');
+    await page.mouse.move(x + 12, y + 9, { steps: 4 });
+    await page.mouse.up();
+    await page.keyboard.up('Control');
+    const after = (await world(page)).nodes.find((n) => n.id === 'line')!;
+    expect(after.width).toBe(10);
+    expect(after.height).toBe(4);
+    expect(after.x).toBeGreaterThan(before.x);
+  }
+});

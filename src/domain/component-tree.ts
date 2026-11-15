@@ -19,6 +19,7 @@ export interface ComponentElement extends Rect {
   name: string;
   /** Marco editable con límites propios, incluso con materiales que sobresalen. */
   frame?: boolean;
+  clipContent?: boolean;
   rotation?: number;
   material?: string;
   background?: boolean;
@@ -119,6 +120,8 @@ export function validComponentTree(
       return false;
     ids.add(e.id);
     if (!validRotation(e.rotation)) return false;
+    if (e.clipContent !== undefined && (!e.frame || typeof e.clipContent !== 'boolean'))
+      return false;
     if (e.frame !== undefined && (typeof e.frame !== 'boolean' || e.material !== undefined))
       return false;
     if (e.material !== undefined) {

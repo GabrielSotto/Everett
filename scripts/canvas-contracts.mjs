@@ -1,5 +1,12 @@
 /** Casos mínimos obligatorios: descubrir una suite incompleta nunca certifica Canvas 0.8. */
 export const canvasCases = [
+  { id: 'C08-U88', layer: 'unit', contracts: ['C08-ORG-01', 'C08-COMPONENT-02'] },
+  { id: 'C08-B232', layer: 'browser', contracts: ['C08-ORG-01'] },
+  { id: 'C08-B231', layer: 'browser', contracts: ['C08-ORG-01', 'C08-COMPONENT-01'] },
+  { id: 'C08-B230', layer: 'browser', contracts: ['C08-ORG-01', 'C08-COMPONENT-01'] },
+  { id: 'C08-U87', layer: 'unit', contracts: ['C08-ORG-01', 'C08-COMPONENT-01'] },
+  { id: 'C08-B228', layer: 'browser', contracts: ['C08-ORG-01', 'C08-STATE-01'] },
+  { id: 'C08-B229', layer: 'browser', contracts: ['C08-ORG-01', 'C08-COMPONENT-01'] },
   { id: 'C08-U86', layer: 'unit', contracts: ['C08-ORG-01', 'C08-STATE-01'] },
   { id: 'C08-B226', layer: 'browser', contracts: ['C08-ORG-01', 'C08-LIBRARY-01'] },
   { id: 'C08-B227', layer: 'browser', contracts: ['C08-ORG-01', 'C08-STATE-01'] },
@@ -424,6 +431,7 @@ export function verifyContractInventory(document) {
 
 /** Entradas públicas obligatorias: una carga directa del input no demuestra el menú. */
 export const canvasControlRequirements = {
+  'C08-B229': { 'layer-list': 2, 'layer-select': 2 },
   'C08-B226': { 'canvas-wireframes': 1, 'library-add': 1, 'component-edit': 1 },
   'C08-B227': { 'component-edit': 1 },
   'C08-B170': { 'layout-guides-edit': 4, 'layout-guides-toggle': 1 },

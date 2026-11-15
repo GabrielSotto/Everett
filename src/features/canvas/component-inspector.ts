@@ -10,10 +10,29 @@ import { html, editable } from '../../ui/dom';
 import { icon } from '../../ui/icons';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { nodeTitle, type Camera } from '../../domain/model';
+import { inspectorLayers, bindLayerDrag } from './inspector-layers';
+import { flatLayers } from '../../domain/component-layers';
+import type { CanvasUi } from './state';
 
 /** Inspector contextual: Enter y Escape recorren la misma jerarquía que las migas. */
 export class ComponentInspector {
-  private panel = document.createElement('aside');
+  private panel = document.createElement('section');
+  private contextual: CanvasUi['componentEditing'];
+  private dismissed: string | undefined;
+  private expanded = new Set<string>();
+  private flat: { group: string; leaf?: string } | undefined;
+  private lastScope: string | undefined;
+  get visible(): boolean {
+    return !this.panel.hidden;
+  }
+  allowSelection(): void {
+    this.dismissed = undefined;
+  }
+  keepContextMenuIndependent(id: string): void {
+    const group = this.ctx.world().canvasGroups?.find((g) => g.nodes.includes(id));
+    if (group && (!this.visible || this.panel.dataset.group !== group.id))
+      this.dismissed = group.id;
+  }
   private key = '';
   private shellState: { element: HTMLElement; inert: boolean } | undefined;
   private presentation:
@@ -25,10 +44,31 @@ export class ComponentInspector {
     private cancelGesture: () => boolean,
   ) {
     this.panel.className = 'component-inspector';
-    this.panel.setAttribute('aria-label', 'Editar componente');
     this.panel.hidden = true;
     this.panel.tabIndex = -1;
-    root.append(this.panel);
+    root.querySelector('#canvas-inspector')!.append(this.panel);
+    bindLayerDrag(this.panel, signal, (edit) => {
+      if (this.flat) {
+        this.stackFlat(edit);
+        return;
+      }
+      if (!this.apply(edit)) return;
+      const editing = this.ctx.ui.canvas.componentEditing!;
+      const root = this.ctx.world().canvasGroups!.find((g) => g.id === editing.group)!.structure!
+        .root;
+      const parent = componentElements(root).find((e) =>
+        e.children.some((c) => c.id === edit.element),
+      )!;
+      editing.element = parent.id;
+      editing.selected = edit.element;
+      const ids = elementMaterials(parent.children.find((c) => c.id === edit.element)!);
+      this.ctx.ui.canvas.selections = ids;
+      this.ctx.ui.canvas.selection = ids[0] ?? null;
+      this.ctx.render();
+      this.panel
+        .querySelector<HTMLElement>(`[data-part="${CSS.escape(edit.element)}"]`)
+        ?.focus({ preventScroll: true });
+    });
     window.addEventListener(
       'keydown',
       (e) => {
@@ -179,6 +219,7 @@ export class ComponentInspector {
     const group =
       this.ctx.world().canvasGroups?.find((g) => g.id === id) ?? componentFor(this.ctx.world(), id);
     if (!group) return false;
+    this.dismissed = undefined;
     if (
       !group.structure &&
       !this.ctx.act(
@@ -195,6 +236,12 @@ export class ComponentInspector {
       return false;
     const root = this.ctx.world().canvasGroups!.find((g) => g.id === group.id)!.structure!.root;
     this.root.dispatchEvent(new CustomEvent('component-close-overlay'));
+    const ui = this.ctx.ui.canvas;
+    if (!ui.selection || !group.nodes.includes(ui.selection)) {
+      ui.selections = [...group.nodes];
+      ui.selection = group.nodes[0] ?? null;
+    }
+    ui.zoneSelection = ui.linkSelection = null;
     this.ctx.ui.canvas.componentEditing = { group: group.id, element: root.id, selected: root.id };
     this.key = '';
     this.panel.replaceChildren();
@@ -217,8 +264,34 @@ export class ComponentInspector {
     }
     return false;
   }
+  selectLayer(id: string): void {
+    if (!this.ctx.world().nodes.some((n) => n.id === id && !n.owner)) return;
+    const group = componentFor(this.ctx.world(), id);
+    if (group && !group.structure && !this.open(group.id)) return;
+    const tree = group && this.ctx.world().canvasGroups?.find((g) => g.id === group.id)?.structure;
+    const parent =
+      tree && componentElements(tree.root).find((e) => e.children.some((c) => c.material === id));
+    if (parent && group) {
+      this.ctx.ui.canvas.componentEditing = {
+        group: group.id,
+        element: parent.id,
+        selected: parent.children.find((c) => c.material === id)!.id,
+      };
+    } else delete this.ctx.ui.canvas.componentEditing;
+    Object.assign(this.ctx.ui.canvas, {
+      selection: id,
+      selections: [id],
+      zoneSelection: null,
+      linkSelection: null,
+    });
+    this.ctx.render();
+    this.ctx.persist();
+    this.root
+      .querySelector<HTMLElement>(`[data-node="${CSS.escape(id)}"]`)
+      ?.focus({ preventScroll: true });
+  }
   private enterElement(id: string): void {
-    const editing = this.ctx.ui.canvas.componentEditing;
+    const editing = this.activate();
     if (!editing) return;
     const group = this.ctx.world().canvasGroups?.find((g) => g.id === editing.group);
     const element =
@@ -232,7 +305,13 @@ export class ComponentInspector {
     this.render();
   }
   private back(): void {
-    const editing = this.ctx.ui.canvas.componentEditing;
+    if (this.flat) {
+      this.dismissed = this.flat.group;
+      this.flat = undefined;
+      this.ctx.render();
+      return;
+    }
+    const editing = this.ctx.ui.canvas.componentEditing ?? this.contextual;
     if (!editing) return;
     const group = this.ctx.world().canvasGroups?.find((g) => g.id === editing.group);
     const parent =
@@ -242,13 +321,14 @@ export class ComponentInspector {
       );
     if (parent) this.enterElement(parent.id);
     else {
+      this.dismissed = group?.id;
       delete this.ctx.ui.canvas.componentEditing;
       this.ctx.render();
       this.render();
     }
   }
   private apply(edit: ComponentEdit): boolean {
-    const editing = this.ctx.ui.canvas.componentEditing;
+    const editing = this.activate();
     if (!editing) return false;
     const ok = this.ctx.act(
       { type: 'component.edit', world: this.ctx.world().id, id: editing.group, edit },
@@ -260,13 +340,98 @@ export class ComponentInspector {
     this.render();
     return ok;
   }
+  private activate() {
+    const ui = this.ctx.ui.canvas;
+    if (!ui.componentEditing && this.contextual) ui.componentEditing = { ...this.contextual };
+    return ui.componentEditing;
+  }
+  private stackFlat(edit: Extract<ComponentEdit, { kind: 'stack' }>) {
+    this.ctx.act(
+      { type: 'component.edit', world: this.ctx.world().id, id: this.flat!.group, edit },
+      'ordenar capas del conjunto',
+      'C08-ORG-01',
+    );
+    this.selectFlat(edit.element);
+  }
+  private selectFlat(id: string) {
+    this.flat!.leaf = id;
+    this.root.dataset.pickedLayer = id;
+    Object.assign(this.ctx.ui.canvas, { selection: id, selections: [id] });
+    this.ctx.render();
+    this.ctx.persist();
+    this.panel
+      .querySelector<HTMLElement>(`[data-part="${CSS.escape(id)}"]`)
+      ?.focus({ preventScroll: true });
+  }
   render(): void {
     if (this.presentation) {
       this.renderPresentation();
       return;
     }
-    const editing = this.ctx.ui.canvas.componentEditing;
-    const group = editing && this.ctx.world().canvasGroups?.find((g) => g.id === editing.group);
+    const ui = this.ctx.ui.canvas;
+    const groups = this.ctx.world().canvasGroups;
+    if (
+      ui.componentEditing &&
+      (ui.zoneSelection ||
+        ui.linkSelection ||
+        (ui.selection &&
+          this.ctx.world().nodes.some((n) => n.id === ui.selection) &&
+          !groups?.find((g) => g.id === ui.componentEditing!.group)?.nodes.includes(ui.selection)))
+    )
+      delete ui.componentEditing;
+    const selectedIds = new Set(ui.selections);
+    const selectedGroup =
+      ui.tool === 'select' && !ui.zoneSelection && !ui.linkSelection && ui.selection
+        ? groups?.find(
+            (g) =>
+              (g.structure || g.nodes.length > 1) &&
+              g.nodes.length === selectedIds.size &&
+              g.nodes.every((id) => selectedIds.has(id)),
+          )
+        : undefined;
+    if (selectedGroup?.id !== this.dismissed) this.dismissed = undefined;
+    const inspectedFlat =
+      selectedGroup ??
+      (ui.tool === 'select' &&
+      !ui.zoneSelection &&
+      !ui.linkSelection &&
+      this.flat?.leaf === ui.selection &&
+      ui.selections.length === 1
+        ? groups?.find((g) => g.id === this.flat?.group && g.nodes.includes(ui.selection!))
+        : undefined);
+    if (
+      !ui.componentEditing &&
+      inspectedFlat &&
+      !inspectedFlat.structure &&
+      inspectedFlat.id !== this.dismissed
+    ) {
+      const leaf = selectedGroup ? undefined : this.flat?.leaf;
+      this.flat = { group: inspectedFlat.id, ...(leaf ? { leaf } : {}) };
+      this.contextual = undefined;
+      const world = this.ctx.world();
+      const root = flatLayers(world, inspectedFlat);
+      const key = JSON.stringify([
+        this.flat,
+        inspectedFlat.name,
+        root.children.map((c) => [c.id, c.name]),
+      ]);
+      if (key !== this.key) {
+        this.key = key;
+        this.panel.hidden = false;
+        this.panel.dataset.group = inspectedFlat.id;
+        this.panel.parentElement!.setAttribute('aria-label', 'Inspector de conjunto');
+        this.panel.innerHTML = `<header><strong>${html(inspectedFlat.name)}</strong><button type="button" class="icon-button" data-component-action="close" aria-label="Cerrar inspector">${icon('close', 16)}</button></header><h3 class="inspector-layers-title">Capas</h3><div class="component-children" role="group" aria-label="Capas">${inspectorLayers(world, root, this.expanded, new Set(leaf ? [leaf] : []), leaf ?? '')}</div>`;
+      }
+      return;
+    }
+    this.flat = undefined;
+    const rootPart = selectedGroup?.structure?.root;
+    this.contextual =
+      rootPart && selectedGroup && selectedGroup.id !== this.dismissed
+        ? { group: selectedGroup.id, element: rootPart.id, selected: rootPart.id }
+        : undefined;
+    const editing = ui.componentEditing ?? this.contextual;
+    const group = editing && groups?.find((g) => g.id === editing.group);
     if (!editing || !group?.structure) {
       delete this.ctx.ui.canvas.componentEditing;
       this.panel.hidden = true;
@@ -285,6 +450,11 @@ export class ComponentInspector {
     const loose = world.nodes.filter((n) => !n.owner && !groupedIds.has(n.id));
     const key = JSON.stringify([
       group,
+      this.ctx
+        .world()
+        .nodes.filter((n) => group.nodes.includes(n.id))
+        .map((n) => n.id),
+      [...this.expanded],
       loose.map((n) => [n.id, nodeTitle(world, n)]),
       world.canvasGroups?.map((g) => [g.id, g.name, g.nodes, g.structure?.root.frame]),
       editing,
@@ -295,7 +465,15 @@ export class ComponentInspector {
     if (key === this.key) return;
     this.key = key;
     this.panel.hidden = false;
+    if (this.panel.dataset.group !== group.id) {
+      this.expanded.clear();
+      this.lastScope = undefined;
+    }
     this.panel.dataset.group = group.id;
+    this.panel.parentElement!.setAttribute(
+      'aria-label',
+      group.structure.root.frame ? 'Inspector de marco' : 'Editar componente',
+    );
     const expanded = [...this.panel.querySelectorAll('details[open] summary')].map(
       (e) => e.textContent,
     );
@@ -305,6 +483,10 @@ export class ComponentInspector {
       path.unshift(ancestor);
       const id = ancestor.id;
       ancestor = elements.find((e) => e.children.some((c) => c.id === id));
+    }
+    if (this.lastScope !== scope.id) {
+      for (const e of path.slice(1)) this.expanded.add(e.id);
+      this.lastScope = scope.id;
     }
     const option = (value: string, label: string, current: string) =>
       `<option value="${html(value)}" ${value === current ? 'selected' : ''}>${html(label)}</option>`;
@@ -348,11 +530,12 @@ export class ComponentInspector {
       items
         .map((n) => `<option value="${html(n.id)}">${html(nodeTitle(world, n))}</option>`)
         .join('');
-    this.panel.innerHTML = `<header><button type="button" class="icon-button" data-component-action="back" aria-label="Subir un nivel">${icon('chevron-left', 16)}</button><strong>${html(group.name)}</strong><button type="button" class="icon-button" data-component-action="close" aria-label="Terminar edición">${icon('close', 16)}</button></header>
-      <nav aria-label="Jerarquía del componente">${path.map((e) => `<button type="button" data-enter="${html(e.id)}" title="${html(e.name)}">${html(e.name)}</button>`).join('<span aria-hidden="true">/</span>')}</nav>
-      <div class="component-children" aria-label="Partes del contenedor">${scope.children.map((e) => `<div class="component-row"><button type="button" data-part="${html(e.id)}" aria-pressed="${chosen.includes(e)}" title="${html(e.name)}">${icon(!e.material ? 'folder' : 'rectangle', 14)}<span>${html(e.name)}</span></button>${!e.material ? `<button type="button" class="icon-button" data-enter="${html(e.id)}" aria-label="Entrar en ${html(e.name)}">${icon('chevron', 12)}</button>` : ''}</div>`).join('') || '<p>Esta pieza no contiene otras partes.</p>'}</div>
+    this.panel.innerHTML = `<header>${scope !== group.structure.root ? `<button type="button" class="icon-button" data-component-action="back" aria-label="Subir un nivel">${icon('chevron-left', 16)}</button>` : ''}<strong>${html(group.name)}</strong><button type="button" class="icon-button" data-component-action="close" aria-label="Terminar edición">${icon('close', 16)}</button></header>
+      <nav aria-label="Jerarquía del componente" ${selected === group.structure.root ? 'hidden' : ''}>${path.map((e) => `<button type="button" data-enter="${html(e.id)}" title="${html(e.name)}">${html(e.name)}</button>`).join('<span aria-hidden="true">/</span>')}</nav>
+      <h3 class="inspector-layers-title">Capas</h3><div class="component-children" role="group" aria-label="Capas">${inspectorLayers(world, group.structure.root, this.expanded, new Set(selected === group.structure.root ? [] : chosen.map((e) => e.id)), selected.id) || '<p>El contenedor está vacío.</p>'}</div>
       <div class="component-properties"><label>Nombre<input data-prop="name" value="${html(selected.name)}" maxlength="200"></label><div class="component-sizes">${size('width', 'Ancho')}${size('height', 'Alto')}</div>
       ${!selected.material ? `<label>Distribución<select data-layout="direction" aria-label="Distribución">${option('free', 'Libre', selected.layout.direction)}${option('row', 'Fila', selected.layout.direction)}${option('column', 'Columna', selected.layout.direction)}</select></label><div class="component-sizes"><label>Espacio<input ${selected.layout.direction === 'free' ? 'disabled' : ''} data-layout="gap" type="number" min="0" max="10000" value="${selected.layout.gap}"></label><label>Margen interno<input data-layout="padding" type="number" min="0" max="10000" value="${selected.layout.padding}"></label></div><label>Alineación<select ${selected.layout.direction === 'free' ? 'disabled' : ''} data-layout="align" aria-label="Alineación">${option('start', 'Inicio', selected.layout.align)}${option('center', 'Centro', selected.layout.align)}${option('end', 'Final', selected.layout.align)}${option('stretch', 'Estirar', selected.layout.align)}</select></label>` : ''}
+      ${selected.frame ? `<label class="frame-clip-option"><input type="checkbox" data-frame-clip ${selected.clipContent ? 'checked' : ''}>Recortar contenido</label>` : ''}
       ${selected.layout.insets ? `<details><summary>Márgenes por lado</summary><div class="component-sizes">${['Superior', 'Derecho', 'Inferior', 'Izquierdo'].map((name, i) => `<label>${name}<input type="number" min="0" max="10000" data-layout-edge="${i}" value="${Math.round(selected.layout.insets![i]! * 100) / 100}"></label>`).join('')}</div></details>` : ''}
       ${editableContent ? '<button type="button" data-component-action="content">Editar contenido y apariencia</button>' : ''}
       ${selected.material ? `<label class="component-check"><input type="checkbox" data-prop="background" ${selected.background ? 'checked' : ''}>Fondo del contenedor</label>` : ''}
@@ -374,7 +557,7 @@ export class ComponentInspector {
               )
               .join(
                 '',
-              )}</select></label><div class="component-actions"><button type="button" data-component-action="earlier" title="Mover antes">${icon('chevron-left', 14)}</button><button type="button" data-component-action="later" title="Mover después">${icon('chevron', 14)}</button><button type="button" data-component-action="duplicate">Duplicar</button><button type="button" data-component-action="detach">Separar</button></div>`
+              )}</select></label><div class="component-actions">${elements.some((e) => e.layout.direction !== 'free' && e.children.some((c) => c.id === selected.id)) ? `<button type="button" data-component-action="earlier" title="Mover antes en la distribución" aria-label="Mover antes en la distribución">${icon('chevron-left', 14)}</button><button type="button" data-component-action="later" title="Mover después en la distribución" aria-label="Mover después en la distribución">${icon('chevron', 14)}</button>` : ''}<button type="button" data-component-action="duplicate">Duplicar</button><button type="button" data-component-action="detach">Separar</button></div>`
           : ''
       }
       <button type="button" data-component-action="container" ${chosen.length < 2 ? 'disabled' : ''}>Agrupar selección en contenedor</button>
@@ -398,11 +581,48 @@ export class ComponentInspector {
     const target = event.target as Element,
       enter = target.closest<HTMLElement>('[data-enter]'),
       row = target.closest<HTMLElement>('[data-part]');
+    const disclosure = target.closest<HTMLElement>('[data-expand]');
+    if (disclosure) {
+      const id = disclosure.dataset.expand!;
+      if (this.expanded.has(id)) {
+        this.expanded.delete(id);
+        this.key = '';
+        this.render();
+      } else {
+        this.expanded.add(id);
+        this.enterElement(id);
+      }
+      this.panel
+        .querySelector<HTMLElement>(`[data-expand="${CSS.escape(id)}"]`)
+        ?.focus({ preventScroll: true });
+      return;
+    }
+    const stack = target.closest<HTMLElement>('[data-stack]');
+    if (stack) {
+      const id = stack.closest<HTMLElement>('[data-layer]')!.dataset.layer!;
+      const edit = {
+        kind: 'stack' as const,
+        element: id,
+        target: stack.dataset.neighbor!,
+        side: stack.dataset.stack as 'above' | 'below',
+      };
+      if (this.flat) this.stackFlat(edit);
+      else this.apply(edit);
+      this.panel
+        .querySelector<HTMLElement>(`[data-part="${CSS.escape(id)}"]`)
+        ?.focus({ preventScroll: true });
+      return;
+    }
+    if (this.flat) {
+      if (row) this.selectFlat(row.dataset.part!);
+      else if (target.closest('[data-component-action=close]')) this.back();
+      return;
+    }
     if (enter) {
       this.enterElement(enter.dataset.enter!);
       return;
     }
-    const editing = this.ctx.ui.canvas.componentEditing;
+    const editing = this.activate();
     if (row && editing) {
       editing.selected = row.dataset.part!;
       const group = this.ctx.world().canvasGroups!.find((g) => g.id === editing.group)!;
@@ -410,6 +630,8 @@ export class ComponentInspector {
         (e) => e.id === editing.selected,
       )!;
       const ids = elementMaterials(selected);
+      editing.element = row.closest<HTMLElement>('[data-parent]')!.dataset.parent!;
+      if (selected.material) this.root.dataset.pickedLayer = selected.material;
       this.ctx.ui.canvas.selections =
         event.ctrlKey || event.metaKey || event.shiftKey
           ? ids.every((id) => this.ctx.ui.canvas.selections.includes(id))
@@ -419,6 +641,9 @@ export class ComponentInspector {
       this.ctx.ui.canvas.selection = this.ctx.ui.canvas.selections[0] ?? null;
       this.ctx.render();
       this.render();
+      this.panel
+        .querySelector<HTMLElement>(`[data-part="${CSS.escape(selected.id)}"]`)
+        ?.focus({ preventScroll: true });
       return;
     }
     const action = target.closest<HTMLElement>('[data-component-action]')?.dataset.componentAction;
@@ -439,6 +664,7 @@ export class ComponentInspector {
       parent = elements.find((e) => e.children.some((c) => c.id === selected.id));
     if (action === 'back') this.back();
     if (action === 'close') {
+      this.dismissed = group.id;
       delete this.ctx.ui.canvas.componentEditing;
       this.ctx.render();
       this.render();
@@ -553,10 +779,21 @@ export class ComponentInspector {
   }
   private change(event: Event): void {
     const field = event.target as HTMLInputElement | HTMLSelectElement,
-      editing = this.ctx.ui.canvas.componentEditing;
+      editing = this.activate();
     if (!editing) return;
     const group = this.ctx.world().canvasGroups!.find((g) => g.id === editing.group)!,
       selected = componentElements(group.structure!.root).find((e) => e.id === editing.selected)!;
+    if (field.hasAttribute('data-frame-clip')) {
+      this.apply({
+        kind: 'clip',
+        element: selected.id,
+        enabled: (field as HTMLInputElement).checked,
+      });
+      this.panel
+        .querySelector<HTMLInputElement>('[data-frame-clip]')
+        ?.focus({ preventScroll: true });
+      return;
+    }
     if (field.dataset.prop) {
       const key = field.dataset.prop;
       this.apply({
@@ -629,7 +866,7 @@ export class ComponentInspector {
       maximumZoom: 1,
       ...(innerWidth >= 700
         ? { rightInset: 308 }
-        : { bottomInset: this.panel.getBoundingClientRect().height + 16 }),
+        : { bottomInset: this.panel.parentElement!.getBoundingClientRect().height + 16 }),
     });
   }
   private renderPresentation(): void {

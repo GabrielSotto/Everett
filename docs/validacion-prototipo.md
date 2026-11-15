@@ -120,8 +120,12 @@ Recorridos de aceptación del [diseño de marcos, componentes mixtos y alineaci�
 El primer bloque cubre pertenencia y geometría con C08-U86 y C08-B226–B227. Incluye un
 traslado entre marcos girados con recorrido de navegación y una pantalla con PNG importado,
 texto libre y una anotación superpuesta externa. Comprueba un fondo creado después de su
-contenido, movimiento desde el título, edición del fondo, Deshacer y recarga. La fracción
-visible del contenido en el primer recorrido se verificará al incorporar recorte.
+contenido, movimiento desde el título, edición del fondo, Deshacer y recarga. C08-U87 y
+C08-B228–B232 cubren máscaras giradas y anidadas, píxeles y selección a ambos lados del
+recorte, desplazamiento y resize antes de soltar, recuperación de una foto oculta desde
+el inspector, orden visible en conjuntos y marcos y cambio de contenedor con Deshacer.
+La selección bajo el puntero se prueba con mouse y teclado. Una línea de 10 × 4 se mueve
+desde su centro al 60, 100 y 200 %.
 
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
    por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles

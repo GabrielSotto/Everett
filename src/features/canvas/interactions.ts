@@ -1,5 +1,8 @@
 import { legacyBars, linkedBarCopy } from '../../domain/legacy-bars';
 import { barEditor } from './bar-chart';
+import { highlightLayer, layerMenu, layersAt, type LayerHits } from './layer-picker';
+import { paintFrameClips } from './frame-clipping';
+import { frameMasks, visiblePolygon } from '../../domain/frame-clipping';
 import type { Context } from '../../app/context';
 import {
   nodeTitle,
@@ -75,6 +78,7 @@ export class CanvasInteractions {
   private ownedUrls = new Set<string>();
   private disposed = false;
   private menuMaterial: string | null = null;
+  private layerContext?: { id: string; point: Point; pointed: boolean; hits: LayerHits };
   private loadingSamples = false;
   private arrangeOrigin: Point = { x: 12, y: 70 };
   private illustrationPosition?: Point;
@@ -105,6 +109,14 @@ export class CanvasInteractions {
     this.overlay = document.createElement('div');
     this.overlay.className = 'canvas-context-layer';
     root.append(this.overlay);
+    const highlightChoice = (event: Event) => {
+      if (!this.overlay.querySelector('.layer-picker')) return;
+      const id = (event.target as Element).closest<HTMLElement>('[data-action=layer-select]')
+        ?.dataset.id;
+      highlightLayer(root, this.layerContext?.hits.find((hit) => hit.id === id)?.polygon);
+    };
+    this.overlay.addEventListener('pointerover', highlightChoice, { signal });
+    this.overlay.addEventListener('focusin', highlightChoice, { signal });
     const stage = root.querySelector<HTMLElement>('.canvas-stage')!;
     bindIllustrationDrop(stage, signal, (item, client) => {
       const panel = this.overlay.querySelector<HTMLElement>('.illustration-picker');
@@ -152,6 +164,7 @@ export class CanvasInteractions {
             .find((draft) => draft.material.id === node.id);
           if (proposal && draft) proposal.outerHTML = previewMarkup(ctx, draft);
         }
+        paintFrameClips(root, world, ctx.ui.canvas.selections);
         this.hydrate();
         ctx.camera?.set(ctx.currentCamera(), true);
       }
@@ -385,8 +398,14 @@ export class CanvasInteractions {
           else this.focusLink(id);
           return;
         }
-        if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-node]')) return;
-        const id = event.target.dataset.node!;
+        if (!(event.target instanceof HTMLElement)) return;
+        const canvasMenu = event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10');
+        const id = event.target.matches('[data-node]')
+          ? event.target.dataset.node
+          : canvasMenu && event.target === root
+            ? ctx.ui.canvas.selection
+            : null;
+        if (!id) return;
         if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
           event.preventDefault();
           event.stopPropagation();
@@ -460,6 +479,27 @@ export class CanvasInteractions {
         const button = target(event),
           id = button?.dataset.id ?? '';
         switch (button?.dataset.action) {
+          case 'layer-list': {
+            const menu = this.layerContext;
+            if (!menu) break;
+            this.overlay.innerHTML = layerMenu(menu.hits, this.position(menu.point));
+            this.fitOverlay();
+            this.overlay.querySelector<HTMLElement>('[data-action=layer-select]')?.focus();
+            break;
+          }
+          case 'layer-back': {
+            const menu = this.layerContext;
+            if (menu) this.menu(menu.id, menu.point, menu.pointed);
+            this.overlay.querySelector<HTMLElement>('[data-action=layer-list]')?.focus();
+            break;
+          }
+          case 'layer-select':
+            if (this.layerContext?.hits.some((h) => h.id === id)) {
+              this.close();
+              this.root.dataset.pickedLayer = id;
+              this.components.selectLayer(id);
+            }
+            break;
           case 'context-arrange': {
             const menu = this.overlay.firstElementChild as HTMLElement | null;
             if (menu)
@@ -1044,6 +1084,15 @@ export class CanvasInteractions {
     this.overlay.addEventListener(
       'keydown',
       (event) => {
+        if (
+          ['Escape', 'ArrowLeft'].includes(event.key) &&
+          this.overlay.querySelector('.layer-picker')
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.overlay.querySelector<HTMLElement>('[data-action=layer-back]')?.click();
+          return;
+        }
         if (event.key === 'Escape') {
           event.preventDefault();
           event.stopPropagation();
@@ -1066,7 +1115,7 @@ export class CanvasInteractions {
         if (
           event.key === 'ArrowRight' &&
           event.target instanceof HTMLElement &&
-          event.target.dataset.action === 'context-arrange'
+          ['context-arrange', 'layer-list'].includes(event.target.dataset.action ?? '')
         ) {
           event.preventDefault();
           event.target.click();
@@ -1303,7 +1352,30 @@ export class CanvasInteractions {
   private menu(id: string, point: Point, pointed = false): void {
     const node = this.ctx.world().nodes.find((n) => n.id === id && !n.owner);
     if (!node) return;
+    highlightLayer(this.root);
+    const world = this.ctx.world();
+    const visible = visiblePolygon(node, frameMasks(world).get(id));
+    // El menú de teclado usa un punto realmente visible aun con la mitad del material recortada.
+    const at = pointed
+      ? toWorld(
+          point,
+          this.ctx.currentCamera(),
+          this.root.querySelector('.canvas-stage')!.getBoundingClientRect(),
+        )
+      : visible.length
+        ? {
+            x: visible.reduce((s, p) => s + p.x, 0) / visible.length,
+            y: visible.reduce((s, p) => s + p.y, 0) / visible.length,
+          }
+        : null;
+    const hits = at ? layersAt(world, at) : [];
+    const pickLayer =
+      hits.length > 1
+        ? '<button type="button" role="menuitem" aria-haspopup="menu" data-action="layer-list">Seleccionar capa <span aria-hidden="true">›</span></button>'
+        : '';
+    this.layerContext = { id, point, pointed, hits };
     this.menuMaterial = id;
+    this.components.keepContextMenuIndependent(id);
     this.ctx.ui.canvas.selection = id;
     if (!this.ctx.ui.canvas.selections.includes(id)) this.ctx.ui.canvas.selections = [id];
     this.ctx.ui.canvas.selections = componentSelection(
@@ -1326,7 +1398,7 @@ export class CanvasInteractions {
           ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>'
           : '';
     if (component && component.id !== this.ctx.ui.canvas.componentEditing?.group) {
-      this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del componente" style="${this.position(point)}"><button role="menuitem" data-action="component-edit" data-id="${component.id}">${component.structure?.root.frame ? 'Editar marco' : 'Editar componente'}</button><button role="menuitem" data-action="group-rename" data-id="${component.id}">Renombrar componente</button><button role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button><button role="menuitem" data-action="group-ungroup" data-id="${component.id}">Desagrupar componente</button><button type="button" role="menuitem" data-action="context-rotate">Girar…</button><button role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangement}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button role="menuitem" data-action="context-remove" data-id="${id}">Eliminar componente</button></div>`;
+      this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del componente" style="${this.position(point)}">${pickLayer}<button role="menuitem" data-action="component-edit" data-id="${component.id}">${component.structure?.root.frame ? 'Editar marco' : 'Editar componente'}</button><button role="menuitem" data-action="group-rename" data-id="${component.id}">Renombrar componente</button><button role="menuitem" data-action="context-duplicate" data-id="${id}">Duplicar</button><button role="menuitem" data-action="group-ungroup" data-id="${component.id}">Desagrupar componente</button><button type="button" role="menuitem" data-action="context-rotate">Girar…</button><button role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangement}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button role="menuitem" data-action="context-remove" data-id="${id}">Eliminar componente</button></div>`;
       this.fitOverlay();
       this.overlay.querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
       return;
@@ -1361,7 +1433,7 @@ export class CanvasInteractions {
             id +
             '">Editar texto <kbd aria-hidden="true">Enter</kbd></button>'
           : '';
-    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}">${editAction}${makeFrame}${this.ctx.ui.canvas.selections.length === 1 && (node.data.kind === 'shape' || node.data.kind === 'text') && legacyBars(this.ctx.world(), id) ? `<button type="button" role="menuitem" data-action="bars-copy" data-id="${html(id)}">Crear copia con datos vinculados</button>` : ''}${callout}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 && isLibraryAsset(node.data.asset) ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-image-colors">Editar colores…</button>` : ''}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-replace-image">Reemplazar imagen…</button>` : ''}<button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'wireframe' ? `<button type="button" role="menuitem" data-action="wireframe-edit" data-id="${id}">Editar contenido</button>` : ''}${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-rotate">Girar…</button><button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
+    this.overlay.innerHTML = `<div class="canvas-context-menu" role="menu" aria-label="Acciones del material" style="${this.position(point)}">${pickLayer}${editAction}${makeFrame}${this.ctx.ui.canvas.selections.length === 1 && (node.data.kind === 'shape' || node.data.kind === 'text') && legacyBars(this.ctx.world(), id) ? `<button type="button" role="menuitem" data-action="bars-copy" data-id="${html(id)}">Crear copia con datos vinculados</button>` : ''}${callout}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 && isLibraryAsset(node.data.asset) ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-image-colors">Editar colores…</button>` : ''}${node.data.kind === 'image' && this.ctx.ui.canvas.selections.length === 1 ? `<button type="button" role="menuitem" data-id="${html(id)}" data-action="material-replace-image">Reemplazar imagen…</button>` : ''}<button type="button" role="menuitem" data-action="material-rename" data-id="${id}">Renombrar <kbd>${html(this.ctx.ui.shortcuts.rename)}</kbd></button><button type="button" role="menuitem" data-action="context-duplicate" data-id="${id}" aria-label="${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}">${this.ctx.ui.canvas.selections.length > 1 ? 'Duplicar selección' : 'Duplicar'}${this.ctx.ui.shortcuts.duplicate ? `<kbd aria-hidden="true">${html(this.ctx.ui.shortcuts.duplicate)}</kbd>` : ''}</button>${node.data.kind === 'wireframe' ? `<button type="button" role="menuitem" data-action="wireframe-edit" data-id="${id}">Editar contenido</button>` : ''}${node.data.kind === 'local' && node.data.content.kind !== 'agent' ? `<button type="button" role="menuitem" data-action="context-publish" data-id="${id}">Crear en ${node.data.content.kind === 'document' ? 'Docs' : node.data.content.kind === 'file' ? 'Code' : 'Board'}…</button>` : ''}${this.ctx.ui.canvas.selections.length > 1 && !this.ctx.world().canvasGroups?.some((g) => g.nodes.some((n) => this.ctx.ui.canvas.selections.includes(n))) ? `<button type="button" role="menuitem" data-action="context-group">Crear conjunto</button>` : ''}${this.ctx.world().canvasGroups?.some((g) => g.nodes.includes(id)) ? `<button role="menuitem" data-action="group-remove" data-id="${id}">Sacar del conjunto</button>` : ''}${node.data.kind === 'reference' && ['document', 'file'].includes(node.data.ref.kind) ? `<button type="button" role="menuitem" data-action="reference-fragment" data-id="${id}">Mostrar un fragmento…</button>${node.data.ref.fragment ? `<button type="button" role="menuitem" data-action="reference-whole" data-id="${id}">Referencia completa</button>` : ''}` : ''}<button type="button" role="menuitem" data-action="context-rotate">Girar…</button><button type="button" role="menuitem" data-action="context-fit">Ajustar a la selección</button>${arrangementUnits(this.ctx.world(), this.ctx.ui.canvas.selections).length > 1 ? '<button type="button" role="menuitem" data-action="context-arrange">Alinear y distribuir <span>›</span></button>' : ''}${layers}<button type="button" role="menuitem" data-action="context-zones" aria-haspopup="menu" data-id="${id}">Asignar a una zona <span>›</span></button><button type="button" role="menuitem" data-action="canvas-comment">Comentar <kbd>${html(this.ctx.ui.shortcuts.comment)}</kbd></button><button type="button" role="menuitem" data-action="context-remove" data-id="${id}">${node.data.kind === 'reference' ? 'Quitar del Canvas' : 'Eliminar'}</button></div>`;
     this.fitOverlay();
     this.overlay.querySelector<HTMLElement>('[role=menuitem]')?.focus({ preventScroll: true });
   }
@@ -2089,6 +2161,8 @@ export class CanvasInteractions {
       });
   }
   close(): boolean {
+    highlightLayer(this.root);
+    delete this.layerContext;
     const insertingIllustration = this.overlay.querySelector(
       '.illustration-picker[data-replace=""]',
     );

@@ -333,6 +333,9 @@ test('C08-B177: recorrido entre pantallas vuelve por historial y restaura cámar
   const box = (await panel.boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(320);
+  const pane = (await page.locator('#canvas-inspector').boundingBox())!;
+  expect(pane.height).toBeLessThanOrEqual(280);
+  expect(pane.y).toBeGreaterThan(300);
   expect(await panel.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
   await capture(page, info, 'inspector-320');
 });

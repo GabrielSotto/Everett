@@ -53,6 +53,39 @@ const edit = (store: Awaited<ReturnType<typeof component>>, value: ComponentEdit
     intent,
   );
 
+test('C08-U88: apilar un subárbol respeta la disposición, evita ciclos y conserva el orden en una composición guardada', async () => {
+  const store = await component();
+  const before = project(store).nodes.map((n) => n.id);
+  edit(store, { kind: 'container', elements: ['part-0', 'part-1'], name: 'Campos' });
+  const group = project(store).canvasGroups![0]!;
+  const nested = group.structure!.root.children.find((c) => c.children.length)!;
+  assert.throws(
+    () => edit(store, { kind: 'stack', element: nested.id, target: 'part-1', side: 'above' }),
+    /capas distintas/,
+  );
+  assert.deepEqual(
+    project(store).nodes.map((n) => n.id),
+    before,
+  );
+  edit(store, { kind: 'stack', element: nested.id, target: 'part-2', side: 'above' });
+  const members = new Set(group.nodes);
+  const ordered = project(store).nodes.filter((n) => members.has(n.id));
+  assert.deepEqual(
+    ordered.map((n) => n.id),
+    [group.nodes[2], group.nodes[0], group.nodes[1]],
+  );
+  assert.deepEqual(project(store).canvasGroups![0]!.structure, group.structure);
+  store.dispatch(
+    { type: 'composition.save', world: 'project', id: group.id, name: 'Orden probado' },
+    intent,
+  );
+  const saved = project(store).compositions!.at(-1)!;
+  assert.deepEqual(
+    saved.composition.parts.map((p) => p.name),
+    ['Campo 2', 'Campo 0', 'Campo 1'],
+  );
+});
+
 test('C08-U62: jerarquía editable conserva identidades, evita ciclos y deshace agrupación, orden y separación', async () => {
   const store = await component();
   const original = structuredClone(project(store).nodes);

@@ -12,6 +12,7 @@ import {
   freeLayout,
   type ComponentElement,
   type ComponentLayout,
+  type ComponentTree,
   type Sizing,
 } from '../component-tree';
 import { layoutComponent } from '../component-layout';
@@ -27,8 +28,11 @@ import {
   transferFramePart,
 } from '../canvas-frames';
 import { componentPoses, localPose } from '../component-geometry';
+import { flatLayers, restackLayer } from '../component-layers';
 
 export type ComponentEdit =
+  | { kind: 'stack'; element: string; target: string; side: 'above' | 'below' | 'inside' }
+  | { kind: 'clip'; element: string; enabled: boolean }
   | { kind: 'initialize' }
   | {
       kind: 'properties';
@@ -205,6 +209,25 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     });
     return;
   }
+  if (!group.structure && c.edit.kind === 'stack') {
+    const { element, target, side } = c.edit;
+    const root = flatLayers(world, group);
+    const source = need(
+      root.children.find((e) => e.id === element),
+      'Capa no disponible.',
+    );
+    const neighbor = need(
+      root.children.find((e) => e.id === target),
+      'Capa no disponible.',
+    );
+    ensure(
+      source !== neighbor && (side === 'above' || side === 'below'),
+      'COMPONENT_STACK',
+      'Elegí otra capa del conjunto.',
+    );
+    restackLayer(world, root, source, neighbor, side);
+    return;
+  }
   group.structure ??= treeFromMaterials(
     world.nodes.filter((n) => group.nodes.includes(n.id)),
     group.name,
@@ -235,7 +258,7 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
       const bounds = groupBounds(world, group),
         sx = edit.rect.width / bounds.width,
         sy = edit.rect.height / bounds.height;
-      const scaled = resizedComponent(world, group, edit.rect, true);
+      const { nodes: scaled } = resizedComponent(world, group, edit.rect, true);
       for (const node of scaled)
         Object.assign(
           world.nodes.find((n) => n.id === node.id)!,
@@ -358,7 +381,55 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     layoutComponent(tree.root);
   } else {
     const element = need(elementAt(tree.root, edit.element), 'Pieza no disponible');
-    if (edit.kind === 'properties') {
+    if (edit.kind === 'stack') {
+      const parent = need(parentOf(tree.root, element.id), 'Elegí una capa del contenedor.');
+      const target = need(elementAt(tree.root, edit.target), 'Elegí una capa del componente.');
+      const destination =
+        edit.side === 'inside'
+          ? target
+          : need(parentOf(tree.root, target.id), 'Elegí una capa del contenedor.');
+      ensure(
+        target !== element &&
+          (edit.side === 'above' ||
+            edit.side === 'below' ||
+            (edit.side === 'inside' && !target.material)) &&
+          !!elementMaterials(element).length &&
+          (edit.side === 'inside' || !!elementMaterials(target).length) &&
+          !elementAt(element, destination.id),
+        'COMPONENT_STACK',
+        'Elegí dos capas distintas con contenido.',
+      );
+      ensure(
+        !(parent.frame && element.background) &&
+          !(destination.frame && target.background && edit.side === 'below'),
+        'FRAME_BACKGROUND',
+        'El fondo del marco queda debajo de sus capas.',
+      );
+      if (parent !== destination) {
+        const neighbor = destination.children.indexOf(target);
+        movePart(
+          tree,
+          element,
+          parent,
+          destination,
+          edit.side === 'inside'
+            ? destination.children.length
+            : neighbor + Number(edit.side === 'above'),
+        );
+        writeTreeGeometry(world, group);
+      }
+      restackLayer(world, destination, element, target, edit.side);
+      return;
+    }
+    if (edit.kind === 'clip') {
+      ensure(
+        element.frame === true && typeof edit.enabled === 'boolean',
+        'FRAME_CLIP',
+        'Elegí un marco para recortar su contenido.',
+      );
+      element.clipContent = edit.enabled;
+      return;
+    } else if (edit.kind === 'properties') {
       const { kind: _, element: __, ...patch } = edit;
       Object.assign(element, structuredClone(patch));
       ensure(
@@ -423,16 +494,7 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
           'COMPONENT_ORDER',
           'Posición no válida.',
         );
-        const poses = componentPoses(tree);
-        const placement = localPose(poses.get(destination.id)!, poses.get(element.id)!);
-        parent.children = parent.children.filter((e) => e !== element);
-        destination.children.splice(edit.index, 0, element);
-        element.x = placement.x;
-        element.y = placement.y;
-        if (!element.material && placement.rotation !== undefined)
-          element.rotation = placement.rotation;
-        delete element.margin;
-        layoutComponent(tree.root);
+        movePart(tree, element, parent, destination, edit.index);
       } else if (edit.kind === 'transfer') {
         transferFramePart(world, group, parent, element, edit.frame, uid);
       } else if (edit.kind === 'detach') {
@@ -474,4 +536,21 @@ function elementMaterialsById(root: ComponentElement): [string, string][] {
   return componentElements(root).flatMap((e) =>
     e.material ? [[e.id, e.material] as [string, string]] : [],
   );
+}
+function movePart(
+  tree: ComponentTree,
+  element: ComponentElement,
+  parent: ComponentElement,
+  destination: ComponentElement,
+  index: number,
+): void {
+  const poses = componentPoses(tree);
+  const placement = localPose(poses.get(destination.id)!, poses.get(element.id)!);
+  parent.children = parent.children.filter((e) => e !== element);
+  destination.children.splice(index, 0, element);
+  element.x = placement.x;
+  element.y = placement.y;
+  if (!element.material && placement.rotation !== undefined) element.rotation = placement.rotation;
+  delete element.margin;
+  layoutComponent(tree.root);
 }

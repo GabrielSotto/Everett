@@ -27,16 +27,16 @@
   outline-offset: var(--selection-outset);
 }
 :is(.material, .orientation-controls) .resize-handle:is(.nw, .sw) {
-  left: calc(0px - var(--selection-outset));
+  left: min(calc(0px - var(--selection-outset)), calc(50% - 7px / var(--canvas-zoom)));
 }
 :is(.material, .orientation-controls) .resize-handle:is(.ne, .se) {
-  left: calc(100% + var(--selection-outset));
+  left: max(calc(100% + var(--selection-outset)), calc(50% + 7px / var(--canvas-zoom)));
 }
 :is(.material, .orientation-controls) .resize-handle:is(.nw, .ne) {
-  top: calc(0px - var(--selection-outset));
+  top: min(calc(0px - var(--selection-outset)), calc(50% - 7px / var(--canvas-zoom)));
 }
 :is(.material, .orientation-controls) .resize-handle:is(.sw, .se) {
-  top: calc(100% + var(--selection-outset));
+  top: max(calc(100% + var(--selection-outset)), calc(50% + 7px / var(--canvas-zoom)));
 }
 .connection:not(.selected) .link-endpoint {
   display: none;
@@ -1113,9 +1113,7 @@ body[data-canvas-motion='reduced']
 }
 
 .zone-inspector {
-  width: min(270px, calc(100vw - 24px));
   padding: 14px;
-  border-radius: 11px;
 }
 .inspector-head > span {
   min-width: 0;

@@ -79,6 +79,8 @@ import { alignmentTargets } from '../../domain/alignment-targets';
 import { layoutFrames } from '../../domain/layout-guides';
 import { paintLayoutGuides } from './layout-guides';
 import { resizedComponent } from '../../domain/component-resize';
+import { frameMasks } from '../../domain/frame-clipping';
+import { paintFrameClips } from './frame-clipping';
 import { componentElements, elementMaterials } from '../../domain/component-tree';
 const shapeTools: Shape[] = ['rectangle', 'ellipse', 'triangle', 'star'];
 const shapePalette = [...shapeTools, 'straight-arrow', 'curved-arrow'] as const;
@@ -190,7 +192,7 @@ export class CanvasView implements View {
       },
     );
     root.innerHTML =
-      '<section class="canvas-stage" id="canvas-stage"><div class="canvas-plane" id="canvas-plane"></div><div id="canvas-zone-labels" aria-hidden="true"></div><div id="selection-actions"></div></section><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><div id="canvas-dock-host"></div><div class="chat-host" id="canvas-chat-host"></div>';
+      '<section class="canvas-stage" id="canvas-stage" tabindex="-1"><div class="canvas-plane" id="canvas-plane"></div><div id="canvas-zone-labels" aria-hidden="true"></div></section><aside id="canvas-inspector" aria-label="Inspector de Canvas" hidden><div id="selection-actions"></div></aside><input id="canvas-file-import" type="file" accept="image/*,video/*,application/pdf" multiple hidden><div id="canvas-dock-host"></div><div class="chat-host" id="canvas-chat-host"></div>';
     this.cam = new SpatialCamera(
       ctx.store.get().camera,
       (camera) => {
@@ -819,6 +821,13 @@ export class CanvasView implements View {
     this.ctx.ui.canvas.linkSelection = kind === 'link' ? id : null;
     const data = this.ctx.world().nodes.find((n) => n.id === id)?.data;
     const editing = ui.componentEditing;
+    if (
+      editing &&
+      (kind === 'zone' ||
+        kind === 'link' ||
+        (kind === 'node' && id && componentFor(this.ctx.world(), id)?.id !== editing.group))
+    )
+      delete ui.componentEditing;
     if (editing && kind === 'node' && id) {
       const tree = this.ctx.world().canvasGroups?.find((g) => g.id === editing.group)?.structure;
       const scope = tree && componentElements(tree.root).find((e) => e.id === editing.element);
@@ -910,6 +919,8 @@ export class CanvasView implements View {
         this.ctx.notice('Devolvé los materiales del agente antes de mover este conjunto.');
         return;
       }
+      this.interactions.components.allowSelection();
+      delete ui.canvas.componentEditing;
       this.select('node', members[0]!.id);
       ui.canvas.selections = members.map((n) => n.id);
       const start = this.point(e);
@@ -1124,6 +1135,7 @@ export class CanvasView implements View {
           ? this.ctx.world().nodes.find((n) => n.id === id && !n.owner)
           : this.ctx.world().zones.find((z) => z.id === id);
       if (!original) return;
+      this.interactions.components.allowSelection();
       if (kind === 'node' && ui.canvas.selections.includes(id) && !e.shiftKey)
         ui.canvas.selection = id;
       else this.select(kind, id, e.shiftKey);
@@ -1199,7 +1211,7 @@ export class CanvasView implements View {
       this.applyRect(box, rect);
       const selected = componentSelection(
         this.ctx.world(),
-        materialsInRect(this.ctx.world().nodes, rect),
+        materialsInRect(this.ctx.world().nodes, rect, frameMasks(this.ctx.world())),
         this.ctx.ui.canvas.componentEditing,
       );
       const ui = this.ctx.ui.canvas;
@@ -1292,7 +1304,7 @@ export class CanvasView implements View {
             height: d.origin.height * scale,
           };
         d.rect = placeResized(d.origin, d.rect);
-        const nodes = resizedComponent(world, group, d.rect);
+        const { nodes, tree } = resizedComponent(world, group, d.rect);
         for (const node of nodes) {
           const el = this.root.querySelector<HTMLElement>(`[data-node="${CSS.escape(node.id)}"]`);
           if (!el) continue;
@@ -1305,6 +1317,14 @@ export class CanvasView implements View {
         );
         if (frame) this.applyRect(frame, d.rect);
         this.paintLinks(nodes.map((n) => ({ id: n.id, point: n })));
+        if (tree && frameMasks(world).size)
+          paintFrameClips(
+            this.root,
+            world,
+            this.ctx.ui.canvas.selections,
+            new Map(nodes.map((n) => [n.id, n])),
+            { resized: { group: group.id, tree } },
+          );
         return;
       }
       const material = this.ctx.world().nodes.find((n) => n.id === d.id);
@@ -1341,6 +1361,13 @@ export class CanvasView implements View {
         }
       }
       this.paintLinks([{ id: d.id, point: d.rect }]);
+      if (material)
+        paintFrameClips(
+          this.root,
+          this.ctx.world(),
+          this.ctx.ui.canvas.selections,
+          new Map([[d.id, { ...material, ...d.rect }]]),
+        );
       return;
     }
     if (d.kind === 'node' || d.kind === 'zone') {
@@ -1447,6 +1474,23 @@ export class CanvasView implements View {
       }
       if (d.kind === 'node') {
         this.paintLinks(positions);
+        const world = this.ctx.world();
+        if (frameMasks(world).size) {
+          const points = new Map(positions.map((p) => [p.id, p.point]));
+          const live = new Map(
+            world.nodes
+              .filter((n) => points.has(n.id))
+              .map((n) => [n.id, { ...n, ...points.get(n.id) }]),
+          );
+          const dx = d.point.x - d.origin.x,
+            dy = d.point.y - d.origin.y;
+          paintFrameClips(this.root, world, this.ctx.ui.canvas.selections, live, {
+            transform: (f) =>
+              f.members.every((id) => live.has(id))
+                ? { ...f.pose, x: f.pose.x + dx, y: f.pose.y + dy }
+                : f.pose,
+          });
+        }
         const chat = this.root.querySelector('.canvas-chat.docked');
         chat?.classList.toggle(
           'reference-drop-ready',
@@ -1571,6 +1615,7 @@ export class CanvasView implements View {
     if (d.kind === 'selection') {
       this.root.querySelector('.selection-box')?.remove();
       if (Math.hypot(d.point.x - d.start.x, d.point.y - d.start.y) * this.cam.current.z < 3) {
+        if (!d.additive) delete this.ctx.ui.canvas.componentEditing;
         this.ctx.ui.canvas.selections = d.additive ? d.before : [];
         this.ctx.ui.canvas.selection = this.ctx.ui.canvas.selections.at(-1) ?? null;
         this.paintSelection();
@@ -1953,6 +1998,8 @@ export class CanvasView implements View {
       id = t.dataset.id ?? '';
     switch (t.dataset.action) {
       case 'group-select': {
+        this.interactions.components.allowSelection();
+        delete ctx.ui.canvas.componentEditing;
         const group = ctx.world().canvasGroups?.find((g) => g.id === id);
         const members =
           group?.nodes.filter((node) => ctx.world().nodes.some((n) => n.id === node && !n.owner)) ??
@@ -2516,7 +2563,9 @@ export class CanvasView implements View {
           group.nodes.every((id) => ui.canvas.selections.includes(id)),
       ) ?? false,
     );
-    this.root.dataset.canvasPanel = ui.canvas.zoneSelection
+    const inspector = this.root.querySelector<HTMLElement>('#canvas-inspector')!;
+    inspector.hidden = !ui.canvas.zoneSelection && !this.interactions.components.visible;
+    this.root.dataset.canvasPanel = !inspector.hidden
       ? 'inspector'
       : this.revision || this.reviewCamera
         ? 'proposal'
@@ -2563,9 +2612,10 @@ export class CanvasView implements View {
         !connect &&
         (!component || (editing && ui.canvas.selections.length === 1))
       ) {
-        if (node.rotation && !layer) layer = controlLayer(plane, element, node);
+        const separateControls = node.rotation || node.id === this.root.dataset.pickedLayer;
+        if (separateControls && !layer) layer = controlLayer(plane, element, node);
         if (layer) {
-          if (!node.rotation) {
+          if (!separateControls) {
             layer.remove();
             layer = undefined;
           } else {
@@ -2597,6 +2647,7 @@ export class CanvasView implements View {
         ? w.nodes.filter((n) => selectedIds.has(n.id) && !n.owner)
         : [],
     );
+    paintFrameClips(this.root, w, ui.canvas.selections);
     if (keepLinks) {
       this.root.querySelectorAll<SVGElement>('[data-link]').forEach((el) => {
         const selected = el.dataset.link === ui.canvas.linkSelection;
@@ -2614,7 +2665,8 @@ export class CanvasView implements View {
     else if (zone) {
       const agent = w.agents.find((a) => a.id === zone.agent),
         materials = w.nodes.filter((n) => n.owner === zone.agent && !!zone.agent);
-      holder.innerHTML = `<aside class="zone-inspector" aria-label="Inspector de zona"><div class="inspector-head"><span>${icon('zone', 15)}<label class="zone-name-label" for="zone-name">Zona</label></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar panel de zona')}</div></div><input id="zone-name" aria-label="Nombre de la zona" placeholder="Zona sin nombre" value="${html(zone.name)}"><label for="zone-agent">Agente asignado</label><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
+      inspector.setAttribute('aria-label', 'Inspector de zona');
+      holder.innerHTML = `<div class="zone-inspector"><div class="inspector-head"><span>${icon('zone', 15)}<label class="zone-name-label" for="zone-name">Zona</label></span><div>${btn('zone-delete', 'trash', 'Eliminar zona', `data-id="${zone.id}"`)}${btn('inspector-close', 'close', 'Cerrar panel de zona')}</div></div><input id="zone-name" aria-label="Nombre de la zona" placeholder="Zona sin nombre" value="${html(zone.name)}"><label for="zone-agent">Agente asignado</label><select id="zone-agent" aria-label="Agente de la zona"><option value="">Elegir agente…</option>${w.agents
         .filter(
           (a) =>
             !a.templateId ||
@@ -2648,7 +2700,7 @@ export class CanvasView implements View {
                 '',
               )}<h4>Materiales · ${materials.length}</h4>${materials.map((n) => `<div class="zone-resource"><span title="${html(nodeTitle(w, n))}">${html(nodeTitle(w, n))}</span><button type="button" data-action="zone-return" data-id="${n.id}" aria-label="Devolver ${html(nodeTitle(w, n))} al Canvas">Devolver</button></div>`).join('')}<div class="zone-actions"><button type="button" data-action="zone-talk" data-id="${zone.id}">${icon('agents', 14)}Ver agente</button><button type="button" data-action="zone-unbind" data-id="${zone.id}" aria-label="Quitar agente y devolver materiales">${icon('unplug', 14)}Retirar agente</button><small>Retirar al agente devuelve sus materiales al Canvas.</small></div>`
           : ''
-      }</aside>`;
+      }</div>`;
     } else holder.innerHTML = '';
   }
   private floatingChatBounds(): DOMRect | null {

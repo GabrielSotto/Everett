@@ -11,7 +11,7 @@ export function resizedComponent(
   group: DeepReadonly<CanvasGroup>,
   rect: Rect,
   scaleStructure = false,
-): Material[] {
+): { nodes: Material[]; tree?: NonNullable<CanvasGroup['structure']> } {
   if (group.structure && !scaleStructure) {
     const tree = structuredClone(group.structure) as NonNullable<CanvasGroup['structure']>;
     tree.root.width = rect.width;
@@ -24,16 +24,17 @@ export function resizedComponent(
       componentElements(tree.root).map((e) => [e.material, poses.get(e.id)!]),
     );
     const members = new Map(world.nodes.map((n) => [n.id, n]));
-    return group.nodes.map((id) => {
+    const nodes = group.nodes.map((id) => {
       const { x, y, width, height } = geometry.get(id)!;
       return { ...structuredClone(members.get(id)!), x, y, width, height } as Material;
     });
+    return { tree, nodes };
   }
   const bounds = groupBounds(world, group);
   const sx = rect.width / bounds.width,
     sy = rect.height / bounds.height;
   const scale = Math.min(sx, sy);
-  return group.nodes.map((id) => {
+  const nodes = group.nodes.map((id) => {
     const original = world.nodes.find((n) => n.id === id)!;
     const node = structuredClone(original) as Material;
     Object.assign(node, {
@@ -55,4 +56,5 @@ export function resizedComponent(
     }
     return node;
   });
+  return { nodes };
 }

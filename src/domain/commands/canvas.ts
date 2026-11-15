@@ -722,7 +722,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         });
         break;
       }
-      const nodes = resizedComponent(world, group, command.rect);
+      const { nodes } = resizedComponent(world, group, command.rect);
       ensure(
         nodes.every(
           (n) =>

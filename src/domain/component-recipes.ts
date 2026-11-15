@@ -20,7 +20,8 @@ export function captureComposition(
   world: WorldSnapshot,
   group: DeepReadonly<CanvasGroup>,
 ): LibraryComposition {
-  const nodes = group.nodes.map((id) => world.nodes.find((n) => n.id === id)!);
+  const members = new Set(group.nodes);
+  const nodes = world.nodes.filter((n) => members.has(n.id));
   if (!nodes.every((n) => n.data.kind === 'wireframe' && n.data.content.piece))
     throw new Error('Guardá una composición de piezas de bosquejo.');
   const x = group.structure?.origin.x ?? Math.min(...nodes.map((n) => n.x)),

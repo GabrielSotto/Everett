@@ -115,20 +115,6 @@
 .quick-actions button:hover {
   background: #a7bdcc13;
 }
-.zone-inspector {
-  position: absolute;
-  right: 21px;
-  top: 20px;
-  width: 270px;
-  max-height: calc(100% - 115px);
-  overflow: auto;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 17px;
-  box-shadow: 0 16px 45px #111b2733;
-  padding: 18px;
-  z-index: 30;
-}
 .inspector-head,
 .inspector-head > span {
   display: flex;

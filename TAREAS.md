@@ -23,7 +23,7 @@ Estado de las iteraciones y correcciones pendientes. El detalle funcional perman
 
 ### Bosquejos — observaciones del rodaje de Nightly (13 de noviembre)
 
-La biblioteca crea pantallas con pertenencia explícita. Una pantalla existente se puede convertir en marco, inspeccionar sus miembros, incorporar materiales y moverla desde el título. La superposición por sí sola conserva las piezas libres. Siguen pendientes la selección bajo el puntero y el recorte en vivo que faltaron al componer y encuadrar la agenda. [Diseño y dependencias](docs/iteraciones/0.8.md#marcos-componentes-mixtos-y-alineación).
+La biblioteca crea pantallas con pertenencia explícita. El inspector del Canvas muestra las capas al seleccionar un marco, un conjunto o un componente estructurado, y las propiedades de zona al seleccionar una zona. Las capas se pueden desplegar, reordenar y trasladar entre contenedores. El marco puede recortar su contenido en vivo. El menú contextual permite elegir una pieza debajo de otra en el punto señalado. [Uso y dependencias](docs/iteraciones/0.8.md#marcos-componentes-mixtos-y-alineación).
 
 La tarjeta de Explorar combina foto importada, texto libre y fondo. El marco admite esos materiales; guardar una composición reutilizable todavía exige piezas de Bosquejos. Las copias vinculadas se reconstruyen al actualizar. Queda pendiente guardar composiciones mixtas, conservar cambios locales por propiedad y ofrecer contorno y sólido para el mismo símbolo. El comportamiento tipográfico de texto libre, notas y editor de piezas está confirmado.
 
