@@ -7,6 +7,7 @@ import {
   type ComponentElement,
 } from './component-tree';
 import { componentPoses, localPose } from './component-geometry';
+import { remapInstanceLayers } from './nested-instances';
 import { corners, containsPoint } from './frame-clipping';
 import type { OrientedRect } from './rotation';
 import type { DeepReadonly } from './readonly';
@@ -75,7 +76,10 @@ export function frameFromMaterial(world: World, background: Material, id: string
   structure.root.frame = true;
   structure.root.children[0]!.name = 'Fondo';
   structure.root.children[0]!.background = true;
-  if (background.rotation) structure.rotation = background.rotation;
+  if (background.rotation) {
+    structure.rotation = background.rotation;
+    delete structure.root.children[0]!.rotation;
+  }
   const group: CanvasGroup = { id, name, component: true, nodes: [background.id], structure };
   if (background.layoutGuides) {
     group.layoutGuides = background.layoutGuides;
@@ -206,6 +210,7 @@ export function transferFramePart(
     used.add(part.id);
     remap.set(old, part.id);
   }
+  remapInstanceLayers(element, remap);
   for (const flow of flows) {
     flow.from = destination.id;
     flow.part = remap.get(flow.part!)!;

@@ -16,6 +16,7 @@ import { rebaseReferences } from './reference-anchors';
 import { applyCopyCommand } from './commands/copies';
 import { applyComponentCommand } from './commands/components';
 import { reconcileComponentTrees, elementAt } from './component-tree';
+import { compositionLinks } from './nested-instances';
 
 export function reduce(state: State, command: Command): State {
   const next = structuredClone(state);
@@ -152,6 +153,17 @@ export function reduce(state: State, command: Command): State {
     const after = next.worlds.find((w) => w.id === command.world);
     if (before && after) {
       reconcileComponentTrees(before, after);
+      // Una revisión de base pertenece a todas sus instancias y se libera con la última.
+      for (const saved of after.compositions ?? []) {
+        if (!saved.previous?.length) continue;
+        const used = new Set(
+          [...compositionLinks(after.canvasGroups ?? [])]
+            .filter((link) => link.id === saved.id)
+            .map((link) => link.revision),
+        );
+        saved.previous = saved.previous.filter((v) => used.has(v.revision));
+        if (!saved.previous.length) delete saved.previous;
+      }
       if (after.screenFlows)
         after.screenFlows = after.screenFlows.filter(
           (f) =>

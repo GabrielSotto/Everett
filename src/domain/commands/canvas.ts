@@ -1,3 +1,4 @@
+import { fittedImage } from '../image-fit';
 import { validBarRows } from '../bar-chart';
 import { adoptMaterials } from '../canvas-frames';
 import { centerOf, rotatedPose } from '../rotation';
@@ -608,15 +609,7 @@ export function applyCanvasCommand(state: State, command: CanvasCommand): void {
         'ASSET',
         'La imagen o sus dimensiones no son válidas.',
       );
-      const center = centerOf(material);
-      const width = Math.min(material.width, material.height * command.ratio);
-      const height = width / command.ratio;
-      // Una imagen demasiado angosta para el marco conserva la dimensión mínima del Canvas.
-      const scale = Math.max(1, 4 / width, 4 / height);
-      material.width = width * scale;
-      material.height = height * scale;
-      material.x = center.x - material.width / 2;
-      material.y = center.y - material.height / 2;
+      Object.assign(material, fittedImage(material, command.ratio));
       material.data = {
         kind: 'image',
         title: material.data.title,

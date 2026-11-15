@@ -68,8 +68,14 @@ export interface CanvasGroup {
   /** Las partes de un componente se manipulan juntas hasta desagruparlo. */
   component?: boolean;
   structure?: import('./component-tree').ComponentTree;
-  recipe?: { id: string; revision: number };
+  recipe?: CompositionLink;
   layoutGuides?: import('./layout-guides').LayoutGuides;
+}
+export interface CompositionLink {
+  id: string;
+  revision: number;
+  /** Propiedades personalizadas que siguen siendo locales aunque una revisión coincida con ellas. */
+  overrides?: { part: string; keys: string[] }[];
 }
 export interface ReferenceAnchor {
   id: string;

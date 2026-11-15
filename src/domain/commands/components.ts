@@ -16,8 +16,17 @@ import {
   type Sizing,
 } from '../component-tree';
 import { layoutComponent } from '../component-layout';
+import { incompatibleMaterial } from '../composition-materials';
+import { refreshInstance, resetInstanceProperty } from '../component-instances';
+import {
+  compositionLinks,
+  layerBinding,
+  refreshNestedInstance,
+  remapInstanceLayers,
+} from '../nested-instances';
+import { nodeTitle } from '../model';
 import { captureComposition } from '../component-recipes';
-import { instantiateLibrary, validLibraryComposition, libraryBounds } from '../sketch-library';
+import { instantiateLibrary, validSavedRecipe } from '../sketch-library';
 import { resizedComponent } from '../component-resize';
 import { groupBounds } from '../manual-groups';
 import {
@@ -34,6 +43,7 @@ import type { Arrangement } from '../arrangement';
 import { arrangedLayerPositions } from '../component-arrangement';
 
 export type ComponentEdit =
+  | { kind: 'reset-property'; element: string; property: string }
   | { kind: 'position'; element: string; axis: 'x' | 'y'; value: number }
   | { kind: 'arrange'; elements: string[]; action: Arrangement }
   | { kind: 'stack'; element: string; target: string; side: 'above' | 'below' | 'inside' }
@@ -128,7 +138,18 @@ function nestGroup(
     componentPoses(nested).get(nested.root.id)!,
   );
   Object.assign(nested.root, placement);
-  for (const e of componentElements(nested.root)) e.id = uid();
+  const layerIds = new Map<string, string>();
+  for (const e of componentElements(nested.root)) {
+    const id = uid();
+    layerIds.set(e.id, id);
+    e.id = id;
+  }
+  remapInstanceLayers(nested.root, layerIds);
+  if (source.recipe)
+    nested.root.instance = {
+      ...source.recipe,
+      layers: [...layerIds].map(([part, layer]) => ({ part, layer })),
+    };
   parent.children.push(nested.root);
   orderFrameBackgrounds(world, group.structure!.root);
   restoreFrameGuides(world, source);
@@ -232,10 +253,15 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     'El agente está usando partes de este componente.',
   );
   if (c.type === 'composition.save') {
+    group.structure ??= treeFromMaterials(
+      world.nodes.filter((n) => group.nodes.includes(n.id)),
+      group.name,
+    );
+    group.component = true;
     const composition = captureComposition(world, group);
     composition.name = c.name.trim();
     ensure(
-      validLibraryComposition(composition),
+      validSavedRecipe(composition),
       'COMPOSITION',
       'La composición no se puede guardar con ese nombre o contenido.',
     );
@@ -246,62 +272,50 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
         )
       : undefined;
     if (existing) {
+      if (
+        [...compositionLinks(world.canvasGroups!)].some(
+          (link) => link.id === existing.id && link.revision === existing.revision,
+        )
+      )
+        (existing.previous ??= []).push({
+          revision: existing.revision,
+          composition: existing.composition,
+        });
       existing.composition = composition;
       existing.name = composition.name;
       existing.revision++;
-    } else
+      if (existing.sourceGroup === group.id)
+        group.recipe = { id: existing.id, revision: existing.revision };
+    } else {
+      const id = uid();
       (world.compositions ??= []).push({
-        id: uid(),
+        id,
+        sourceGroup: group.id,
         name: composition.name,
         revision: 1,
         composition,
       });
+      group.recipe = { id, revision: 1 };
+    }
     return;
   }
   if (c.type === 'composition.update') {
+    const scope = c.element
+      ? need(
+          group.structure && elementAt(group.structure.root, c.element),
+          'Esta capa ya no está en el marco.',
+        )
+      : undefined;
+    const link = scope ? scope.instance : group.recipe;
     const saved = need(
-      world.compositions?.find((s) => s.id === group.recipe?.id),
+      world.compositions?.find((s) => s.id === link?.id),
       'Esta copia es independiente.',
     );
-    const bounds = groupBounds(world, group),
-      nextBounds = libraryBounds(saved.composition),
-      result = instantiateLibrary(
-        saved.composition,
-        uid(),
-        {
-          x: bounds.x + nextBounds.width / 2,
-          y: bounds.y + nextBounds.height / 2,
-        },
-        true,
-      );
-    ensure(!!result.group, 'COMPOSITION', 'No se pudo actualizar la composición.');
-    // Mantener la identidad de las partes supervivientes preserva cables, comentarios
-    // y acciones. Una parte eliminada permanece suelta si todavía tiene referencias.
-    const oldParts = new Map(group.structure ? elementMaterialsById(group.structure.root) : []);
-    const remap = new Map<string, string>();
-    for (const [part, material] of elementMaterialsById(result.group!.structure!.root)) {
-      const oldId = oldParts.get(part);
-      if (oldId) remap.set(material, oldId);
-    }
-    for (const node of result.nodes) node.id = remap.get(node.id) ?? node.id;
-    for (const element of componentElements(result.group!.structure!.root))
-      if (element.material) element.material = remap.get(element.material) ?? element.material;
-    result.group!.nodes = result.nodes.map((n) => n.id);
-    const replaced = new Set(result.group!.nodes),
-      removed = new Set(group.nodes);
-    world.nodes = world.nodes.filter(
-      (n) =>
-        !replaced.has(n.id) &&
-        (!removed.has(n.id) ||
-          world.links.some((l) => l.from === n.id || l.to === n.id) ||
-          world.comments.some((c) => c.node === n.id)),
-    );
-    world.nodes.push(...result.nodes);
-    Object.assign(group, {
-      nodes: result.group!.nodes,
-      structure: result.group!.structure,
-      recipe: { id: saved.id, revision: saved.revision },
-    });
+    if (scope) {
+      refreshNestedInstance(world, group, scope, saved, uid);
+      layoutComponent(group.structure!.root);
+      writeTreeGeometry(world, group);
+    } else refreshInstance(world, group, saved, uid);
     return;
   }
   if (!group.structure && c.edit.kind === 'stack') {
@@ -335,13 +349,11 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     return;
   }
   if (edit.kind === 'initialize') {
+    const blocked = incompatibleMaterial(world, group);
     ensure(
-      group.nodes.every((id) => {
-        const n = world.nodes.find((n) => n.id === id)!;
-        return n.data.kind === 'wireframe' && !!n.data.content.piece;
-      }),
+      !blocked,
       'COMPONENT_CONTENT',
-      'Elegí un conjunto de piezas de bosquejo.',
+      blocked ? `Separá «${nodeTitle(world, blocked)}» para crear el componente.` : '',
     );
     return;
   }
@@ -450,6 +462,23 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     layoutComponent(tree.root);
   } else {
     const element = need(elementAt(tree.root, edit.element), 'Pieza no disponible');
+    if (edit.kind === 'reset-property') {
+      const binding = need(layerBinding(group, element), 'Esta copia es independiente.');
+      const saved = need(
+        world.compositions?.find((s) => s.id === binding.link.id),
+        'Composición no disponible.',
+      );
+      resetInstanceProperty(
+        world,
+        group,
+        saved,
+        element,
+        edit.property,
+        binding.link,
+        binding.part,
+      );
+      return;
+    }
     if (edit.kind === 'stack') {
       const parent = need(parentOf(tree.root, element.id), 'Elegí una capa del contenedor.');
       const target = need(elementAt(tree.root, edit.target), 'Elegí una capa del componente.');
@@ -599,6 +628,7 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
         const copy = structuredClone(element);
         const clone = (e: ComponentElement) => {
           e.id = uid();
+          delete e.instance;
           if (e.material) {
             const node = structuredClone(world.nodes.find((n) => n.id === e.material)!);
             node.id = uid();
@@ -619,11 +649,6 @@ export function applyComponentCommand(state: State, c: ComponentCommand): void {
     }
   }
   writeTreeGeometry(world, group);
-}
-function elementMaterialsById(root: ComponentElement): [string, string][] {
-  return componentElements(root).flatMap((e) =>
-    e.material ? [[e.id, e.material] as [string, string]] : [],
-  );
 }
 function movePart(
   tree: ComponentTree,

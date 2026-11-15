@@ -10,7 +10,8 @@ import { validCanvasText } from './canvas-text';
 import { validNoteFont, validFontWeight, validNoteTypography } from './note-fonts';
 import { validLayoutGuides } from './layout-guides';
 import { validComponentTree, elementAt } from './component-tree';
-import { validLibraryComposition } from './sketch-library';
+import { validSavedRecipe } from './sketch-library';
+import { compositionLinks } from './nested-instances';
 import { validLabelPlacement } from './cable-labels';
 import { validLinkDirection, validLinkWeight } from './link-stroke';
 import { validArrowPoints } from './free-arrow';
@@ -110,30 +111,52 @@ export function validate(s: State): void {
       'COMPOSITION',
       'Biblioteca o recorridos inválidos.',
     );
-    const savedIds = new Set<string>();
+    const savedIds = new Map<string, number>();
     for (const saved of w.compositions ?? []) {
       ensure(
         !!saved &&
           typeof saved.id === 'string' &&
           !!saved.id &&
           !savedIds.has(saved.id) &&
+          (saved.sourceGroup === undefined ||
+            (typeof saved.sourceGroup === 'string' && !!saved.sourceGroup)) &&
           typeof saved.name === 'string' &&
           saved.name.trim().length > 0 &&
           saved.name.length <= 200 &&
           Number.isInteger(saved.revision) &&
           saved.revision > 0 &&
-          validLibraryComposition(saved.composition),
+          validSavedRecipe(saved.composition) &&
+          (saved.previous === undefined ||
+            (Array.isArray(saved.previous) &&
+              saved.previous.every(
+                (v) =>
+                  v &&
+                  Number.isInteger(v.revision) &&
+                  v.revision > 0 &&
+                  v.revision < saved.revision &&
+                  validSavedRecipe(v.composition),
+              ) &&
+              new Set(saved.previous.map((v) => v.revision)).size === saved.previous.length)),
         'COMPOSITION',
         'Composición guardada inválida.',
       );
-      savedIds.add(saved.id);
+      savedIds.set(saved.id, saved.revision);
     }
-    for (const group of w.canvasGroups ?? [])
+    for (const link of compositionLinks(w.canvasGroups ?? []))
       ensure(
-        !group.recipe ||
-          (savedIds.has(group.recipe.id) &&
-            Number.isInteger(group.recipe.revision) &&
-            group.recipe.revision > 0),
+        Number.isInteger(link.revision) &&
+          link.revision > 0 &&
+          link.revision <= (savedIds.get(link.id) ?? 0) &&
+          (link.overrides === undefined ||
+            (Array.isArray(link.overrides) &&
+              link.overrides.every(
+                (o) =>
+                  o &&
+                  typeof o.part === 'string' &&
+                  !!o.part &&
+                  Array.isArray(o.keys) &&
+                  o.keys.every((k: unknown) => typeof k === 'string' && !!k),
+              ))),
         'COMPOSITION',
         'Vínculo de composición inválido.',
       );

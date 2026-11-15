@@ -1,3 +1,6 @@
+import { instanceProperties } from '../../domain/component-instances';
+import { layerBinding } from '../../domain/nested-instances';
+import { incompatibleMaterial } from '../../domain/composition-materials';
 import type { Context } from '../../app/context';
 import type { ComponentEdit } from '../../domain/commands/components';
 import {
@@ -274,6 +277,14 @@ export class ComponentInspector {
     const group =
       this.ctx.world().canvasGroups?.find((g) => g.id === id) ?? componentFor(this.ctx.world(), id);
     if (!group) return false;
+    const blocked = !group.structure && incompatibleMaterial(this.ctx.world(), group);
+    if (blocked) {
+      this.ctx.notice(
+        `Separá «${nodeTitle(this.ctx.world(), blocked)}» para crear el componente.`,
+        true,
+      );
+      return false;
+    }
     this.selectedContainers.clear();
     this.dismissed = undefined;
     if (
@@ -538,6 +549,7 @@ export class ComponentInspector {
         : 0;
     const key = JSON.stringify([
       group,
+      world.nodes.find((n) => n.id === selected.material)?.data,
       interiorCount,
       this.ctx
         .world()
@@ -547,7 +559,7 @@ export class ComponentInspector {
       world.canvasGroups?.map((g) => [g.id, g.name, g.nodes, g.structure?.root.frame]),
       editing,
       this.ctx.ui.canvas.selections,
-      this.ctx.world().compositions,
+      world.compositions?.map((s) => [s.id, s.revision, s.name]),
       this.ctx.world().screenFlows,
     ]);
     if (key === this.key) return;
@@ -578,9 +590,13 @@ export class ComponentInspector {
     const selectedNode = world.nodes.find((n) => n.id === selected.material);
     const editableContent =
       selectedNode?.data.kind === 'wireframe' || selectedNode?.data.kind === 'text';
-    const unsupported = world.nodes.find(
-      (n) => group.nodes.includes(n.id) && (n.data.kind !== 'wireframe' || !n.data.content.piece),
-    );
+    const unsupported = incompatibleMaterial(world, group);
+    const binding = layerBinding(group, selected);
+    const saved = binding && world.compositions?.find((s) => s.id === binding.link.id);
+    const overrides =
+      selectedNode && saved && binding
+        ? instanceProperties(saved, binding.link, binding.part, selectedNode.data)
+        : [];
     const available = this.ctx
       .world()
       .nodes.filter(
@@ -646,6 +662,8 @@ export class ComponentInspector {
     this.properties.innerHTML = `<div class="component-properties">
       <header class="property-heading"><h3 class="inspector-properties-title" aria-label="Propiedades · ${html(selected.name)}">${type}</h3><input aria-label="Nombre" data-prop="name" value="${html(selected.name)}" maxlength="200"></header>
       ${alignment}${geometryProperties(selected, parent, group.structure.origin)}${layoutProperties(selected)}
+      ${selectedNode?.data.kind === 'image' ? '<button type="button" data-component-action="content">Reemplazar imagen…</button>' : ''}
+      ${overrides.length ? `<details><summary>Cambios de esta copia</summary>${overrides.map((p) => `<button type="button" data-component-action="reset-property" data-property="${html(p.key)}">Restablecer ${html(p.label.toLocaleLowerCase())}</button>`).join('')}</details>` : ''}
       ${editableContent ? '<button type="button" data-component-action="content">Editar contenido y apariencia</button>' : ''}
       ${selected.material ? `<label class="component-check"><input type="checkbox" data-prop="background" ${selected.background ? 'checked' : ''}>Fondo del contenedor</label>` : ''}
       ${
@@ -675,7 +693,8 @@ export class ComponentInspector {
       ${selected.material && available.length ? `<details><summary>Sustituir pieza</summary><label>Reemplazo<select data-replace aria-label="Reemplazo">${materialOptions(available)}</select></label><button type="button" data-component-action="replace">Sustituir contenido de la pieza</button></details>` : ''}
       ${!selected.material && nestable.length ? `<details><summary>Anidar un componente</summary><label>Componente del Canvas<select data-nest aria-label="Componente del Canvas">${nestable.map((g) => `<option value="${html(g.id)}">${html(g.name)}</option>`).join('')}</select></label><button type="button" data-component-action="nest">Anidar en este contenedor</button></details>` : ''}
       ${selected === root ? `<details><summary>Escala proporcional</summary><label>Porcentaje<input data-scale type="number" min="1" max="1000" value="100"></label><button type="button" data-component-action="scale">Escalar composición</button></details>` : ''}
-      ${selected === root ? `<details><summary>Reutilizar</summary>${unsupported ? `<p>«${html(nodeTitle(world, unsupported))}» todavía no se puede guardar en una composición de Bosquejos.</p>` : `<label>Nombre<input data-save-name value="${html(group.name)}" maxlength="200"></label><button type="button" data-component-action="save">Guardar composición</button>${group.recipe ? `<button type="button" data-component-action="update">Actualizar esta copia desde biblioteca</button><button type="button" data-component-action="publish">Actualizar composición guardada</button>` : ''}<p>Las copias son independientes. Las vinculadas se actualizan solo cuando lo pedís.</p>`}</details>` : ''}
+      ${selected.instance ? `<details><summary>Reutilizar</summary><button type="button" data-component-action="update">Actualizar esta copia desde biblioteca</button></details>` : ''}
+      ${selected === root ? `<details><summary>Reutilizar</summary>${unsupported ? `<p>«${html(nodeTitle(world, unsupported))}» todavía no se puede guardar en una composición de Bosquejos.</p>` : `<label>Nombre<input data-save-name value="${html(saved?.name ?? group.name)}" maxlength="200"></label><button type="button" data-component-action="save">Guardar composición</button>${group.recipe ? `<button type="button" data-component-action="update">Actualizar esta copia desde biblioteca</button><button type="button" data-component-action="publish">Actualizar composición guardada</button>` : ''}<p>Las copias son independientes. Las vinculadas se actualizan solo cuando lo pedís.</p>`}</details>` : ''}
       <details><summary>Recorrido</summary><label>Ir a<select data-flow aria-label="Ir a">${option('', 'Sin destino', flow?.to ?? '')}${this.ctx
         .world()
         .canvasGroups?.filter((g) => g.id !== group.id)
@@ -816,6 +835,11 @@ export class ComponentInspector {
       this.ctx.render();
       this.render();
     }
+    if (action === 'reset-property') {
+      const property = target.closest<HTMLElement>('[data-property]')?.dataset.property;
+      if (property) this.apply({ kind: 'reset-property', element: selected.id, property });
+      return;
+    }
     if (action === 'content' && selected.material)
       this.root.dispatchEvent(
         new CustomEvent('component-edit-content', { detail: selected.material }),
@@ -901,12 +925,30 @@ export class ComponentInspector {
         'guardar composición',
         'C08-COMPONENT-02',
       );
-    if (action === 'update')
-      this.ctx.act(
-        { type: 'composition.update', world: this.ctx.world().id, id: group.id },
-        'actualizar composición elegida',
-        'C08-COMPONENT-02',
-      );
+    if (action === 'update') {
+      if (
+        this.ctx.act(
+          {
+            type: 'composition.update',
+            world: this.ctx.world().id,
+            id: group.id,
+            ...(selected.instance ? { element: selected.id } : {}),
+          },
+          'actualizar composición elegida',
+          'C08-COMPONENT-02',
+        )
+      ) {
+        const after = this.ctx.world();
+        const members = new Set(after.canvasGroups!.find((g) => g.id === group.id)!.nodes);
+        const original = new Set(group.nodes);
+        const detached = after.nodes.filter((n) => original.has(n.id) && !members.has(n.id));
+        this.ctx.notice(
+          detached.length
+            ? 'Se conservaron en el Canvas: ' + detached.map((n) => nodeTitle(after, n)).join(', ')
+            : 'Copia actualizada.',
+        );
+      }
+    }
     if (action === 'present') {
       const shell = document.getElementById('shell');
       if (shell) {

@@ -32,6 +32,9 @@ test('C08-U86: dos marcos girados conservan pose, selección explícita y rutas 
   store.dispatch({ type: 'frame.create', world, background: 'Agenda', members: [] }, intent);
   store.dispatch({ type: 'frame.create', world, background: 'Detalle', members: [] }, intent);
   const [a, b, c] = project(store).canvasGroups!;
+  const poses = componentPoses(a!.structure!);
+  const frameBackground = a!.structure!.root.children.find((e) => e.background)!;
+  assert.equal(poses.get(frameBackground.id)!.rotation, 35);
   store.dispatch(
     { type: 'layout-guides.set', world, target: { kind: 'group', id: b!.id }, guides },
     intent,

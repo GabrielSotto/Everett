@@ -66,14 +66,22 @@ export async function videoFixture(context: BrowserContext, duration = 250): Pro
   }
 }
 
-export async function storedFixture(page: Page, state: State, ui: Ui): Promise<void> {
+export async function storedFixture(
+  page: Page,
+  state: State,
+  ui: Ui,
+  assets: { id: string; data: string }[] = [],
+): Promise<void> {
   // Cerrar el contexto vivo antes de sustituir su entrada durable. Su último
   // guardado termina antes de esta transacción y no pisa el fixture en pagehide.
   await page.evaluate(() =>
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false })),
   );
   await page.evaluate(
-    async ({ state, ui }) => {
+    async ({ state, ui, assets }) => {
+      const blobs = await Promise.all(
+        assets.map(async (a) => ({ id: a.id, blob: await (await fetch(a.data)).blob() })),
+      );
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open('everett-canvas', 1);
         request.onsuccess = () => resolve(request.result);
@@ -81,7 +89,8 @@ export async function storedFixture(page: Page, state: State, ui: Ui): Promise<v
       });
       const { worlds, seq, ...personal } = state;
       await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(['worlds', 'personal'], 'readwrite');
+        const tx = db.transaction(['worlds', 'personal', 'assets'], 'readwrite');
+        for (const a of blobs) tx.objectStore('assets').put(a.blob, a.id);
         tx.objectStore('worlds').put({ schema: 1, worlds, seq }, 'shared');
         tx.objectStore('personal').put({ schema: 1, state: personal, ui }, 'local-user');
         tx.oncomplete = () => resolve();
@@ -89,6 +98,6 @@ export async function storedFixture(page: Page, state: State, ui: Ui): Promise<v
       });
       db.close();
     },
-    { state, ui },
+    { state, ui, assets },
   );
 }

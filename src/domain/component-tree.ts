@@ -1,8 +1,17 @@
-import type { CanvasGroup, Material, Point, Rect, World, WorldSnapshot } from './model';
+import type {
+  CanvasGroup,
+  CompositionLink,
+  Material,
+  Point,
+  Rect,
+  World,
+  WorldSnapshot,
+} from './model';
 import type { DeepReadonly } from './readonly';
 import { validRotation, rotateVector, type OrientedRect } from './rotation';
 import { childPose, componentPoses, localPose } from './component-geometry';
 import { layoutComponent } from './component-layout';
+import { fittedImage } from './image-fit';
 
 export type Sizing = 'fixed' | 'hug' | 'fill';
 export interface ComponentLayout {
@@ -19,6 +28,8 @@ export interface ComponentElement extends Rect {
   name: string;
   /** Marco editable con límites propios, incluso con materiales que sobresalen. */
   frame?: boolean;
+  /** Vínculo de una copia incorporada explícitamente a otro contenedor. */
+  instance?: CompositionLink & { layers: { layer: string; part: string }[] };
   clipContent?: boolean;
   rotation?: number;
   material?: string;
@@ -119,6 +130,28 @@ export function validComponentTree(
     )
       return false;
     ids.add(e.id);
+    if (e.instance !== undefined) {
+      const link = e.instance;
+      if (
+        e.material ||
+        !link ||
+        !Array.isArray(link.layers) ||
+        !link.layers.length ||
+        link.layers.length > 6000 ||
+        !link.layers.every(
+          (item) =>
+            item &&
+            typeof item.layer === 'string' &&
+            !!item.layer &&
+            typeof item.part === 'string' &&
+            !!item.part,
+        ) ||
+        new Set(link.layers.map((item) => item.layer)).size !== link.layers.length ||
+        new Set(link.layers.map((item) => item.part)).size !== link.layers.length ||
+        !link.layers.some((item) => item.layer === e.id)
+      )
+        return false;
+    }
     if (!validRotation(e.rotation)) return false;
     if (e.clipContent !== undefined && (!e.frame || typeof e.clipContent !== 'boolean'))
       return false;
@@ -174,6 +207,7 @@ export function treeFromMaterials(
       children: nodes.map((n, i) => ({
         id: `part-${i}`,
         material: n.id,
+        ...(n.rotation ? { rotation: n.rotation } : {}),
         name: 'title' in n.data ? n.data.title || 'Pieza' : 'Pieza',
         x: n.x - x,
         y: n.y - y,
@@ -187,6 +221,19 @@ export function treeFromMaterials(
     },
   };
 }
+/** El layout asigna una caja; la imagen conserva su proporción dentro de ella, incluso en un padre girado. */
+export function fitComponentImages(
+  tree: ComponentTree,
+  nodes: ReadonlyMap<string, DeepReadonly<Material>>,
+  materials?: ReadonlySet<string>,
+) {
+  for (const leaf of componentElements(tree.root)) {
+    if (!leaf.material || (materials && !materials.has(leaf.material))) continue;
+    const data = nodes.get(leaf.material)?.data;
+    if (data?.kind === 'image' && Math.abs(leaf.width / leaf.height - data.ratio) > 0.000001)
+      Object.assign(leaf, fittedImage(leaf, data.ratio));
+  }
+}
 export function writeTreeGeometry(
   world: World,
   group: CanvasGroup,
@@ -194,6 +241,7 @@ export function writeTreeGeometry(
 ): void {
   const tree = group.structure!;
   const nodes = new Map(world.nodes.map((n) => [n.id, n]));
+  fitComponentImages(tree, nodes, materials);
   const poses = componentPoses(tree);
   for (const e of componentElements(tree.root)) {
     if (!e.material || (materials && !materials.has(e.material))) continue;

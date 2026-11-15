@@ -139,6 +139,12 @@ C08-B239 contrasta la posición real después de alinear al marco y entre capas,
 operación y prueba la distribución de los hijos en ambos ejes. C08-U90 comprueba la
 referencia local en un marco girado y el rechazo de selecciones incompatibles.
 
+C08-U91 y C08-B240 comprueban publicación manual, orden y contenido propio de las tarjetas.
+C08-U92 y C08-B242 ejercitan las copias dentro de un marco, incluida una personalización
+que coincide temporalmente con la definición y debe seguir siendo local hasta restablecerla.
+C08-B241 descarga un respaldo tras borrar la última tarjeta, verifica los bytes de la foto
+y vuelve a insertar la composición en un contexto de navegador limpio.
+
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
    por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles
    pertenecen al marco. Moverlo por el título. La tarjeta debe conservar su posición relativa,

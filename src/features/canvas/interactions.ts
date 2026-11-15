@@ -91,7 +91,7 @@ export class CanvasInteractions {
     private root: HTMLElement,
     private ctx: Context,
     signal: AbortSignal,
-    editText: (id: string) => boolean,
+    editText: (id: string, fromInspector?: boolean) => boolean,
     private center: () => Point,
     private identify: () => void,
     cancelGesture: () => boolean,
@@ -101,7 +101,17 @@ export class CanvasInteractions {
       'component-edit-content',
       (e) => {
         const id = (e as CustomEvent<string>).detail;
-        if (ctx.world().nodes.find((n) => n.id === id)?.data.kind === 'text') editText(id);
+        const kind = ctx.world().nodes.find((n) => n.id === id)?.data.kind;
+        if (kind === 'image') {
+          const button = root.querySelector<HTMLElement>(
+            '.inspector-properties-pane [data-component-action=content]',
+          );
+          const rect = button?.getBoundingClientRect();
+          this.showIllustrations(
+            { x: rect?.left ?? innerWidth / 2, y: rect?.bottom ?? innerHeight / 2 },
+            id,
+          );
+        } else if (kind === 'text') editText(id, true);
         else this.editWireframe(id);
       },
       { signal },

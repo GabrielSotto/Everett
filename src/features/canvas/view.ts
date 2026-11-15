@@ -1,3 +1,4 @@
+import { incompatibleMaterial } from '../../domain/composition-materials';
 import type { Context, Tool } from '../../app/context';
 import {
   materialRoute,
@@ -246,7 +247,7 @@ export class CanvasView implements View {
       root,
       ctx,
       this.abort.signal,
-      (id) => this.editText(id),
+      (id, fromInspector) => this.editText(id, fromInspector),
       () => this.camPoint(),
       () => this.paintMaterialIdentifications(),
       () => {
@@ -725,9 +726,14 @@ export class CanvasView implements View {
       )
       ?.focus({ preventScroll: true });
   }
-  private editText(id: string): boolean {
+  private editText(id: string, fromInspector = false): boolean {
     const node = this.ctx.world().nodes.find((n) => n.id === id);
-    if (!node || node.owner || node.data.kind !== 'text' || componentFor(this.ctx.world(), id))
+    if (
+      !node ||
+      node.owner ||
+      node.data.kind !== 'text' ||
+      (!fromInspector && componentFor(this.ctx.world(), id))
+    )
       return false;
     this.directText.start(node.id, node, node.width, node);
     return true;
@@ -2313,6 +2319,7 @@ export class CanvasView implements View {
       ...n,
       ...(preview.find((p) => p.id === n.id)?.point ?? {}),
     }));
+    const byId = new Map(world.nodes.map((n) => [n.id, n]));
     const markup = (world.canvasGroups ?? [])
       .map((group) => {
         const allMoving = group.nodes.every((id) => preview.some((p) => p.id === id));
@@ -2325,18 +2332,15 @@ export class CanvasView implements View {
         // de densidad; el zoom nunca desplaza ni ensancha el conjunto.
         const density =
           bounds.width * zoom >= 240 ? 'full' : bounds.width * zoom >= 64 ? 'compact' : 'hidden';
+        const blocked =
+          !isComponent(world, group, byId) && incompatibleMaterial(world, group, byId);
         const headingSide = groupHeadingSide({ ...world, nodes }, group);
         const selected = group.nodes.every((id) => this.ctx.ui.canvas.selections.includes(id));
-        return `<div ${isComponent(world, group) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px;${group.structure?.rotation ? 'rotate:' + group.structure.rotation + 'deg' : ''}"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="${group.structure?.root.frame ? 'group-select' : 'group-rename'}" data-id="${group.id}" title="${html(group.name)}" aria-label="${group.structure?.root.frame ? 'Mover marco' : 'Renombrar conjunto'} ${html(group.name)}">${html(group.name)}</button>${
-          isComponent(world, group)
+        return `<div ${isComponent(world, group, byId) ? `data-component="${group.id}"` : ''} data-density="${density}" data-heading-side="${headingSide}" class="canvas-manual-group ${selected ? 'selected' : ''} ${destination === group.id ? 'group-drop-ready' : ''}" style="left:${bounds.x}px;top:${bounds.y}px;width:${bounds.width}px;height:${bounds.height}px;${group.structure?.rotation ? 'rotate:' + group.structure.rotation + 'deg' : ''}"><div class="group-heading" tabindex="0" data-group="${group.id}"><button type="button" class="group-grip" data-action="group-select" data-id="${group.id}" aria-label="Conjunto: ${html(group.name)}" title="Arrastrar conjunto">${icon('grip', 14)}</button><button type="button" class="group-name" data-action="${group.structure?.root.frame ? 'group-select' : 'group-rename'}" data-id="${group.id}" title="${html(group.name)}" aria-label="${group.structure?.root.frame ? 'Mover marco' : 'Renombrar conjunto'} ${html(group.name)}">${html(group.name)}</button>${
+          isComponent(world, group, byId)
             ? `<button type="button" data-action="component-edit" data-id="${group.id}" aria-label="${group.structure?.root.frame ? 'Editar marco' : 'Editar componente'} ${html(group.name)}">Editar</button>`
-            : group.nodes.every((id) => {
-                  const n = world.nodes.find((n) => n.id === id);
-                  return n?.data.kind === 'wireframe' && !!n.data.content.piece;
-                })
-              ? `<button type="button" data-action="component-edit" data-id="${group.id}">Crear componente</button>`
-              : ''
-        }<small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${selected && isComponent(world, group) && this.ctx.ui.canvas.tool === 'select' ? resizeHandles('group', group.id) : ''}${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
+            : `<button type="button" data-action="component-edit" data-id="${group.id}" ${blocked ? `aria-disabled="true" title="Separá «${html(nodeTitle(world, blocked))}» para crear el componente"` : ''}>Crear componente</button>`
+        }<small class="group-count">${group.nodes.length} ${group.nodes.length === 1 ? 'material' : 'materiales'}</small><button type="button" class="group-separate" data-action="group-ungroup" data-id="${group.id}" aria-label="Separar conjunto">Separar</button></div>${selected && isComponent(world, group, byId) && this.ctx.ui.canvas.tool === 'select' ? resizeHandles('group', group.id) : ''}${destination === group.id ? '<span class="group-drop-message" role="status">Soltar para agregar</span>' : ''}</div>`;
       })
       .join('');
     if (markup !== this.groupMarkup || !layer.childElementCount) {

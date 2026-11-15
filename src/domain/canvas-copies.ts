@@ -329,8 +329,10 @@ export function insertCanvasCopies(
     if (group.structure) {
       group.structure.origin.x += offset.x;
       group.structure.origin.y += offset.y;
-      for (const element of componentElements(group.structure.root))
+      for (const element of componentElements(group.structure.root)) {
+        delete (element as ComponentElement).instance;
         if (element.material) (element as ComponentElement).material = map.get(element.material)!;
+      }
     }
     (world.canvasGroups ??= []).push({
       ...group,

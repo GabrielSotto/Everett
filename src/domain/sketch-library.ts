@@ -1,3 +1,5 @@
+import type { DeepReadonly } from './readonly';
+import { validNativePart, type PartData } from './composition-materials';
 import { validRotation } from './rotation';
 import type { CanvasGroup, Material, Point, Rect } from './model';
 import { validWireframe, type WireframeContent } from './wireframes';
@@ -25,7 +27,21 @@ export interface LibraryComposition {
   component?: boolean;
   structure?: ComponentTree;
 }
+/** Las recetas del catálogo mantienen su formato. Las guardadas también admiten materiales nativos. */
+export type SavedPart = LibraryPart | (Omit<LibraryPart, 'content'> & { data: PartData });
+export type SavedRecipe = Omit<LibraryComposition, 'parts'> & { parts: SavedPart[] };
+
+export function partData(part: SavedPart): PartData;
+export function partData(part: DeepReadonly<SavedPart>): DeepReadonly<PartData>;
+export function partData(part: DeepReadonly<SavedPart>): DeepReadonly<PartData> {
+  return 'data' in part
+    ? part.data
+    : { kind: 'wireframe', title: part.name, content: part.content };
+}
 export function validLibraryComposition(value: LibraryComposition): boolean {
+  return validSavedRecipe(value) && value.parts.every((p) => !('data' in p) && !!p.content.piece);
+}
+export function validSavedRecipe(value: SavedRecipe): boolean {
   return (
     !!value &&
     typeof value.name === 'string' &&
@@ -54,13 +70,16 @@ export function validLibraryComposition(value: LibraryComposition): boolean {
         p.height <= 10000 &&
         Math.abs(p.x) <= 10000 &&
         Math.abs(p.y) <= 10000 &&
-        validWireframe(p.content) &&
-        !!p.content.piece,
+        ('data' in p
+          ? !('content' in p) &&
+            validNativePart(p.data) &&
+            (p.data.kind !== 'image' || Math.abs(p.width / p.height - p.data.ratio) < 0.001)
+          : validWireframe(p.content) && !!p.content.piece),
     )
   );
 }
 /** El espacio reservado por el catálogo no forma parte del material insertado. */
-export function libraryBounds(composition: LibraryComposition): Rect {
+export function libraryBounds(composition: SavedRecipe): Rect {
   if (composition.structure) return { ...composition.structure.root };
   const x = Math.min(...composition.parts.map((p) => p.x));
   const y = Math.min(...composition.parts.map((p) => p.y));
@@ -74,7 +93,7 @@ export function libraryBounds(composition: LibraryComposition): Rect {
 
 /** La receta se materializa una vez; editar una copia nunca modifica el catálogo. */
 export function instantiateLibrary(
-  composition: LibraryComposition,
+  composition: SavedRecipe,
   id: string,
   center: Point,
   forceGroup = false,
@@ -88,7 +107,7 @@ export function instantiateLibrary(
     height: p.height,
     ...(p.rotation ? { rotation: p.rotation } : {}),
     owner: null,
-    data: { kind: 'wireframe', title: p.name, content: structuredClone(p.content) },
+    data: structuredClone(partData(p)),
   }));
   const structure = composition.structure
     ? structuredClone(composition.structure)

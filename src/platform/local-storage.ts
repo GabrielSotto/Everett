@@ -134,6 +134,14 @@ export class LocalStorage {
         ),
       ),
     );
+    for (const world of state.worlds)
+      for (const saved of world.compositions ?? [])
+        for (const recipe of [
+          saved.composition,
+          ...(saved.previous ?? []).map((v) => v.composition),
+        ])
+          for (const part of recipe.parts)
+            if ('data' in part && part.data.kind === 'image') ids.add(part.data.asset);
     for (const page of Object.values(ui.readerPages ?? {})) {
       if (page.readerAsset) ids.add(page.readerAsset);
       if (page.imageAsset) ids.add(page.imageAsset);

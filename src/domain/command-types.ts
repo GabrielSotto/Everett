@@ -39,7 +39,7 @@ export type Command =
     }
   | { type: 'composition.save'; world: string; id: string; name: string; replace?: string }
   | { type: 'composition.insert'; world: string; id: string; center: Point; linked: boolean }
-  | { type: 'composition.update'; world: string; id: string }
+  | { type: 'composition.update'; world: string; id: string; element?: string }
   | {
       type: 'screen-flow.set';
       world: string;
