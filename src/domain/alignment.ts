@@ -123,22 +123,25 @@ function objectGuides(
       anchors(target, axis).some((value) => Math.abs(point - value) < epsilon),
     );
     for (const [i, position] of points.entries()) {
-      if (!aligned[i] || (i === 1 && aligned[0] && aligned[2])) continue;
+      if (!aligned[i]) continue;
+      const centers = i === 1 && Math.abs(position - middle(target, axis)) < epsilon;
+      const from = centers ? middle(moving, other) : moving[other];
+      const to = centers ? middle(moving, other) : end(moving, other);
       let line = guides.get(position);
       if (!line) {
         line = {
           axis,
           position,
-          from: moving[other],
-          to: end(moving, other),
+          from,
+          to,
           markers: [middle(moving, other)],
           source: 'object',
         };
         guides.set(position, line);
       }
-      line.from = Math.min(line.from, target[other]);
-      line.to = Math.max(line.to, end(target, other));
       const mark = middle(target, other);
+      line.from = Math.min(line.from, from, centers ? mark : target[other]);
+      line.to = Math.max(line.to, to, centers ? mark : end(target, other));
       if (!line.markers.includes(mark)) line.markers.push(mark);
       if (target.id !== undefined && (!line.target || target === winner.target))
         line.target = target.id;

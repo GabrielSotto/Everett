@@ -1,6 +1,6 @@
 import { snapBounds, type SnapBounds } from './alignment-bounds';
 import type { WorldSnapshot } from './model';
-import { isComponent } from './manual-groups';
+import { groupBounds, isComponent } from './manual-groups';
 import { selectionBounds, type SnapTarget } from './alignment';
 import { componentElements, elementMaterials, parentOf } from './component-tree';
 import { componentPoses } from './component-geometry';
@@ -60,21 +60,16 @@ export function alignmentScene(
   } else {
     const grouped = new Set<string>();
     for (const group of world.canvasGroups ?? []) {
-      if (!isComponent(world, group, nodes)) continue;
+      const chosen = group.nodes.every((id) => selected.has(id));
+      if (!chosen && !isComponent(world, group, nodes)) continue;
       for (const id of group.nodes) grouped.add(id);
       const members = group.nodes.flatMap((id) => nodes.get(id) ?? []);
       if (!members.length || members.length !== group.nodes.length || members.some((n) => n.owner))
         continue;
-      const chosen = group.nodes.every((id) => selected.has(id));
       if (!chosen && group.nodes.some((id) => selected.has(id))) continue;
       const tree = group.structure;
       const box = tree
-        ? snapBounds({
-            ...tree.root,
-            x: tree.origin.x + tree.root.x,
-            y: tree.origin.y + tree.root.y,
-            rotation: tree.rotation,
-          })
+        ? snapBounds({ ...groupBounds(world, group), rotation: tree.rotation })
         : selectionBounds(members);
       add(box, group.id, chosen);
       if (chosen) for (const id of group.nodes) remaining.delete(id);
@@ -90,7 +85,11 @@ export function alignmentScene(
     const n = nodes.get(id);
     if (n) moving.push(snapBounds(n));
   }
-  return { moving: moving.length > 1 ? selectionBounds(moving) : moving[0], targets };
+  return {
+    moving: moving.length > 1 ? selectionBounds(moving) : moving[0],
+    parts: moving,
+    targets,
+  };
 }
 
 export function alignmentLayoutFrames(

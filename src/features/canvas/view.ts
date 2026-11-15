@@ -79,6 +79,7 @@ import {
 import { alignRect, type SnapMemory } from '../../domain/alignment';
 import { alignmentScene, alignmentLayoutFrames } from '../../domain/alignment-targets';
 import { paintAlignmentGuides } from './alignment-guides';
+import { bindMeasurements } from './measurements';
 import { paintLayoutGuides } from './layout-guides';
 import { resizedComponent } from '../../domain/component-resize';
 import { frameMasks } from '../../domain/frame-clipping';
@@ -112,7 +113,7 @@ type Drag =
       origins?: { id: string; point: Point }[];
       additive?: boolean;
       snap?: SnapMemory;
-      alignment?: ReturnType<typeof alignmentScene> & {
+      alignment?: Pick<ReturnType<typeof alignmentScene>, 'moving' | 'targets'> & {
         world: WorldSnapshot;
         frames: ReturnType<typeof alignmentLayoutFrames>;
       };
@@ -175,6 +176,7 @@ export class CanvasView implements View {
   private sequence = 0;
   private directText: DirectTextEditor;
   private interactions: CanvasInteractions;
+  private refreshMeasurements?: () => void;
   constructor(
     private root: HTMLElement,
     private ctx: Context,
@@ -215,6 +217,7 @@ export class CanvasView implements View {
             this.paintGroups();
           }
           this.paintMaterialIdentifications();
+          this.refreshMeasurements?.();
         }
         this.ctx.cameraChanged?.();
       },
@@ -287,6 +290,13 @@ export class CanvasView implements View {
       { signal: this.abort.signal },
     );
     root.addEventListener('pointerdown', (e) => this.down(e), { signal: this.abort.signal });
+    this.refreshMeasurements = bindMeasurements(
+      root.querySelector<HTMLElement>('#canvas-stage')!,
+      ctx,
+      () => !this.drag && ctx.ui.canvas.tool === 'select',
+      () => this.cam.current.z,
+      this.abort.signal,
+    );
     root.addEventListener('pointermove', (e) => this.move(e), { signal: this.abort.signal });
     root.addEventListener('pointerup', (e) => this.up(e), { signal: this.abort.signal });
     root.addEventListener('keydown', (e) => this.materialKey(e), { signal: this.abort.signal });
@@ -2553,6 +2563,7 @@ export class CanvasView implements View {
     }
   }
   private paintSelection(keepLinks = false): void {
+    this.refreshMeasurements?.();
     this.interactions.components.render();
     const w = this.ctx.world(),
       ui = this.ctx.ui,

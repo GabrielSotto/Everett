@@ -32,11 +32,11 @@ test('C08-U93: fila y columna muestran solo las coincidencias finales con los ve
       const guides = snap.guides.filter((g) => g.source === 'object' && g.axis === axis);
       assert.deepEqual(
         guides.map((g) => Math.round(g.position)),
-        [0, 40],
+        [0, 20, 40],
       );
       for (const g of guides) {
-        assert.equal(g.from, -90);
-        assert.equal(g.to, 170);
+        assert.equal(g.from, Math.round(g.position) === 20 ? -50 : -90);
+        assert.equal(g.to, Math.round(g.position) === 20 ? 130 : 170);
         assert.deepEqual(
           [...g.markers].sort((a, b) => a - b),
           [-50, 40, 130],
@@ -76,7 +76,7 @@ test('C08-U93: fila y columna muestran solo las coincidencias finales con los ve
   assert.equal(alignRect(moving, [far], 1).correction.y, -1);
   const conflict = alignRect(moving, [close, box('opuesta', -110, 2)], 1);
   for (const g of conflict.guides.filter((g) => g.axis === 'y' && g.source === 'object'))
-    assert.equal(g.from, 0);
+    assert.equal(g.from, g.position === 20 ? 40 : 0);
 });
 
 test('C08-U94: un marco arrastra sus márgenes y su inspector compara hermanos que siguen visibles', () => {
@@ -175,13 +175,13 @@ test('C08-U95: una retícula girada conserva las coincidencias de ambos vecinos 
   const edges = actual.guides.filter((g) => g.source === 'object');
   assert.deepEqual(
     edges.map((g) => Math.round(g.position)),
-    [50, 90],
+    [50, 70, 90],
   );
   for (const edge of edges) {
     assert.equal(edge.axis, 'y');
     assert.equal(edge.markers.length, 3);
-    assert.equal(Math.round(edge.from), 40);
-    assert.equal(Math.round(edge.to), 320);
+    assert.equal(Math.round(edge.from), Math.round(edge.position) === 70 ? 80 : 40);
+    assert.equal(Math.round(edge.to), Math.round(edge.position) === 70 ? 280 : 320);
   }
   assert.equal(actual.guides.filter((g) => g.source === 'gap').length, 2);
 });

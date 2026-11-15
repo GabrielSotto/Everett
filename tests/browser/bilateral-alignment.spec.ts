@@ -49,15 +49,15 @@ for (const [id, vertical] of [
       const guides = page.locator('.alignment-guides');
       const edges = guides.locator('line[data-snap-source=object]');
       const gaps = guides.locator('line[data-snap-source=gap]');
-      await expect(edges).toHaveCount(2);
+      await expect(edges).toHaveCount(3);
       await expect(gaps).toHaveCount(2);
       const along = vertical ? 'y' : 'x',
         perp = vertical ? 'x' : 'y';
-      for (const [i, p] of [0, vertical ? 130 : 60].entries()) {
+      for (const [i, p] of [0, vertical ? 65 : 30, vertical ? 130 : 60].entries()) {
         const line = edges.nth(i);
         await expect(line).toHaveAttribute(perp + '1', String(p));
-        await expect(line).toHaveAttribute(along + '1', '-150');
-        await expect(line).toHaveAttribute(along + '2', '260');
+        await expect(line).toHaveAttribute(along + '1', i === 1 ? '-95' : '-150');
+        await expect(line).toHaveAttribute(along + '2', i === 1 ? '205' : '260');
         await expect(line.locator('..').locator('path')).toHaveCount(3);
       }
       for (const [i, [a, b]] of [
@@ -70,7 +70,7 @@ for (const [id, vertical] of [
       await capture(page, info, vertical ? 'vecinas-columna' : 'vecinas-fila');
       await move(12, -3);
       await expect(gaps).toHaveCount(0);
-      await expect(edges).toHaveCount(2);
+      await expect(edges).toHaveCount(3);
       await move(-1, -3);
       await expect(gaps).toHaveCount(2);
       await page.mouse.up();

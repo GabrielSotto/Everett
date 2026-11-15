@@ -8,7 +8,8 @@
 .canvas-actions-trigger {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 32px;
   min-height: 28px;
   padding: 4px 6px;
   border-radius: 6px;
@@ -97,6 +98,24 @@
 }
 .arrangement-label {
   font-weight: 600;
+}
+.distance-reading {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 10px;
+  padding-block: 6px;
+}
+.distance-reading strong {
+  grid-column: 1 / -1;
+}
+.distance-reading span {
+  color: var(--muted);
+}
+.distance-reading b {
+  color: var(--text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .arrangement-icons {
   display: grid;
@@ -202,17 +221,6 @@ body[data-canvas-motion='reduced'] :is(.canvas-actions-pop, .canvas-context-menu
 .arrangement-menu > button,
 .canvas-actions-back {
   font-weight: 600;
-}
-@media (max-width: 1100px) {
-  .canvas-actions-trigger {
-    width: 28px;
-    justify-content: center;
-    padding: 4px;
-  }
-  .canvas-actions-trigger > span,
-  .canvas-actions-trigger > svg:last-child {
-    display: none;
-  }
 }
 
 .shell {
@@ -567,22 +575,25 @@ select option {
     display: none;
   }
 }
-/* Las bibliotecas mantienen el nombre mientras hay espacio; en móvil, su posición. */
-@media (min-width: 760px) and (max-width: 1100px) {
-  .canvas-actions-trigger:is([data-action='canvas-wireframes'], [data-action='canvas-graphics']) {
-    width: auto;
-    padding-inline: 6px;
-  }
-  .canvas-actions-trigger:is([data-action='canvas-wireframes'], [data-action='canvas-graphics'])
-    > span {
-    display: inline;
-  }
-}
 @media (max-width: 360px) {
   .shell:has(.canvas-zoom) {
     padding-inline: 4px;
   }
   .shell:has(.canvas-zoom) .shell-spacer {
     min-width: 0;
+  }
+}
+@media (max-width: 320px) {
+  .shell:has(.canvas-zoom) {
+    gap: 0;
+    padding-inline: 2px;
+  }
+  .shell:has(.canvas-zoom) .canvas-zoom > button {
+    padding-inline: 0;
+    min-width: 24px;
+    justify-content: center;
+  }
+  .shell:has(.canvas-zoom) .canvas-zoom > button svg {
+    display: none;
   }
 }

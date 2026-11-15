@@ -1868,7 +1868,8 @@ body[data-canvas-motion='reduced']
 .color-error:empty {
   display: none;
 }
-.alignment-guides {
+.alignment-guides,
+.canvas-measurement {
   position: absolute;
   inset: 0;
   width: 1px;
@@ -1877,11 +1878,22 @@ body[data-canvas-motion='reduced']
   pointer-events: none;
   z-index: 50;
 }
-.alignment-guides :is(line, path) {
+.alignment-guides :is(line, path),
+.canvas-measurement :is(rect, path) {
   stroke: #ff7189;
-  stroke-width: 1;
+  /* El zoom lo aplica el plano HTML que envuelve al SVG. */
+  stroke-width: calc(1px / var(--canvas-zoom, 1));
   fill: none;
-  vector-effect: non-scaling-stroke;
+}
+.canvas-measurement text {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  fill: #ffd7de;
+  stroke: #252c34;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  paint-order: stroke;
 }
 .cable-inline-edit.canvas-context-form {
   width: min(210px, calc(100vw - 24px));

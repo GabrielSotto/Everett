@@ -149,7 +149,9 @@ C08-U93 y C08-U94 comprueban la geometría bilateral, la prioridad local a varia
 referencias dentro de un marco recortado. C08-U95 combina dos vecinas, huecos iguales y una
 retícula girada a 35°. C08-B243 y C08-B244 arrastran una tarjeta entre dos
 vecinas en fila y columna, capturan los extremos de ambas guías, contrastan los huecos con
-las posiciones guardadas y recuperan el origen con Deshacer.
+las posiciones guardadas y recuperan el origen con Deshacer. C08-U96 y C08-B245 comprueban la
+medición de borde a borde en píxeles, incluido el caso de dos marcos de teléfono al 21 %.
+C08-B246 verifica los cuatro botones de la barra desde 320 hasta 1440 px.
 
 1. **Reorganizar pantallas y conservar el encuadre.** En Explorar, dejar asomar una tarjeta
    por el borde inferior y superponer una anotación externa. Comprobar en la jerarquía cuáles
@@ -173,8 +175,8 @@ las posiciones guardadas y recuperan el origen con Deshacer.
    imagen y el texto completos. Cambiar Inicio a sólido en una copia, comparar con otra en
    contorno y comprobar identidad del símbolo, tinta, caja y estado después de recargar.
 4. **Alinear una fila y una columna sin adivinar la referencia.** Arrastrar la pieza central de
-   tres tarjetas con vecinos a ambos lados. Si coinciden los dos bordes paralelos, ambas guías
-   deben llegar a los dos vecinos. Variar los tamaños hasta que coincida solo un borde o solo
+   tres tarjetas con vecinos a ambos lados. Si coinciden los dos bordes paralelos y los centros, los tres deben tener
+   una guía que llegue a los vecinos. Variar los tamaños hasta que coincida solo un borde o solo
    el centro. Alejar la pieza un píxel de la igualdad de huecos y comprobar que la indicación
    de distancias corresponde a la geometría final. Repetir en columna, invertir el sentido
    del gesto e incluir un tercero lejano, retícula en marco girado y referencias de otra

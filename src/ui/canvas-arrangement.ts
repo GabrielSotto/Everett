@@ -6,6 +6,8 @@ import {
   type Arrangement,
 } from '../domain/arrangement';
 import { icon } from './icons';
+import { alignmentScene } from '../domain/alignment-targets';
+import { measureBounds, dimensionText } from '../domain/measurements';
 
 export const arrangementNames: Record<Arrangement, string> = {
   left: 'Alinear a la izquierda',
@@ -43,6 +45,15 @@ export function arrangeSelection(
 
 export function arrangementMarkup(ctx: Context): string {
   const units = arrangementUnits(ctx.world(), ctx.ui.canvas.selections);
+  const { selections, componentEditing } = ctx.ui.canvas;
+  const parts =
+    selections.length >= 2
+      ? alignmentScene(ctx.world(), new Set(selections), componentEditing).parts
+      : [];
+  const distance = parts.length === 2 ? measureBounds(parts[0]!, parts[1]!) : undefined;
+  const reading = distance
+    ? `<div class="distance-reading" role="group" aria-label="Distancia entre los dos elementos"><strong>${distance.kind}</strong>${distance.dimensions.length ? distance.dimensions.map((d) => `<span>${d.label} <b>${dimensionText(d)}</b></span>`).join('') : '<b>0 px</b>'}</div>`
+    : '';
   const control = (action: Arrangement) =>
     `<button type="button" role="menuitem" data-action="selection-arrange" data-arrangement="${action}" aria-label="${arrangementNames[action]}" title="${arrangementNames[action]}" ${units.length < (action.startsWith('space') ? 3 : 2) ? 'disabled' : ''}>${icon('arrange-' + action, 18)}</button>`;
   const gap = (axis: 'x' | 'y') => {
@@ -59,7 +70,7 @@ export function arrangementMarkup(ctx: Context): string {
     .map(control)
     .join(
       '',
-    )}</div><span class="arrangement-label">Espaciado</span><div class="arrangement-spacing" role="group" aria-label="Espaciado de la selección">${(['x', 'y'] as const).map((axis) => `<div class="arrangement-axis"><span>${axis === 'x' ? 'Horizontal' : 'Vertical'}</span><div><label title="Espaciado ${axis === 'x' ? 'horizontal' : 'vertical'}"><input type="number" data-spacing="space-${axis}" min="0" max="10000" step="any" value="${gap(axis)}" placeholder="${units.length < 2 ? '—' : 'Mixto'}" ${units.length < 2 ? 'disabled' : ''} aria-label="Separación ${axis === 'x' ? 'horizontal' : 'vertical'}"><span aria-hidden="true">px</span></label>${control(`space-${axis}`)}</div></div>`).join('')}</div><p class="arrangement-hint">${units.length < 2 ? 'Seleccioná al menos dos elementos para alinear.' : units.length < 3 ? 'Con tres o más podés distribuir el espacio por igual.' : 'Distribuir mantiene los extremos de la selección.'}</p></div>`;
+    )}</div>${reading}<span class="arrangement-label">Espaciado</span><div class="arrangement-spacing" role="group" aria-label="Espaciado de la selección">${(['x', 'y'] as const).map((axis) => `<div class="arrangement-axis"><span>${axis === 'x' ? 'Horizontal' : 'Vertical'}</span><div><label title="Espaciado ${axis === 'x' ? 'horizontal' : 'vertical'}"><input type="number" data-spacing="space-${axis}" min="0" max="10000" step="any" value="${gap(axis)}" placeholder="${units.length <= 2 ? '—' : 'Mixto'}" ${units.length < 2 ? 'disabled' : ''} aria-label="Separación ${axis === 'x' ? 'horizontal' : 'vertical'}"><span aria-hidden="true">px</span></label>${control(`space-${axis}`)}</div></div>`).join('')}</div><p class="arrangement-hint">${units.length === 1 ? 'Mantené Alt u Opción y señalá otro elemento para medir.' : units.length === 0 ? 'Seleccioná al menos dos elementos para alinear.' : units.length < 3 ? 'Con tres o más podés distribuir el espacio por igual.' : 'Distribuir mantiene los extremos de la selección.'}</p></div>`;
 }
 
 export function bindArrangementSpacing(

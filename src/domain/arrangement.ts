@@ -1,6 +1,7 @@
 import type { Material, Point, Rect, WorldSnapshot } from './model';
 import { visualBounds } from './rotation';
 import { selectionBounds } from './alignment';
+import { groupBounds } from './manual-groups';
 
 export const arrangements = [
   'left',
@@ -25,7 +26,10 @@ export function arrangementUnits(world: WorldSnapshot, ids: readonly string[]): 
   for (const group of world.canvasGroups ?? []) {
     if (!group.nodes.length || !group.nodes.every((id) => remaining.has(id))) continue;
     const nodes = selected.filter((node) => group.nodes.includes(node.id));
-    units.push({ ...selectionBounds(nodes), nodes });
+    const bounds = group.structure
+      ? visualBounds({ ...groupBounds(world, group), rotation: group.structure.rotation })
+      : selectionBounds(nodes);
+    units.push({ ...bounds, nodes });
     nodes.forEach((node) => remaining.delete(node.id));
   }
   for (const node of selected)
