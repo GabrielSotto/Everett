@@ -1,4 +1,6 @@
 // Símbolos Phosphor MIT, fijados por vendor/sources.json.
+export const symbolVariants = { regular: 'Contorno', fill: 'Sólido' };
+export const symbolAsset = (id, variant = 'regular') => (variant === 'fill' ? id + '-fill' : id);
 export const symbolNames = {
   'arrow-left': 'Volver',
   'arrow-right': 'Siguiente',

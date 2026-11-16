@@ -8,6 +8,8 @@ import { html } from './dom';
 import { icon } from './icons';
 import { pickerSearch, searchKey } from './picker-search';
 import { librarySymbol } from '../features/canvas/library/symbols';
+import { isSymbolVariant } from '../domain/sketch-symbols';
+import { symbolVariantControl } from './symbol-variant-control';
 
 /** Ajustes de la próxima inserción, sin otro visor ni formulario de tamaño. */
 export function libraryOptions(
@@ -53,6 +55,7 @@ export function libraryOptions(
     );
     choice.state = states.length ? states : 'default';
     panel.innerHTML = `<header><strong>${html(entry.name)}</strong><button type="button" data-close aria-label="Cerrar opciones">${icon('close', 14)}</button></header>${entry.variants.length > 1 ? `<label>Variante<select data-variant>${entry.variants.map((v) => `<option value="${v.id}" ${v.id === choice.variant ? 'selected' : ''}>${html(v.label)}</option>`).join('')}</select></label>` : ''}${entry.settings
+      .filter((s) => s.id !== 'symbolVariant')
       .map(
         (setting) =>
           `<label>${html(setting.label)}<select data-setting="${setting.id}">${settingOptions(
@@ -75,7 +78,12 @@ export function libraryOptions(
       if (selector) {
         const browser = document.createElement('div');
         browser.className = 'library-symbol-browser';
-        browser.innerHTML = `<div class="library-symbol-grid" role="group" aria-label="Símbolos de Phosphor">${entry.variants.map((v) => `<button type="button" data-symbol="${v.id}" aria-label="${html(v.label)}" title="${html(v.label)}" aria-pressed="${v.id === choice.variant}"><img src="${librarySymbol(v.id)}" alt=""></button>`).join('')}</div><p class="library-symbol-empty" hidden>Sin coincidencias</p>`;
+        const variant = isSymbolVariant(choice.options.symbolVariant)
+          ? choice.options.symbolVariant
+          : 'regular';
+        browser.innerHTML =
+          symbolVariantControl('picker', variant) +
+          `<div class="library-symbol-grid" role="group" aria-label="Símbolos de Phosphor">${entry.variants.map((v) => `<button type="button" data-symbol="${v.id}" aria-label="${html(v.label)}" title="${html(v.label)}" aria-pressed="${v.id === choice.variant}"><img src="${librarySymbol(v.id, variant)}" alt=""></button>`).join('')}</div><p class="library-symbol-empty" hidden>Sin coincidencias</p>`;
         selector.replaceWith(browser);
         const first = () => browser.querySelector<HTMLElement>('[data-symbol]:not([hidden])');
         search = pickerSearch(
@@ -113,6 +121,18 @@ export function libraryOptions(
   panel.addEventListener(
     'change',
     (event) => {
+      const control = event.target;
+      if (
+        control instanceof HTMLInputElement &&
+        control.hasAttribute('data-symbol-variant') &&
+        isSymbolVariant(control.value)
+      ) {
+        choice.options.symbolVariant = control.value;
+        for (const button of panel.querySelectorAll<HTMLButtonElement>('[data-symbol]'))
+          button.querySelector('img')!.src = librarySymbol(button.dataset.symbol!, control.value);
+        changed(choice);
+        return;
+      }
       // Salir de la búsqueda también emite change; no reconstruir el selector
       // mientras Tab o un clic están trasladando el foco a un símbolo.
       if (!(event.target instanceof HTMLSelectElement)) return;

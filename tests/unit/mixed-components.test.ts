@@ -8,7 +8,67 @@ import { prepareComponentLayout } from '../../src/domain/component-layout';
 import { validate } from '../../src/domain/invariants';
 import { instanceProperties } from '../../src/domain/component-instances';
 import { componentElements } from '../../src/domain/component-tree';
-import { wireframeAppearance } from '../../src/domain/wireframes';
+import { wireframeAppearance, wireframeMaterial } from '../../src/domain/wireframes';
+import { validSketchPiece, type SketchPiece } from '../../src/domain/sketch-pieces';
+
+test('C08-U98: una variante local conserva su estado al actualizar y restablecer el símbolo en una copia', async () => {
+  await prepareComponentLayout();
+  const { store, worldId: world } = setup();
+  const act = (c: Command) => store.dispatch(c, intent);
+  const block = wireframeMaterial('block', 'base', { x: 0, y: 0 });
+  const icon = wireframeMaterial('block', 'icon', { x: 10, y: 10 });
+  assert(icon.data.kind === 'wireframe');
+  icon.data.content.piece = { style: { color: '#445566' }, symbol: 'house' };
+  assert(validSketchPiece(icon.data.content.piece));
+  assert(!validSketchPiece({ style: {}, symbol: 'house', symbolVariant: 'unknown' }));
+  assert(!validSketchPiece({ style: {}, symbolVariant: 'fill' }));
+  for (const node of [block, icon]) act({ type: 'node.create', world, node });
+  act({ type: 'group.create', world, nodes: [block.id, icon.id], name: 'Navegación' });
+  const source = project(store).canvasGroups![0]!.id;
+  act({ type: 'component.edit', world, id: source, edit: { kind: 'initialize' } });
+  act({ type: 'composition.save', world, id: source, name: 'Navegación' });
+  const saved = project(store).compositions![0]!.id;
+  for (const x of [400, 800])
+    act({ type: 'composition.insert', world, id: saved, linked: true, center: { x, y: 0 } });
+  const [, active, inactive] = project(store).canvasGroups!;
+  const activeId = active!.nodes[1]!,
+    inactiveId = inactive!.nodes[1]!;
+  const content = (id: string) => {
+    const node = project(store).nodes.find((n) => n.id === id)!;
+    assert(node.data.kind === 'wireframe');
+    return structuredClone(node.data.content);
+  };
+  const change = (id: string, patch: Partial<SketchPiece>) => {
+    const next = content(id);
+    act({
+      type: 'wireframe.edit',
+      world,
+      id,
+      content: { ...next, piece: { ...next.piece!, ...patch } },
+    });
+  };
+  change(activeId, { symbolVariant: 'fill' });
+  assert.equal(content(icon.id).piece!.symbolVariant, undefined);
+  assert.equal(content(inactiveId).piece!.symbolVariant, undefined);
+  change(icon.id, { symbol: 'compass', style: { color: '#225588' } });
+  act({ type: 'composition.save', world, id: source, name: 'Navegación', replace: saved });
+  for (const instance of [active!, inactive!])
+    act({ type: 'composition.update', world, id: instance.id });
+  assert.deepEqual(content(activeId).piece, {
+    symbol: 'compass',
+    symbolVariant: 'fill',
+    style: { color: '#225588' },
+  });
+  assert.deepEqual(content(inactiveId).piece, content(icon.id).piece);
+  act({
+    type: 'component.edit',
+    world,
+    id: active!.id,
+    edit: { kind: 'reset-property', element: 'part-1', property: 'content.piece.symbolVariant' },
+  });
+  assert.equal(content(activeId).piece!.symbolVariant ?? 'regular', 'regular');
+  assert.equal(content(activeId).piece!.symbol, 'compass');
+});
 
 test('C08-U91: actualizar una tarjeta mixta conserva sus datos locales y hereda el diseño por identidad de capa', async () => {
   await prepareComponentLayout();

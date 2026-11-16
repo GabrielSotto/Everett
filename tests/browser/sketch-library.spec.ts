@@ -12,6 +12,79 @@ async function library(page: Page) {
   return page.getByRole('dialog', { name: 'Biblioteca de bosquejos' });
 }
 
+test('C08-B247: buscar un símbolo, elegir su variante e invertirla en el Canvas conserva la caja y la tinta', async ({
+  page,
+}, info) => {
+  await start(page);
+  await page.setViewportSize({ width: 550, height: 768 });
+  const panel = await openLibrary(page);
+  await (await librarySearch(page)).fill('Icono y símbolo');
+  await panel.locator('[data-library-entry=symbol]').click();
+  const options = page.getByRole('dialog', { name: 'Opciones de Icono y símbolo' });
+  const ink = async (file: string) =>
+    (await readFile('design/wireframe-library/vendor/' + file + '.svg', 'utf8')).trim();
+  const folder = options.getByRole('button', { name: 'Carpeta', exact: true });
+  await expect(options.getByRole('radio', { name: 'Contorno' })).toBeChecked();
+  await options.getByRole('button', { name: 'Buscar símbolo' }).click();
+  const search = options.getByRole('searchbox', { name: 'Buscar símbolo' });
+  await search.fill('carpeta');
+  await folder.click();
+  await options.getByRole('radio', { name: 'Sólido' }).check();
+  await expect(search).toHaveValue('carpeta');
+  await expect(folder).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    await folder
+      .locator('img')
+      .evaluate((img: HTMLImageElement) => decodeURIComponent(img.src.split(',')[1]!).trim()),
+  ).toBe(await ink('folder-fill'));
+  await capture(page, info, 'selector-solido');
+  await options.getByRole('button', { name: 'Cerrar opciones' }).click();
+  await panel.locator('[data-library-add=symbol]').click();
+  const part = (await world(page)).nodes.find(
+    (n) => n.data.kind === 'wireframe' && n.data.content.piece?.symbol === 'folder',
+  )!;
+  const node = page.locator(`[data-node="${part.id}"]`);
+  const visibleInk = () =>
+    node
+      .locator('.library-symbol')
+      .evaluate((el) =>
+        decodeURIComponent(
+          getComputedStyle(el).maskImage.match(/url\(["']?data:image\/svg\+xml,(.*?)["']?\)$/)![1]!,
+        ).trim(),
+      );
+  await expect.poll(visibleInk).toBe(await ink('folder-fill'));
+  const color = await node
+    .locator('.library-symbol')
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+  await node.dblclick();
+  const fill = page.getByRole('radio', { name: 'Sólido' });
+  await expect(fill).toBeChecked();
+  await fill.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('radio', { name: 'Contorno' })).toBeChecked();
+  await expect.poll(visibleInk).toBe(await ink('folder'));
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect.poll(visibleInk).toBe(await ink('folder'));
+  const current = (await world(page)).nodes.find((n) => n.id === part.id)!;
+  expect(part.data.kind).toBe('wireframe');
+  expect(current.data.kind).toBe('wireframe');
+  if (part.data.kind === 'wireframe' && current.data.kind === 'wireframe') {
+    const expected = structuredClone(part.data.content);
+    delete expected.piece!.symbolVariant;
+    expect(current.data.content).toEqual(expected);
+  }
+  expect([current.x, current.y, current.width, current.height]).toEqual([
+    part.x,
+    part.y,
+    part.width,
+    part.height,
+  ]);
+  expect(
+    await node.locator('.library-symbol').evaluate((el) => getComputedStyle(el).backgroundColor),
+  ).toBe(color);
+});
+
 test('C08-B148: Bosquejos despliega una biblioteca acotada al botón, sin ficha previa, e inserta por selección directa', async ({
   page,
 }, info) => {

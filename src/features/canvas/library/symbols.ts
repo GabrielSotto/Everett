@@ -1,3 +1,4 @@
+import { symbolAsset, type SymbolVariant } from '../../../../design/wireframe-library/symbols.js';
 import svg0 from '../../../../design/wireframe-library/vendor/arrow-left.svg?raw';
 import svg1 from '../../../../design/wireframe-library/vendor/arrow-right.svg?raw';
 import svg2 from '../../../../design/wireframe-library/vendor/arrow-up.svg?raw';
@@ -150,6 +151,158 @@ import svg148 from '../../../../design/wireframe-library/vendor/translate.svg?ra
 import svg149 from '../../../../design/wireframe-library/vendor/wheelchair.svg?raw';
 import svg150 from '../../../../design/wireframe-library/vendor/hands-clapping.svg?raw';
 import svg151 from '../../../../design/wireframe-library/vendor/handshake.svg?raw';
+import svg152 from '../../../../design/wireframe-library/vendor/arrow-left-fill.svg?raw';
+import svg153 from '../../../../design/wireframe-library/vendor/arrow-right-fill.svg?raw';
+import svg154 from '../../../../design/wireframe-library/vendor/arrow-up-fill.svg?raw';
+import svg155 from '../../../../design/wireframe-library/vendor/bell-fill.svg?raw';
+import svg156 from '../../../../design/wireframe-library/vendor/calendar-blank-fill.svg?raw';
+import svg157 from '../../../../design/wireframe-library/vendor/caret-down-fill.svg?raw';
+import svg158 from '../../../../design/wireframe-library/vendor/check-circle-fill.svg?raw';
+import svg159 from '../../../../design/wireframe-library/vendor/check-fill.svg?raw';
+import svg160 from '../../../../design/wireframe-library/vendor/circle-half-fill.svg?raw';
+import svg161 from '../../../../design/wireframe-library/vendor/copy-fill.svg?raw';
+import svg162 from '../../../../design/wireframe-library/vendor/dots-three-fill.svg?raw';
+import svg163 from '../../../../design/wireframe-library/vendor/eye-fill.svg?raw';
+import svg164 from '../../../../design/wireframe-library/vendor/file-fill.svg?raw';
+import svg165 from '../../../../design/wireframe-library/vendor/folder-fill.svg?raw';
+import svg166 from '../../../../design/wireframe-library/vendor/gear-six-fill.svg?raw';
+import svg167 from '../../../../design/wireframe-library/vendor/image-fill.svg?raw';
+import svg168 from '../../../../design/wireframe-library/vendor/info-fill.svg?raw';
+import svg169 from '../../../../design/wireframe-library/vendor/link-fill.svg?raw';
+import svg170 from '../../../../design/wireframe-library/vendor/magnifying-glass-fill.svg?raw';
+import svg171 from '../../../../design/wireframe-library/vendor/minus-fill.svg?raw';
+import svg172 from '../../../../design/wireframe-library/vendor/paper-plane-tilt-fill.svg?raw';
+import svg173 from '../../../../design/wireframe-library/vendor/paperclip-fill.svg?raw';
+import svg174 from '../../../../design/wireframe-library/vendor/pencil-simple-fill.svg?raw';
+import svg175 from '../../../../design/wireframe-library/vendor/play-fill.svg?raw';
+import svg176 from '../../../../design/wireframe-library/vendor/plus-fill.svg?raw';
+import svg177 from '../../../../design/wireframe-library/vendor/rows-fill.svg?raw';
+import svg178 from '../../../../design/wireframe-library/vendor/sidebar-simple-fill.svg?raw';
+import svg179 from '../../../../design/wireframe-library/vendor/sliders-horizontal-fill.svg?raw';
+import svg180 from '../../../../design/wireframe-library/vendor/squares-four-fill.svg?raw';
+import svg181 from '../../../../design/wireframe-library/vendor/trash-fill.svg?raw';
+import svg182 from '../../../../design/wireframe-library/vendor/user-fill.svg?raw';
+import svg183 from '../../../../design/wireframe-library/vendor/warning-circle-fill.svg?raw';
+import svg184 from '../../../../design/wireframe-library/vendor/x-fill.svg?raw';
+import svg185 from '../../../../design/wireframe-library/vendor/house-fill.svg?raw';
+import svg186 from '../../../../design/wireframe-library/vendor/list-fill.svg?raw';
+import svg187 from '../../../../design/wireframe-library/vendor/heart-fill.svg?raw';
+import svg188 from '../../../../design/wireframe-library/vendor/star-fill.svg?raw';
+import svg189 from '../../../../design/wireframe-library/vendor/bookmark-simple-fill.svg?raw';
+import svg190 from '../../../../design/wireframe-library/vendor/shopping-cart-fill.svg?raw';
+import svg191 from '../../../../design/wireframe-library/vendor/credit-card-fill.svg?raw';
+import svg192 from '../../../../design/wireframe-library/vendor/receipt-fill.svg?raw';
+import svg193 from '../../../../design/wireframe-library/vendor/wallet-fill.svg?raw';
+import svg194 from '../../../../design/wireframe-library/vendor/envelope-fill.svg?raw';
+import svg195 from '../../../../design/wireframe-library/vendor/chat-circle-fill.svg?raw';
+import svg196 from '../../../../design/wireframe-library/vendor/phone-fill.svg?raw';
+import svg197 from '../../../../design/wireframe-library/vendor/video-camera-fill.svg?raw';
+import svg198 from '../../../../design/wireframe-library/vendor/microphone-fill.svg?raw';
+import svg199 from '../../../../design/wireframe-library/vendor/speaker-high-fill.svg?raw';
+import svg200 from '../../../../design/wireframe-library/vendor/pause-fill.svg?raw';
+import svg201 from '../../../../design/wireframe-library/vendor/stop-fill.svg?raw';
+import svg202 from '../../../../design/wireframe-library/vendor/skip-forward-fill.svg?raw';
+import svg203 from '../../../../design/wireframe-library/vendor/download-simple-fill.svg?raw';
+import svg204 from '../../../../design/wireframe-library/vendor/upload-simple-fill.svg?raw';
+import svg205 from '../../../../design/wireframe-library/vendor/share-network-fill.svg?raw';
+import svg206 from '../../../../design/wireframe-library/vendor/lock-fill.svg?raw';
+import svg207 from '../../../../design/wireframe-library/vendor/lock-open-fill.svg?raw';
+import svg208 from '../../../../design/wireframe-library/vendor/shield-check-fill.svg?raw';
+import svg209 from '../../../../design/wireframe-library/vendor/key-fill.svg?raw';
+import svg210 from '../../../../design/wireframe-library/vendor/sign-out-fill.svg?raw';
+import svg211 from '../../../../design/wireframe-library/vendor/users-fill.svg?raw';
+import svg212 from '../../../../design/wireframe-library/vendor/user-plus-fill.svg?raw';
+import svg213 from '../../../../design/wireframe-library/vendor/map-pin-fill.svg?raw';
+import svg214 from '../../../../design/wireframe-library/vendor/globe-fill.svg?raw';
+import svg215 from '../../../../design/wireframe-library/vendor/clock-fill.svg?raw';
+import svg216 from '../../../../design/wireframe-library/vendor/timer-fill.svg?raw';
+import svg217 from '../../../../design/wireframe-library/vendor/funnel-fill.svg?raw';
+import svg218 from '../../../../design/wireframe-library/vendor/sort-ascending-fill.svg?raw';
+import svg219 from '../../../../design/wireframe-library/vendor/arrows-clockwise-fill.svg?raw';
+import svg220 from '../../../../design/wireframe-library/vendor/arrow-down-fill.svg?raw';
+import svg221 from '../../../../design/wireframe-library/vendor/caret-left-fill.svg?raw';
+import svg222 from '../../../../design/wireframe-library/vendor/caret-right-fill.svg?raw';
+import svg223 from '../../../../design/wireframe-library/vendor/caret-up-fill.svg?raw';
+import svg224 from '../../../../design/wireframe-library/vendor/dots-six-vertical-fill.svg?raw';
+import svg225 from '../../../../design/wireframe-library/vendor/device-mobile-fill.svg?raw';
+import svg226 from '../../../../design/wireframe-library/vendor/device-tablet-fill.svg?raw';
+import svg227 from '../../../../design/wireframe-library/vendor/desktop-fill.svg?raw';
+import svg228 from '../../../../design/wireframe-library/vendor/camera-fill.svg?raw';
+import svg229 from '../../../../design/wireframe-library/vendor/chart-bar-fill.svg?raw';
+import svg230 from '../../../../design/wireframe-library/vendor/check-square-fill.svg?raw';
+import svg231 from '../../../../design/wireframe-library/vendor/radio-button-fill.svg?raw';
+import svg232 from '../../../../design/wireframe-library/vendor/toggle-right-fill.svg?raw';
+import svg233 from '../../../../design/wireframe-library/vendor/cloud-fill.svg?raw';
+import svg234 from '../../../../design/wireframe-library/vendor/code-fill.svg?raw';
+import svg235 from '../../../../design/wireframe-library/vendor/text-t-fill.svg?raw';
+import svg236 from '../../../../design/wireframe-library/vendor/lightning-fill.svg?raw';
+import svg237 from '../../../../design/wireframe-library/vendor/question-fill.svg?raw';
+import svg238 from '../../../../design/wireframe-library/vendor/sun-fill.svg?raw';
+import svg239 from '../../../../design/wireframe-library/vendor/moon-fill.svg?raw';
+import svg240 from '../../../../design/wireframe-library/vendor/airplane-fill.svg?raw';
+import svg241 from '../../../../design/wireframe-library/vendor/bicycle-fill.svg?raw';
+import svg242 from '../../../../design/wireframe-library/vendor/boat-fill.svg?raw';
+import svg243 from '../../../../design/wireframe-library/vendor/bus-fill.svg?raw';
+import svg244 from '../../../../design/wireframe-library/vendor/car-fill.svg?raw';
+import svg245 from '../../../../design/wireframe-library/vendor/truck-fill.svg?raw';
+import svg246 from '../../../../design/wireframe-library/vendor/train-fill.svg?raw';
+import svg247 from '../../../../design/wireframe-library/vendor/compass-fill.svg?raw';
+import svg248 from '../../../../design/wireframe-library/vendor/suitcase-fill.svg?raw';
+import svg249 from '../../../../design/wireframe-library/vendor/mountains-fill.svg?raw';
+import svg250 from '../../../../design/wireframe-library/vendor/tree-fill.svg?raw';
+import svg251 from '../../../../design/wireframe-library/vendor/leaf-fill.svg?raw';
+import svg252 from '../../../../design/wireframe-library/vendor/plant-fill.svg?raw';
+import svg253 from '../../../../design/wireframe-library/vendor/flower-fill.svg?raw';
+import svg254 from '../../../../design/wireframe-library/vendor/drop-fill.svg?raw';
+import svg255 from '../../../../design/wireframe-library/vendor/flame-fill.svg?raw';
+import svg256 from '../../../../design/wireframe-library/vendor/snowflake-fill.svg?raw';
+import svg257 from '../../../../design/wireframe-library/vendor/wind-fill.svg?raw';
+import svg258 from '../../../../design/wireframe-library/vendor/book-open-fill.svg?raw';
+import svg259 from '../../../../design/wireframe-library/vendor/graduation-cap-fill.svg?raw';
+import svg260 from '../../../../design/wireframe-library/vendor/student-fill.svg?raw';
+import svg261 from '../../../../design/wireframe-library/vendor/music-notes-fill.svg?raw';
+import svg262 from '../../../../design/wireframe-library/vendor/paint-brush-fill.svg?raw';
+import svg263 from '../../../../design/wireframe-library/vendor/palette-fill.svg?raw';
+import svg264 from '../../../../design/wireframe-library/vendor/scissors-fill.svg?raw';
+import svg265 from '../../../../design/wireframe-library/vendor/ruler-fill.svg?raw';
+import svg266 from '../../../../design/wireframe-library/vendor/shapes-fill.svg?raw';
+import svg267 from '../../../../design/wireframe-library/vendor/pencil-ruler-fill.svg?raw';
+import svg268 from '../../../../design/wireframe-library/vendor/grid-four-fill.svg?raw';
+import svg269 from '../../../../design/wireframe-library/vendor/stack-fill.svg?raw';
+import svg270 from '../../../../design/wireframe-library/vendor/git-branch-fill.svg?raw';
+import svg271 from '../../../../design/wireframe-library/vendor/tree-structure-fill.svg?raw';
+import svg272 from '../../../../design/wireframe-library/vendor/kanban-fill.svg?raw';
+import svg273 from '../../../../design/wireframe-library/vendor/list-checks-fill.svg?raw';
+import svg274 from '../../../../design/wireframe-library/vendor/flag-fill.svg?raw';
+import svg275 from '../../../../design/wireframe-library/vendor/target-fill.svg?raw';
+import svg276 from '../../../../design/wireframe-library/vendor/chart-pie-fill.svg?raw';
+import svg277 from '../../../../design/wireframe-library/vendor/trend-up-fill.svg?raw';
+import svg278 from '../../../../design/wireframe-library/vendor/package-fill.svg?raw';
+import svg279 from '../../../../design/wireframe-library/vendor/warehouse-fill.svg?raw';
+import svg280 from '../../../../design/wireframe-library/vendor/storefront-fill.svg?raw';
+import svg281 from '../../../../design/wireframe-library/vendor/factory-fill.svg?raw';
+import svg282 from '../../../../design/wireframe-library/vendor/buildings-fill.svg?raw';
+import svg283 from '../../../../design/wireframe-library/vendor/hospital-fill.svg?raw';
+import svg284 from '../../../../design/wireframe-library/vendor/first-aid-fill.svg?raw';
+import svg285 from '../../../../design/wireframe-library/vendor/heartbeat-fill.svg?raw';
+import svg286 from '../../../../design/wireframe-library/vendor/thermometer-fill.svg?raw';
+import svg287 from '../../../../design/wireframe-library/vendor/flask-fill.svg?raw';
+import svg288 from '../../../../design/wireframe-library/vendor/database-fill.svg?raw';
+import svg289 from '../../../../design/wireframe-library/vendor/cpu-fill.svg?raw';
+import svg290 from '../../../../design/wireframe-library/vendor/wifi-high-fill.svg?raw';
+import svg291 from '../../../../design/wireframe-library/vendor/bluetooth-fill.svg?raw';
+import svg292 from '../../../../design/wireframe-library/vendor/cloud-arrow-up-fill.svg?raw';
+import svg293 from '../../../../design/wireframe-library/vendor/printer-fill.svg?raw';
+import svg294 from '../../../../design/wireframe-library/vendor/game-controller-fill.svg?raw';
+import svg295 from '../../../../design/wireframe-library/vendor/headphones-fill.svg?raw';
+import svg296 from '../../../../design/wireframe-library/vendor/film-strip-fill.svg?raw';
+import svg297 from '../../../../design/wireframe-library/vendor/broadcast-fill.svg?raw';
+import svg298 from '../../../../design/wireframe-library/vendor/keyhole-fill.svg?raw';
+import svg299 from '../../../../design/wireframe-library/vendor/fingerprint-fill.svg?raw';
+import svg300 from '../../../../design/wireframe-library/vendor/translate-fill.svg?raw';
+import svg301 from '../../../../design/wireframe-library/vendor/wheelchair-fill.svg?raw';
+import svg302 from '../../../../design/wireframe-library/vendor/hands-clapping-fill.svg?raw';
+import svg303 from '../../../../design/wireframe-library/vendor/handshake-fill.svg?raw';
 const symbols: Record<string, string> = {
   'arrow-left': 'data:image/svg+xml,' + encodeURIComponent(svg0),
   'arrow-right': 'data:image/svg+xml,' + encodeURIComponent(svg1),
@@ -303,9 +456,161 @@ const symbols: Record<string, string> = {
   wheelchair: 'data:image/svg+xml,' + encodeURIComponent(svg149),
   'hands-clapping': 'data:image/svg+xml,' + encodeURIComponent(svg150),
   handshake: 'data:image/svg+xml,' + encodeURIComponent(svg151),
+  'arrow-left-fill': 'data:image/svg+xml,' + encodeURIComponent(svg152),
+  'arrow-right-fill': 'data:image/svg+xml,' + encodeURIComponent(svg153),
+  'arrow-up-fill': 'data:image/svg+xml,' + encodeURIComponent(svg154),
+  'bell-fill': 'data:image/svg+xml,' + encodeURIComponent(svg155),
+  'calendar-blank-fill': 'data:image/svg+xml,' + encodeURIComponent(svg156),
+  'caret-down-fill': 'data:image/svg+xml,' + encodeURIComponent(svg157),
+  'check-circle-fill': 'data:image/svg+xml,' + encodeURIComponent(svg158),
+  'check-fill': 'data:image/svg+xml,' + encodeURIComponent(svg159),
+  'circle-half-fill': 'data:image/svg+xml,' + encodeURIComponent(svg160),
+  'copy-fill': 'data:image/svg+xml,' + encodeURIComponent(svg161),
+  'dots-three-fill': 'data:image/svg+xml,' + encodeURIComponent(svg162),
+  'eye-fill': 'data:image/svg+xml,' + encodeURIComponent(svg163),
+  'file-fill': 'data:image/svg+xml,' + encodeURIComponent(svg164),
+  'folder-fill': 'data:image/svg+xml,' + encodeURIComponent(svg165),
+  'gear-six-fill': 'data:image/svg+xml,' + encodeURIComponent(svg166),
+  'image-fill': 'data:image/svg+xml,' + encodeURIComponent(svg167),
+  'info-fill': 'data:image/svg+xml,' + encodeURIComponent(svg168),
+  'link-fill': 'data:image/svg+xml,' + encodeURIComponent(svg169),
+  'magnifying-glass-fill': 'data:image/svg+xml,' + encodeURIComponent(svg170),
+  'minus-fill': 'data:image/svg+xml,' + encodeURIComponent(svg171),
+  'paper-plane-tilt-fill': 'data:image/svg+xml,' + encodeURIComponent(svg172),
+  'paperclip-fill': 'data:image/svg+xml,' + encodeURIComponent(svg173),
+  'pencil-simple-fill': 'data:image/svg+xml,' + encodeURIComponent(svg174),
+  'play-fill': 'data:image/svg+xml,' + encodeURIComponent(svg175),
+  'plus-fill': 'data:image/svg+xml,' + encodeURIComponent(svg176),
+  'rows-fill': 'data:image/svg+xml,' + encodeURIComponent(svg177),
+  'sidebar-simple-fill': 'data:image/svg+xml,' + encodeURIComponent(svg178),
+  'sliders-horizontal-fill': 'data:image/svg+xml,' + encodeURIComponent(svg179),
+  'squares-four-fill': 'data:image/svg+xml,' + encodeURIComponent(svg180),
+  'trash-fill': 'data:image/svg+xml,' + encodeURIComponent(svg181),
+  'user-fill': 'data:image/svg+xml,' + encodeURIComponent(svg182),
+  'warning-circle-fill': 'data:image/svg+xml,' + encodeURIComponent(svg183),
+  'x-fill': 'data:image/svg+xml,' + encodeURIComponent(svg184),
+  'house-fill': 'data:image/svg+xml,' + encodeURIComponent(svg185),
+  'list-fill': 'data:image/svg+xml,' + encodeURIComponent(svg186),
+  'heart-fill': 'data:image/svg+xml,' + encodeURIComponent(svg187),
+  'star-fill': 'data:image/svg+xml,' + encodeURIComponent(svg188),
+  'bookmark-simple-fill': 'data:image/svg+xml,' + encodeURIComponent(svg189),
+  'shopping-cart-fill': 'data:image/svg+xml,' + encodeURIComponent(svg190),
+  'credit-card-fill': 'data:image/svg+xml,' + encodeURIComponent(svg191),
+  'receipt-fill': 'data:image/svg+xml,' + encodeURIComponent(svg192),
+  'wallet-fill': 'data:image/svg+xml,' + encodeURIComponent(svg193),
+  'envelope-fill': 'data:image/svg+xml,' + encodeURIComponent(svg194),
+  'chat-circle-fill': 'data:image/svg+xml,' + encodeURIComponent(svg195),
+  'phone-fill': 'data:image/svg+xml,' + encodeURIComponent(svg196),
+  'video-camera-fill': 'data:image/svg+xml,' + encodeURIComponent(svg197),
+  'microphone-fill': 'data:image/svg+xml,' + encodeURIComponent(svg198),
+  'speaker-high-fill': 'data:image/svg+xml,' + encodeURIComponent(svg199),
+  'pause-fill': 'data:image/svg+xml,' + encodeURIComponent(svg200),
+  'stop-fill': 'data:image/svg+xml,' + encodeURIComponent(svg201),
+  'skip-forward-fill': 'data:image/svg+xml,' + encodeURIComponent(svg202),
+  'download-simple-fill': 'data:image/svg+xml,' + encodeURIComponent(svg203),
+  'upload-simple-fill': 'data:image/svg+xml,' + encodeURIComponent(svg204),
+  'share-network-fill': 'data:image/svg+xml,' + encodeURIComponent(svg205),
+  'lock-fill': 'data:image/svg+xml,' + encodeURIComponent(svg206),
+  'lock-open-fill': 'data:image/svg+xml,' + encodeURIComponent(svg207),
+  'shield-check-fill': 'data:image/svg+xml,' + encodeURIComponent(svg208),
+  'key-fill': 'data:image/svg+xml,' + encodeURIComponent(svg209),
+  'sign-out-fill': 'data:image/svg+xml,' + encodeURIComponent(svg210),
+  'users-fill': 'data:image/svg+xml,' + encodeURIComponent(svg211),
+  'user-plus-fill': 'data:image/svg+xml,' + encodeURIComponent(svg212),
+  'map-pin-fill': 'data:image/svg+xml,' + encodeURIComponent(svg213),
+  'globe-fill': 'data:image/svg+xml,' + encodeURIComponent(svg214),
+  'clock-fill': 'data:image/svg+xml,' + encodeURIComponent(svg215),
+  'timer-fill': 'data:image/svg+xml,' + encodeURIComponent(svg216),
+  'funnel-fill': 'data:image/svg+xml,' + encodeURIComponent(svg217),
+  'sort-ascending-fill': 'data:image/svg+xml,' + encodeURIComponent(svg218),
+  'arrows-clockwise-fill': 'data:image/svg+xml,' + encodeURIComponent(svg219),
+  'arrow-down-fill': 'data:image/svg+xml,' + encodeURIComponent(svg220),
+  'caret-left-fill': 'data:image/svg+xml,' + encodeURIComponent(svg221),
+  'caret-right-fill': 'data:image/svg+xml,' + encodeURIComponent(svg222),
+  'caret-up-fill': 'data:image/svg+xml,' + encodeURIComponent(svg223),
+  'dots-six-vertical-fill': 'data:image/svg+xml,' + encodeURIComponent(svg224),
+  'device-mobile-fill': 'data:image/svg+xml,' + encodeURIComponent(svg225),
+  'device-tablet-fill': 'data:image/svg+xml,' + encodeURIComponent(svg226),
+  'desktop-fill': 'data:image/svg+xml,' + encodeURIComponent(svg227),
+  'camera-fill': 'data:image/svg+xml,' + encodeURIComponent(svg228),
+  'chart-bar-fill': 'data:image/svg+xml,' + encodeURIComponent(svg229),
+  'check-square-fill': 'data:image/svg+xml,' + encodeURIComponent(svg230),
+  'radio-button-fill': 'data:image/svg+xml,' + encodeURIComponent(svg231),
+  'toggle-right-fill': 'data:image/svg+xml,' + encodeURIComponent(svg232),
+  'cloud-fill': 'data:image/svg+xml,' + encodeURIComponent(svg233),
+  'code-fill': 'data:image/svg+xml,' + encodeURIComponent(svg234),
+  'text-t-fill': 'data:image/svg+xml,' + encodeURIComponent(svg235),
+  'lightning-fill': 'data:image/svg+xml,' + encodeURIComponent(svg236),
+  'question-fill': 'data:image/svg+xml,' + encodeURIComponent(svg237),
+  'sun-fill': 'data:image/svg+xml,' + encodeURIComponent(svg238),
+  'moon-fill': 'data:image/svg+xml,' + encodeURIComponent(svg239),
+  'airplane-fill': 'data:image/svg+xml,' + encodeURIComponent(svg240),
+  'bicycle-fill': 'data:image/svg+xml,' + encodeURIComponent(svg241),
+  'boat-fill': 'data:image/svg+xml,' + encodeURIComponent(svg242),
+  'bus-fill': 'data:image/svg+xml,' + encodeURIComponent(svg243),
+  'car-fill': 'data:image/svg+xml,' + encodeURIComponent(svg244),
+  'truck-fill': 'data:image/svg+xml,' + encodeURIComponent(svg245),
+  'train-fill': 'data:image/svg+xml,' + encodeURIComponent(svg246),
+  'compass-fill': 'data:image/svg+xml,' + encodeURIComponent(svg247),
+  'suitcase-fill': 'data:image/svg+xml,' + encodeURIComponent(svg248),
+  'mountains-fill': 'data:image/svg+xml,' + encodeURIComponent(svg249),
+  'tree-fill': 'data:image/svg+xml,' + encodeURIComponent(svg250),
+  'leaf-fill': 'data:image/svg+xml,' + encodeURIComponent(svg251),
+  'plant-fill': 'data:image/svg+xml,' + encodeURIComponent(svg252),
+  'flower-fill': 'data:image/svg+xml,' + encodeURIComponent(svg253),
+  'drop-fill': 'data:image/svg+xml,' + encodeURIComponent(svg254),
+  'flame-fill': 'data:image/svg+xml,' + encodeURIComponent(svg255),
+  'snowflake-fill': 'data:image/svg+xml,' + encodeURIComponent(svg256),
+  'wind-fill': 'data:image/svg+xml,' + encodeURIComponent(svg257),
+  'book-open-fill': 'data:image/svg+xml,' + encodeURIComponent(svg258),
+  'graduation-cap-fill': 'data:image/svg+xml,' + encodeURIComponent(svg259),
+  'student-fill': 'data:image/svg+xml,' + encodeURIComponent(svg260),
+  'music-notes-fill': 'data:image/svg+xml,' + encodeURIComponent(svg261),
+  'paint-brush-fill': 'data:image/svg+xml,' + encodeURIComponent(svg262),
+  'palette-fill': 'data:image/svg+xml,' + encodeURIComponent(svg263),
+  'scissors-fill': 'data:image/svg+xml,' + encodeURIComponent(svg264),
+  'ruler-fill': 'data:image/svg+xml,' + encodeURIComponent(svg265),
+  'shapes-fill': 'data:image/svg+xml,' + encodeURIComponent(svg266),
+  'pencil-ruler-fill': 'data:image/svg+xml,' + encodeURIComponent(svg267),
+  'grid-four-fill': 'data:image/svg+xml,' + encodeURIComponent(svg268),
+  'stack-fill': 'data:image/svg+xml,' + encodeURIComponent(svg269),
+  'git-branch-fill': 'data:image/svg+xml,' + encodeURIComponent(svg270),
+  'tree-structure-fill': 'data:image/svg+xml,' + encodeURIComponent(svg271),
+  'kanban-fill': 'data:image/svg+xml,' + encodeURIComponent(svg272),
+  'list-checks-fill': 'data:image/svg+xml,' + encodeURIComponent(svg273),
+  'flag-fill': 'data:image/svg+xml,' + encodeURIComponent(svg274),
+  'target-fill': 'data:image/svg+xml,' + encodeURIComponent(svg275),
+  'chart-pie-fill': 'data:image/svg+xml,' + encodeURIComponent(svg276),
+  'trend-up-fill': 'data:image/svg+xml,' + encodeURIComponent(svg277),
+  'package-fill': 'data:image/svg+xml,' + encodeURIComponent(svg278),
+  'warehouse-fill': 'data:image/svg+xml,' + encodeURIComponent(svg279),
+  'storefront-fill': 'data:image/svg+xml,' + encodeURIComponent(svg280),
+  'factory-fill': 'data:image/svg+xml,' + encodeURIComponent(svg281),
+  'buildings-fill': 'data:image/svg+xml,' + encodeURIComponent(svg282),
+  'hospital-fill': 'data:image/svg+xml,' + encodeURIComponent(svg283),
+  'first-aid-fill': 'data:image/svg+xml,' + encodeURIComponent(svg284),
+  'heartbeat-fill': 'data:image/svg+xml,' + encodeURIComponent(svg285),
+  'thermometer-fill': 'data:image/svg+xml,' + encodeURIComponent(svg286),
+  'flask-fill': 'data:image/svg+xml,' + encodeURIComponent(svg287),
+  'database-fill': 'data:image/svg+xml,' + encodeURIComponent(svg288),
+  'cpu-fill': 'data:image/svg+xml,' + encodeURIComponent(svg289),
+  'wifi-high-fill': 'data:image/svg+xml,' + encodeURIComponent(svg290),
+  'bluetooth-fill': 'data:image/svg+xml,' + encodeURIComponent(svg291),
+  'cloud-arrow-up-fill': 'data:image/svg+xml,' + encodeURIComponent(svg292),
+  'printer-fill': 'data:image/svg+xml,' + encodeURIComponent(svg293),
+  'game-controller-fill': 'data:image/svg+xml,' + encodeURIComponent(svg294),
+  'headphones-fill': 'data:image/svg+xml,' + encodeURIComponent(svg295),
+  'film-strip-fill': 'data:image/svg+xml,' + encodeURIComponent(svg296),
+  'broadcast-fill': 'data:image/svg+xml,' + encodeURIComponent(svg297),
+  'keyhole-fill': 'data:image/svg+xml,' + encodeURIComponent(svg298),
+  'fingerprint-fill': 'data:image/svg+xml,' + encodeURIComponent(svg299),
+  'translate-fill': 'data:image/svg+xml,' + encodeURIComponent(svg300),
+  'wheelchair-fill': 'data:image/svg+xml,' + encodeURIComponent(svg301),
+  'hands-clapping-fill': 'data:image/svg+xml,' + encodeURIComponent(svg302),
+  'handshake-fill': 'data:image/svg+xml,' + encodeURIComponent(svg303),
 };
-export function librarySymbol(name: string): string {
-  const source = symbols[name];
+export function librarySymbol(name: string, variant?: SymbolVariant): string {
+  const source = symbols[symbolAsset(name, variant)];
   if (!source) throw new Error('El símbolo de esta pieza no está disponible. Elegí otra variante.');
   return source;
 }

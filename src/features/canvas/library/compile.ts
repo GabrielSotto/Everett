@@ -195,6 +195,7 @@ export async function compileLibrary(choice: LibraryChoice): Promise<LibraryComp
         const symbol = element.dataset.librarySymbol;
         if (!symbol) throw new Error('Símbolo de biblioteca no reconocido.');
         piece.symbol = symbol;
+        if (element.dataset.symbolVariant === 'fill') piece.symbolVariant = 'fill';
         if (choice.entry.family === 'base') piece.autoInk = true;
         // Los SVG externos de Phosphor usan tinta negra; no heredan color del img.
         style.color = css.filter.includes('invert(1)') ? '#ffffff' : '#000000';

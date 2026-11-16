@@ -22,6 +22,34 @@ const entry = (id) => {
 const sample = (id, state = 'default', data = 'demo', variant) =>
   JSDOM.fragment(renderSample(entry(id), state, data, variant));
 
+test('BLF-SYMBOL-01: cada símbolo ofrece sus dos SVG oficiales en el mismo encuadre', async () => {
+  const symbols = entry('symbol');
+  assert.equal(symbols.variants.length, 152);
+  for (const { id } of symbols.variants) {
+    const drawings = new Set();
+    for (const style of ['regular', 'fill']) {
+      const fragment = JSDOM.fragment(
+        renderSample(symbols, 'default', 'demo', id, { symbolVariant: style }),
+      );
+      const img = fragment.querySelector('img');
+      assert.equal(img.dataset.librarySymbol, id);
+      assert.equal(img.dataset.symbolVariant, style);
+      const resource = img.getAttribute('src');
+      assert.equal(
+        resource,
+        '/design/wireframe-library/vendor/' + id + (style === 'fill' ? '-fill' : '') + '.svg',
+      );
+      const svg = JSDOM.fragment(
+        await readFile(new URL('../..' + resource, import.meta.url), 'utf8'),
+      ).querySelector('svg');
+      assert.equal(svg.getAttribute('viewBox'), '0 0 256 256');
+      assert.ok(svg.querySelector('path'));
+      drawings.add(svg.innerHTML);
+    }
+    assert.equal(drawings.size, 2, id + ' requiere dos dibujos distintos');
+  }
+});
+
 test('BLF-STATE-01: una herramienta activa se representa en un control, sin activar toda la toolbar', async () => {
   const normal = sample('toolbar');
   const selected = sample('toolbar', 'active');

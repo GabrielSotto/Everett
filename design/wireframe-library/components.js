@@ -1,12 +1,13 @@
 // Representaciones estáticas: los controles dibujados permanecen dentro de una muestra inert.
+import { symbolAsset } from './symbols.js';
 export const esc = (v) =>
   String(v).replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
 export const t = (v, cls = '') => `<span class="label ${cls}" data-part="texto">${esc(v)}</span>`;
-export const ico = (n) =>
-  `<img class="icon" data-part="símbolo" src="/design/wireframe-library/vendor/${n}.svg" alt="">`;
+export const ico = (id, variant = 'regular') =>
+  `<img class="icon" data-part="símbolo" data-library-symbol="${esc(id)}" data-symbol-variant="${esc(variant)}" src="/design/wireframe-library/vendor/${symbolAsset(id, variant)}.svg" alt="">`;
 const has = (state, value) => (Array.isArray(state) ? state : [state]).includes(value);
 const is = (c, value) =>
   value === 'default' && c.states ? c.states.length === 0 : has(c.states ?? c.state, value);

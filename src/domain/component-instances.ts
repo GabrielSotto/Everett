@@ -138,9 +138,10 @@ export function refreshInstance(
     const source = old.data as PartData;
     const base = baseParts.get(leaf.id);
     if (!base || !supportsComposition(source) || !compatiblePartData(target, source)) continue;
-    const fields = localProperties(partData(base), source, previousOverrides.get(leaf.id));
+    const fields = localProperties(partData(base), source, previousOverrides.get(leaf.id)).filter(
+      (property) => copyProperty(target, source, property),
+    );
     if (fields.length) overrides.push({ part: leaf.id, keys: fields.map((field) => field.key) });
-    for (const property of fields) copyProperty(target, source, property);
     if (fields.some((p) => p.key === 'title')) leaf.name = source.title || leaf.name;
     if (target.kind === 'image' && Math.abs(leaf.width / leaf.height - target.ratio) > 0.000001)
       Object.assign(leaf, fittedImage(leaf, target.ratio));

@@ -166,7 +166,7 @@ base(
   'symbol',
   'Icono y símbolo',
   'Símbolo individual de Phosphor · buscá y elegí otra variante',
-  (c) => `<div class="symbol-example">${ico(c.variant)}</div>`,
+  (c) => `<div class="symbol-example">${ico(c.variant, c.options.symbolVariant)}</div>`,
 );
 base(
   'check-mark',

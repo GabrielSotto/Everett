@@ -50,6 +50,7 @@ const properties: Record<PartData['kind'], Property[]> = {
     ...labelFields(
       {
         symbol: 'Símbolo',
+        symbolVariant: 'Variante del símbolo',
         paths: 'Trazado',
         viewBox: 'Encuadre',
         rotation: 'Rotación del símbolo',
@@ -96,6 +97,12 @@ function styleLabel(key: string): string {
   return labels[key] ?? key;
 }
 function read(data: Data, path: string): unknown {
+  if (
+    path === 'content.piece.symbolVariant' &&
+    data.kind === 'wireframe' &&
+    data.content.piece?.symbol
+  )
+    return data.content.piece.symbolVariant ?? 'regular';
   if (data.kind === 'wireframe' && path.startsWith('content.appearance.')) {
     return wireframeAppearance(data.content)[
       path.slice('content.appearance.'.length) as keyof WireframeAppearance
@@ -134,6 +141,12 @@ export function localProperties(base: Data, current: Data, retained: readonly st
 }
 export function copyProperty(target: PartData, source: Data, property: Property) {
   if (!compatible(target, source)) return false;
+  if (
+    property.key === 'content.piece.symbolVariant' &&
+    target.kind === 'wireframe' &&
+    !target.content.piece?.symbol
+  )
+    return false;
   if (
     target.kind === 'wireframe' &&
     property.key.startsWith('content.appearance.') &&

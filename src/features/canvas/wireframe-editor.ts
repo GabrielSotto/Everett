@@ -11,7 +11,8 @@ import { icon } from '../../ui/icons';
 import { frameCanvas } from '../../ui/canvas-frame';
 import { wireframeMarkup } from './wireframe-markup';
 import { bindColorPicker } from './color-picker';
-import { sketchSymbols } from '../../domain/sketch-symbols';
+import { isSymbolVariant, sketchSymbols } from '../../domain/sketch-symbols';
+import { symbolVariantControl } from '../../ui/symbol-variant-control';
 
 /** Listeners locales y observación de tamaño con limpieza al cerrar el formulario. */
 export function bindWireframeEditor(
@@ -117,7 +118,9 @@ export function bindWireframeEditor(
               ([id, name]) =>
                 `<option value="${id}" ${content.piece!.symbol === id ? 'selected' : ''}>${name}</option>`,
             )
-            .join('')}</select></label>`
+            .join(
+              '',
+            )}</select></label>${symbolVariantControl('editor', content.piece.symbolVariant)}`
         : '';
     } else if (content.type === 'table') {
       activeRow = Math.min(activeRow, content.cells.length - 1);
@@ -165,7 +168,10 @@ export function bindWireframeEditor(
     position();
   };
   form.addEventListener('input', (event) => {
-    if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement))
+    if (!(
+      event.target instanceof HTMLTextAreaElement ||
+      (event.target instanceof HTMLInputElement && event.target.type === 'text')
+    ))
       return;
     if (!event.target.closest('.wireframe-editor-fields')) return;
     const node = current();
@@ -211,12 +217,19 @@ export function bindWireframeEditor(
       return;
     if (
       node.data.content.piece &&
-      field.matches('[data-piece-symbol],[data-piece-font],[data-piece-weight]')
+      field.matches(
+        '[data-piece-symbol],[data-symbol-variant],[data-piece-font],[data-piece-weight]',
+      )
     ) {
       if (!field.reportValidity()) return;
       const content: WireframeContent = structuredClone(node.data.content);
       if (field.matches('[data-piece-symbol]')) content.piece!.symbol = field.value;
-      else if (field.matches('[data-piece-weight]')) content.piece!.style.fontWeight = field.value;
+      else if (field.hasAttribute('data-symbol-variant')) {
+        if (!content.piece!.symbol || !isSymbolVariant(field.value)) return;
+        if (field.value === 'regular') delete content.piece!.symbolVariant;
+        else content.piece!.symbolVariant = field.value;
+      } else if (field.matches('[data-piece-weight]'))
+        content.piece!.style.fontWeight = field.value;
       else {
         content.piece!.style.fontSize = field.value + 'px';
         content.piece!.style.lineHeight = Number(field.value) * 1.45 + 'px';

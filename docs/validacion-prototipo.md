@@ -176,7 +176,7 @@ C08-B246 verifica los cuatro botones de la barra desde 320 hasta 1440 px.
    sin redimensionarla. Mover el contenido mixto dentro de la ventana y verificar que solo su
    porción visible admite selección sobre el Canvas. Desactivar el recorte y recuperar la
    imagen y el texto completos. Cambiar Inicio a sólido en una copia, comparar con otra en
-   contorno y comprobar identidad del símbolo, tinta, caja y estado después de recargar.
+   contorno y comprobar identidad del símbolo, tinta, caja y estado después de recargar. BLF-SYMBOL-01 verifica los dos recursos de cada símbolo. C08-B247 sigue la elección, edición y recarga desde el Canvas. C08-U98 comprueba la actualización y el restablecimiento de la variante en una copia vinculada.
 4. **Alinear una fila y una columna sin adivinar la referencia.** Arrastrar la pieza central de
    tres tarjetas con vecinos a ambos lados. Si coinciden los dos bordes paralelos y los centros, los tres deben tener
    una guía que llegue a los vecinos. Variar los tamaños hasta que coincida solo un borde o solo

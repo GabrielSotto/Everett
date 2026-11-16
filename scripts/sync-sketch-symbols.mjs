@@ -1,13 +1,19 @@
 // Sincroniza nombres, SVG y módulo estático. Los símbolos siguen disponibles sin red.
 import { readFile, writeFile } from 'node:fs/promises';
 import { format, resolveConfig } from 'prettier';
-import { symbolNames } from '../design/wireframe-library/symbols.js';
+import { symbolNames, symbolAsset, symbolVariants } from '../design/wireframe-library/symbols.js';
 const folder = new URL('../design/wireframe-library/vendor/', import.meta.url);
 const { icons } = JSON.parse(await readFile(new URL('sources.json', folder), 'utf8'));
-const ids = Object.keys(symbolNames);
+const assets = Object.keys(symbolVariants).flatMap((variant) =>
+  Object.keys(symbolNames).map((id) => ({
+    variant,
+    name: symbolAsset(id, variant),
+  })),
+);
+const ids = assets.map((asset) => asset.name);
 for (let start = 0; start < ids.length; start += 8)
   await Promise.all(
-    ids.slice(start, start + 8).map(async (id) => {
+    assets.slice(start, start + 8).map(async ({ variant, name: id }) => {
       const path = new URL(id + '.svg', folder);
       try {
         await readFile(path);
@@ -18,7 +24,9 @@ for (let start = 0; start < ids.length; start += 8)
       const r = await fetch(
         'https://raw.githubusercontent.com/phosphor-icons/core/' +
           icons.commit +
-          '/assets/regular/' +
+          '/assets/' +
+          variant +
+          '/' +
           id +
           '.svg',
       );
@@ -33,6 +41,9 @@ const lines = ids.map(
   (id, i) =>
     'import svg' + i + " from '../../../../design/wireframe-library/vendor/" + id + ".svg?raw';",
 );
+lines.unshift(
+  "import { symbolAsset, type SymbolVariant } from '../../../../design/wireframe-library/symbols.js';",
+);
 lines.push(
   'const symbols: Record<string, string> = {',
   ...ids.map(
@@ -40,8 +51,8 @@ lines.push(
       '  ' + JSON.stringify(id) + ": 'data:image/svg+xml,' + encodeURIComponent(svg" + i + '),',
   ),
   '};',
-  'export function librarySymbol(name: string): string {',
-  '  const source = symbols[name];',
+  'export function librarySymbol(name: string, variant?: SymbolVariant): string {',
+  '  const source = symbols[symbolAsset(name, variant)];',
   "  if (!source) throw new Error('El símbolo de esta pieza no está disponible. Elegí otra variante.');",
   '  return source;',
   '}',
@@ -51,4 +62,4 @@ const formatted = await format(lines.join('\n'), {
   parser: 'typescript',
 });
 await writeFile(new URL('../src/features/canvas/library/symbols.ts', import.meta.url), formatted);
-console.log(ids.length + ' símbolos.');
+console.log(Object.keys(symbolNames).length + ' símbolos, ' + assets.length + ' recursos.');

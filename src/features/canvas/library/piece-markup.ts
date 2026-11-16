@@ -23,7 +23,7 @@ export function libraryPieceMarkup(content: WireframeContent): string {
     .join(';');
   const text = content.type === 'table' ? '' : content.text;
   const body = piece.symbol
-    ? `<span class="library-symbol" style="mask-image:url('${html(librarySymbol(piece.symbol))}')"></span>`
+    ? `<span class="library-symbol" style="mask-image:url('${html(librarySymbol(piece.symbol, piece.symbolVariant))}')"></span>`
     : piece.paths
       ? `<svg viewBox="${html(piece.viewBox ?? '0 0 220 100')}" preserveAspectRatio="none">${piece.paths.map((path) => `<path d="${html(path.d)}" fill="${html(content.appearance?.fill ?? path.fill)}" stroke="${html(content.appearance?.stroke ?? path.stroke)}" stroke-width="${path.width}"/>`).join('')}</svg>`
       : text

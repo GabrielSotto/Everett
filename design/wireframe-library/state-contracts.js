@@ -1,5 +1,5 @@
 // Estados por componente: intención y alcance se declaran antes de representarlos.
-import { symbolNames } from './symbols.js';
+import { symbolNames, symbolVariants } from './symbols.js';
 export const stateNames = {
   default: 'Base',
   hover: 'Hover',
@@ -989,6 +989,7 @@ for (const id of ['booking-mobile', 'records-workspace', 'support-workspace'])
     ),
   ]);
 
+settings.symbol = [setting('symbolVariant', 'Variante del símbolo', Object.entries(symbolVariants))];
 define('symbol', [base('Símbolo individual')], Object.entries(symbolNames).map(([id, label]) =>
   variant(id, label, 'Símbolo vectorial editable de Phosphor.'),
 ));

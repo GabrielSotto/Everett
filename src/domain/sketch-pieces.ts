@@ -1,4 +1,4 @@
-import { sketchSymbols } from './sketch-symbols';
+import { isSymbolVariant, sketchSymbols, type SymbolVariant } from './sketch-symbols';
 /** Apariencia resuelta de una pieza de la biblioteca. Sin HTML ni CSS ejecutable persistido. */
 export const pieceStyleKeys = [
   'backgroundColor',
@@ -35,6 +35,7 @@ export type PieceStyleKey = (typeof pieceStyleKeys)[number];
 export interface SketchPiece {
   style: Partial<Record<PieceStyleKey, string>>;
   symbol?: string;
+  symbolVariant?: SymbolVariant;
   paths?: readonly { d: string; fill: string; stroke: string; width: number }[];
   viewBox?: string;
   rotation?: number;
@@ -67,6 +68,8 @@ export function validSketchPiece(value: unknown): value is SketchPiece {
     piece.symbol !== undefined &&
     (typeof piece.symbol !== 'string' || !Object.hasOwn(sketchSymbols, piece.symbol))
   )
+    return false;
+  if (piece.symbolVariant !== undefined && (!piece.symbol || !isSymbolVariant(piece.symbolVariant)))
     return false;
   if (
     piece.rotation !== undefined &&
